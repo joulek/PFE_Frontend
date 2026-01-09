@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Navbar from "../components/Navbar";
 import { getJobs } from "../services/job.api";
+import Link from "next/link";
 
 function formatDate(date) {
     return new Date(date).toLocaleDateString("fr-FR");
@@ -65,19 +66,27 @@ export default function PublicJobsPage() {
                                     </p>
                                 </div>
 
-                                {/* ACTION */}
-                                <div className="mt-6 flex justify-end">
-                                    <button
-                                        disabled={isExpired}
-                                        className={`px-6 py-2 rounded-full text-sm font-medium transition
-      ${isExpired
-                                                ? "bg-gray-200 text-gray-400 cursor-not-allowed"
-                                                : "bg-[#6CB33F] text-white hover:bg-[#4E8F2F] shadow"
-                                            }`}
-                                    >
-                                        {isExpired ? "Offre expirée" : "Postuler"}
-                                    </button>
-                                </div>
+                             
+<div className="mt-6 flex justify-end">
+  {isExpired ? (
+    <button
+      disabled
+      className="px-6 py-2 rounded-full text-sm font-medium
+                 bg-gray-200 text-gray-400 cursor-not-allowed"
+    >
+      Offre expirée
+    </button>
+  ) : (
+    <Link href={`/jobs/${job._id}/apply`}>
+      <button
+        className="px-6 py-2 rounded-full text-sm font-medium transition
+                   bg-[#6CB33F] text-white hover:bg-[#4E8F2F] shadow"
+      >
+        Postuler
+      </button>
+    </Link>
+  )}
+</div>
 
                             </div>
                         );
