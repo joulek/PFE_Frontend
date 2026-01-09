@@ -1,0 +1,178 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import {
+    getJobs,
+    createJob,
+    updateJob,
+    deleteJob,
+} from "../../services/job.api";
+import JobModal from "./JobModal";
+import { logout } from "../../services/auth.api";
+
+import Navbar from "../../components/Navbar";
+
+import DeleteJobModal from "./DeleteJobModal";
+function formatDate(date) {
+    if (!date) return "—";
+    return new Date(date).toLocaleDateString("fr-FR");
+}
+
+export default function JobsPage() {
+    const [jobs, setJobs] = useState([]);
+    const [modalOpen, setModalOpen] = useState(false);
+    const [editingJob, setEditingJob] = useState(null);
+    const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+    const [jobToDelete, setJobToDelete] = useState(null);
+
+    async function loadJobs() {
+        const res = await getJobs();
+        setJobs(res.data);
+    }
+
+    useEffect(() => {
+        loadJobs();
+    }, []);
+
+    async function handleCreate(data) {
+        await createJob(data);
+        setModalOpen(false);
+        loadJobs();
+    }
+
+    async function handleUpdate(data) {
+        await updateJob(editingJob._id, data);
+        setEditingJob(null);
+        setModalOpen(false);
+        loadJobs();
+    }
+
+    async function handleDelete(id) {
+        if (!confirm("Supprimer cette offre ?")) return;
+        await deleteJob(id);
+        loadJobs();
+    }
+async function handleLogout() {
+  try {
+    await logout();
+  } catch (err) {
+    console.warn("Logout backend error (ignored)");
+  } finally {
+    localStorage.removeItem("token");
+    localStorage.removeItem("user");
+    window.location.href = "/login";
+  }
+}
+
+    return (
+<div className="min-h-screen bg-[#F4F7F5]">
+  <Navbar onLogout={handleLogout} />
+<div className="max-w-6xl mx-auto pt-10">
+
+                {/* HEADER */}
+                <div className="flex justify-between items-center mb-10">
+                    <h1 className="text-3xl font-bold text-gray-800">
+                        Offres d’emploi
+                    </h1>
+
+                    <button
+                        onClick={() => {
+                            setEditingJob(null);
+                            setModalOpen(true);
+                        }}
+                        className="bg-[#6CB33F] hover:bg-[#4E8F2F]
+                       text-white px-6 py-3 rounded-xl
+                       font-semibold shadow transition"
+                    >
+                         Nouvelle offre
+                    </button>
+                </div>
+
+                {/* GRID */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {jobs.map((job) => (
+                        <div
+                            key={job._id}
+                            className="bg-white rounded-2xl shadow
+                         p-6 flex flex-col justify-between
+                         hover:shadow-lg transition"
+                        >
+                            <div>
+                                <h3 className="text-xl font-semibold text-gray-800 mb-2">
+                                    {job.titre}
+                                </h3>
+
+                                <p className="text-gray-600 text-sm mb-4 line-clamp-3">
+                                    {job.description}
+                                </p>
+
+                                {/* TECHNOLOGIES */}
+                                <div className="flex flex-wrap gap-2 mb-4">
+                                    {job.technologies?.map((tech, i) => (
+                                        <span
+                                            key={i}
+                                            className="bg-[#E9F5E3] text-[#4E8F2F]
+                                 text-xs font-medium
+                                 px-3 py-1 rounded-full"
+                                        >
+                                            {tech}
+                                        </span>
+                                    ))}
+                                </div>
+
+                                {/* DATES */}
+                                <div className="text-xs text-gray-500 space-y-1">
+                                    <p>📅 Créée : {formatDate(job.createdAt)}</p>
+                                    <p>⏳ Clôture : {formatDate(job.dateCloture)}</p>
+                                </div>
+                            </div>
+
+                            {/* ACTIONS */}
+                            <div className="flex justify-end gap-4 mt-6">
+                                <button
+                                    onClick={() => {
+                                        setEditingJob(job);
+                                        setModalOpen(true);
+                                    }}
+                                    className="text-[#4E8F2F] font-medium hover:underline"
+                                >
+                                    Modifier
+                                </button>
+
+                                <button
+                                    onClick={() => {
+                                        setJobToDelete(job);
+                                        setDeleteModalOpen(true);
+                                    }}
+                                    className="text-red-500 hover:underline"
+                                >
+                                    Supprimer
+                                </button>
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            </div>
+
+            <JobModal
+                open={modalOpen}
+                onClose={() => setModalOpen(false)}
+                onSubmit={editingJob ? handleUpdate : handleCreate}
+                initialData={editingJob}
+            />
+            <DeleteJobModal
+                open={deleteModalOpen}
+                job={jobToDelete}
+                onClose={() => setDeleteModalOpen(false)}
+                onConfirm={async () => {
+                    await deleteJob(jobToDelete._id);
+                    setDeleteModalOpen(false);
+                    loadJobs();
+                }}
+            />
+
+        </div>
+
+
+    );
+}
