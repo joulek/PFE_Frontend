@@ -3,20 +3,29 @@
 import Navbar from "../../components/Navbar";
 import { logout } from "../../services/auth.api";
 
+import { useRouter } from "next/navigation"; // ✅
+import { useEffect } from "react";
 export default function RecruiterDashboard() {
+  const router = useRouter();
 
-async function handleLogout() {
-  try {
-    await logout();
-  } catch (err) {
-    console.warn("Logout backend error (ignored)");
-  } finally {
-    localStorage.removeItem("token");
-    localStorage.removeItem("user");
-    window.location.href = "/login";
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    if (!token) {
+      router.replace("/login");
+    }
+  }, []);
+
+  async function handleLogout() {
+    try {
+      await logout();
+    } catch (err) {
+      console.warn("Logout backend error (ignored)");
+    } finally {
+      localStorage.removeItem("token");
+      localStorage.removeItem("user");
+      window.location.href = "/login";
+    }
   }
-}
-
 
   return (
     <div className="min-h-screen bg-[#F4F7F5]">

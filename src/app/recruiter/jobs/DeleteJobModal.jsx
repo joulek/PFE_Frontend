@@ -21,7 +21,9 @@ export default function DeleteJobModal({ open, onClose, onConfirm, job }) {
         </p>
 
         <div className="flex gap-4">
+          {/* ✅ BOUTON CIBLABLE PAR CYPRESS */}
           <button
+            data-cy="confirm-delete"
             onClick={onConfirm}
             className="flex-1 bg-red-500 hover:bg-red-600
                        text-white py-3 rounded-xl font-semibold"
