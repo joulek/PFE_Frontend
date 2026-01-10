@@ -10,11 +10,13 @@ import {
 import JobModal from "./JobModal";
 import DeleteJobModal from "./DeleteJobModal";
 
+/* ================= UTILS ================= */
 function formatDate(date) {
   if (!date) return "—";
   return new Date(date).toLocaleDateString("fr-FR");
 }
 
+/* ================= PAGE ================= */
 export default function JobsPage() {
   const [jobs, setJobs] = useState([]);
   const [modalOpen, setModalOpen] = useState(false);
@@ -45,12 +47,12 @@ export default function JobsPage() {
   }
 
   return (
-    // 🌿 BACKGROUND GLOBAL
+    /* 🌿 BACKGROUND GLOBAL */
     <div className="min-h-screen bg-green-50">
       {/* 📦 CONTAINER */}
       <div className="max-w-6xl mx-auto px-6 pt-10 pb-16">
 
-        {/* HEADER */}
+        {/* ================= HEADER ================= */}
         <div className="flex justify-between items-center mb-10">
           <h1 className="text-3xl font-bold text-gray-800">
             Offres d’emploi
@@ -69,15 +71,16 @@ export default function JobsPage() {
           </button>
         </div>
 
-        {/* GRID */}
+        {/* ================= JOBS GRID ================= */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {jobs.map((job) => (
             <div
               key={job._id}
               className="bg-white rounded-2xl shadow
-                         p-6 flex flex-col justify-between
+                         p-6 flex flex-col
                          hover:shadow-lg transition"
             >
+              {/* ===== TOP CONTENT ===== */}
               <div>
                 <h3 className="text-xl font-semibold text-gray-800 mb-2">
                   {job.titre}
@@ -100,42 +103,61 @@ export default function JobsPage() {
                     </span>
                   ))}
                 </div>
-
-                {/* DATES */}
-                <div className="text-xs text-gray-500 space-y-1">
-                  <p>📅 Créée : {formatDate(job.createdAt)}</p>
-                  <p>⏳ Clôture : {formatDate(job.dateCloture)}</p>
-                </div>
               </div>
 
-              {/* ACTIONS */}
-              <div className="flex justify-end gap-4 mt-6">
-                <button
-                  onClick={() => {
-                    setEditingJob(job);
-                    setModalOpen(true);
-                  }}
-                  className="text-[#4E8F2F] font-medium hover:underline"
-                >
-                  Modifier
-                </button>
+              {/* ===== DIVIDER ===== */}
+              <div className="border-t border-gray-100 my-4" />
 
-                <button
-                  onClick={() => {
-                    setJobToDelete(job);
-                    setDeleteModalOpen(true);
-                  }}
-                  className="text-red-500 hover:underline"
-                >
-                  Supprimer
-                </button>
+              {/* ===== BOTTOM BAR ===== */}
+              <div className="flex items-center justify-between">
+                {/* DATES */}
+                <div className="text-sm text-gray-500 space-y-1">
+                  <div className="flex items-center gap-2">
+                    <span>📅</span>
+                    <span>Créée : {formatDate(job.createdAt)}</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span>⏳</span>
+                    <span>Clôture : {formatDate(job.dateCloture)}</span>
+                  </div>
+                </div>
+
+                {/* ACTIONS */}
+                <div className="flex items-center gap-4">
+                  <button
+                    onClick={() => {
+                      setEditingJob(job);
+                      setModalOpen(true);
+                    }}
+                    className="text-[#4E8F2F] font-medium hover:underline"
+                  >
+                    Modifier
+                  </button>
+
+                  <button
+                    onClick={() => {
+                      setJobToDelete(job);
+                      setDeleteModalOpen(true);
+                    }}
+                    className="text-red-500 hover:underline"
+                  >
+                    Supprimer
+                  </button>
+                </div>
               </div>
             </div>
           ))}
+
+          {/* EMPTY STATE */}
+          {jobs.length === 0 && (
+            <p className="text-gray-500 text-sm">
+              Aucune offre disponible.
+            </p>
+          )}
         </div>
       </div>
 
-      {/* MODALS */}
+      {/* ================= MODALS ================= */}
       <JobModal
         open={modalOpen}
         onClose={() => setModalOpen(false)}

@@ -9,6 +9,7 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   async function handleSubmit(e) {
     e.preventDefault();
@@ -23,7 +24,7 @@ export default function LoginPage() {
     } catch (err) {
       setError(
         err?.response?.data?.message ||
-          "Erreur de connexion. Vérifiez vos informations."
+        "Erreur de connexion. Vérifiez vos informations."
       );
     } finally {
       setLoading(false);
@@ -78,30 +79,98 @@ export default function LoginPage() {
 
           <form onSubmit={handleSubmit} className="space-y-6">
             <div>
-              <label className="text-sm font-medium text-gray-600">
+              <label className="text-sm font-medium text-gray-600 mb-1 block">
                 Email professionnel
               </label>
-              <input
-                type="email"
-                required
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="mt-1.5 w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#6CB33F] outline-none"
-              />
+
+              <div className="relative">
+                {/* Icône email */}
+                <span className="absolute inset-y-0 left-4 flex items-center text-gray-400">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none"
+                    viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
+                      d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25H4.5A2.25 2.25 0 012.25 17.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5H4.5A2.25 2.25 0 002.25 6.75m19.5 0L12 13.5 2.25 6.75" />
+                  </svg>
+                </span>
+
+                <input
+                  type="email"
+                  required
+                  placeholder="votre.email@optylab.com"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="
+        w-full pl-12 pr-4 py-3
+        border border-gray-300
+        rounded-xl
+        text-gray-700
+        focus:ring-2 focus:ring-[#6CB33F]
+        outline-none
+      "
+                />
+              </div>
             </div>
 
+
             <div>
-              <label className="text-sm font-medium text-gray-600">
+              <label className="text-sm font-medium text-gray-600 mb-1 block">
                 Mot de passe
               </label>
-              <input
-                type="password"
-                required
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="mt-1.5 w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#6CB33F] outline-none"
-              />
+
+              <div className="relative">
+                {/* Icône cadenas */}
+                <span className="absolute inset-y-0 left-4 flex items-center text-gray-400">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none"
+                    viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
+                      d="M16.5 10.5V7.875a4.5 4.5 0 10-9 0V10.5m-.75 0h10.5a.75.75 0 01.75.75v7.5a.75.75 0 01-.75.75H6a.75.75 0 01-.75-.75v-7.5a.75.75 0 01.75-.75z" />
+                  </svg>
+                </span>
+
+                <input
+                  type={showPassword ? "text" : "password"}
+                  required
+                  value={password}
+                  placeholder="********"
+
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="
+        w-full pl-12 pr-12 py-3
+        border border-gray-300
+        rounded-xl
+        text-gray-700
+        focus:ring-2 focus:ring-[#6CB33F]
+        outline-none
+      "
+                />
+
+                {/* Icône œil */}
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute inset-y-0 right-4 flex items-center text-gray-400 hover:text-gray-600"
+                >
+                  {showPassword ? (
+                    // eye-off
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none"
+                      viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
+                        d="M3 3l18 18M10.58 10.58A2 2 0 0012 14a2 2 0 001.42-.58M9.88 4.24A9.96 9.96 0 0112 4c5.52 0 10 4.48 10 8 0 1.35-.52 2.63-1.44 3.73M6.23 6.23C3.6 7.86 2 9.96 2 12c0 3.52 4.48 8 10 8a9.96 9.96 0 004.12-.88" />
+                    </svg>
+                  ) : (
+                    // eye
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none"
+                      viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
+                        d="M2.25 12c0-3.52 4.48-8 10-8s10 4.48 10 8-4.48 8-10 8-10-4.48-10-8z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
+                        d="M12 15a3 3 0 100-6 3 3 0 000 6z" />
+                    </svg>
+                  )}
+                </button>
+              </div>
             </div>
+
 
             <button
               type="submit"

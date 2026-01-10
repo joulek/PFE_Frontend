@@ -2,12 +2,7 @@
 
 import { useState, useEffect } from "react";
 
-export default function JobModal({
-  open,
-  onClose,
-  onSubmit,
-  initialData,
-}) {
+export default function JobModal({ open, onClose, onSubmit, initialData }) {
   const [form, setForm] = useState({
     titre: "",
     description: "",
@@ -50,100 +45,135 @@ export default function JobModal({
   }
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center">
-      <div className="bg-white rounded-3xl w-full max-w-xl p-8 shadow-xl">
+    <div
+      className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center px-4"
+      onMouseDown={(e) => {
+        // ferme si clic sur overlay
+        if (e.target === e.currentTarget) onClose();
+      }}
+    >
+      <div className="bg-white w-full max-w-2xl rounded-3xl shadow-2xl overflow-hidden">
+        {/* ===== HEADER (comme image) ===== */}
+        <div className="px-8 pt-7 pb-5 border-b border-gray-200">
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <h2 className="text-2xl font-extrabold text-gray-900">
+                {initialData ? "Modifier l’offre" : "Ajouter une offre"}
+              </h2>
+              <p className="text-sm text-gray-500 mt-1">
+                Mettez à jour les informations de l'annonce pour les candidats.
+              </p>
+            </div>
 
-        {/* TITLE */}
-        <h2 className="text-2xl font-bold text-gray-800 mb-6">
-          {initialData ? "Modifier l’offre" : "Nouvelle offre"}
-        </h2>
+            <button
+              type="button"
+              onClick={onClose}
+              className="h-10 w-10 rounded-full grid place-items-center
+                         text-gray-500 hover:text-gray-800 hover:bg-gray-100 transition"
+              aria-label="Fermer"
+              title="Fermer"
+            >
+              ✕
+            </button>
+          </div>
+        </div>
 
-        <form onSubmit={handleSubmit} className="space-y-5">
+        {/* ===== BODY ===== */}
+        <form onSubmit={handleSubmit} className="px-8 py-7">
+          <div className="space-y-6">
+            {/* TITRE */}
+            <div>
+              <label className="block text-sm font-semibold tracking-wide text-gray-700 mb-2 uppercase">
+                Titre du poste
+              </label>
+              <input
+                value={form.titre}
+                onChange={(e) => setForm({ ...form, titre: e.target.value })}
+                required
+                className="w-full h-12 px-5 rounded-full border border-gray-200
+                           bg-white text-gray-800
+                           focus:border-[#6CB33F] focus:ring-4 focus:ring-[#6CB33F]/15
+                           outline-none transition"
+                placeholder="Ex: Fullstack Developer (React/Node)"
+              />
+            </div>
 
-          {/* TITRE */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Titre du poste
-            </label>
-            <input
-              value={form.titre}
-              onChange={(e) =>
-                setForm({ ...form, titre: e.target.value })
-              }
-              required
-              className="w-full px-4 py-3 rounded-xl
-                         border border-gray-300
-                         focus:border-[#6CB33F]
-                         focus:ring-2 focus:ring-[#6CB33F]/30
-                         outline-none transition"
-            />
+            {/* DESCRIPTION */}
+            <div>
+              <label className="block text-sm font-semibold tracking-wide text-gray-700 mb-2 uppercase">
+                Description
+              </label>
+              <textarea
+                rows={5}
+                value={form.description}
+                onChange={(e) =>
+                  setForm({ ...form, description: e.target.value })
+                }
+                required
+                className="w-full px-5 py-4 rounded-3xl border border-gray-200
+                           bg-white text-gray-800 resize-none
+                           focus:border-[#6CB33F] focus:ring-4 focus:ring-[#6CB33F]/15
+                           outline-none transition"
+                placeholder="Décrivez la mission, le profil recherché, responsabilités..."
+              />
+            </div>
+
+            {/* GRID (TECH + DATE) */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* TECHNOLOGIES */}
+              <div>
+                <label className="block text-sm font-semibold tracking-wide text-gray-700 mb-2 uppercase">
+                  Technologies
+                </label>
+                <input
+                  value={form.technologies}
+                  onChange={(e) =>
+                    setForm({ ...form, technologies: e.target.value })
+                  }
+                  placeholder="React, Node.js, Tailwind"
+                  className="w-full h-12 px-5 rounded-full border border-gray-200
+                             bg-white text-gray-800
+                             focus:border-[#6CB33F] focus:ring-4 focus:ring-[#6CB33F]/15
+                             outline-none transition"
+                />
+                <p className="text-xs text-gray-500 mt-2">
+                  Sépare avec une virgule.
+                </p>
+              </div>
+
+              {/* DATE */}
+              <div>
+                <label className="block text-sm font-semibold tracking-wide text-gray-700 mb-2 uppercase">
+                  Date de clôture
+                </label>
+                <div className="relative">
+                  <input
+                    type="date"
+                    value={form.dateCloture}
+                    onChange={(e) =>
+                      setForm({ ...form, dateCloture: e.target.value })
+                    }
+                    className="w-full h-12 px-5 pr-12 rounded-full border border-gray-200
+                               bg-white text-gray-800
+                               focus:border-[#6CB33F] focus:ring-4 focus:ring-[#6CB33F]/15
+                               outline-none transition"
+                  />
+                  {/* icône calendrier */}
+                  <span className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-gray-400">
+                    
+                  </span>
+                </div>
+              </div>
+            </div>
           </div>
 
-          {/* DESCRIPTION */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Description du poste
-            </label>
-            <textarea
-              rows={4}
-              value={form.description}
-              onChange={(e) =>
-                setForm({ ...form, description: e.target.value })
-              }
-              required
-              className="w-full px-4 py-3 rounded-xl
-                         border border-gray-300
-                         focus:border-[#6CB33F]
-                         focus:ring-2 focus:ring-[#6CB33F]/30
-                         outline-none transition"
-            />
-          </div>
-
-          {/* TECHNOLOGIES */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Technologies requises
-            </label>
-            <input
-              value={form.technologies}
-              onChange={(e) =>
-                setForm({ ...form, technologies: e.target.value })
-              }
-              placeholder="React, Node.js, MongoDB"
-              className="w-full px-4 py-3 rounded-xl
-                         border border-gray-300
-                         focus:border-[#6CB33F]
-                         focus:ring-2 focus:ring-[#6CB33F]/30
-                         outline-none transition"
-            />
-          </div>
-
-          {/* DATE CLOTURE */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Date de clôture
-            </label>
-            <input
-              type="date"
-              value={form.dateCloture}
-              onChange={(e) =>
-                setForm({ ...form, dateCloture: e.target.value })
-              }
-              className="w-full px-4 py-3 rounded-xl
-                         border border-gray-300
-                         focus:border-[#6CB33F]
-                         focus:ring-2 focus:ring-[#6CB33F]/30
-                         outline-none transition"
-            />
-          </div>
-
-          {/* ACTIONS */}
-          <div className="flex gap-4 pt-6">
+          {/* ===== FOOTER (boutons comme image) ===== */}
+          <div className="mt-8 pt-6 border-t border-gray-200 flex flex-col sm:flex-row gap-4">
             <button
               type="submit"
-              className="flex-1 bg-[#6CB33F] hover:bg-[#4E8F2F]
-                         text-white py-3 rounded-xl
-                         font-semibold transition"
+              className="sm:flex-1 h-12 rounded-full font-semibold
+                         bg-[#6CB33F] hover:bg-[#5AA332] text-white
+                         transition shadow-sm"
             >
               Enregistrer
             </button>
@@ -151,15 +181,13 @@ export default function JobModal({
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 py-3 rounded-xl
-                         border border-gray-300
-                         text-gray-700 hover:bg-gray-50
-                         transition"
+              className="sm:flex-1 h-12 rounded-full font-semibold
+                         border border-gray-200 text-gray-700
+                         hover:bg-gray-50 transition"
             >
               Annuler
             </button>
           </div>
-
         </form>
       </div>
     </div>
