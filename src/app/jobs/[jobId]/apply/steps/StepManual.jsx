@@ -1,25 +1,10 @@
 "use client";
 import { useState } from "react";
 
-export default function StepManual({
-  jobId,
-  candidatureId,
-  parsedCV,
-  cvFileUrl,
-  onBack,
-}) {
-  // نحط parsedCV في state باش نعدّل فيه
+export default function StepManual({ parsedCV, cvFileUrl, onBack, onSubmit }) {
   const [form, setForm] = useState(parsedCV);
 
-  /* ======================
-     HANDLERS
-  ====================== */
-
-  const updateExperience = (index, field, value) => {
-    const updated = [...form.experiences];
-    updated[index] = { ...updated[index], [field]: value };
-    setForm({ ...form, experiences: updated });
-  };
+  /* ===== HANDLERS ===== */
 
   const updateEducation = (index, field, value) => {
     const updated = [...form.education];
@@ -27,158 +12,179 @@ export default function StepManual({
     setForm({ ...form, education: updated });
   };
 
-  /* ======================
-     RENDER 
-  ====================== */
+  const updateExperience = (index, field, value) => {
+    const updated = [...form.experiences];
+    updated[index] = { ...updated[index], [field]: value };
+    setForm({ ...form, experiences: updated });
+  };
+
+  // ✅ STYLE INPUT EXACT COMME LOGIN
+  const inputClass =
+    "w-full px-4 py-3 border border-gray-300 rounded-xl " +
+    "focus:ring-2 focus:ring-[#6CB33F] focus:border-[#6CB33F] " +
+    "outline-none transition";
 
   return (
-    <div>
-      <h2 className="text-xl font-semibold mb-4">
-        Étape 2 — Vérification & Complément
-      </h2>
-
-      {/* ===== CV LINK ===== */}
-      <p className="mb-6 text-sm">
-        CV uploadé :{" "}
-        <a
-          href={`http://localhost:5000${cvFileUrl}`}
-          target="_blank"
-          className="text-blue-600 underline"
-        >
-          Voir le CV
-        </a>
-      </p>
-
-      {/* ===== BASIC INFO ===== */}
-      <div className="grid grid-cols-2 gap-4 mb-6">
-        <input
-          className="border p-2 rounded"
-          value={form.fullName || ""}
-          onChange={(e) =>
-            setForm({ ...form, fullName: e.target.value })
-          }
-          placeholder="Nom complet"
-        />
-
-        <input
-          className="border p-2 rounded"
-          value={form.email || ""}
-          onChange={(e) =>
-            setForm({ ...form, email: e.target.value })
-          }
-          placeholder="Email"
-        />
+    <div className="w-full px-6 md:px-12 xl:px-24 space-y-10">
+      {/* ===== HEADER ===== */}
+      <div>
+        <h2 className="text-3xl font-bold text-gray-800">
+          Étape 2 — Vérification & Complément
+        </h2>
+        <p className="text-sm text-gray-600">
+          CV uploadé :
+          <a
+            href={`http://localhost:5000${cvFileUrl}`}
+            target="_blank"
+            className="text-green-600 underline ml-1"
+          >
+            Voir le CV
+          </a>
+        </p>
       </div>
 
-      {/* ======================
-         EXPERIENCES
-      ====================== */}
-      <h3 className="font-semibold mb-2">Expériences professionnelles</h3>
-
-      {form.experiences?.map((exp, i) => (
-        <div
-          key={i}
-          className="border rounded p-4 mb-4 bg-gray-50"
-        >
+      {/* ===== GRID ===== */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {/* ===== INFOS PERSONNELLES ===== */}
+        <Card title="Informations personnelles">
           <input
-            className="border p-2 rounded w-full mb-2"
-            value={exp.role || ""}
+            className={`${inputClass} mb-3`}
+            value={form.fullName || ""}
             onChange={(e) =>
-              updateExperience(i, "role", e.target.value)
+              setForm({ ...form, fullName: e.target.value })
             }
-            placeholder="Poste / Rôle"
+            placeholder="Nom complet"
           />
 
           <input
-            className="border p-2 rounded w-full mb-2"
-            value={exp.company || ""}
+            className={inputClass}
+            value={form.email || ""}
             onChange={(e) =>
-              updateExperience(i, "company", e.target.value)
+              setForm({ ...form, email: e.target.value })
             }
-            placeholder="Entreprise / Lieu"
+            placeholder="Email"
           />
+        </Card>
 
-          <input
-            className="border p-2 rounded w-full mb-2"
-            value={exp.period || ""}
-            onChange={(e) =>
-              updateExperience(i, "period", e.target.value)
-            }
-            placeholder="Période"
-          />
+        {/* ===== FORMATION ===== */}
+        <Card title="Formation">
+          {form.education?.map((edu, i) => (
+            <div
+              key={i}
+              className="border border-gray-200 rounded-xl p-4 mb-4 bg-gray-50"
+            >
+              <input
+                className={`${inputClass} mb-2`}
+                value={edu.degree || ""}
+                onChange={(e) =>
+                  updateEducation(i, "degree", e.target.value)
+                }
+                placeholder="Diplôme"
+              />
 
-          <textarea
-            className="border p-2 rounded w-full"
-            rows={3}
-            value={(exp.description || []).join("\n")}
-            onChange={(e) =>
-              updateExperience(i, "description", e.target.value.split("\n"))
-            }
-            placeholder="Description (une ligne par point)"
-          />
-        </div>
-      ))}
+              <input
+                className={`${inputClass} mb-2`}
+                value={edu.institution || ""}
+                onChange={(e) =>
+                  updateEducation(i, "institution", e.target.value)
+                }
+                placeholder="Établissement"
+              />
 
-      {/* ======================
-         EDUCATION
-      ====================== */}
-      <h3 className="font-semibold mb-2 mt-6">Formation</h3>
+              <input
+                className={inputClass}
+                value={edu.period || ""}
+                onChange={(e) =>
+                  updateEducation(i, "period", e.target.value)
+                }
+                placeholder="Période"
+              />
+            </div>
+          ))}
+        </Card>
 
-      {form.education?.map((edu, i) => (
-        <div
-          key={i}
-          className="border rounded p-4 mb-4 bg-gray-50"
-        >
-          <input
-            className="border p-2 rounded w-full mb-2"
-            value={edu.degree || ""}
-            onChange={(e) =>
-              updateEducation(i, "degree", e.target.value)
-            }
-            placeholder="Diplôme"
-          />
+        {/* ===== EXPERIENCES ===== */}
+        <Card title="Expériences professionnelles" className="md:col-span-2">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {form.experiences?.map((exp, i) => (
+              <div
+                key={i}
+                className="border border-gray-200 rounded-xl p-4 bg-gray-50"
+              >
+                <input
+                  className={`${inputClass} mb-2`}
+                  value={exp.role || ""}
+                  onChange={(e) =>
+                    updateExperience(i, "role", e.target.value)
+                  }
+                  placeholder="Poste / Rôle"
+                />
 
-          <input
-            className="border p-2 rounded w-full mb-2"
-            value={edu.institution || ""}
-            onChange={(e) =>
-              updateEducation(i, "institution", e.target.value)
-            }
-            placeholder="Établissement"
-          />
+                <input
+                  className={`${inputClass} mb-2`}
+                  value={exp.company || ""}
+                  onChange={(e) =>
+                    updateExperience(i, "company", e.target.value)
+                  }
+                  placeholder="Entreprise"
+                />
 
-          <input
-            className="border p-2 rounded w-full mb-2"
-            value={edu.period || ""}
-            onChange={(e) =>
-              updateEducation(i, "period", e.target.value)
-            }
-            placeholder="Période"
-          />
-        </div>
-      ))}
+                <input
+                  className={`${inputClass} mb-2`}
+                  value={exp.period || ""}
+                  onChange={(e) =>
+                    updateExperience(i, "period", e.target.value)
+                  }
+                  placeholder="Période"
+                />
 
-      {/* ======================
-         ACTIONS
-      ====================== */}
-      <div className="mt-8 flex gap-3">
+                <textarea
+                  rows={3}
+                  className={inputClass}
+                  value={(exp.description || []).join("\n")}
+                  onChange={(e) =>
+                    updateExperience(
+                      i,
+                      "description",
+                      e.target.value.split("\n")
+                    )
+                  }
+                  placeholder="Description (une ligne par point)"
+                />
+              </div>
+            ))}
+          </div>
+        </Card>
+      </div>
+
+      {/* ===== ACTIONS ===== */}
+      <div className="flex justify-between pt-8">
         <button
           onClick={onBack}
-          className="px-4 py-2 border rounded"
+          className="px-6 py-3 rounded-xl border border-gray-300 hover:bg-gray-50 transition"
         >
-          Retour
+          ← Retour
         </button>
 
         <button
-          className="px-6 py-2 bg-green-600 text-white rounded"
           onClick={() => {
-            console.log("FINAL DATA:", form);
-            alert("Candidature prête à être envoyée ✔️");
+            if (typeof onSubmit === "function") onSubmit(form);
           }}
+          className="px-6 py-3 rounded-xl bg-[#6CB33F] hover:bg-[#4E8F2F] text-white transition"
         >
-          Envoyer la candidature
+          Continuer →
         </button>
       </div>
+    </div>
+  );
+}
+
+/* ===== CARD ===== */
+function Card({ title, children, className = "" }) {
+  return (
+    <div className={`bg-white rounded-2xl shadow p-6 ${className}`}>
+      <h3 className="text-lg font-semibold mb-4">{title}</h3>
+      {children}
     </div>
   );
 }

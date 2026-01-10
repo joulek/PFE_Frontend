@@ -1,10 +1,9 @@
 "use client";
 
-import Navbar from "../../components/Navbar";
 import { logout } from "../../services/auth.api";
-
-import { useRouter } from "next/navigation"; // ✅
+import { useRouter } from "next/navigation";
 import { useEffect } from "react";
+
 export default function RecruiterDashboard() {
   const router = useRouter();
 
@@ -13,7 +12,7 @@ export default function RecruiterDashboard() {
     if (!token) {
       router.replace("/login");
     }
-  }, []);
+  }, [router]);
 
   async function handleLogout() {
     try {
@@ -28,12 +27,9 @@ export default function RecruiterDashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-[#F4F7F5]">
-
-      {/* NAVBAR */}
-      <Navbar onLogout={handleLogout} />
-
-      {/* CONTENT */}
+    // 🌿 BACKGROUND GLOBAL
+    <div className="min-h-screen bg-green-50">
+      {/* 📦 CONTAINER */}
       <div className="flex items-center justify-center px-4 py-20">
         <div className="bg-white rounded-3xl shadow-xl p-14 max-w-3xl w-full text-center">
 
