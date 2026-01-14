@@ -10,3 +10,8 @@ export const updateJob = (id, data) =>
 
 export const deleteJob = (id) =>
   api.delete(`/jobs/${id}`);
+
+
+export const getJobCount = () => api.get("/jobs/count");
+
+

@@ -2,44 +2,55 @@
 import { useState } from "react";
 
 /* =======================
-   UTILITIES
+   SAFE UTILITIES
 ======================= */
 
-function extractPeriod(text = "") {
-  const m = text.match(
-    /(Janvier|Février|Mars|Avril|Mai|Juin|Juillet|Août|Septembre|Octobre|Novembre|Décembre|\d{4}).{0,15}(\d{4}|En cours)/i
-  );
-  return m ? m[0] : "";
+function extractPeriod(p) {
+  if (!p) return "";
+  if (Array.isArray(p)) return p.join(" - ");
+  if (typeof p !== "string") return "";
+  return p;
 }
 
 function extractSchool(text = "") {
   if (!text) return "";
-  if (text.toLowerCase().includes("sfax")) return "ISET Sfax";
+  const t = text.toLowerCase();
+  if (t.includes("iset")) return "ISET Sfax";
+  if (t.includes("sfax")) return "Université de Sfax";
+  if (t.includes("univers")) return text;
   return "";
 }
 
 function extractDegree(text = "") {
+  if (!text) return "";
   return text
-    .replace(/Septembre.*|Spécialité.*/gi, "")
+    .replace(/(septembre|janvier|février|mars|avril|mai|juin|juillet|août|octobre|novembre|décembre).*/gi, "")
     .trim();
 }
 
 function extractRole(text = "") {
-  if (text.includes("Projet Freelance")) return "Développeuse Full Stack";
-  if (text.includes("Stage")) return "Stagiaire Développeuse Web";
-  if (text.includes("Application Web")) return "Développeuse Web";
+  if (!text) return "Développeuse";
+  const t = text.toLowerCase();
+  if (t.includes("freelance")) return "Développeuse Full Stack";
+  if (t.includes("stage")) return "Stagiaire Développeuse Web";
+  if (t.includes("backend")) return "Développeuse Backend";
+  if (t.includes("frontend")) return "Développeuse Frontend";
+  if (t.includes("full")) return "Développeuse Full Stack";
   return "Développeuse";
 }
 
-function extractBullets(text = "") {
+function extractBullets(text) {
+  if (!text) return [];
+  if (Array.isArray(text)) return text;
   return text
     .split("\n")
-    .filter((l) => l.trim().startsWith("•"))
-    .map((l) => l.replace("•", "").trim());
+    .map((l) => l.replace(/^[-•▪o]\s*/, "").trim())
+    .filter((l) => l.length > 0);
 }
 
 function cleanCompany(c = "") {
-  return c.replace("ACTIVITÉS", "").replace(/\n/g, "").trim();
+  if (!c) return "";
+  return c.replace(/ACTIVITÉS|ACTIVITES/gi, "").replace(/\n/g, "").trim();
 }
 
 /* =======================
@@ -57,28 +68,36 @@ export default function StepManual({ parsedCV, cvFileUrl, onBack, onSubmit }) {
     education: (parsedCV?.education || []).map((e) => ({
       degree: extractDegree(e.degree),
       institution: extractSchool(e.school || e.degree),
-      period: extractPeriod(e.degree),
+      period: extractPeriod(e.period),
     })),
-    
+
     skills: (parsedCV?.skills || []).filter(
       (s) =>
+        typeof s === "string" &&
         s.length < 40 &&
         !s.toLowerCase().includes("cursus") &&
         !s.toLowerCase().includes("master") &&
         !s.toLowerCase().includes("licence")
     ),
 
-    experiences: (parsedCV?.work_experience || []).map((e) => ({
-      role: extractRole(e.description),
-      company: cleanCompany(e.company),
-      period: extractPeriod(e.description || e.period),
-      description: extractBullets(e.description),
-    })),
+    experiences: (parsedCV?.work_experience || []).map((e) => {
+      const desc = Array.isArray(e.description) ? e.description.join(" ") : e.description;
+      return {
+        role: extractRole(desc),
+        company: cleanCompany(e.company || ""),
+        period: extractPeriod(e.period),
+        description: extractBullets(e.description),
+      };
+    }),
   }));
 
   const inputClass =
     "w-full px-4 py-3 border border-gray-300 rounded-xl " +
     "focus:ring-2 focus:ring-[#6CB33F] focus:border-[#6CB33F] outline-none transition";
+
+  /* =======================
+     UPDATERS
+  ====================== */
 
   const updateEducation = (i, f, v) => {
     const e = [...form.education];
@@ -91,6 +110,17 @@ export default function StepManual({ parsedCV, cvFileUrl, onBack, onSubmit }) {
     e[i] = { ...e[i], [f]: v };
     setForm({ ...form, experiences: e });
   };
+
+  const addEducation = () => {
+    setForm({
+      ...form,
+      education: [...form.education, { degree: "", institution: "", period: "" }],
+    });
+  };
+
+  /* =======================
+     RENDER
+  ====================== */
 
   return (
     <div className="min-h-screen bg-green-50 py-12">
@@ -108,93 +138,73 @@ export default function StepManual({ parsedCV, cvFileUrl, onBack, onSubmit }) {
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
 
-          {/* ========= PERSONAL INFO ========= */}
+          {/* ========== PERSONAL ========= */}
           <Card title="Informations personnelles">
-            <input
-              className={`${inputClass} mb-3`}
-              placeholder="Nom complet"
-              value={form.fullName}
-              onChange={(e) =>
-                setForm({ ...form, fullName: e.target.value })
-              }
-            />
-            <input
-              className={`${inputClass} mb-3`}
-              placeholder="Email"
-              value={form.email}
-              onChange={(e) =>
-                setForm({ ...form, email: e.target.value })
-              }
-            />
-            <input
-              className={`${inputClass} mb-3`}
-              placeholder="Téléphone"
-              value={form.phone}
-              onChange={(e) =>
-                setForm({ ...form, phone: e.target.value })
-              }
-            />
-            <input
-              className={`${inputClass} mb-3`}
-              placeholder="LinkedIn"
-              value={form.linkedin}
-              onChange={(e) =>
-                setForm({ ...form, linkedin: e.target.value })
-              }
-            />
-            <input
-              className={inputClass}
-              placeholder="GitHub"
-              value={form.github}
-              onChange={(e) =>
-                setForm({ ...form, github: e.target.value })
-              }
-            />
+            {["fullName", "email", "phone", "linkedin", "github"].map((k) => (
+              <input
+                key={k}
+                className={`${inputClass} mb-3`}
+                value={form[k]}
+                placeholder={k}
+                onChange={(e) => setForm({ ...form, [k]: e.target.value })}
+              />
+            ))}
           </Card>
 
-          {/* ========= EDUCATION ========= */}
-          <Card title="Formation">
+          {/* ========== EDUCATION ========= */}
+          <Card
+            title={
+              <div className="flex justify-between items-center">
+                <span>Formation</span>
+                <button
+                  type="button"
+                  onClick={addEducation}
+                  className="text-green-600 hover:text-green-800 text-xl font-bold"
+                >
+                  ＋
+                </button>
+              </div>
+            }
+          >
             {form.education.map((edu, i) => (
               <div key={i} className="bg-gray-50 p-4 rounded-xl mb-4">
                 <input
                   className={`${inputClass} mb-2`}
                   value={edu.degree}
-                  onChange={(e) =>
-                    updateEducation(i, "degree", e.target.value)
-                  }
+                  onChange={(e) => updateEducation(i, "degree", e.target.value)}
                   placeholder="Diplôme"
                 />
                 <input
                   className={`${inputClass} mb-2`}
                   value={edu.institution}
-                  onChange={(e) =>
-                    updateEducation(i, "institution", e.target.value)
-                  }
+                  onChange={(e) => updateEducation(i, "institution", e.target.value)}
                   placeholder="Établissement"
                 />
                 <input
                   className={inputClass}
                   value={edu.period}
-                  onChange={(e) =>
-                    updateEducation(i, "period", e.target.value)
-                  }
+                  onChange={(e) => updateEducation(i, "period", e.target.value)}
                   placeholder="Période"
                 />
               </div>
             ))}
           </Card>
-            {/* ===== SKILLS ===== */}
+
+          {/* ========== SKILLS ========= */}
           <Card title="Compétences (Skills)">
             <div className="flex flex-wrap gap-2">
-              {form.skills.map((s,i)=>(
-                <span key={i} className="bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm">
+              {form.skills.map((s, i) => (
+                <span
+                  key={i}
+                  className="bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm"
+                >
                   {s}
                 </span>
               ))}
             </div>
           </Card>
 
-          {/* ========= EXPERIENCE ========= */}
+          {/* ========== EXPERIENCE ========= */}
           <Card title="Expériences professionnelles" className="md:col-span-2">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {form.experiences.map((exp, i) => (
@@ -202,25 +212,19 @@ export default function StepManual({ parsedCV, cvFileUrl, onBack, onSubmit }) {
                   <input
                     className={`${inputClass} mb-2`}
                     value={exp.role}
-                    onChange={(e) =>
-                      updateExperience(i, "role", e.target.value)
-                    }
+                    onChange={(e) => updateExperience(i, "role", e.target.value)}
                     placeholder="Poste"
                   />
                   <input
                     className={`${inputClass} mb-2`}
                     value={exp.company}
-                    onChange={(e) =>
-                      updateExperience(i, "company", e.target.value)
-                    }
+                    onChange={(e) => updateExperience(i, "company", e.target.value)}
                     placeholder="Entreprise"
                   />
                   <input
                     className={`${inputClass} mb-2`}
                     value={exp.period}
-                    onChange={(e) =>
-                      updateExperience(i, "period", e.target.value)
-                    }
+                    onChange={(e) => updateExperience(i, "period", e.target.value)}
                     placeholder="Période"
                   />
                   <textarea
@@ -228,11 +232,7 @@ export default function StepManual({ parsedCV, cvFileUrl, onBack, onSubmit }) {
                     className={inputClass}
                     value={exp.description.join("\n")}
                     onChange={(e) =>
-                      updateExperience(
-                        i,
-                        "description",
-                        e.target.value.split("\n")
-                      )
+                      updateExperience(i, "description", e.target.value.split("\n"))
                     }
                     placeholder="Description (une ligne par point)"
                   />
@@ -240,6 +240,7 @@ export default function StepManual({ parsedCV, cvFileUrl, onBack, onSubmit }) {
               ))}
             </div>
           </Card>
+
         </div>
 
         <div className="flex justify-between">

@@ -2,9 +2,10 @@
 
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import { getJobCount } from "../../services/job.api";
+
 
 export default function RecruiterDashboard() {
-  const router = useRouter();
 
   const [stats, setStats] = useState({
     jobOffers: 0,
@@ -12,17 +13,23 @@ export default function RecruiterDashboard() {
   });
 
   useEffect(() => {
-    const token = localStorage.getItem("token");
-    if (!token) {
-      router.replace("/login");
+    async function loadStats() {
+      try {
+        const [jobsRes, candRes] = await Promise.all([
+          getJobCount(),
+        ]);
+
+        setStats({
+          jobOffers: jobsRes.data.count,
+        });
+      } catch (err) {
+        console.error("Erreur stats", err);
+      }
     }
 
-    // temporaire (tu brancheras l'API après)
-    setStats({
-      jobOffers: 24,
-      candidatures: 142,
-    });
-  }, [router]);
+    loadStats();
+  }, []);
+
 
   return (
     <div className="min-h-screen bg-green-50 px-6 py-14">
