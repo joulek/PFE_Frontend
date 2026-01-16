@@ -3,7 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { getJobCount } from "../../services/job.api";
-
+import { getCondidatureCount } from "../../services/candidature.api";
 
 export default function RecruiterDashboard() {
 
@@ -17,10 +17,13 @@ export default function RecruiterDashboard() {
       try {
         const [jobsRes, candRes] = await Promise.all([
           getJobCount(),
+          getCondidatureCount(),
         ]);
+
 
         setStats({
           jobOffers: jobsRes.data.count,
+          candidatures: candRes.data.count,
         });
       } catch (err) {
         console.error("Erreur stats", err);
