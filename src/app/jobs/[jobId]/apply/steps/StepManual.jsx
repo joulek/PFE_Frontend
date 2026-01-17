@@ -363,7 +363,7 @@ export default function StepManual({ parsedCV, cvFileUrl, onBack, onSubmit }) {
           type="button"
           onClick={addPersonalExtra}
           className="px-6 py-3 rounded-full bg-white border border-gray-900
-                     font-semibold text-gray-900 hover:bg-gray-50 transition"
+                     font-semibold text-gray-900 hover:bg-gray-50 transition" data-cy="add-skill-btn"
         >
           + Ajouter un champ
         </button>
