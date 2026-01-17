@@ -47,9 +47,27 @@ export default function ApplyPage() {
           cvFileUrl={cvFileUrl}
           onBack={() => setStep(1)}
           onSubmit={async (manualPayload) => {
-            // ✅ confirm candidature مباشرة (بدون StepReview)
+            const pi = manualPayload.personal_info || {};
+
+            const personalInfoForm = {
+              dateNaissance: pi.date_naissance || null,
+              lieuNaissance: pi.lieu_naissance || null,
+              numeroCIN: pi.numero_cin || null,
+              delivreeLe: pi.cin_delivree_le || null,
+              delivreeA: pi.cin_delivree_a || null,
+              adresse: manualPayload.adresse || null,
+              codePostal: pi.code_postal || null,
+              telephone: manualPayload.telephone || null,
+              permisConduire: pi.permis_conduire || null,
+              dateObtentionPermis: pi.date_obtention_permis || null,
+              situationFamiliale: pi.situation_familiale || null,
+              nombreEnfants: pi.nombre_enfants || null,
+            };
+
             await confirmCandidature(candidatureId, parsedCV, manualPayload);
+
           }}
+
         />
       )}
     </div>

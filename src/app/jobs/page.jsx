@@ -13,16 +13,25 @@ function formatDate(date) {
 export default function PublicJobsPage() {
   const [jobs, setJobs] = useState([]);
 
+  // ✅ NEW: stocker les cartes ouvertes
+  const [expandedJobs, setExpandedJobs] = useState({});
+
   useEffect(() => {
     getJobs().then((res) => setJobs(res.data));
   }, []);
+
+  function toggleReadMore(jobId) {
+    setExpandedJobs((prev) => ({
+      ...prev,
+      [jobId]: !prev[jobId],
+    }));
+  }
 
   return (
     /* 🌿 BACKGROUND GLOBAL */
     <div className="min-h-screen bg-green-50">
       {/* 📦 CONTAINER */}
       <div className="max-w-6xl mx-auto px-6 py-12">
-
         {/* ================= HEADER ================= */}
         <div className="mb-12">
           <h1 className="text-3xl font-bold text-gray-800 mb-2">
@@ -41,6 +50,9 @@ export default function PublicJobsPage() {
             const isExpired =
               job.dateCloture && new Date(job.dateCloture) < new Date();
 
+            const isExpanded = !!expandedJobs[job._id];
+            const hasLongDescription = (job.description || "").length > 160;
+
             return (
               <div
                 key={job._id}
@@ -53,12 +65,28 @@ export default function PublicJobsPage() {
                     {job.titre}
                   </h3>
 
-                  <p className="text-gray-600 text-sm mb-4 line-clamp-3">
+                  {/* DESCRIPTION */}
+                  <p
+                    className={`text-gray-600 text-sm mb-2 whitespace-pre-line ${
+                      !isExpanded ? "line-clamp-3" : ""
+                    }`}
+                  >
                     {job.description}
                   </p>
 
+                  {/* ✅ Lire la suite / Réduire */}
+                  {hasLongDescription && (
+                    <button
+                      type="button"
+                      onClick={() => toggleReadMore(job._id)}
+                      className="text-sm text-[#4E8F2F] font-semibold hover:underline"
+                    >
+                      {isExpanded ? "Réduire ↑" : "Lire la suite →"}
+                    </button>
+                  )}
+
                   {/* TECHNOLOGIES */}
-                  <div className="flex flex-wrap gap-2 mb-4">
+                  <div className="flex flex-wrap gap-2 mt-4 mb-4">
                     {job.technologies?.map((tech, i) => (
                       <span
                         key={i}
@@ -95,9 +123,7 @@ export default function PublicJobsPage() {
                       />
                     </svg>
 
-                    <span>
-                      Clôture : {formatDate(job.dateCloture)}
-                    </span>
+                    <span>Clôture : {formatDate(job.dateCloture)}</span>
                   </div>
 
                   {/* ACTION */}
@@ -126,9 +152,7 @@ export default function PublicJobsPage() {
 
           {/* ===== EMPTY STATE ===== */}
           {jobs.length === 0 && (
-            <p className="text-gray-500 text-sm">
-              Aucune offre disponible.
-            </p>
+            <p className="text-gray-500 text-sm">Aucune offre disponible.</p>
           )}
         </div>
       </div>

@@ -21,23 +21,44 @@ export const uploadCvToJob = async (jobId, file) => {
   return data;
 };
 
-// ✅ NEW: confirm candidature (parsed + manual)
-export const confirmCandidature = async (candidatureId, parsed, manual) => {
+export const confirmCandidature = async (
+  candidatureId,
+  parsed,
+  manual,
+  personalInfoForm
+) => {
   const res = await fetch(
     `http://localhost:5000/api/applications/${candidatureId}/confirm`,
     {
       method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ parsed, manual, personalInfoForm }),
+    }
+  );
+
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.message || "Submit failed");
+  return data;
+};
+
+
+// ✅ NEW: update infos personnelles du candidat
+export const updatePersonalInfo = async (candidatureId, personalInfoForm) => {
+  const res = await fetch(
+    `http://localhost:5000/candidatures/${candidatureId}/personal-info`
+    , {
+      method: "PATCH",
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({ parsed, manual }),
+      body: JSON.stringify(personalInfoForm),
     }
   );
 
   const data = await res.json();
 
   if (!res.ok) {
-    throw new Error(data.message || "Submit failed");
+    throw new Error(data.message || "Update personal info failed");
   }
 
   return data;

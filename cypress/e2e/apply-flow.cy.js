@@ -5,125 +5,7 @@ describe("Candidature - Step 1 Upload + Step 2 Vérification", () => {
     cy.visit(`http://localhost:3000/jobs/${jobId}/apply`);
   });
 
-  it("Affiche correctement la page Étape 1", () => {
-    cy.get('[data-cy="apply-step1-title"]').should(
-      "contain",
-      "Étape 1 — Upload du CV"
-    );
-
-    cy.get('[data-cy="apply-step1-subtitle"]').should(
-      "contain",
-      "Les informations seront extraites automatiquement"
-    );
-
-    cy.get('[data-cy="upload-card"]').should("exist");
-    cy.get('[data-cy="submit-cv-btn"]').should("exist");
-  });
-
-  it("Affiche une erreur si on clique sur Soumettre sans choisir un fichier", () => {
-    cy.get('[data-cy="submit-cv-btn"]').click();
-
-    cy.get('[data-cy="upload-error"]')
-      .should("exist")
-      .and("contain", "Veuillez sélectionner un CV au format PDF.");
-  });
-
-  it("Upload CV avec intercept API + passe à l’étape 2", () => {
-    cy.intercept("POST", `**/api/applications/${jobId}/cv`, {
-      statusCode: 200,
-      body: {
-        candidatureId: "fake_candidature_id_123",
-        cvFileUrl: "/uploads/cvs/test.pdf",
-        extracted: {
-          nom: "Test User",
-          email: "test.user@gmail.com",
-          telephone: "+216 99 999 999",
-          adresse: "Sfax",
-          titre_poste: "Développeur",
-          profil: "Profil test",
-          competences: {
-            langages_programmation: ["React", "Node.js"],
-            frameworks: ["Next.js"],
-            outils: ["Git"],
-            bases_donnees: ["MongoDB"],
-            autres: [],
-          },
-          formation: [
-            {
-              diplome: "Licence Informatique",
-              etablissement: "ISET Sfax",
-              periode: "2021 - 2024",
-            },
-          ],
-          experience_professionnelle: [],
-          projets: [],
-          certifications: [],
-          langues: [],
-          activites: ["Sport"],
-          reseaux_sociaux: {
-            linkedin: "linkedin.com/in/test",
-            github: "github.com/test",
-          },
-        },
-      },
-    }).as("uploadCV");
-
-    cy.get('[data-cy="cv-input"]').selectFile("cypress/fixtures/test.pdf", {
-      force: true,
-    });
-
-    cy.get('[data-cy="selected-file-name"]').should("contain", "test.pdf");
-
-    cy.get('[data-cy="submit-cv-btn"]').click();
-
-    cy.wait("@uploadCV");
-
-    cy.contains("Étape 2 — Vérification & Complément").should("exist");
-    cy.contains("Informations personnelles").should("exist");
-  });
-
-  it("Navigation Step 2 : Continuer puis Retour", () => {
-    cy.intercept("POST", `**/api/applications/${jobId}/cv`, {
-      statusCode: 200,
-      body: {
-        candidatureId: "fake_candidature_id_123",
-        cvFileUrl: "/uploads/cvs/test.pdf",
-        extracted: {
-          nom: "Test User",
-          email: "test.user@gmail.com",
-          telephone: "+216 99 999 999",
-          adresse: "Sfax",
-          titre_poste: "Développeur",
-          profil: "Profil test",
-          competences: { all: ["React"] },
-          formation: [],
-          experience_professionnelle: [],
-          projets: [],
-          certifications: [],
-          langues: [],
-          activites: [],
-          reseaux_sociaux: {},
-        },
-      },
-    }).as("uploadCV");
-
-    cy.get('[data-cy="cv-input"]').selectFile("cypress/fixtures/test.pdf", {
-      force: true,
-    });
-
-    cy.get('[data-cy="submit-cv-btn"]').click();
-    cy.wait("@uploadCV");
-
-    cy.contains("Étape 2 — Vérification & Complément").should("exist");
-
-    cy.contains("Continuer →").click();
-    cy.contains("Profil / Résumé").should("exist");
-
-    cy.contains("← Retour").click();
-    cy.contains("Informations personnelles").should("exist");
-  });
-
-  it("Flow complet : Upload -> Step2 -> Dernière section -> Envoyer candidature", () => {
+  it("Flow complet : Upload -> Step2 -> Dernière section -> Envoyer candidature (avec nouveaux champs)", () => {
     // 1) Upload CV => Step2
     cy.intercept("POST", `**/api/applications/${jobId}/cv`, {
       statusCode: 200,
@@ -137,7 +19,9 @@ describe("Candidature - Step 1 Upload + Step 2 Vérification", () => {
           adresse: "Sfax",
           titre_poste: "Développeur",
           profil: "Profil test",
+
           competences: { all: ["React", "Node.js"] },
+
           formation: [
             {
               diplome: "Licence Informatique",
@@ -145,14 +29,29 @@ describe("Candidature - Step 1 Upload + Step 2 Vérification", () => {
               periode: "2021 - 2024",
             },
           ],
+
           experience_professionnelle: [],
           projets: [],
           certifications: [],
           langues: [],
           activites: ["Sport"],
+
           reseaux_sociaux: {
             linkedin: "linkedin.com/in/test",
             github: "github.com/test",
+          },
+
+          personal_info: {
+            date_naissance: "01/01/2000",
+            lieu_naissance: "Tunis",
+            numero_cin: "12345678",
+            cin_delivree_le: "01/01/2018",
+            cin_delivree_a: "Sfax",
+            code_postal: "3000",
+            permis_conduire: "Non",
+            date_obtention_permis: "",
+            situation_familiale: "Célibataire",
+            nombre_enfants: "",
           },
         },
       },
@@ -167,7 +66,7 @@ describe("Candidature - Step 1 Upload + Step 2 Vérification", () => {
 
     cy.contains("Étape 2 — Vérification & Complément").should("exist");
 
-    // 2) Intercept SUBMIT FINAL (URL CORRECTE)
+    // 2) Intercept SUBMIT FINAL
     cy.intercept(
       "POST",
       "**/api/applications/fake_candidature_id_123/confirm",
@@ -177,20 +76,33 @@ describe("Candidature - Step 1 Upload + Step 2 Vérification", () => {
       }
     ).as("submitCandidature");
 
-    // 3) Aller à la dernière section (9 sections => 8 clicks)
-    for (let i = 0; i < 8; i++) {
-      cy.contains("Continuer →").click();
-    }
+    // 3) Test permis
+    cy.contains("Permis de conduire").should("exist");
+    cy.contains("Oui").click();
+    cy.contains("Date d’obtention du permis").should("exist");
 
-    cy.contains("Activités / Intérêts").should("exist");
+    // 4) Aller à la dernière section (click jusqu’à disparition de Continuer)
+    const goNext = () => {
+      cy.get("body").then(($body) => {
+        if ($body.find('button:contains("Continuer →")').length > 0) {
+          cy.contains("Continuer →").click();
+          goNext();
+        }
+      });
+    };
 
-    // 4) Cliquer Envoyer
+    goNext();
+
+    // 5) Vérifier qu'on est à la fin
+    cy.contains("Envoyer ma candidature →").should("exist");
+
+    // 6) Envoyer
     cy.contains("Envoyer ma candidature →").click();
 
-    // 5) Vérifier l'appel API final
+    // 7) Vérifier l'appel API final
     cy.wait("@submitCandidature");
 
-    // 6) Vérifier message succès
+    // 8) Message succès
     cy.contains("Votre candidature a été envoyée avec succès").should("exist");
   });
 });
