@@ -12,30 +12,10 @@ function formatDate(date) {
 /* ================= PAGE ================= */
 export default function PublicJobsPage() {
   const [jobs, setJobs] = useState([]);
-  const [selectedCategory, setSelectedCategory] = useState("Tous");
 
   useEffect(() => {
     getJobs().then((res) => setJobs(res.data));
   }, []);
-
-  /* ================= FILTERS ================= */
-  const categories = [
-    { label: "Tous", icon: "⬚" },
-    { label: "Ingénierie", icon: "<>" },
-    { label: "Design", icon: "🎨" },
-    { label: "Marketing", icon: "📣" },
-    { label: "Support", icon: "🎧" },
-    { label: "Opticien", icon: "👓" },
-  ];
-
-  const filteredJobs =
-    selectedCategory === "Tous"
-      ? jobs
-      : jobs.filter(
-          (job) =>
-            job.categorie?.toLowerCase() ===
-            selectedCategory.toLowerCase()
-        );
 
   return (
     /* 🌿 BACKGROUND GLOBAL */
@@ -53,36 +33,13 @@ export default function PublicJobsPage() {
             Rejoignez une équipe dynamique et participez à l’aventure de demain.
             Découvrez nos opportunités actuelles.
           </p>
-
-          {/* ================= FILTERS ================= */}
-          <div className="flex flex-wrap gap-3">
-            {categories.map((cat) => (
-              <button
-                key={cat.label}
-                onClick={() => setSelectedCategory(cat.label)}
-                className={`
-                  px-4 py-2 rounded-full text-sm font-medium transition
-                  flex items-center gap-2
-                  ${
-                    selectedCategory === cat.label
-                      ? "bg-[#6CB33F] text-white shadow"
-                      : "bg-white text-gray-600 border border-gray-200 hover:bg-gray-50"
-                  }
-                `}
-              >
-                <span>{cat.icon}</span>
-                {cat.label}
-              </button>
-            ))}
-          </div>
         </div>
 
         {/* ================= JOBS GRID ================= */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {filteredJobs.map((job) => {
+          {jobs.map((job) => {
             const isExpired =
-              job.dateCloture &&
-              new Date(job.dateCloture) < new Date();
+              job.dateCloture && new Date(job.dateCloture) < new Date();
 
             return (
               <div
@@ -168,9 +125,9 @@ export default function PublicJobsPage() {
           })}
 
           {/* ===== EMPTY STATE ===== */}
-          {filteredJobs.length === 0 && (
+          {jobs.length === 0 && (
             <p className="text-gray-500 text-sm">
-              Aucune offre disponible pour cette catégorie.
+              Aucune offre disponible.
             </p>
           )}
         </div>

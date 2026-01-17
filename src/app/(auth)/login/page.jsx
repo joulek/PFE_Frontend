@@ -3,6 +3,8 @@
 import { useState } from "react";
 import Image from "next/image";
 import api from "../../services/api";
+import { login } from "../../services/auth.api";
+
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
@@ -17,7 +19,7 @@ export default function LoginPage() {
     setLoading(true);
 
     try {
-      const res = await api.post("/users/login", { email, password });
+      const res = await login(email, password);
       localStorage.setItem("token", res.data.token);
       localStorage.setItem("user", JSON.stringify(res.data.user));
       window.location.href = "/recruiter/dashboard";

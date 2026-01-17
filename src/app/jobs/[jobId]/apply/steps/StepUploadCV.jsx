@@ -1,5 +1,6 @@
 "use client";
 import { useState } from "react";
+import { uploadCvToJob } from "../../../../services/application.api";
 
 export default function StepUploadCV({ jobId, onParsed }) {
   const [file, setFile] = useState(null);
@@ -16,23 +17,10 @@ export default function StepUploadCV({ jobId, onParsed }) {
     setErr("");
 
     try {
-      const form = new FormData();
-      form.append("cv", file);
-
-      const res = await fetch(
-        `http://localhost:5000/api/applications/${jobId}/cv`,
-        {
-          method: "POST",
-          body: form,
-        }
-      );
-
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.message || "Upload échoué");
-
+      const data = await uploadCvToJob(jobId, file); // ✅ upload + extraction
       onParsed(data);
     } catch (e) {
-      setErr(e.message);
+      setErr(e?.message || "Erreur lors de l’upload du CV.");
     } finally {
       setLoading(false);
     }
@@ -41,16 +29,23 @@ export default function StepUploadCV({ jobId, onParsed }) {
   return (
     <>
       {/* ===== TITLE ===== */}
-      <h2 className="text-2xl font-semibold text-center mb-2">
+      <h2
+        data-cy="apply-step1-title"
+        className="text-3xl font-extrabold text-center mb-2"
+      >
         Étape 1 — Upload du CV
       </h2>
 
-      <p className="text-gray-600 text-center mb-8">
+      <p
+        data-cy="apply-step1-subtitle"
+        className="text-gray-600 text-center mb-8"
+      >
         Déposez votre CV. Les informations seront extraites automatiquement.
       </p>
 
-      {/* ===== DROPZONE ===== */}
+      {/* ===== UPLOAD CARD ===== */}
       <label
+        data-cy="upload-card"
         htmlFor="cv"
         className="flex flex-col items-center justify-center
                    border-2 border-dashed border-green-400
@@ -59,18 +54,21 @@ export default function StepUploadCV({ jobId, onParsed }) {
                    transition"
       >
         <input
+          data-cy="cv-input"
           id="cv"
           type="file"
           accept=".pdf"
           hidden
-          onChange={(e) => setFile(e.target.files?.[0])}
+          onChange={(e) => {
+            const selected = e.target.files?.[0];
+            setFile(selected || null);
+            setErr(""); // reset error when choosing file
+          }}
         />
 
         <div className="text-4xl mb-3">📄</div>
 
-        <p className="font-medium text-gray-700">
-          Glissez-déposez votre CV ici
-        </p>
+        <p className="font-medium text-gray-700">Glissez-déposez votre CV ici</p>
 
         <p className="text-sm text-gray-500 mt-1">
           ou cliquez pour sélectionner un fichier
@@ -80,23 +78,31 @@ export default function StepUploadCV({ jobId, onParsed }) {
           Format accepté : <b>PDF uniquement</b>
         </p>
 
+        {/* Selected file name */}
         {file && (
-          <p className="mt-4 text-sm text-green-600 font-medium">
+          <p
+            data-cy="selected-file-name"
+            className="mt-4 text-sm text-green-600 font-medium"
+          >
             ✔ {file.name}
           </p>
         )}
       </label>
 
-      {/* ===== ERROR ===== */}
+      {/* Error */}
       {err && (
-        <p className="text-red-500 text-sm text-center mt-4">
+        <p
+          data-cy="upload-error"
+          className="text-red-500 text-sm text-center mt-4"
+        >
           {err}
         </p>
       )}
 
-      {/* ===== ACTION ===== */}
+      {/* Submit */}
       <div className="mt-10 flex justify-center">
         <button
+          data-cy="submit-cv-btn"
           onClick={upload}
           disabled={loading}
           className="px-10 py-3 rounded-xl bg-green-600 text-white

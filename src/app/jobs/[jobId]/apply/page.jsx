@@ -5,26 +5,24 @@ import { useParams } from "next/navigation";
 
 import StepUploadCV from "./steps/StepUploadCV";
 import StepManual from "./steps/StepManual";
-import StepReview from "./steps/StepReview";
+
+import { confirmCandidature } from "../../../services/application.api";
 
 export default function ApplyPage() {
-  const { jobId } = useParams(); // ✅ CORRECT
-  const [candidatureId, setCandidatureId] = useState(null);
-
+  const { jobId } = useParams();
 
   const [step, setStep] = useState(1);
+
+  const [candidatureId, setCandidatureId] = useState(null);
   const [parsedCV, setParsedCV] = useState(null);
   const [cvFileUrl, setCvFileUrl] = useState(null);
-  const [manual, setManual] = useState(null);
 
   return (
     <div className="min-h-screen bg-green-50 px-6 py-10">
-
       {/* ===== STEPPER ===== */}
       <div className="flex justify-center gap-6 mb-10">
         <Step label="Upload CV" active={step >= 1} />
-        <Step label="Vérification" active={step >= 2} />
-        <Step label="Confirmation" active={step >= 3} />
+        <Step label="Vérification & Complément" active={step >= 2} />
       </div>
 
       {/* ===== STEP 1 ===== */}
@@ -42,38 +40,23 @@ export default function ApplyPage() {
         </div>
       )}
 
-      {/* ===== STEP 2 (FULL WIDTH) ===== */}
+      {/* ===== STEP 2 ===== */}
       {step === 2 && (
         <StepManual
           parsedCV={parsedCV}
           cvFileUrl={cvFileUrl}
           onBack={() => setStep(1)}
-          onSubmit={(data) => {
-            setParsedCV(data);
-            setStep(3);
+          onSubmit={async (manualPayload) => {
+            // ✅ confirm candidature مباشرة (بدون StepReview)
+            await confirmCandidature(candidatureId, parsedCV, manualPayload);
           }}
         />
-      )}
-
-
-      {/* ===== STEP 3 ===== */}
-      {step === 3 && (
-        <div className="max-w-3xl mx-auto bg-white rounded-3xl shadow p-10">
-          <StepReview
-            candidatureId={candidatureId}   // ✅ ICI
-            parsed={parsedCV}
-            manual={manual}
-            cvFileUrl={cvFileUrl}
-          />
-
-        </div>
       )}
     </div>
   );
 }
 
 /* ===== STEPPER ===== */
-
 function Step({ label, active }) {
   return (
     <div className="flex flex-col items-center">
