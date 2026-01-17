@@ -65,7 +65,8 @@ export default function StepManual({ parsedCV, cvFileUrl, onBack, onSubmit }) {
         nombre_enfants: safeStr(p?.personal_info?.nombre_enfants),
       },
 
-      personal_info_extra: [],
+      personal_info_extra: safeArr(p.personal_info_extra),
+
       profile: safeStr(p.profil),
 
       skills: uniqCleanSkills([
@@ -74,6 +75,7 @@ export default function StepManual({ parsedCV, cvFileUrl, onBack, onSubmit }) {
         ...safeArr(p?.competences?.outils),
         ...safeArr(p?.competences?.bases_donnees),
         ...safeArr(p?.competences?.autres),
+        ...safeArr(p?.competences?.all),
       ]),
 
       education: safeArr(p.formation).map((edu) => ({
@@ -118,7 +120,7 @@ export default function StepManual({ parsedCV, cvFileUrl, onBack, onSubmit }) {
   const [successMsg, setSuccessMsg] = useState("");
   const [errorMsg, setErrorMsg] = useState("");
 
-  const [newInterest, setNewInterest] = useState("");
+  const [newSkill, setNewSkill] = useState("");
 
   /* =======================
      CRUD FUNCTIONS
@@ -126,20 +128,20 @@ export default function StepManual({ parsedCV, cvFileUrl, onBack, onSubmit }) {
   const addEducation = () => {
     setForm((prev) => ({
       ...prev,
-      education: [...prev.education, { degree: "", institution: "", period: "" }],
+      education: [...safeArr(prev.education), { degree: "", institution: "", period: "" }],
     }));
   };
 
   const removeEducation = (i) => {
     setForm((prev) => ({
       ...prev,
-      education: prev.education.filter((_, idx) => idx !== i),
+      education: safeArr(prev.education).filter((_, idx) => idx !== i),
     }));
   };
 
   const updateEducation = (i, field, value) => {
     setForm((prev) => {
-      const arr = [...prev.education];
+      const arr = [...safeArr(prev.education)];
       arr[i] = { ...arr[i], [field]: value };
       return { ...prev, education: arr };
     });
@@ -149,7 +151,7 @@ export default function StepManual({ parsedCV, cvFileUrl, onBack, onSubmit }) {
     setForm((prev) => ({
       ...prev,
       experience: [
-        ...prev.experience,
+        ...safeArr(prev.experience),
         { role: "", company: "", period: "", location: "", description: "" },
       ],
     }));
@@ -158,13 +160,13 @@ export default function StepManual({ parsedCV, cvFileUrl, onBack, onSubmit }) {
   const removeExperience = (i) => {
     setForm((prev) => ({
       ...prev,
-      experience: prev.experience.filter((_, idx) => idx !== i),
+      experience: safeArr(prev.experience).filter((_, idx) => idx !== i),
     }));
   };
 
   const updateExperience = (i, field, value) => {
     setForm((prev) => {
-      const arr = [...prev.experience];
+      const arr = [...safeArr(prev.experience)];
       arr[i] = { ...arr[i], [field]: value };
       return { ...prev, experience: arr };
     });
@@ -173,20 +175,20 @@ export default function StepManual({ parsedCV, cvFileUrl, onBack, onSubmit }) {
   const addProject = () => {
     setForm((prev) => ({
       ...prev,
-      projects: [...prev.projects, { name: "", description: "", technologies: [] }],
+      projects: [...safeArr(prev.projects), { name: "", description: "", technologies: [] }],
     }));
   };
 
   const removeProject = (i) => {
     setForm((prev) => ({
       ...prev,
-      projects: prev.projects.filter((_, idx) => idx !== i),
+      projects: safeArr(prev.projects).filter((_, idx) => idx !== i),
     }));
   };
 
   const updateProject = (i, field, value) => {
     setForm((prev) => {
-      const arr = [...prev.projects];
+      const arr = [...safeArr(prev.projects)];
       arr[i] = { ...arr[i], [field]: value };
       return { ...prev, projects: arr };
     });
@@ -195,7 +197,7 @@ export default function StepManual({ parsedCV, cvFileUrl, onBack, onSubmit }) {
   const removeSkill = (skill) => {
     setForm((prev) => ({
       ...prev,
-      skills: prev.skills.filter((s) => s !== skill),
+      skills: safeArr(prev.skills).filter((s) => s !== skill),
     }));
   };
 
@@ -204,27 +206,27 @@ export default function StepManual({ parsedCV, cvFileUrl, onBack, onSubmit }) {
     if (!s) return;
     setForm((prev) => ({
       ...prev,
-      skills: uniqCleanSkills([...prev.skills, s]),
+      skills: uniqCleanSkills([...safeArr(prev.skills), s]),
     }));
   };
 
   const addCertification = () => {
     setForm((prev) => ({
       ...prev,
-      certifications: [...prev.certifications, { name: "", org: "", date: "" }],
+      certifications: [...safeArr(prev.certifications), { name: "", org: "", date: "" }],
     }));
   };
 
   const removeCertification = (i) => {
     setForm((prev) => ({
       ...prev,
-      certifications: prev.certifications.filter((_, idx) => idx !== i),
+      certifications: safeArr(prev.certifications).filter((_, idx) => idx !== i),
     }));
   };
 
   const updateCertification = (i, field, value) => {
     setForm((prev) => {
-      const arr = [...prev.certifications];
+      const arr = [...safeArr(prev.certifications)];
       arr[i] = { ...arr[i], [field]: value };
       return { ...prev, certifications: arr };
     });
@@ -233,23 +235,33 @@ export default function StepManual({ parsedCV, cvFileUrl, onBack, onSubmit }) {
   const addLanguage = () => {
     setForm((prev) => ({
       ...prev,
-      languages: [...prev.languages, { name: "", level: "" }],
+      languages: [...safeArr(prev.languages), { name: "", level: "" }],
     }));
   };
 
   const removeLanguage = (i) => {
     setForm((prev) => ({
       ...prev,
-      languages: prev.languages.filter((_, idx) => idx !== i),
+      languages: safeArr(prev.languages).filter((_, idx) => idx !== i),
     }));
   };
 
   const updateLanguage = (i, field, value) => {
     setForm((prev) => {
-      const arr = [...prev.languages];
+      const arr = [...safeArr(prev.languages)];
       arr[i] = { ...arr[i], [field]: value };
       return { ...prev, languages: arr };
     });
+  };
+
+  const addPersonalExtra = () => {
+    setForm((prev) => ({
+      ...prev,
+      personal_info_extra: [
+        ...safeArr(prev.personal_info_extra),
+        { label: "", value: "" },
+      ],
+    }));
   };
 
   /* =======================
@@ -287,13 +299,13 @@ export default function StepManual({ parsedCV, cvFileUrl, onBack, onSubmit }) {
         value: safeStr(x.value),
       })),
 
-      formation: form.education.map((e) => ({
+      formation: safeArr(form.education).map((e) => ({
         diplome: safeStr(e.degree),
         etablissement: safeStr(e.institution),
         periode: safeStr(e.period),
       })),
 
-      experience_professionnelle: form.experience.map((e) => ({
+      experience_professionnelle: safeArr(form.experience).map((e) => ({
         poste: safeStr(e.role),
         entreprise: safeStr(e.company),
         lieu: safeStr(e.location),
@@ -301,21 +313,21 @@ export default function StepManual({ parsedCV, cvFileUrl, onBack, onSubmit }) {
         description: safeStr(e.description),
       })),
 
-      competences: { all: form.skills },
+      competences: { all: safeArr(form.skills) },
 
-      projets: form.projects.map((p) => ({
+      projets: safeArr(form.projects).map((p) => ({
         nom: safeStr(p.name),
         description: safeStr(p.description),
         technologies: safeArr(p.technologies),
       })),
 
-      certifications: form.certifications.map((c) => ({
+      certifications: safeArr(form.certifications).map((c) => ({
         nom: safeStr(c.name),
         organisme: safeStr(c.org),
         date: safeStr(c.date),
       })),
 
-      langues: form.languages.map((l) => ({
+      langues: safeArr(form.languages).map((l) => ({
         langue: safeStr(l.name),
         niveau: safeStr(l.level),
       })),
@@ -332,9 +344,7 @@ export default function StepManual({ parsedCV, cvFileUrl, onBack, onSubmit }) {
 
       setSuccessMsg("Votre candidature a été envoyée avec succès !");
     } catch (e) {
-      setErrorMsg(
-        "❌ " + (e?.message || "Erreur lors de l’envoi. Essayez à nouveau.")
-      );
+      setErrorMsg("❌ " + (e?.message || "Erreur lors de l’envoi. Essayez à nouveau."));
     } finally {
       setLoadingSubmit(false);
     }
@@ -344,19 +354,20 @@ export default function StepManual({ parsedCV, cvFileUrl, onBack, onSubmit }) {
      SECTIONS LIST
   ======================= */
   const sections = [
+    /* ================= PERSONAL ================= */
     {
       key: "personal",
       title: "Informations personnelles",
-      addLabel: "Ajouter un champ",
-      onAdd: () => {
-        setForm((prev) => ({
-          ...prev,
-          personal_info_extra: [
-            ...(prev.personal_info_extra || []),
-            { label: "", value: "" },
-          ],
-        }));
-      },
+      rightAction: (
+        <button
+          type="button"
+          onClick={addPersonalExtra}
+          className="px-6 py-3 rounded-full bg-white border border-gray-900
+                     font-semibold text-gray-900 hover:bg-gray-50 transition"
+        >
+          + Ajouter un champ
+        </button>
+      ),
       render: () => (
         <div className="space-y-6">
           <InputField
@@ -500,9 +511,7 @@ export default function StepManual({ parsedCV, cvFileUrl, onBack, onSubmit }) {
 
           {/* PERMIS */}
           <div className="space-y-2">
-            <p className="text-sm font-semibold text-gray-700">
-              Permis de conduire
-            </p>
+            <p className="text-sm font-semibold text-gray-700">Permis de conduire</p>
 
             <div className="flex gap-3">
               <button
@@ -519,8 +528,7 @@ export default function StepManual({ parsedCV, cvFileUrl, onBack, onSubmit }) {
                 }
                 className={`px-6 py-3 rounded-full border font-semibold transition
                 ${
-                  safeStr(form.personal_info.permis_conduire).toLowerCase() ===
-                  "oui"
+                  safeStr(form.personal_info.permis_conduire).toLowerCase() === "oui"
                     ? "bg-green-600 text-white border-green-600"
                     : "bg-white text-gray-700 border-gray-200 hover:bg-gray-50"
                 }`}
@@ -543,8 +551,7 @@ export default function StepManual({ parsedCV, cvFileUrl, onBack, onSubmit }) {
                 }
                 className={`px-6 py-3 rounded-full border font-semibold transition
                 ${
-                  safeStr(form.personal_info.permis_conduire).toLowerCase() ===
-                  "non"
+                  safeStr(form.personal_info.permis_conduire).toLowerCase() === "non"
                     ? "bg-green-600 text-white border-green-600"
                     : "bg-white text-gray-700 border-gray-200 hover:bg-gray-50"
                 }`}
@@ -576,9 +583,7 @@ export default function StepManual({ parsedCV, cvFileUrl, onBack, onSubmit }) {
           {/* Situation familiale */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <p className="text-sm font-semibold text-gray-700">
-                Situation familiale
-              </p>
+              <p className="text-sm font-semibold text-gray-700">Situation familiale</p>
 
               <select
                 data-cy="situation-familiale"
@@ -661,12 +666,13 @@ export default function StepManual({ parsedCV, cvFileUrl, onBack, onSubmit }) {
             />
           </div>
 
+          {/* Champs extra */}
           {safeArr(form.personal_info_extra).length > 0 && (
             <div className="space-y-3 pt-2">
               {safeArr(form.personal_info_extra).map((f, idx) => (
                 <div key={idx} className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <InputField
-                    label={`Champ ${idx + 1} (titre)`}
+                    label={`Champ (titre)`}
                     placeholder="Ex : Nationalité"
                     value={safeStr(f.label)}
                     onChange={(v) =>
@@ -697,38 +703,458 @@ export default function StepManual({ parsedCV, cvFileUrl, onBack, onSubmit }) {
       ),
     },
 
-    // باقي الأقسام كما عندك (profile, education, skills, experience...)
-    // ⬇️ خليهم كما هما عندك بدون تغيير
-    ...getOtherSections({
-      form,
-      setForm,
-      newInterest,
-      setNewInterest,
-      addEducation,
-      removeEducation,
-      updateEducation,
-      addExperience,
-      removeExperience,
-      updateExperience,
-      addProject,
-      removeProject,
-      updateProject,
-      addSkill,
-      removeSkill,
-      addCertification,
-      removeCertification,
-      updateCertification,
-      addLanguage,
-      removeLanguage,
-      updateLanguage,
-    }),
+    /* ================= PROFILE ================= */
+    {
+      key: "profile",
+      title: "Profil",
+      rightAction: null,
+      render: () => (
+        <div className="space-y-4">
+          <p className="text-sm font-semibold text-gray-700">Résumé / Profil</p>
+          <textarea
+            data-cy="profile"
+            className="w-full min-h-[160px] px-6 py-4 border border-gray-200 rounded-3xl bg-white
+                       focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none transition
+                       placeholder:text-gray-400"
+            placeholder="Parlez brièvement de vous..."
+            value={form.profile || ""}
+            onChange={(e) => setForm((prev) => ({ ...prev, profile: e.target.value }))}
+          />
+        </div>
+      ),
+    },
+
+    /* ================= SKILLS ================= */
+    {
+      key: "skills",
+      title: "Compétences",
+      rightAction: null,
+      render: () => (
+        <div className="space-y-6">
+          <div className="space-y-2">
+            <p className="text-sm font-semibold text-gray-700">Ajouter une compétence</p>
+
+            <div className="flex gap-3">
+              <input
+                data-cy="new-skill"
+                className="flex-1 px-6 py-4 border border-gray-200 rounded-full bg-white
+                           focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none transition
+                           placeholder:text-gray-400"
+                placeholder="Ex : React, Node.js, MongoDB..."
+                value={newSkill}
+                onChange={(e) => setNewSkill(e.target.value)}
+              />
+
+              <button
+                type="button"
+                onClick={() => {
+                  addSkill(newSkill);
+                  setNewSkill("");
+                }}
+                className="px-8 py-4 rounded-full bg-green-600 text-white font-semibold
+                           hover:bg-green-700 transition"
+              >
+                Ajouter
+              </button>
+            </div>
+          </div>
+
+          {safeArr(form.skills).length > 0 ? (
+            <div className="flex flex-wrap gap-2">
+              {safeArr(form.skills).map((s) => (
+                <span
+                  key={s}
+                  className="inline-flex items-center gap-2 px-4 py-2 rounded-full
+                             bg-green-50 border border-green-200 text-green-800 text-sm font-semibold"
+                >
+                  {s}
+                  <button
+                    type="button"
+                    onClick={() => removeSkill(s)}
+                    className="text-green-700 hover:text-red-600 transition"
+                    title="Supprimer"
+                  >
+                    ✕
+                  </button>
+                </span>
+              ))}
+            </div>
+          ) : (
+            <p className="text-sm text-gray-500">Aucune compétence ajoutée.</p>
+          )}
+        </div>
+      ),
+    },
+
+    /* ================= EDUCATION ================= */
+    {
+      key: "education",
+      title: "Formation",
+      rightAction: (
+        <button
+          type="button"
+          onClick={addEducation}
+          className="px-6 py-3 rounded-full bg-white border border-gray-900
+                     font-semibold text-gray-900 hover:bg-gray-50 transition"
+        >
+          + Ajouter
+        </button>
+      ),
+      render: () => (
+        <div className="space-y-6">
+          {safeArr(form.education).length > 0 ? (
+            safeArr(form.education).map((edu, i) => (
+              <div
+                key={i}
+                className="p-5 rounded-3xl border border-gray-200 bg-gray-50 space-y-4"
+              >
+                {/* ✅ HEADER: نحّينا Formation #1 وخليّينا Supprimer وحدو */}
+                <div className="flex items-center justify-end">
+                  <button
+                    type="button"
+                    onClick={() => removeEducation(i)}
+                    className="text-red-600 font-semibold hover:underline"
+                  >
+                    Supprimer
+                  </button>
+                </div>
+
+                <InputField
+                  label="Diplôme"
+                  placeholder="Ex : Licence Informatique"
+                  value={edu.degree}
+                  onChange={(v) => updateEducation(i, "degree", v)}
+                />
+                <InputField
+                  label="Établissement"
+                  placeholder="Ex : ISET Sfax"
+                  value={edu.institution}
+                  onChange={(v) => updateEducation(i, "institution", v)}
+                />
+                <InputField
+                  label="Période"
+                  placeholder="Ex : 2022 - 2025"
+                  value={edu.period}
+                  onChange={(v) => updateEducation(i, "period", v)}
+                />
+              </div>
+            ))
+          ) : (
+            <p className="text-sm text-gray-500">Aucune formation ajoutée.</p>
+          )}
+        </div>
+      ),
+    },
+
+    /* ================= EXPERIENCE ================= */
+    {
+      key: "experience",
+      title: "Expérience professionnelle",
+      rightAction: (
+        <button
+          type="button"
+          onClick={addExperience}
+          className="px-6 py-3 rounded-full bg-white border border-gray-900
+                     font-semibold text-gray-900 hover:bg-gray-50 transition"
+        >
+          + Ajouter
+        </button>
+      ),
+      render: () => (
+        <div className="space-y-6">
+          {safeArr(form.experience).length > 0 ? (
+            safeArr(form.experience).map((exp, i) => (
+              <div
+                key={i}
+                className="p-5 rounded-3xl border border-gray-200 bg-gray-50 space-y-4"
+              >
+                {/* ✅ HEADER: Supprimer وحدو */}
+                <div className="flex items-center justify-end">
+                  <button
+                    type="button"
+                    onClick={() => removeExperience(i)}
+                    className="text-red-600 font-semibold hover:underline"
+                  >
+                    Supprimer
+                  </button>
+                </div>
+
+                <InputField
+                  label="Poste"
+                  placeholder="Ex : Développeuse Fullstack"
+                  value={exp.role}
+                  onChange={(v) => updateExperience(i, "role", v)}
+                />
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <InputField
+                    label="Entreprise"
+                    placeholder="Ex : MTR"
+                    value={exp.company}
+                    onChange={(v) => updateExperience(i, "company", v)}
+                  />
+                  <InputField
+                    label="Lieu"
+                    placeholder="Ex : Sfax"
+                    value={exp.location}
+                    onChange={(v) => updateExperience(i, "location", v)}
+                  />
+                </div>
+
+                <InputField
+                  label="Période"
+                  placeholder="Ex : Juin 2024 - Sept 2024"
+                  value={exp.period}
+                  onChange={(v) => updateExperience(i, "period", v)}
+                />
+
+                <div className="space-y-2">
+                  <p className="text-sm font-semibold text-gray-700">Description</p>
+                  <textarea
+                    className="w-full min-h-[120px] px-6 py-4 border border-gray-200 rounded-3xl bg-white
+                               focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none transition
+                               placeholder:text-gray-400"
+                    placeholder="Décrivez vos missions..."
+                    value={exp.description || ""}
+                    onChange={(e) => updateExperience(i, "description", e.target.value)}
+                  />
+                </div>
+              </div>
+            ))
+          ) : (
+            <p className="text-sm text-gray-500">Aucune expérience ajoutée.</p>
+          )}
+        </div>
+      ),
+    },
+
+    /* ================= PROJECTS ================= */
+    {
+      key: "projects",
+      title: "Projets",
+      rightAction: (
+        <button
+          type="button"
+          onClick={addProject}
+          className="px-6 py-3 rounded-full bg-white border border-gray-900
+                     font-semibold text-gray-900 hover:bg-gray-50 transition"
+        >
+          + Ajouter
+        </button>
+      ),
+      render: () => (
+        <div className="space-y-6">
+          {safeArr(form.projects).length > 0 ? (
+            safeArr(form.projects).map((pr, i) => (
+              <div
+                key={i}
+                className="p-5 rounded-3xl border border-gray-200 bg-gray-50 space-y-4"
+              >
+                {/* ✅ HEADER: Supprimer وحدو */}
+                <div className="flex items-center justify-end">
+                  <button
+                    type="button"
+                    onClick={() => removeProject(i)}
+                    className="text-red-600 font-semibold hover:underline"
+                  >
+                    Supprimer
+                  </button>
+                </div>
+
+                <InputField
+                  label="Nom du projet"
+                  placeholder="Ex : YnityLearn"
+                  value={pr.name}
+                  onChange={(v) => updateProject(i, "name", v)}
+                />
+
+                <div className="space-y-2">
+                  <p className="text-sm font-semibold text-gray-700">Description</p>
+                  <textarea
+                    className="w-full min-h-[120px] px-6 py-4 border border-gray-200 rounded-3xl bg-white
+                               focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none transition
+                               placeholder:text-gray-400"
+                    placeholder="Décrivez le projet..."
+                    value={pr.description || ""}
+                    onChange={(e) => updateProject(i, "description", e.target.value)}
+                  />
+                </div>
+
+                <InputField
+                  label="Technologies (séparées par virgule)"
+                  placeholder="Ex : React, Node.js, MongoDB"
+                  value={safeArr(pr.technologies).join(", ")}
+                  onChange={(v) =>
+                    updateProject(
+                      i,
+                      "technologies",
+                      v
+                        .split(",")
+                        .map((x) => x.trim())
+                        .filter(Boolean)
+                    )
+                  }
+                />
+              </div>
+            ))
+          ) : (
+            <p className="text-sm text-gray-500">Aucun projet ajouté.</p>
+          )}
+        </div>
+      ),
+    },
+
+    /* ================= CERTIFICATIONS ================= */
+    {
+      key: "certifications",
+      title: "Certifications",
+      rightAction: (
+        <button
+          type="button"
+          onClick={addCertification}
+          className="px-6 py-3 rounded-full bg-white border border-gray-900
+                     font-semibold text-gray-900 hover:bg-gray-50 transition"
+        >
+          + Ajouter
+        </button>
+      ),
+      render: () => (
+        <div className="space-y-6">
+          {safeArr(form.certifications).length > 0 ? (
+            safeArr(form.certifications).map((c, i) => (
+              <div
+                key={i}
+                className="p-5 rounded-3xl border border-gray-200 bg-gray-50 space-y-4"
+              >
+                {/* ✅ HEADER: Supprimer وحدو */}
+                <div className="flex items-center justify-end">
+                  <button
+                    type="button"
+                    onClick={() => removeCertification(i)}
+                    className="text-red-600 font-semibold hover:underline"
+                  >
+                    Supprimer
+                  </button>
+                </div>
+
+                <InputField
+                  label="Nom"
+                  placeholder="Ex : ISTQB Foundation"
+                  value={c.name}
+                  onChange={(v) => updateCertification(i, "name", v)}
+                />
+                <InputField
+                  label="Organisme"
+                  placeholder="Ex : ISTQB"
+                  value={c.org}
+                  onChange={(v) => updateCertification(i, "org", v)}
+                />
+                <InputField
+                  label="Date"
+                  placeholder="Ex : 2025"
+                  value={c.date}
+                  onChange={(v) => updateCertification(i, "date", v)}
+                />
+              </div>
+            ))
+          ) : (
+            <p className="text-sm text-gray-500">Aucune certification.</p>
+          )}
+        </div>
+      ),
+    },
+
+    /* ================= LANGUAGES ================= */
+    {
+      key: "languages",
+      title: "Langues",
+      rightAction: (
+        <button
+          type="button"
+          onClick={addLanguage}
+          className="px-6 py-3 rounded-full bg-white border border-gray-900
+                     font-semibold text-gray-900 hover:bg-gray-50 transition"
+        >
+          + Ajouter
+        </button>
+      ),
+      render: () => (
+        <div className="space-y-6">
+          {safeArr(form.languages).length > 0 ? (
+            safeArr(form.languages).map((l, i) => (
+              <div
+                key={i}
+                className="p-5 rounded-3xl border border-gray-200 bg-gray-50 space-y-4"
+              >
+                {/* ✅ HEADER: Supprimer وحدو */}
+                <div className="flex items-center justify-end">
+                  <button
+                    type="button"
+                    onClick={() => removeLanguage(i)}
+                    className="text-red-600 font-semibold hover:underline"
+                  >
+                    Supprimer
+                  </button>
+                </div>
+
+                <InputField
+                  label="Langue"
+                  placeholder="Ex : Français"
+                  value={l.name}
+                  onChange={(v) => updateLanguage(i, "name", v)}
+                />
+                <InputField
+                  label="Niveau"
+                  placeholder="Ex : Courant"
+                  value={l.level}
+                  onChange={(v) => updateLanguage(i, "level", v)}
+                />
+              </div>
+            ))
+          ) : (
+            <p className="text-sm text-gray-500">Aucune langue ajoutée.</p>
+          )}
+        </div>
+      ),
+    },
+
+    /* ================= INTERESTS ================= */
+    {
+      key: "interests",
+      title: "Centres d’intérêt",
+      rightAction: null,
+      render: () => (
+        <div className="space-y-4">
+          <p className="text-sm font-semibold text-gray-700">
+            Activités / Intérêts (une ligne = un intérêt)
+          </p>
+
+          <textarea
+            data-cy="interests"
+            className="w-full min-h-[160px] px-6 py-4 border border-gray-200 rounded-3xl bg-white
+                       focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none transition
+                       placeholder:text-gray-400"
+            placeholder={`Ex :\nSport\nLecture\nHackathons`}
+            value={safeArr(form.interests).join("\n")}
+            onChange={(e) =>
+              setForm((prev) => ({
+                ...prev,
+                interests: e.target.value
+                  .split("\n")
+                  .map((x) => x.trim())
+                  .filter(Boolean),
+              }))
+            }
+          />
+        </div>
+      ),
+    },
   ];
 
   const total = sections.length;
   const current = sectionIndex + 1;
   const percent = Math.round((current / total) * 100);
   const isLast = sectionIndex === sections.length - 1;
-
   const currentSection = sections[sectionIndex];
 
   return (
@@ -758,7 +1184,7 @@ export default function StepManual({ parsedCV, cvFileUrl, onBack, onSubmit }) {
           </div>
         </div>
 
-        <Card title={currentSection.title} rightAction={null}>
+        <Card title={currentSection.title} rightAction={currentSection.rightAction}>
           {currentSection.render()}
         </Card>
 
@@ -789,9 +1215,7 @@ export default function StepManual({ parsedCV, cvFileUrl, onBack, onSubmit }) {
 
             {!isLast ? (
               <button
-                onClick={() =>
-                  setSectionIndex((p) => Math.min(sections.length - 1, p + 1))
-                }
+                onClick={() => setSectionIndex((p) => Math.min(sections.length - 1, p + 1))}
                 className="px-10 py-4 rounded-full bg-green-600 text-white font-semibold
                            hover:bg-green-700 transition shadow-lg"
               >
@@ -830,7 +1254,7 @@ function Card({ title, rightAction, children, className = "" }) {
     >
       <div className="flex items-center justify-between gap-4 mb-6">
         <h3 className="font-bold text-2xl text-gray-900">{title}</h3>
-        {rightAction}
+        {rightAction ? <div className="shrink-0">{rightAction}</div> : null}
       </div>
 
       {children}
@@ -877,8 +1301,4 @@ function IconInputField({ label, value, onChange, placeholder, icon }) {
       </div>
     </div>
   );
-}
-
-function getOtherSections() {
-  return [];
 }
