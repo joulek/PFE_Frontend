@@ -89,6 +89,18 @@ async function handleLogout() {
                 >
                   Gestion offres
                 </Link>
+
+
+                <Link
+                  href="/recruiter/candidatures"
+                  className={`px-6 py-2 rounded-full font-semibold transition
+                    ${isActive("/recruiter/candidatures")
+                      ? "bg-[#6CB33F] text-white shadow"
+                      : "text-gray-600 hover:text-[#4E8F2F]"}
+                  `}
+                >
+                  Candidatures
+                </Link>
               </>
             )}
           </div>
