@@ -1,11 +1,13 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { getJobs } from "../services/job.api";
 import Link from "next/link";
+import Pagination from "../components/Pagination";
 
 /* ================= UTILS ================= */
 function formatDate(date) {
+  if (!date) return "—";
   return new Date(date).toLocaleDateString("fr-FR");
 }
 
@@ -16,8 +18,12 @@ export default function PublicJobsPage() {
   // ✅ NEW: stocker les cartes ouvertes
   const [expandedJobs, setExpandedJobs] = useState({});
 
+  // ✅ Pagination
+  const [page, setPage] = useState(1);
+  const pageSize = 6; // 🔥 change comme tu veux
+
   useEffect(() => {
-    getJobs().then((res) => setJobs(res.data));
+    getJobs().then((res) => setJobs(res.data || []));
   }, []);
 
   function toggleReadMore(jobId) {
@@ -26,6 +32,18 @@ export default function PublicJobsPage() {
       [jobId]: !prev[jobId],
     }));
   }
+
+  // ✅ Pagination logic
+  const totalPages = Math.max(1, Math.ceil(jobs.length / pageSize));
+
+  const paginatedJobs = useMemo(() => {
+    const start = (page - 1) * pageSize;
+    return jobs.slice(start, start + pageSize);
+  }, [jobs, page]);
+
+  useEffect(() => {
+    if (page > totalPages) setPage(totalPages);
+  }, [page, totalPages]);
 
   return (
     /* 🌿 BACKGROUND GLOBAL */
@@ -46,7 +64,7 @@ export default function PublicJobsPage() {
 
         {/* ================= JOBS GRID ================= */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {jobs.map((job) => {
+          {paginatedJobs.map((job) => {
             const isExpired =
               job.dateCloture && new Date(job.dateCloture) < new Date();
 
@@ -155,6 +173,21 @@ export default function PublicJobsPage() {
             <p className="text-gray-500 text-sm">Aucune offre disponible.</p>
           )}
         </div>
+
+        {/* ✅ PAGINATION FOOTER */}
+        {jobs.length > 0 && (
+          <div className="mt-10 flex items-center justify-between text-sm text-gray-500">
+            <p>
+              Total: {jobs.length} offre(s) — Page {page} / {totalPages}
+            </p>
+
+            <Pagination
+              currentPage={page}
+              totalPages={totalPages}
+              onPageChange={setPage}
+            />
+          </div>
+        )}
       </div>
     </div>
   );

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   getJobs,
   createJob,
@@ -9,6 +9,7 @@ import {
 } from "../../services/job.api";
 import JobModal from "./JobModal";
 import DeleteJobModal from "./DeleteJobModal";
+import Pagination from "../../components/Pagination";
 
 /* ================= UTILS ================= */
 function formatDate(date) {
@@ -24,12 +25,16 @@ export default function JobsPage() {
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [jobToDelete, setJobToDelete] = useState(null);
 
-  // ✅ NEW: stocker les cartes ouvertes (par id)
+  // ✅ stocker les cartes ouvertes (par id)
   const [expandedJobs, setExpandedJobs] = useState({});
+
+  // ✅ Pagination
+  const [page, setPage] = useState(1);
+  const pageSize = 6; // 🔥 change comme tu veux (ex: 4, 6, 8)
 
   async function loadJobs() {
     const res = await getJobs();
-    setJobs(res.data);
+    setJobs(res.data || []);
   }
 
   useEffect(() => {
@@ -56,6 +61,19 @@ export default function JobsPage() {
     }));
   }
 
+  // ✅ Pagination logic
+  const totalPages = Math.max(1, Math.ceil(jobs.length / pageSize));
+
+  const paginatedJobs = useMemo(() => {
+    const start = (page - 1) * pageSize;
+    return jobs.slice(start, start + pageSize);
+  }, [jobs, page]);
+
+  // إذا نقص عدد الjobs بعد delete، رجّع page لآخر صفحة موجودة
+  useEffect(() => {
+    if (page > totalPages) setPage(totalPages);
+  }, [page, totalPages]);
+
   return (
     /* 🌿 BACKGROUND GLOBAL */
     <div className="min-h-screen bg-green-50">
@@ -80,7 +98,7 @@ export default function JobsPage() {
 
         {/* ================= JOBS GRID ================= */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {jobs.map((job) => {
+          {paginatedJobs.map((job) => {
             const isExpanded = !!expandedJobs[job._id];
             const hasLongDescription = (job.description || "").length > 160;
 
@@ -99,14 +117,13 @@ export default function JobsPage() {
 
                   {/* DESCRIPTION */}
                   <p
-                    className={`text-gray-600 text-sm mb-2 whitespace-pre-line ${
-                      !isExpanded ? "line-clamp-3" : ""
-                    }`}
+                    className={`text-gray-600 text-sm mb-2 whitespace-pre-line ${!isExpanded ? "line-clamp-3" : ""
+                      }`}
                   >
                     {job.description}
                   </p>
 
-                  {/* ✅ Lire la suite / Réduire */}
+                  {/* Lire la suite / Réduire */}
                   {hasLongDescription && (
                     <button
                       type="button"
@@ -181,15 +198,34 @@ export default function JobsPage() {
             <p className="text-gray-500 text-sm">Aucune offre disponible.</p>
           )}
         </div>
+
+        {/* ✅ PAGINATION FOOTER */}
+        {jobs.length > 0 && (
+          <div className="mt-10 flex items-center justify-between text-sm text-gray-500">
+            <p>
+              Total: {jobs.length} offre(s) — Page {page} / {totalPages}
+            </p>
+
+            <Pagination
+              currentPage={page}
+              totalPages={totalPages}
+              onPageChange={setPage}
+            />
+          </div>
+        )}
       </div>
 
       {/* ================= MODALS ================= */}
       <JobModal
         open={modalOpen}
-        onClose={() => setModalOpen(false)}
+        onClose={() => {
+          setModalOpen(false);
+          setEditingJob(null); // ✅ مهم
+        }}
         onSubmit={editingJob ? handleUpdate : handleCreate}
         initialData={editingJob}
       />
+
 
       <DeleteJobModal
         open={deleteModalOpen}

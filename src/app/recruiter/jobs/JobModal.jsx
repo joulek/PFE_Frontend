@@ -3,14 +3,20 @@
 import { useState, useEffect } from "react";
 
 export default function JobModal({ open, onClose, onSubmit, initialData }) {
-  const [form, setForm] = useState({
+  const emptyForm = {
     titre: "",
     description: "",
     technologies: "",
     dateCloture: "",
-  });
+  };
 
+  const [form, setForm] = useState(emptyForm);
+
+  // ✅ FIX: reset/remplir le form à chaque ouverture du modal
   useEffect(() => {
+    if (!open) return;
+
+    // MODE UPDATE (Modifier)
     if (initialData) {
       setForm({
         titre: initialData.titre || "",
@@ -20,15 +26,12 @@ export default function JobModal({ open, onClose, onSubmit, initialData }) {
           ? initialData.dateCloture.slice(0, 10)
           : "",
       });
-    } else {
-      setForm({
-        titre: "",
-        description: "",
-        technologies: "",
-        dateCloture: "",
-      });
+      return;
     }
-  }, [initialData]);
+
+    // MODE CREATE (Ajouter) => reset
+    setForm(emptyForm);
+  }, [open, initialData]);
 
   if (!open) return null;
 
@@ -53,7 +56,7 @@ export default function JobModal({ open, onClose, onSubmit, initialData }) {
       }}
     >
       <div className="bg-white w-full max-w-2xl rounded-3xl shadow-2xl overflow-hidden">
-        {/* ===== HEADER (comme image) ===== */}
+        {/* ===== HEADER ===== */}
         <div className="px-8 pt-7 pb-5 border-b border-gray-200">
           <div className="flex items-start justify-between gap-4">
             <div>
@@ -158,16 +161,16 @@ export default function JobModal({ open, onClose, onSubmit, initialData }) {
                                focus:border-[#6CB33F] focus:ring-4 focus:ring-[#6CB33F]/15
                                outline-none transition"
                   />
-                  {/* icône calendrier */}
+
                   <span className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-gray-400">
-                    
+                  
                   </span>
                 </div>
               </div>
             </div>
           </div>
 
-          {/* ===== FOOTER (boutons comme image) ===== */}
+          {/* ===== FOOTER ===== */}
           <div className="mt-8 pt-6 border-t border-gray-200 flex flex-col sm:flex-row gap-4">
             <button
               type="submit"
@@ -180,7 +183,10 @@ export default function JobModal({ open, onClose, onSubmit, initialData }) {
 
             <button
               type="button"
-              onClick={onClose}
+              onClick={() => {
+                setForm(emptyForm); // ✅ reset direct
+                onClose();
+              }}
               className="sm:flex-1 h-12 rounded-full font-semibold
                          border border-gray-200 text-gray-700
                          hover:bg-gray-50 transition"

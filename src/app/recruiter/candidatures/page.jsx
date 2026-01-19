@@ -3,9 +3,10 @@
 import { useEffect, useMemo, useState } from "react";
 import { getCandidaturesWithJob } from "../../services/candidature.api";
 import Pagination from "../../components/Pagination";
+import { Search } from "lucide-react";
 
-/* ================= CONFIG ================= */
-const API_BASE = "http://localhost:5000";
+/* ================= CONFIG (.env) ================= */
+const API_BASE = process.env.NEXT_PUBLIC_API_URL;
 
 /* ================= UTILS ================= */
 function formatDate(date) {
@@ -23,45 +24,42 @@ function safeStr(v) {
   return String(v);
 }
 
-/* ================= NAME GUESS ================= */
-function guessNameFromFilename(c) {
-  const file = safeStr(c?.cv?.originalName || "");
-  if (!file) return "";
-
-  const noExt = file.replace(/\.(pdf|docx|doc)$/i, "");
-
-  const cleaned = noExt
-    .replace(/^cv[-_ ]?/i, "")
-    .replace(/^resume[-_ ]?/i, "")
-    .replace(/[-_]/g, " ")
-    .replace(/\s+/g, " ")
-    .trim();
-
-  if (cleaned.length < 3) return "";
-  if (/^cv\d*$/i.test(cleaned)) return "";
-
-  return cleaned;
-}
-
-/* ================= CANDIDATE HELPERS ================= */
+/* ================= FULL NAME (EXTRACTED FIRST) ================= */
 function getFullName(c) {
+  const extracted = c?.extracted || {};
+  const parsed = c?.parsed || {};
+
   const full =
     safeStr(c?.fullName) ||
-    safeStr(c?.nom) ||
-    `${safeStr(c?.prenom)} ${safeStr(c?.nom)}`.trim() ||
-    guessNameFromFilename(c);
+    safeStr(extracted?.manual?.nom) ||
+    safeStr(extracted?.nom) ||
+    safeStr(parsed?.manual?.nom) ||
+    safeStr(parsed?.nom) ||
+    safeStr(extracted?.full_name) ||
+    safeStr(parsed?.full_name) ||
+    safeStr(extracted?.personal_info?.full_name) ||
+    safeStr(parsed?.personal_info?.full_name) ||
+    `${safeStr(c?.prenom)} ${safeStr(c?.nom)}`.trim();
 
   return full || "Candidat";
 }
-
+/* ================= EMAIL (EXTRACTED FIRST) ================= */
 function getEmail(c) {
-  const e = safeStr(c?.email);
+  const extracted = c?.extracted || {};
+  const parsed = c?.parsed || {};
+
+  const e =
+    safeStr(c?.email) ||
+    safeStr(extracted?.manual?.email) ||  // ← AJOUTEZ CETTE LIGNE
+    safeStr(extracted?.email) ||
+    safeStr(parsed?.manual?.email) ||     // ← AJOUTEZ CETTE LIGNE
+    safeStr(parsed?.email) ||
+    safeStr(extracted?.personal_info?.email) ||
+    safeStr(parsed?.personal_info?.email);
 
   if (!e) return "—";
 
-  // تنظيف: ينحي الرموز الغريبة
-  const cleaned = e.replace(/[^\w.@+-]/g, "");
-  return cleaned || "—";
+  return e.replace(/[^\w.@+-]/g, "") || "—";
 }
 
 /* ================= CV URL HELPERS ================= */
@@ -71,7 +69,6 @@ function normalizeUrl(raw) {
 
   if (u.startsWith("http://") || u.startsWith("https://")) return u;
 
-  // windows path => ما ينجمش يتحل
   if (/^[a-zA-Z]:\\/.test(u)) return "";
 
   if (u.startsWith("/")) return `${API_BASE}${u}`;
@@ -96,7 +93,6 @@ export default function CandidaturesTablePage() {
   const [loading, setLoading] = useState(true);
   const [q, setQ] = useState("");
 
-  // Pagination
   const [page, setPage] = useState(1);
   const pageSize = 10;
 
@@ -157,20 +153,11 @@ export default function CandidaturesTablePage() {
           <h1 className="text-4xl font-extrabold text-gray-900">
             Liste des Candidatures
           </h1>
-
-          <button
-            onClick={loadCandidatures}
-            className="bg-[#6CB33F] hover:bg-[#4E8F2F]
-                       text-white px-6 py-3 rounded-full
-                       font-semibold shadow-md transition flex items-center gap-2"
-          >
-            ⟳ Actualiser
-          </button>
         </div>
 
         {/* SEARCH BAR */}
         <div className="bg-white rounded-full shadow-sm border border-gray-100 px-5 py-3 flex items-center gap-3 mb-8">
-          <span className="text-gray-400">🔍</span>
+          <Search className="w-5 h-5 text-[#4E8F2F]" />
           <input
             value={q}
             onChange={(e) => setQ(e.target.value)}
@@ -231,12 +218,9 @@ export default function CandidaturesTablePage() {
                           <div className="font-extrabold text-gray-900">
                             {getFullName(c)}
                           </div>
-                          <div className="text-xs text-gray-400 mt-1">
-                            ID: {String(c._id).slice(-6)}
-                          </div>
                         </td>
 
-                        {/* EMAIL (🔥 هذا هو اللي كان ناقص عندك) */}
+                        {/* EMAIL */}
                         <td className="px-8 py-5 text-gray-700">
                           {email !== "—" ? (
                             <a
@@ -252,10 +236,7 @@ export default function CandidaturesTablePage() {
 
                         {/* POSTE */}
                         <td className="px-8 py-5">
-                          <span
-                            className="inline-flex items-center px-4 py-2 rounded-full
-                                       bg-[#E9F5E3] text-[#4E8F2F] text-xs font-semibold border border-[#d7ebcf]"
-                          >
+                          <span className="inline-flex items-center px-4 py-2 rounded-full bg-[#E9F5E3] text-[#4E8F2F] text-xs font-semibold border border-[#d7ebcf]">
                             {safeStr(c?.jobTitle) || "Poste inconnu"}
                           </span>
                         </td>
@@ -272,12 +253,9 @@ export default function CandidaturesTablePage() {
                               href={cvUrl}
                               target="_blank"
                               rel="noreferrer"
-                              className="inline-flex items-center gap-2
-                                         bg-[#E9F5E3] border border-[#d7ebcf]
-                                         text-[#4E8F2F] font-bold
-                                         px-4 py-2 rounded-full hover:bg-[#dff0d6] transition"
+                              className="inline-flex items-center gap-2 bg-[#E9F5E3] border border-[#d7ebcf] text-[#4E8F2F] font-bold px-4 py-2 rounded-full hover:bg-[#dff0d6] transition"
                             >
-                              📄 Voir CV
+                              Voir CV
                             </a>
                           ) : (
                             <span className="text-gray-400">—</span>
