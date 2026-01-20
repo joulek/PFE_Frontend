@@ -1,36 +1,54 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
+# Frontend - Plateforme de Recrutement Intelligent
 
-## Getting Started
+Frontend de la plateforme de recrutement permettant :
+- Consultation des offres d’emploi (public)
+- Postuler à une offre (upload CV)
+- Affichage des candidatures (recruteur)
+- Visualisation des informations extraites depuis le CV
+- Recherche + Pagination + UI moderne
 
-First, run the development server:
+---
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+## 🧰 Stack technique
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+- **Next.js (React)**
+- **Tailwind CSS**
+- **Axios** (API calls)
+- **Lucide-react** (icônes)
 
-You can start editing the page by modifying `app/page.js`. The page auto-updates as you edit the file.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## ⚙️ Installation
 
-## Learn More
+### 1) Cloner le projet
+git clone https://github.com/joulek/PFE_Frontend.git
+cd frontend
 
-To learn more about Next.js, take a look at the following resources:
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+### 2) Installer les dépendances
+npm install
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
 
-## Deploy on Vercel
+### 3) 🔐 Configuration (.env.local)
+Créer un fichier .env.local à la racine du frontend :
+NEXT_PUBLIC_API_URL=http://localhost:5000
+Le frontend utilise cette variable pour communiquer avec le backend.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+### 4) ▶️ Lancer le projet
+Mode développement : npm run dev
+Le frontend sera accessible sur : http://localhost:3000
+Mode production : npm run build
+                  npm start
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+
+### ✨ Fonctionnalités principales
+### 1) 👤 Côté candidat
+- Voir la liste des offres disponibles
+- Postuler à une offre via upload CV
+- Envoi automatique vers le backend + extraction
+
+### 2)🧑‍💼 Côté recruteur
+- Voir la liste des candidatures reçues
+- Consulter son dasboard 
+- Page pour la gestion des offres d'emploi
+- Interface de connexion
+
