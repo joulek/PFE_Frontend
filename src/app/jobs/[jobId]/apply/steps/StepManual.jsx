@@ -52,7 +52,6 @@ export default function StepManual({ parsedCV, cvFileUrl, onBack, onSubmit }) {
         linkedin: safeStr(p?.reseaux_sociaux?.linkedin),
         github: safeStr(p?.reseaux_sociaux?.github),
 
-        // ✅ NOUVEAUX CHAMPS
         date_naissance: safeStr(p?.personal_info?.date_naissance),
         lieu_naissance: safeStr(p?.personal_info?.lieu_naissance),
         numero_cin: safeStr(p?.personal_info?.numero_cin),
@@ -128,7 +127,10 @@ export default function StepManual({ parsedCV, cvFileUrl, onBack, onSubmit }) {
   const addEducation = () => {
     setForm((prev) => ({
       ...prev,
-      education: [...safeArr(prev.education), { degree: "", institution: "", period: "" }],
+      education: [
+        ...safeArr(prev.education),
+        { degree: "", institution: "", period: "" },
+      ],
     }));
   };
 
@@ -175,7 +177,10 @@ export default function StepManual({ parsedCV, cvFileUrl, onBack, onSubmit }) {
   const addProject = () => {
     setForm((prev) => ({
       ...prev,
-      projects: [...safeArr(prev.projects), { name: "", description: "", technologies: [] }],
+      projects: [
+        ...safeArr(prev.projects),
+        { name: "", description: "", technologies: [] },
+      ],
     }));
   };
 
@@ -213,7 +218,10 @@ export default function StepManual({ parsedCV, cvFileUrl, onBack, onSubmit }) {
   const addCertification = () => {
     setForm((prev) => ({
       ...prev,
-      certifications: [...safeArr(prev.certifications), { name: "", org: "", date: "" }],
+      certifications: [
+        ...safeArr(prev.certifications),
+        { name: "", org: "", date: "" },
+      ],
     }));
   };
 
@@ -344,7 +352,9 @@ export default function StepManual({ parsedCV, cvFileUrl, onBack, onSubmit }) {
 
       setSuccessMsg("Votre candidature a été envoyée avec succès !");
     } catch (e) {
-      setErrorMsg("❌ " + (e?.message || "Erreur lors de l’envoi. Essayez à nouveau."));
+      setErrorMsg(
+        "❌ " + (e?.message || "Erreur lors de l’envoi. Essayez à nouveau.")
+      );
     } finally {
       setLoadingSubmit(false);
     }
@@ -354,22 +364,12 @@ export default function StepManual({ parsedCV, cvFileUrl, onBack, onSubmit }) {
      SECTIONS LIST
   ======================= */
   const sections = [
-    /* ================= PERSONAL ================= */
     {
       key: "personal",
       title: "Informations personnelles",
-      rightAction: (
-        <button
-          type="button"
-          onClick={addPersonalExtra}
-          className="px-6 py-3 rounded-full bg-white border border-gray-900
-                     font-semibold text-gray-900 hover:bg-gray-50 transition" data-cy="add-skill-btn"
-        >
-          + Ajouter un champ
-        </button>
-      ),
+      ightAction: null,
       render: () => (
-        <div className="space-y-6">
+        <div className="space-y-5 sm:space-y-6">
           <InputField
             label="Nom complet"
             placeholder="Ex : Jean Dupont"
@@ -424,7 +424,6 @@ export default function StepManual({ parsedCV, cvFileUrl, onBack, onSubmit }) {
             }
           />
 
-          {/* ✅ NOUVEAUX CHAMPS */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <InputField
               label="Date de naissance"
@@ -511,9 +510,11 @@ export default function StepManual({ parsedCV, cvFileUrl, onBack, onSubmit }) {
 
           {/* PERMIS */}
           <div className="space-y-2">
-            <p className="text-sm font-semibold text-gray-700">Permis de conduire</p>
+            <p className="text-sm font-semibold text-gray-700">
+              Permis de conduire
+            </p>
 
-            <div className="flex gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <button
                 data-cy="permis-oui"
                 type="button"
@@ -526,9 +527,10 @@ export default function StepManual({ parsedCV, cvFileUrl, onBack, onSubmit }) {
                     },
                   }))
                 }
-                className={`px-6 py-3 rounded-full border font-semibold transition
+                className={`w-full px-6 py-3 rounded-full border font-semibold transition
                 ${
-                  safeStr(form.personal_info.permis_conduire).toLowerCase() === "oui"
+                  safeStr(form.personal_info.permis_conduire).toLowerCase() ===
+                  "oui"
                     ? "bg-green-600 text-white border-green-600"
                     : "bg-white text-gray-700 border-gray-200 hover:bg-gray-50"
                 }`}
@@ -549,9 +551,10 @@ export default function StepManual({ parsedCV, cvFileUrl, onBack, onSubmit }) {
                     },
                   }))
                 }
-                className={`px-6 py-3 rounded-full border font-semibold transition
+                className={`w-full px-6 py-3 rounded-full border font-semibold transition
                 ${
-                  safeStr(form.personal_info.permis_conduire).toLowerCase() === "non"
+                  safeStr(form.personal_info.permis_conduire).toLowerCase() ===
+                  "non"
                     ? "bg-green-600 text-white border-green-600"
                     : "bg-white text-gray-700 border-gray-200 hover:bg-gray-50"
                 }`}
@@ -561,7 +564,6 @@ export default function StepManual({ parsedCV, cvFileUrl, onBack, onSubmit }) {
             </div>
           </div>
 
-          {/* Date permis (seulement si Oui) */}
           {safeStr(form.personal_info.permis_conduire).toLowerCase() === "oui" && (
             <InputField
               label="Date d’obtention du permis"
@@ -583,12 +585,17 @@ export default function StepManual({ parsedCV, cvFileUrl, onBack, onSubmit }) {
           {/* Situation familiale */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <p className="text-sm font-semibold text-gray-700">Situation familiale</p>
+              <p className="text-sm font-semibold text-gray-700">
+                Situation familiale
+              </p>
 
               <select
                 data-cy="situation-familiale"
-                className="w-full px-6 py-4 border border-gray-200 rounded-full bg-white
-                           focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none transition"
+                className="
+                  w-full px-5 py-3 sm:px-6 sm:py-4
+                  border border-gray-200 rounded-full bg-white
+                  focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none transition
+                "
                 value={form.personal_info.situation_familiale}
                 onChange={(e) =>
                   setForm((prev) => ({
@@ -666,7 +673,6 @@ export default function StepManual({ parsedCV, cvFileUrl, onBack, onSubmit }) {
             />
           </div>
 
-          {/* Champs extra */}
           {safeArr(form.personal_info_extra).length > 0 && (
             <div className="space-y-3 pt-2">
               {safeArr(form.personal_info_extra).map((f, idx) => (
@@ -703,7 +709,6 @@ export default function StepManual({ parsedCV, cvFileUrl, onBack, onSubmit }) {
       ),
     },
 
-    /* ================= PROFILE ================= */
     {
       key: "profile",
       title: "Profil",
@@ -713,18 +718,23 @@ export default function StepManual({ parsedCV, cvFileUrl, onBack, onSubmit }) {
           <p className="text-sm font-semibold text-gray-700">Résumé / Profil</p>
           <textarea
             data-cy="profile"
-            className="w-full min-h-[160px] px-6 py-4 border border-gray-200 rounded-3xl bg-white
-                       focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none transition
-                       placeholder:text-gray-400"
+            className="
+              w-full min-h-[160px]
+              px-5 py-3 sm:px-6 sm:py-4
+              border border-gray-200 rounded-2xl sm:rounded-3xl bg-white
+              focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none transition
+              placeholder:text-gray-400
+            "
             placeholder="Parlez brièvement de vous..."
             value={form.profile || ""}
-            onChange={(e) => setForm((prev) => ({ ...prev, profile: e.target.value }))}
+            onChange={(e) =>
+              setForm((prev) => ({ ...prev, profile: e.target.value }))
+            }
           />
         </div>
       ),
     },
 
-    /* ================= SKILLS ================= */
     {
       key: "skills",
       title: "Compétences",
@@ -732,14 +742,20 @@ export default function StepManual({ parsedCV, cvFileUrl, onBack, onSubmit }) {
       render: () => (
         <div className="space-y-6">
           <div className="space-y-2">
-            <p className="text-sm font-semibold text-gray-700">Ajouter une compétence</p>
+            <p className="text-sm font-semibold text-gray-700">
+              Ajouter une compétence
+            </p>
 
-            <div className="flex gap-3">
+            <div className="flex flex-col sm:flex-row gap-3">
               <input
                 data-cy="new-skill"
-                className="flex-1 px-6 py-4 border border-gray-200 rounded-full bg-white
-                           focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none transition
-                           placeholder:text-gray-400"
+                className="
+                  w-full sm:flex-1
+                  px-5 py-3 sm:px-6 sm:py-4
+                  border border-gray-200 rounded-full bg-white
+                  focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none transition
+                  placeholder:text-gray-400
+                "
                 placeholder="Ex : React, Node.js, MongoDB..."
                 value={newSkill}
                 onChange={(e) => setNewSkill(e.target.value)}
@@ -751,8 +767,12 @@ export default function StepManual({ parsedCV, cvFileUrl, onBack, onSubmit }) {
                   addSkill(newSkill);
                   setNewSkill("");
                 }}
-                className="px-8 py-4 rounded-full bg-green-600 text-white font-semibold
-                           hover:bg-green-700 transition"
+                className="
+                  w-full sm:w-auto
+                  px-6 py-3 sm:px-8 sm:py-4
+                  rounded-full bg-green-600 text-white font-semibold
+                  hover:bg-green-700 transition
+                "
               >
                 Ajouter
               </button>
@@ -764,8 +784,12 @@ export default function StepManual({ parsedCV, cvFileUrl, onBack, onSubmit }) {
               {safeArr(form.skills).map((s) => (
                 <span
                   key={s}
-                  className="inline-flex items-center gap-2 px-4 py-2 rounded-full
-                             bg-green-50 border border-green-200 text-green-800 text-sm font-semibold"
+                  className="
+                    inline-flex items-center gap-2
+                    px-4 py-2 rounded-full
+                    bg-green-50 border border-green-200 text-green-800
+                    text-sm font-semibold
+                  "
                 >
                   {s}
                   <button
@@ -786,7 +810,6 @@ export default function StepManual({ parsedCV, cvFileUrl, onBack, onSubmit }) {
       ),
     },
 
-    /* ================= EDUCATION ================= */
     {
       key: "education",
       title: "Formation",
@@ -794,8 +817,11 @@ export default function StepManual({ parsedCV, cvFileUrl, onBack, onSubmit }) {
         <button
           type="button"
           onClick={addEducation}
-          className="px-6 py-3 rounded-full bg-white border border-gray-900
-                     font-semibold text-gray-900 hover:bg-gray-50 transition"
+          className="
+            w-full sm:w-auto
+            px-5 py-3 rounded-full bg-white border border-gray-900
+            font-semibold text-gray-900 hover:bg-gray-50 transition
+          "
         >
           + Ajouter
         </button>
@@ -806,9 +832,8 @@ export default function StepManual({ parsedCV, cvFileUrl, onBack, onSubmit }) {
             safeArr(form.education).map((edu, i) => (
               <div
                 key={i}
-                className="p-5 rounded-3xl border border-gray-200 bg-gray-50 space-y-4"
+                className="p-4 sm:p-5 rounded-2xl sm:rounded-3xl border border-gray-200 bg-gray-50 space-y-4"
               >
-                {/* ✅ HEADER: نحّينا Formation #1 وخليّينا Supprimer وحدو */}
                 <div className="flex items-center justify-end">
                   <button
                     type="button"
@@ -846,7 +871,6 @@ export default function StepManual({ parsedCV, cvFileUrl, onBack, onSubmit }) {
       ),
     },
 
-    /* ================= EXPERIENCE ================= */
     {
       key: "experience",
       title: "Expérience professionnelle",
@@ -854,8 +878,11 @@ export default function StepManual({ parsedCV, cvFileUrl, onBack, onSubmit }) {
         <button
           type="button"
           onClick={addExperience}
-          className="px-6 py-3 rounded-full bg-white border border-gray-900
-                     font-semibold text-gray-900 hover:bg-gray-50 transition"
+          className="
+            w-full sm:w-auto
+            px-5 py-3 rounded-full bg-white border border-gray-900
+            font-semibold text-gray-900 hover:bg-gray-50 transition
+          "
         >
           + Ajouter
         </button>
@@ -866,9 +893,8 @@ export default function StepManual({ parsedCV, cvFileUrl, onBack, onSubmit }) {
             safeArr(form.experience).map((exp, i) => (
               <div
                 key={i}
-                className="p-5 rounded-3xl border border-gray-200 bg-gray-50 space-y-4"
+                className="p-4 sm:p-5 rounded-2xl sm:rounded-3xl border border-gray-200 bg-gray-50 space-y-4"
               >
-                {/* ✅ HEADER: Supprimer وحدو */}
                 <div className="flex items-center justify-end">
                   <button
                     type="button"
@@ -909,14 +935,22 @@ export default function StepManual({ parsedCV, cvFileUrl, onBack, onSubmit }) {
                 />
 
                 <div className="space-y-2">
-                  <p className="text-sm font-semibold text-gray-700">Description</p>
+                  <p className="text-sm font-semibold text-gray-700">
+                    Description
+                  </p>
                   <textarea
-                    className="w-full min-h-[120px] px-6 py-4 border border-gray-200 rounded-3xl bg-white
-                               focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none transition
-                               placeholder:text-gray-400"
+                    className="
+                      w-full min-h-[120px]
+                      px-5 py-3 sm:px-6 sm:py-4
+                      border border-gray-200 rounded-2xl sm:rounded-3xl bg-white
+                      focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none transition
+                      placeholder:text-gray-400
+                    "
                     placeholder="Décrivez vos missions..."
                     value={exp.description || ""}
-                    onChange={(e) => updateExperience(i, "description", e.target.value)}
+                    onChange={(e) =>
+                      updateExperience(i, "description", e.target.value)
+                    }
                   />
                 </div>
               </div>
@@ -928,7 +962,6 @@ export default function StepManual({ parsedCV, cvFileUrl, onBack, onSubmit }) {
       ),
     },
 
-    /* ================= PROJECTS ================= */
     {
       key: "projects",
       title: "Projets",
@@ -936,8 +969,11 @@ export default function StepManual({ parsedCV, cvFileUrl, onBack, onSubmit }) {
         <button
           type="button"
           onClick={addProject}
-          className="px-6 py-3 rounded-full bg-white border border-gray-900
-                     font-semibold text-gray-900 hover:bg-gray-50 transition"
+          className="
+            w-full sm:w-auto
+            px-5 py-3 rounded-full bg-white border border-gray-900
+            font-semibold text-gray-900 hover:bg-gray-50 transition
+          "
         >
           + Ajouter
         </button>
@@ -948,9 +984,8 @@ export default function StepManual({ parsedCV, cvFileUrl, onBack, onSubmit }) {
             safeArr(form.projects).map((pr, i) => (
               <div
                 key={i}
-                className="p-5 rounded-3xl border border-gray-200 bg-gray-50 space-y-4"
+                className="p-4 sm:p-5 rounded-2xl sm:rounded-3xl border border-gray-200 bg-gray-50 space-y-4"
               >
-                {/* ✅ HEADER: Supprimer وحدو */}
                 <div className="flex items-center justify-end">
                   <button
                     type="button"
@@ -969,14 +1004,22 @@ export default function StepManual({ parsedCV, cvFileUrl, onBack, onSubmit }) {
                 />
 
                 <div className="space-y-2">
-                  <p className="text-sm font-semibold text-gray-700">Description</p>
+                  <p className="text-sm font-semibold text-gray-700">
+                    Description
+                  </p>
                   <textarea
-                    className="w-full min-h-[120px] px-6 py-4 border border-gray-200 rounded-3xl bg-white
-                               focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none transition
-                               placeholder:text-gray-400"
+                    className="
+                      w-full min-h-[120px]
+                      px-5 py-3 sm:px-6 sm:py-4
+                      border border-gray-200 rounded-2xl sm:rounded-3xl bg-white
+                      focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none transition
+                      placeholder:text-gray-400
+                    "
                     placeholder="Décrivez le projet..."
                     value={pr.description || ""}
-                    onChange={(e) => updateProject(i, "description", e.target.value)}
+                    onChange={(e) =>
+                      updateProject(i, "description", e.target.value)
+                    }
                   />
                 </div>
 
@@ -1004,7 +1047,6 @@ export default function StepManual({ parsedCV, cvFileUrl, onBack, onSubmit }) {
       ),
     },
 
-    /* ================= CERTIFICATIONS ================= */
     {
       key: "certifications",
       title: "Certifications",
@@ -1012,8 +1054,11 @@ export default function StepManual({ parsedCV, cvFileUrl, onBack, onSubmit }) {
         <button
           type="button"
           onClick={addCertification}
-          className="px-6 py-3 rounded-full bg-white border border-gray-900
-                     font-semibold text-gray-900 hover:bg-gray-50 transition"
+          className="
+            w-full sm:w-auto
+            px-5 py-3 rounded-full bg-white border border-gray-900
+            font-semibold text-gray-900 hover:bg-gray-50 transition
+          "
         >
           + Ajouter
         </button>
@@ -1024,9 +1069,8 @@ export default function StepManual({ parsedCV, cvFileUrl, onBack, onSubmit }) {
             safeArr(form.certifications).map((c, i) => (
               <div
                 key={i}
-                className="p-5 rounded-3xl border border-gray-200 bg-gray-50 space-y-4"
+                className="p-4 sm:p-5 rounded-2xl sm:rounded-3xl border border-gray-200 bg-gray-50 space-y-4"
               >
-                {/* ✅ HEADER: Supprimer وحدو */}
                 <div className="flex items-center justify-end">
                   <button
                     type="button"
@@ -1064,7 +1108,6 @@ export default function StepManual({ parsedCV, cvFileUrl, onBack, onSubmit }) {
       ),
     },
 
-    /* ================= LANGUAGES ================= */
     {
       key: "languages",
       title: "Langues",
@@ -1072,8 +1115,11 @@ export default function StepManual({ parsedCV, cvFileUrl, onBack, onSubmit }) {
         <button
           type="button"
           onClick={addLanguage}
-          className="px-6 py-3 rounded-full bg-white border border-gray-900
-                     font-semibold text-gray-900 hover:bg-gray-50 transition"
+          className="
+            w-full sm:w-auto
+            px-5 py-3 rounded-full bg-white border border-gray-900
+            font-semibold text-gray-900 hover:bg-gray-50 transition
+          "
         >
           + Ajouter
         </button>
@@ -1084,9 +1130,8 @@ export default function StepManual({ parsedCV, cvFileUrl, onBack, onSubmit }) {
             safeArr(form.languages).map((l, i) => (
               <div
                 key={i}
-                className="p-5 rounded-3xl border border-gray-200 bg-gray-50 space-y-4"
+                className="p-4 sm:p-5 rounded-2xl sm:rounded-3xl border border-gray-200 bg-gray-50 space-y-4"
               >
-                {/* ✅ HEADER: Supprimer وحدو */}
                 <div className="flex items-center justify-end">
                   <button
                     type="button"
@@ -1118,7 +1163,6 @@ export default function StepManual({ parsedCV, cvFileUrl, onBack, onSubmit }) {
       ),
     },
 
-    /* ================= INTERESTS ================= */
     {
       key: "interests",
       title: "Centres d’intérêt",
@@ -1131,9 +1175,13 @@ export default function StepManual({ parsedCV, cvFileUrl, onBack, onSubmit }) {
 
           <textarea
             data-cy="interests"
-            className="w-full min-h-[160px] px-6 py-4 border border-gray-200 rounded-3xl bg-white
-                       focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none transition
-                       placeholder:text-gray-400"
+            className="
+              w-full min-h-[160px]
+              px-5 py-3 sm:px-6 sm:py-4
+              border border-gray-200 rounded-2xl sm:rounded-3xl bg-white
+              focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none transition
+              placeholder:text-gray-400
+            "
             placeholder={`Ex :\nSport\nLecture\nHackathons`}
             value={safeArr(form.interests).join("\n")}
             onChange={(e) =>
@@ -1158,19 +1206,19 @@ export default function StepManual({ parsedCV, cvFileUrl, onBack, onSubmit }) {
   const currentSection = sections[sectionIndex];
 
   return (
-    <div className="min-h-screen bg-green-50 py-14">
-      <div className="max-w-5xl mx-auto px-6">
-        <div className="text-center mb-8">
+    <div className="min-h-screen bg-green-50 py-8 sm:py-14">
+      <div className="max-w-5xl mx-auto px-4 sm:px-6">
+        <div className="text-center mb-6 sm:mb-8">
           <p className="text-xs tracking-[0.25em] text-gray-500 font-semibold">
             SECTION {current} / {total}
           </p>
 
-          <h2 className="text-4xl font-extrabold text-gray-900 mt-2">
+          <h2 className="text-2xl sm:text-4xl font-extrabold text-gray-900 mt-2">
             Étape 2 — Vérification & Complément
           </h2>
         </div>
 
-        <div className="mb-8">
+        <div className="mb-6 sm:mb-8">
           <div className="flex items-center justify-between text-sm text-gray-600 mb-2">
             <span>Progression de la candidature</span>
             <span className="font-semibold text-green-700">{percent}%</span>
@@ -1201,23 +1249,33 @@ export default function StepManual({ parsedCV, cvFileUrl, onBack, onSubmit }) {
         )}
 
         {!successMsg && (
-          <div className="mt-10 flex items-center justify-between">
+          <div className="mt-8 sm:mt-10 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 sm:gap-4">
             <button
               onClick={() => {
                 if (sectionIndex === 0) onBack?.();
                 else setSectionIndex((p) => Math.max(0, p - 1));
               }}
-              className="px-10 py-4 rounded-full border border-gray-900 bg-white
-                         font-semibold text-gray-900 hover:bg-gray-50 transition"
+              className="
+                w-full sm:w-auto
+                px-6 sm:px-10 py-3 sm:py-4
+                rounded-full border border-gray-900 bg-white
+                font-semibold text-gray-900 hover:bg-gray-50 transition
+              "
             >
               ← Retour
             </button>
 
             {!isLast ? (
               <button
-                onClick={() => setSectionIndex((p) => Math.min(sections.length - 1, p + 1))}
-                className="px-10 py-4 rounded-full bg-green-600 text-white font-semibold
-                           hover:bg-green-700 transition shadow-lg"
+                onClick={() =>
+                  setSectionIndex((p) => Math.min(sections.length - 1, p + 1))
+                }
+                className="
+                  w-full sm:w-auto
+                  px-6 sm:px-10 py-3 sm:py-4
+                  rounded-full bg-green-600 text-white font-semibold
+                  hover:bg-green-700 transition shadow-lg
+                "
               >
                 Continuer →
               </button>
@@ -1225,8 +1283,12 @@ export default function StepManual({ parsedCV, cvFileUrl, onBack, onSubmit }) {
               <button
                 onClick={handleSubmitFinal}
                 disabled={loadingSubmit}
-                className="px-10 py-4 rounded-full bg-green-600 text-white font-semibold
-                           hover:bg-green-700 transition shadow-lg disabled:opacity-50"
+                className="
+                  w-full sm:w-auto
+                  px-6 sm:px-10 py-3 sm:py-4
+                  rounded-full bg-green-600 text-white font-semibold
+                  hover:bg-green-700 transition shadow-lg disabled:opacity-50
+                "
               >
                 {loadingSubmit ? "Envoi..." : "Envoyer ma candidature →"}
               </button>
@@ -1250,11 +1312,17 @@ export default function StepManual({ parsedCV, cvFileUrl, onBack, onSubmit }) {
 function Card({ title, rightAction, children, className = "" }) {
   return (
     <div
-      className={`bg-white rounded-[28px] shadow-sm border border-green-100 p-8 ${className}`}
+      className={`
+        bg-white
+        rounded-2xl sm:rounded-[28px]
+        shadow-sm border border-green-100
+        p-4 sm:p-8
+        ${className}
+      `}
     >
-      <div className="flex items-center justify-between gap-4 mb-6">
-        <h3 className="font-bold text-2xl text-gray-900">{title}</h3>
-        {rightAction ? <div className="shrink-0">{rightAction}</div> : null}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4 mb-5 sm:mb-6">
+        <h3 className="font-bold text-xl sm:text-2xl text-gray-900">{title}</h3>
+        {rightAction ? <div className="w-full sm:w-auto">{rightAction}</div> : null}
       </div>
 
       {children}
@@ -1268,9 +1336,13 @@ function InputField({ label, value, onChange, placeholder, dataCy }) {
       <p className="text-sm font-semibold text-gray-700">{label}</p>
       <input
         data-cy={dataCy}
-        className="w-full px-6 py-4 border border-gray-200 rounded-full bg-white
-                   focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none transition
-                   placeholder:text-gray-400"
+        className="
+          w-full
+          px-5 py-3 sm:px-6 sm:py-4
+          border border-gray-200 rounded-full bg-white
+          focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none transition
+          placeholder:text-gray-400
+        "
         value={value}
         placeholder={placeholder}
         onChange={(e) => onChange(e.target.value)}
@@ -1285,15 +1357,17 @@ function IconInputField({ label, value, onChange, placeholder, icon }) {
       <p className="text-sm font-semibold text-gray-700">{label}</p>
 
       <div
-        className="flex items-center border border-gray-200 rounded-full bg-white overflow-hidden
-                   focus-within:ring-2 focus-within:ring-green-500 focus-within:border-green-500 transition"
+        className="
+          flex items-center border border-gray-200 rounded-full bg-white overflow-hidden
+          focus-within:ring-2 focus-within:ring-green-500 focus-within:border-green-500 transition
+        "
       >
-        <div className="w-14 h-14 flex items-center justify-center border-r border-gray-200 text-gray-500">
+        <div className="w-12 h-12 sm:w-14 sm:h-14 flex items-center justify-center border-r border-gray-200 text-gray-500">
           <span className="text-sm font-bold">{icon}</span>
         </div>
 
         <input
-          className="flex-1 px-5 py-4 outline-none bg-transparent placeholder:text-gray-400"
+          className="flex-1 px-4 sm:px-5 py-3 sm:py-4 outline-none bg-transparent placeholder:text-gray-400"
           value={value}
           placeholder={placeholder}
           onChange={(e) => onChange(e.target.value)}
