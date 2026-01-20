@@ -77,15 +77,21 @@ function normalizeUrl(raw) {
 }
 
 function getCvUrl(c) {
-  const raw =
+  let raw =
     safeStr(c?.cv?.fileUrl) ||
     safeStr(c?.cv?.url) ||
     safeStr(c?.cv?.filename) ||
     safeStr(c?.cv?.path) ||
     "";
 
+  // ✅ si le backend renvoie /uploads/xxx.pdf on corrige vers /uploads/cvs/xxx.pdf
+  if (raw.startsWith("/uploads/") && !raw.startsWith("/uploads/cvs/")) {
+    raw = raw.replace("/uploads/", "/uploads/cvs/");
+  }
+
   return normalizeUrl(raw);
 }
+
 
 /* ================= PAGE ================= */
 export default function CandidaturesTablePage() {
