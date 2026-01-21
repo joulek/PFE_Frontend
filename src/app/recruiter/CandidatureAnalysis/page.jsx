@@ -1,6 +1,10 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import Pagination from "../../components/Pagination";
+
+import { getCandidaturesAnalysis } from "../../services/candidature.api";
+
 import {
   Search,
   CheckCircle2,
@@ -11,9 +15,11 @@ import {
   FileText,
   ShieldAlert,
   TrendingUp,
+  Mail,
+  Check,
 } from "lucide-react";
 
-const API_BASE = "http://localhost:5000";
+const API_BASE = process.env.NEXT_PUBLIC_API_URL;
 
 /* ================= HELPERS ================= */
 function safeStr(v) {
@@ -143,8 +149,8 @@ function normalizeJobMatch(jobMatch) {
   const root = jobMatch || {};
   const status = root?.status;
 
-  // jobMatch.score هو object كبير
-  const payload = root?.score && typeof root.score === "object" ? root.score : root;
+  const payload =
+    root?.score && typeof root.score === "object" ? root.score : root;
 
   const detailedScores = payload?.detailedScores || {};
   const skillsAnalysis = payload?.skillsAnalysis || {};
@@ -163,14 +169,12 @@ function normalizeJobMatch(jobMatch) {
     seniorityFit: payload?.seniorityFit,
     confidenceLevel: payload?.confidenceLevel,
 
-    // scores
     techFitScore: detailedScores?.skillsFitScore,
     experienceFitScore: detailedScores?.experienceFitScore,
     projectFitScore: detailedScores?.projectFitScore,
     educationScore: detailedScores?.educationScore,
     communicationScore: detailedScores?.communicationScore,
 
-    // skills
     matchedSkills: Array.isArray(skillsAnalysis?.matchedSkills)
       ? skillsAnalysis.matchedSkills
       : [],
@@ -184,29 +188,17 @@ function normalizeJobMatch(jobMatch) {
       ? skillsAnalysis.transferableSkills
       : [],
 
-    // experience
     yearsOfRelevantExperience: experienceAnalysis?.yearsOfRelevantExperience,
-    industryMatch: experienceAnalysis?.industryMatch,
-    companySizeMatch: experienceAnalysis?.companySizeMatch,
 
-    // risks
     riskLevel: riskMitigation?.riskLevel,
     probabilityOfSuccess: riskMitigation?.probabilityOfSuccess,
-    riskFlags: Array.isArray(riskMitigation?.riskFlags) ? riskMitigation.riskFlags : [],
     mitigationStrategies: Array.isArray(riskMitigation?.mitigationStrategies)
       ? riskMitigation.mitigationStrategies
       : [],
 
-    // next steps
     immediateAction: nextSteps?.immediateAction,
     talentPoolStatus: nextSteps?.talentPoolStatus,
 
-    // impact + market
-    businessImpact: projectImpact?.businessImpact,
-    complexityLevel: projectImpact?.complexityLevel,
-    profileMarketDemand: competitiveAnalysis?.profileMarketDemand,
-
-    // comp
     marketPositioning: compensationFit?.marketPositioning,
 
     strengths: Array.isArray(payload?.strengths) ? payload.strengths : [],
@@ -242,9 +234,6 @@ function CandidatureCard({ c }) {
         : "—"
       : "—";
 
-  const statusCheck = cvUrl ? "CV Uploaded" : "No CV Data";
-
-  // eslint-disable-next-line react-hooks/preserve-manual-memoization
   const skillCloud = useMemo(() => {
     const arr = [
       ...(match?.matchedSkills || []),
@@ -278,12 +267,7 @@ function CandidatureCard({ c }) {
             </div>
 
             <div>
-              <div className="flex items-center gap-2">
-                <h3 className="text-xl font-bold text-gray-900">{name}</h3>
-                <span className="text-xs px-2 py-1 rounded-full bg-green-100 text-green-700 border border-green-200">
-                  TOP TALENT
-                </span>
-              </div>
+              <h2 className="text-xl font-extrabold text-gray-900">{name}</h2>
 
               <p className="text-sm text-gray-500 mt-1">
                 {jobTitle} • <span className="font-medium">{expYears}</span>
@@ -308,7 +292,6 @@ function CandidatureCard({ c }) {
                 )}
               </div>
 
-              {/* extra meta */}
               <div className="flex flex-wrap gap-2 mt-3">
                 {match?.confidenceLevel && (
                   <Tag variant="green">Confidence: {match.confidenceLevel}</Tag>
@@ -319,17 +302,25 @@ function CandidatureCard({ c }) {
                   </Tag>
                 )}
                 {match?.probabilityOfSuccess && (
-                  <Tag variant="yellow">Success: {match.probabilityOfSuccess}</Tag>
+                  <Tag variant="yellow">
+                    Success: {match.probabilityOfSuccess}
+                  </Tag>
                 )}
               </div>
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
-            <button className="px-4 py-2 rounded-xl bg-green-500 text-white text-sm font-semibold hover:bg-green-600">
-              Contact Candidate
+          {/* BUTTONS */}
+          <div className="flex items-center gap-3">
+            {/* Contact */}
+            <button className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-gray-100 text-gray-900 text-sm font-semibold hover:bg-gray-200 transition">
+              <Mail className="w-4 h-4" />
+              Contact
             </button>
-            <button className="px-4 py-2 rounded-xl bg-gray-100 text-gray-800 text-sm font-semibold hover:bg-gray-200">
+
+            {/* Shortlist */}
+            <button className="inline-flex items-center gap-2 px-6 py-2.5 rounded-full bg-green-500 text-white text-sm font-semibold hover:bg-green-600 transition shadow-sm">
+              <Check className="w-4 h-4" />
               Shortlist
             </button>
           </div>
@@ -337,13 +328,16 @@ function CandidatureCard({ c }) {
 
         {/* STATS ROW */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
+          {/* MATCH SCORE */}
           <div className="rounded-2xl border border-gray-100 p-4 bg-white">
             <p className="text-xs font-semibold text-gray-500">MATCH SCORE</p>
             <div className="flex items-end justify-between mt-2">
               <p className="text-3xl font-extrabold text-green-600">
                 {typeof score === "number" ? pct(score) : "—"}
               </p>
-              <span className={`text-xs px-2 py-1 rounded-full ${scorePill(score)}`}>
+              <span
+                className={`text-xs px-2 py-1 rounded-full ${scorePill(score)}`}
+              >
                 {match?.recommendation ? recLabel(match.recommendation) : "—"}
               </span>
             </div>
@@ -352,9 +346,12 @@ function CandidatureCard({ c }) {
             </p>
           </div>
 
+          {/* EXPERIENCE */}
           <div className="rounded-2xl border border-gray-100 p-4 bg-white">
             <p className="text-xs font-semibold text-gray-500">EXPERIENCE</p>
-            <p className="text-3xl font-extrabold text-gray-900 mt-2">{expYears}</p>
+            <p className="text-3xl font-extrabold text-gray-900 mt-2">
+              {expYears}
+            </p>
             <p className="text-xs text-gray-500 mt-2">
               Seniority:{" "}
               <span className="font-semibold capitalize">
@@ -363,19 +360,45 @@ function CandidatureCard({ c }) {
             </p>
           </div>
 
-          <div className="rounded-2xl border border-gray-100 p-4 bg-white">
-            <p className="text-xs font-semibold text-gray-500">STATUS CHECK</p>
-            <div className="flex items-center gap-2 mt-2">
-              {cvUrl ? (
-                <CheckCircle2 className="w-5 h-5 text-green-600" />
-              ) : (
-                <AlertTriangle className="w-5 h-5 text-red-500" />
-              )}
-              <p className="text-lg font-bold text-gray-900">{statusCheck}</p>
-            </div>
-            <p className="text-xs text-gray-500 mt-2">
-              Demand: {match?.profileMarketDemand || "—"}
-            </p>
+          {/* AI DETECTION */}
+          <div className="rounded-2xl border border-gray-100 p-4 bg-white min-h-[120px] flex flex-col justify-between">
+            <p className="text-xs font-semibold text-gray-500">AI DETECTION</p>
+
+            {ai?.status !== "DONE" ? (
+              <div className="flex items-center gap-2 mt-2">
+                <Brain className="w-5 h-5 text-gray-600" />
+                <p className="text-lg font-bold text-gray-900">
+                  {ai?.status || "—"}
+                </p>
+              </div>
+            ) : (
+              <div className="mt-2">
+                <div className="flex items-center gap-3">
+                  {ai?.isAIGenerated ? (
+                    <AlertTriangle className="w-6 h-6 text-red-500" />
+                  ) : (
+                    <CheckCircle2 className="w-6 h-6 text-green-600" />
+                  )}
+
+                  <p className="text-3xl font-extrabold text-gray-900">
+                    {ai.isAIGenerated ? "AI" : "Human"}
+                  </p>
+                </div>
+
+                <p className="text-sm text-gray-500 mt-2">
+                  Confidence:{" "}
+                  <span className="font-semibold text-gray-800">
+                    {`${Math.round((ai.confidence || 0) * 100)}%`}
+                  </span>
+                </p>
+
+                {ai?.explanation && (
+                  <p className="text-xs text-gray-500 mt-2 line-clamp-2">
+                    {ai.explanation}
+                  </p>
+                )}
+              </div>
+            )}
           </div>
         </div>
 
@@ -396,23 +419,31 @@ function CandidatureCard({ c }) {
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
                 <div className="rounded-xl border border-gray-100 p-4">
-                  <p className="text-sm font-semibold text-gray-900">Points forts</p>
+                  <p className="text-sm font-semibold text-gray-900">
+                    Points forts
+                  </p>
                   <ul className="mt-2 text-sm text-gray-600 list-disc pl-5 space-y-1">
                     {(match?.strengths || []).length === 0 ? (
                       <li>—</li>
                     ) : (
-                      match.strengths.slice(0, 4).map((x, i) => <li key={i}>{x}</li>)
+                      match.strengths.slice(0, 4).map((x, i) => (
+                        <li key={i}>{x}</li>
+                      ))
                     )}
                   </ul>
                 </div>
 
                 <div className="rounded-xl border border-gray-100 p-4">
-                  <p className="text-sm font-semibold text-gray-900">Points faibles</p>
+                  <p className="text-sm font-semibold text-gray-900">
+                    Points faibles
+                  </p>
                   <ul className="mt-2 text-sm text-gray-600 list-disc pl-5 space-y-1">
                     {(match?.weaknesses || []).length === 0 ? (
                       <li>—</li>
                     ) : (
-                      match.weaknesses.slice(0, 4).map((x, i) => <li key={i}>{x}</li>)
+                      match.weaknesses.slice(0, 4).map((x, i) => (
+                        <li key={i}>{x}</li>
+                      ))
                     )}
                   </ul>
                 </div>
@@ -423,106 +454,28 @@ function CandidatureCard({ c }) {
             <div className="rounded-2xl border border-gray-100 p-5 bg-white">
               <p className="text-gray-900 font-semibold flex items-center gap-2">
                 <TrendingUp className="w-5 h-5 text-gray-700" />
-                Detailed Scores
+                Scores Detaillés
               </p>
 
               <div className="space-y-4 mt-4">
-                <div>
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-gray-700 font-medium">Skills Fit</span>
-                    <span className="text-gray-500">
-                      {typeof match?.techFitScore === "number"
-                        ? `${Math.round(match.techFitScore * 100)}%`
-                        : "—"}
-                    </span>
-                  </div>
-                  <ProgressBar value01={match?.techFitScore} />
-                </div>
-
-                <div>
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-gray-700 font-medium">Experience Fit</span>
-                    <span className="text-gray-500">
-                      {typeof match?.experienceFitScore === "number"
-                        ? `${Math.round(match.experienceFitScore * 100)}%`
-                        : "—"}
-                    </span>
-                  </div>
-                  <ProgressBar value01={match?.experienceFitScore} />
-                </div>
-
-                <div>
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-gray-700 font-medium">Project Fit</span>
-                    <span className="text-gray-500">
-                      {typeof match?.projectFitScore === "number"
-                        ? `${Math.round(match.projectFitScore * 100)}%`
-                        : "—"}
-                    </span>
-                  </div>
-                  <ProgressBar value01={match?.projectFitScore} />
-                </div>
-
-                <div>
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-gray-700 font-medium">Education</span>
-                    <span className="text-gray-500">
-                      {typeof match?.educationScore === "number"
-                        ? `${Math.round(match.educationScore * 100)}%`
-                        : "—"}
-                    </span>
-                  </div>
-                  <ProgressBar value01={match?.educationScore} />
-                </div>
-
-                <div>
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-gray-700 font-medium">Communication</span>
-                    <span className="text-gray-500">
-                      {typeof match?.communicationScore === "number"
-                        ? `${Math.round(match.communicationScore * 100)}%`
-                        : "—"}
-                    </span>
-                  </div>
-                  <ProgressBar value01={match?.communicationScore} />
-                </div>
-              </div>
-            </div>
-
-            {/* AI Detection */}
-            <div className="rounded-2xl border border-gray-100 p-5 bg-white">
-              <div className="flex items-center gap-2 text-gray-900 font-semibold">
-                <Brain className="w-5 h-5 text-gray-700" />
-                AI Detection
-              </div>
-
-              {ai?.status !== "DONE" ? (
-                <p className="text-sm text-gray-500 mt-2">
-                  Status: <span className="font-medium">{ai?.status || "—"}</span>
-                </p>
-              ) : (
-                <div className="mt-3 flex items-start gap-3">
-                  {ai?.isAIGenerated ? (
-                    <AlertTriangle className="w-5 h-5 text-red-500 mt-0.5" />
-                  ) : (
-                    <CheckCircle2 className="w-5 h-5 text-green-600 mt-0.5" />
-                  )}
-
-                  <div>
-                    <p className="text-sm text-gray-800">
-                      <span className="font-semibold">AI Generated:</span>{" "}
-                      {ai.isAIGenerated ? "Oui" : "Non"}{" "}
+                {[
+                  ["Skills Fit", match?.techFitScore],
+                  ["Experience Fit", match?.experienceFitScore],
+                  ["Project Fit", match?.projectFitScore],
+                  ["Education", match?.educationScore],
+                  ["Communication", match?.communicationScore],
+                ].map(([label, val], idx) => (
+                  <div key={idx}>
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-gray-700 font-medium">{label}</span>
                       <span className="text-gray-500">
-                        (confidence {Math.round((ai.confidence || 0) * 100)}%)
+                        {typeof val === "number" ? `${Math.round(val * 100)}%` : "—"}
                       </span>
-                    </p>
-
-                    {ai?.explanation && (
-                      <p className="text-sm text-gray-600 mt-1">{ai.explanation}</p>
-                    )}
+                    </div>
+                    <ProgressBar value01={val} />
                   </div>
-                </div>
-              )}
+                ))}
+              </div>
             </div>
           </div>
 
@@ -545,7 +498,13 @@ function CandidatureCard({ c }) {
                       <Tag
                         key={i}
                         variant={
-                          isMatched ? "green" : isMust ? "red" : isNice ? "yellow" : "gray"
+                          isMatched
+                            ? "green"
+                            : isMust
+                            ? "red"
+                            : isNice
+                            ? "yellow"
+                            : "gray"
                         }
                       >
                         {s}
@@ -661,37 +620,6 @@ function CandidatureCard({ c }) {
                 </div>
               )}
             </div>
-
-            {/* CV box */}
-            <div className="rounded-2xl border border-gray-100 p-5 bg-white">
-              <p className="text-gray-900 font-semibold">DOCUMENT</p>
-
-              <div className="mt-4 border border-dashed border-gray-200 rounded-2xl p-6 text-center">
-                {cvUrl ? (
-                  <>
-                    <p className="text-sm text-gray-600">CV disponible</p>
-                    <a
-                      href={cvUrl}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="inline-flex items-center justify-center gap-2 mt-3 px-4 py-2 rounded-xl bg-green-500 text-white text-sm font-semibold hover:bg-green-600"
-                    >
-                      <FileText className="w-4 h-4" />
-                      Ouvrir CV
-                    </a>
-                  </>
-                ) : (
-                  <>
-                    <p className="text-sm text-gray-600">
-                      The applicant did not attach a CV file.
-                    </p>
-                    <button className="mt-3 px-4 py-2 rounded-xl bg-green-500 text-white text-sm font-semibold hover:bg-green-600">
-                      Request CV
-                    </button>
-                  </>
-                )}
-              </div>
-            </div>
           </div>
         </div>
 
@@ -711,24 +639,19 @@ export default function CandidatureAnalysisPage() {
   const [aiFilter, setAiFilter] = useState("ALL");
   const [minScore, setMinScore] = useState(0);
 
+  // ✅ Pagination
+  const [page, setPage] = useState(1);
+  const ITEMS_PER_PAGE = 5;
+
   useEffect(() => {
     async function load() {
       try {
         setLoading(true);
-        const token = localStorage.getItem("token");
 
-        const res = await fetch(`${API_BASE}/candidatures/analysis`, {
-          headers: { Authorization: token ? `Bearer ${token}` : "" },
-        });
+        // ✅ service call (no direct fetch)
+        const res = await getCandidaturesAnalysis();
+        const data = res?.data;
 
-        if (!res.ok) {
-          const errText = await res.text();
-          console.log("API ERROR:", res.status, errText);
-          setItems([]);
-          return;
-        }
-
-        const data = await res.json();
         setItems(Array.isArray(data) ? data : []);
       } catch (e) {
         console.log("Load error:", e?.message);
@@ -776,11 +699,24 @@ export default function CandidatureAnalysisPage() {
     });
   }, [items, search, jobFilter, aiFilter, minScore]);
 
+  // reset page when filters change
+  useEffect(() => {
+    setPage(1);
+  }, [search, jobFilter, aiFilter, minScore]);
+
+  // paginate
+  const totalPages = Math.max(1, Math.ceil(filtered.length / ITEMS_PER_PAGE));
+
+  const paginatedItems = useMemo(() => {
+    const start = (page - 1) * ITEMS_PER_PAGE;
+    return filtered.slice(start, start + ITEMS_PER_PAGE);
+  }, [filtered, page]);
+
   return (
     <div className="min-h-screen bg-green-50 px-6 py-10">
       <div className="max-w-6xl mx-auto">
         <div className="mb-6">
-          <h1 className="text-3xl font-bold text-gray-800">
+          <h1 className="text-4xl font-extrabold text-gray-900">
             Analyse Candidatures
           </h1>
           <p className="text-gray-600 mt-1">
@@ -788,6 +724,7 @@ export default function CandidatureAnalysisPage() {
           </p>
         </div>
 
+        {/* FILTERS */}
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 mb-6">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
             <div className="flex items-center gap-2 border border-gray-200 rounded-xl px-3 py-2">
@@ -841,6 +778,7 @@ export default function CandidatureAnalysisPage() {
           </div>
         </div>
 
+        {/* CONTENT */}
         {loading ? (
           <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
             <p className="text-gray-600">Chargement...</p>
@@ -850,11 +788,24 @@ export default function CandidatureAnalysisPage() {
             <p className="text-gray-600">Aucune candidature trouvée.</p>
           </div>
         ) : (
-          <div className="space-y-6">
-            {filtered.map((c) => (
-              <CandidatureCard key={c._id} c={c} />
-            ))}
-          </div>
+          <>
+            <div className="space-y-6">
+              {paginatedItems.map((c) => (
+                <CandidatureCard key={c._id} c={c} />
+              ))}
+            </div>
+
+            {/* PAGINATION */}
+            {totalPages > 1 && (
+              <div className="mt-8 flex justify-center">
+                <Pagination
+                  currentPage={page}
+                  totalPages={totalPages}
+                  onPageChange={(p) => setPage(p)}
+                />
+              </div>
+            )}
+          </>
         )}
       </div>
     </div>
