@@ -81,7 +81,7 @@ export default function JobsPage() {
       <div className="max-w-6xl mx-auto px-6 pt-10 pb-16">
         {/* ================= HEADER ================= */}
         <div className="flex justify-between items-center mb-10">
-          <h1 className="text-3xl font-bold text-gray-800">Offres d’emploi</h1>
+          <h1 className="text-4xl font-extrabold text-gray-900">Offres d’emploi</h1>
 
           <button
             onClick={() => {

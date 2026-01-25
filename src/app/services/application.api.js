@@ -63,3 +63,5 @@ export const updatePersonalInfo = async (candidatureId, personalInfoForm) => {
 
   return data;
 };
+
+

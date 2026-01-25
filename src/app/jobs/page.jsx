@@ -52,7 +52,7 @@ export default function PublicJobsPage() {
       <div className="max-w-6xl mx-auto px-6 py-12">
         {/* ================= HEADER ================= */}
         <div className="mb-12">
-          <h1 className="text-3xl font-bold text-gray-800 mb-2">
+          <h1 className="text-4xl font-extrabold text-gray-900">
             Offres d’emploi
           </h1>
 

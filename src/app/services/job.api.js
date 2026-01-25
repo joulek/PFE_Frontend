@@ -14,4 +14,5 @@ export const deleteJob = (id) =>
 
 export const getJobCount = () => api.get("/jobs/count");
 
-
+export const getJobsWithCandidatureCount = () =>
+  api.get("/jobs/with-candidatures-count");

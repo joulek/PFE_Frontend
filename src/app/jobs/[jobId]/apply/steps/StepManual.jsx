@@ -10,6 +10,16 @@ function safeStr(v) {
   return String(v);
 }
 
+export function cleanEmail(email) {
+  if (!email) return "";
+  return String(email)
+    .replaceAll("envel⌢pe", "")
+    .replaceAll("/envel⌢pe", "")
+    .replaceAll("envelope", "")
+    .replaceAll(" ", "")
+    .trim();
+}
+
 function safeArr(v) {
   if (!v) return [];
   if (Array.isArray(v)) return v;
@@ -29,6 +39,56 @@ function uniqCleanSkills(skills) {
     });
 }
 
+function clamp(n, min, max) {
+  const x = Number(n);
+  if (!Number.isFinite(x)) return min;
+  return Math.max(min, Math.min(max, x));
+}
+
+function getPercentFromLevel(level) {
+  const v = safeStr(level).toLowerCase();
+  if (!v) return 0;
+
+  // si "80%" => 80
+  const m = v.match(/(\d{1,3})\s*%/);
+  if (m) return clamp(m[1], 0, 100);
+
+  // si "0.8" => 80
+  const num = Number(v);
+  if (Number.isFinite(num)) {
+    if (num >= 0 && num <= 1) return Math.round(num * 100);
+    if (num >= 0 && num <= 100) return Math.round(num);
+  }
+
+  return 0;
+}
+
+function ProgressSlider({ valuePercent, onChangePercent }) {
+  const p = clamp(valuePercent, 0, 100);
+
+  return (
+    <div className="space-y-2">
+      <div className="flex items-center justify-between text-sm">
+        <span className="font-semibold text-gray-700">Niveau</span>
+        <span className="font-bold text-green-700">{p}%</span>
+      </div>
+
+      <input
+        type="range"
+        min={0}
+        max={100}
+        step={5}
+        value={p}
+        onChange={(e) => onChangePercent(Number(e.target.value))}
+        className="range-green w-full"
+        style={{
+          background: `linear-gradient(to right, #16a34a ${p}%, #dcfce7 ${p}%)`,
+        }}
+      />
+    </div>
+  );
+}
+
 /* =======================
    COMPONENT
 ======================= */
@@ -36,11 +96,8 @@ export default function StepManual({ parsedCV, cvFileUrl, onBack, onSubmit }) {
   const initial = useMemo(() => {
     const p = parsedCV || {};
 
-    const fixedEmail = safeStr(p.email)
-      .replace("envel⌢pe", "")
-      .replace("/envel⌢pe", "")
-      .replace("envelpe", "")
-      .trim();
+    // ✅ CLEAN EMAIL ICI
+    const fixedEmail = cleanEmail(safeStr(p.email));
 
     return {
       personal_info: {
@@ -278,7 +335,10 @@ export default function StepManual({ parsedCV, cvFileUrl, onBack, onSubmit }) {
   async function handleSubmitFinal() {
     const payload = {
       nom: safeStr(form.personal_info.full_name),
-      email: safeStr(form.personal_info.email),
+
+      // ✅ CLEAN EMAIL AUSSI AU SUBMIT (sécurité)
+      email: cleanEmail(safeStr(form.personal_info.email)),
+
       telephone: safeStr(form.personal_info.phone),
       adresse: safeStr(form.personal_info.address),
       titre_poste: safeStr(form.personal_info.job_title),
@@ -367,7 +427,7 @@ export default function StepManual({ parsedCV, cvFileUrl, onBack, onSubmit }) {
     {
       key: "personal",
       title: "Informations personnelles",
-      ightAction: null,
+      rightAction: null,
       render: () => (
         <div className="space-y-5 sm:space-y-6">
           <InputField
@@ -392,7 +452,10 @@ export default function StepManual({ parsedCV, cvFileUrl, onBack, onSubmit }) {
               onChange={(v) =>
                 setForm((prev) => ({
                   ...prev,
-                  personal_info: { ...prev.personal_info, email: v },
+                  personal_info: {
+                    ...prev.personal_info,
+                    email: cleanEmail(v), // ✅ clean pendant la saisie aussi
+                  },
                 }))
               }
             />
@@ -1148,11 +1211,12 @@ export default function StepManual({ parsedCV, cvFileUrl, onBack, onSubmit }) {
                   value={l.name}
                   onChange={(v) => updateLanguage(i, "name", v)}
                 />
-                <InputField
-                  label="Niveau"
-                  placeholder="Ex : Courant"
-                  value={l.level}
-                  onChange={(v) => updateLanguage(i, "level", v)}
+
+                <ProgressSlider
+                  valuePercent={getPercentFromLevel(l.level)}
+                  onChangePercent={(newPercent) =>
+                    updateLanguage(i, "level", `${newPercent}%`)
+                  }
                 />
               </div>
             ))

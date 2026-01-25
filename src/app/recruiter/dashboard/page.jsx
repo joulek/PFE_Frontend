@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 
-import { getJobCount } from "../../services/job.api";
+import { getJobCount, getJobsWithCandidatureCount } from "../../services/job.api";
 import {
   getCondidatureCount,
   getCandidaturesWithJob,
@@ -11,6 +11,17 @@ import {
 
 // ✅ Icons modernes
 import { Briefcase, Users } from "lucide-react";
+
+// ✅ Chart (Recharts)
+import {
+  ResponsiveContainer,
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  Tooltip,
+  CartesianGrid,
+} from "recharts";
 
 /* ================= UTILS ================= */
 function safeStr(v) {
@@ -43,51 +54,48 @@ function guessNameFromFilename(c) {
 function getCandidateObj(c) {
   return c?.extracted?.extracted || c?.extracted || c?.parsed || {};
 }
+
 function getFullName(c) {
   const extracted = c?.extracted || {};
   const parsed = c?.parsed || {};
 
-  // Vérifier d'abord extracted.manual et parsed.manual
   const full =
     safeStr(c?.fullName) ||
-    safeStr(extracted?.manual?.nom) ||        // ← AJOUTÉ
+    safeStr(extracted?.manual?.nom) ||
     safeStr(extracted?.nom) ||
-    safeStr(parsed?.manual?.nom) ||           // ← AJOUTÉ
+    safeStr(parsed?.manual?.nom) ||
     safeStr(parsed?.nom) ||
     safeStr(extracted?.full_name) ||
     safeStr(parsed?.full_name) ||
     safeStr(extracted?.personal_info?.full_name) ||
     safeStr(parsed?.personal_info?.full_name);
 
-  // Si on a trouvé un nom complet, le retourner
   if (full) return full;
 
-  // Sinon, essayer de construire à partir de prénom + nom
   const prenom =
     safeStr(c?.prenom) ||
-    safeStr(extracted?.manual?.prenom) ||     // ← AJOUTÉ
+    safeStr(extracted?.manual?.prenom) ||
     safeStr(extracted?.prenom) ||
-    safeStr(parsed?.manual?.prenom) ||        // ← AJOUTÉ
+    safeStr(parsed?.manual?.prenom) ||
     safeStr(parsed?.prenom) ||
     safeStr(extracted?.first_name) ||
     safeStr(parsed?.first_name);
 
   const nom =
     safeStr(c?.nom) ||
-    safeStr(extracted?.manual?.nom) ||        // ← AJOUTÉ
+    safeStr(extracted?.manual?.nom) ||
     safeStr(extracted?.nom) ||
-    safeStr(parsed?.manual?.nom) ||           // ← AJOUTÉ
+    safeStr(parsed?.manual?.nom) ||
     safeStr(parsed?.nom) ||
     safeStr(extracted?.last_name) ||
     safeStr(parsed?.last_name);
 
   const constructed = `${prenom} ${nom}`.trim();
-
   if (constructed) return constructed;
 
-  // En dernier recours, essayer de deviner depuis le nom du fichier
   return guessNameFromFilename(c) || "Candidat";
 }
+
 function getInitials(name) {
   const n = safeStr(name);
   if (!n) return "??";
@@ -121,13 +129,18 @@ export default function RecruiterDashboard() {
   const [lastCandidatures, setLastCandidatures] = useState([]);
   const [loadingLast, setLoadingLast] = useState(true);
 
+  // ✅ Chart states
+  const [jobsStats, setJobsStats] = useState([]);
+  const [loadingChart, setLoadingChart] = useState(true);
+
   useEffect(() => {
     async function loadDashboard() {
       try {
-        const [jobsRes, candRes, lastRes] = await Promise.all([
+        const [jobsRes, candRes, lastRes, chartRes] = await Promise.all([
           getJobCount(),
           getCondidatureCount(),
           getCandidaturesWithJob(),
+          getJobsWithCandidatureCount(),
         ]);
 
         setStats({
@@ -135,21 +148,36 @@ export default function RecruiterDashboard() {
           candidatures: candRes.data.count,
         });
 
+        // ===== Dernières candidatures =====
         const list = lastRes.data || [];
 
-        // sort by createdAt desc (latest first)
         const sorted = [...list].sort((a, b) => {
-          return (
-            new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-          );
+          return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
         });
 
         setLastCandidatures(sorted.slice(0, 3));
+
+        // ===== Histogramme =====
+        // ===== Histogramme (uniquement offres avec candidatures > 0) =====
+        const chartData = (chartRes.data || [])
+          .filter((j) => Number(j?.candidaturesCount || 0) > 0)   // ✅ فقط اللي عندهم candidatures
+          .map((j) => {
+            const title = safeStr(j?.titre) || "Offre";
+            return {
+              name: title.length > 14 ? title.slice(0, 14) + "..." : title,
+              candidatures: Number(j?.candidaturesCount || 0),
+            };
+          });
+
+        setJobsStats(chartData);
+
       } catch (err) {
         console.error("Erreur dashboard", err);
         setLastCandidatures([]);
+        setJobsStats([]);
       } finally {
         setLoadingLast(false);
+        setLoadingChart(false);
       }
     }
 
@@ -160,7 +188,7 @@ export default function RecruiterDashboard() {
     <div className="min-h-screen bg-green-50 px-6 py-14">
       <div className="max-w-7xl mx-auto">
         {/* ===== Header ===== */}
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">
+        <h1 className="text-4xl font-extrabold text-gray-900">
           Bienvenue dans votre espace RH 👋
         </h1>
 
@@ -177,12 +205,8 @@ export default function RecruiterDashboard() {
             </div>
 
             <div>
-              <p className="text-gray-500 text-sm font-medium">
-                Offres d’emploi
-              </p>
-              <p className="text-4xl font-bold text-gray-900">
-                {stats.jobOffers}
-              </p>
+              <p className="text-gray-500 text-sm font-medium">Offres d’emploi</p>
+              <p className="text-4xl font-bold text-gray-900">{stats.jobOffers}</p>
             </div>
           </div>
 
@@ -194,18 +218,44 @@ export default function RecruiterDashboard() {
 
             <div>
               <p className="text-gray-500 text-sm font-medium">Candidatures</p>
-              <p className="text-4xl font-bold text-gray-900">
-                {stats.candidatures}
-              </p>
+              <p className="text-4xl font-bold text-gray-900">{stats.candidatures}</p>
             </div>
           </div>
         </div>
 
+        {/* ===== Chart ===== */}
+        <div className="bg-white rounded-3xl shadow-md p-8 mb-14">
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-xl font-bold text-gray-900">
+              Candidatures par offre
+            </h2>
+            <p className="text-sm text-gray-500">
+              Répartition des candidatures selon les offres
+            </p>
+          </div>
+
+          {loadingChart ? (
+            <p className="text-gray-500 text-sm">Chargement du graphique...</p>
+          ) : jobsStats.length === 0 ? (
+            <p className="text-gray-500 text-sm">Aucune donnée disponible.</p>
+          ) : (
+            <div className="w-full h-[320px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={jobsStats}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="name" tick={{ fontSize: 12 }} />
+                  <YAxis allowDecimals={false} />
+                  <Tooltip />
+                  <Bar dataKey="candidatures" radius={[10, 10, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          )}
+        </div>
+
         {/* ===== Title + Voir tout OUTSIDE table container ===== */}
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-xl font-bold text-gray-900">
-            Dernières Candidatures
-          </h2>
+          <h2 className="text-xl font-bold text-gray-900">Dernières Candidatures</h2>
 
           <Link
             href="/recruiter/candidatures"
@@ -241,10 +291,7 @@ export default function RecruiterDashboard() {
                     const jobTitle = safeStr(c?.jobTitle) || "—";
 
                     return (
-                      <tr
-                        key={c._id}
-                        className="hover:bg-green-50/40 transition"
-                      >
+                      <tr key={c._id} className="hover:bg-green-50/40 transition">
                         {/* CANDIDAT */}
                         <td className="px-10 py-6">
                           <div className="flex items-center gap-4">
@@ -253,9 +300,7 @@ export default function RecruiterDashboard() {
                             </div>
 
                             <div>
-                              <p className="font-semibold text-gray-900">
-                                {fullName}
-                              </p>
+                              <p className="font-semibold text-gray-900">{fullName}</p>
                               <p className="text-xs text-gray-400">
                                 {formatTimeAgo(c?.createdAt)}
                               </p>
@@ -264,9 +309,7 @@ export default function RecruiterDashboard() {
                         </td>
 
                         {/* POSTE */}
-                        <td className="px-10 py-6 text-gray-600">
-                          {jobTitle}
-                        </td>
+                        <td className="px-10 py-6 text-gray-600">{jobTitle}</td>
                       </tr>
                     );
                   })}
