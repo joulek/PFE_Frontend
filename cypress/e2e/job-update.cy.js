@@ -1,7 +1,7 @@
 describe("Gestion des offres - Modification", () => {
     it("Modifier une offre existante", () => {
-      cy.loginRecruiter();
-      cy.visit("http://localhost:3000/recruiter/jobs");
+      cy.loginadmin();
+      cy.visit("http://localhost:3000/admin/jobs");
   
       cy.contains("Modifier").first().click();
   

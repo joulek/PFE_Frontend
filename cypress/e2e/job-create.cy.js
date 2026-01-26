@@ -1,7 +1,7 @@
 describe("Gestion des offres - Création", () => {
     it("Créer une nouvelle offre", () => {
-      cy.loginRecruiter();
-      cy.visit("http://localhost:3000/recruiter/jobs");
+      cy.loginadmin();
+      cy.visit("http://localhost:3000/admin/jobs");
   
       cy.contains("Nouvelle offre").click();
   

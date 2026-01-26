@@ -3,7 +3,10 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 
-import { getJobCount, getJobsWithCandidatureCount } from "../../services/job.api";
+import {
+  getJobCount,
+  getJobsWithCandidatureCount,
+} from "../../services/job.api";
 import {
   getCondidatureCount,
   getCandidaturesWithJob,
@@ -120,7 +123,7 @@ function formatTimeAgo(date) {
 }
 
 /* ================= PAGE ================= */
-export default function RecruiterDashboard() {
+export default function AdminDashboard() {
   const [stats, setStats] = useState({
     jobOffers: 0,
     candidatures: 0,
@@ -152,7 +155,9 @@ export default function RecruiterDashboard() {
         const list = lastRes.data || [];
 
         const sorted = [...list].sort((a, b) => {
-          return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+          return (
+            new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+          );
         });
 
         setLastCandidatures(sorted.slice(0, 3));
@@ -160,7 +165,7 @@ export default function RecruiterDashboard() {
         // ===== Histogramme =====
         // ===== Histogramme (uniquement offres avec candidatures > 0) =====
         const chartData = (chartRes.data || [])
-          .filter((j) => Number(j?.candidaturesCount || 0) > 0)   // ✅ فقط اللي عندهم candidatures
+          .filter((j) => Number(j?.candidaturesCount || 0) > 0)
           .map((j) => {
             const title = safeStr(j?.titre) || "Offre";
             return {
@@ -170,7 +175,6 @@ export default function RecruiterDashboard() {
           });
 
         setJobsStats(chartData);
-
       } catch (err) {
         console.error("Erreur dashboard", err);
         setLastCandidatures([]);
@@ -205,8 +209,12 @@ export default function RecruiterDashboard() {
             </div>
 
             <div>
-              <p className="text-gray-500 text-sm font-medium">Offres d’emploi</p>
-              <p className="text-4xl font-bold text-gray-900">{stats.jobOffers}</p>
+              <p className="text-gray-500 text-sm font-medium">
+                Offres d’emploi
+              </p>
+              <p className="text-4xl font-bold text-gray-900">
+                {stats.jobOffers}
+              </p>
             </div>
           </div>
 
@@ -218,7 +226,9 @@ export default function RecruiterDashboard() {
 
             <div>
               <p className="text-gray-500 text-sm font-medium">Candidatures</p>
-              <p className="text-4xl font-bold text-gray-900">{stats.candidatures}</p>
+              <p className="text-4xl font-bold text-gray-900">
+                {stats.candidatures}
+              </p>
             </div>
           </div>
         </div>
@@ -255,10 +265,12 @@ export default function RecruiterDashboard() {
 
         {/* ===== Title + Voir tout OUTSIDE table container ===== */}
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-xl font-bold text-gray-900">Dernières Candidatures</h2>
+          <h2 className="text-xl font-bold text-gray-900">
+            Dernières Candidatures
+          </h2>
 
           <Link
-            href="/recruiter/candidatures"
+            href="/admin/candidatures"
             className="text-sm font-semibold text-[#4E8F2F] hover:underline"
           >
             Voir tout
@@ -291,7 +303,10 @@ export default function RecruiterDashboard() {
                     const jobTitle = safeStr(c?.jobTitle) || "—";
 
                     return (
-                      <tr key={c._id} className="hover:bg-green-50/40 transition">
+                      <tr
+                        key={c._id}
+                        className="hover:bg-green-50/40 transition"
+                      >
                         {/* CANDIDAT */}
                         <td className="px-10 py-6">
                           <div className="flex items-center gap-4">
@@ -300,7 +315,9 @@ export default function RecruiterDashboard() {
                             </div>
 
                             <div>
-                              <p className="font-semibold text-gray-900">{fullName}</p>
+                              <p className="font-semibold text-gray-900">
+                                {fullName}
+                              </p>
                               <p className="text-xs text-gray-400">
                                 {formatTimeAgo(c?.createdAt)}
                               </p>

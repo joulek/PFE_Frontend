@@ -9,7 +9,7 @@ describe("Test Logout Recruteur", () => {
       cy.contains("Se connecter").click();
   
       // 3️⃣ Vérifier qu’on est bien sur le dashboard
-      cy.url().should("include", "/recruiter/dashboard");
+      cy.url().should("include", "/admin/dashboard");
   
       // 4️⃣ Cliquer sur Déconnexion
       cy.contains("Déconnexion").click();
@@ -18,7 +18,7 @@ describe("Test Logout Recruteur", () => {
       cy.url().should("include", "/login");
   
       // 6️⃣ Vérifier que le dashboard n’est plus accessible
-      cy.visit("http://localhost:3000/recruiter/dashboard");
+      cy.visit("http://localhost:3000/admin/dashboard");
       cy.url().should("include", "/login");
     });
   });

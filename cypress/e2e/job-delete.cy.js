@@ -1,7 +1,7 @@
 describe("Gestion des offres - Suppression", () => {
     it("Supprimer une offre", () => {
-      cy.loginRecruiter();
-      cy.visit("http://localhost:3000/recruiter/jobs");
+      cy.loginadmin();
+      cy.visit("http://localhost:3000/admin/jobs");
   
       // Cliquer sur Supprimer de la carte
       cy.contains("Supprimer").first().click();

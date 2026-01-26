@@ -1,8 +1,8 @@
 describe("Gestion des offres - Affichage", () => {
     it("Affiche la liste des offres", () => {
-      cy.loginRecruiter();
+      cy.loginadmin();
   
-      cy.visit("http://localhost:3000/recruiter/jobs");
+      cy.visit("http://localhost:3000/admin/jobs");
   
       cy.contains("Offres d’emploi").should("be.visible");
   

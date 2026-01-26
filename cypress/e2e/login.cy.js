@@ -7,7 +7,7 @@ describe("Test Login Recruteur", () => {
   
       cy.contains("Se connecter").click();
   
-      cy.url().should("include", "/recruiter/dashboard");
+      cy.url().should("include", "/admin/dashboard");
     });
   });
   

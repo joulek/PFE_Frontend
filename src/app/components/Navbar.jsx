@@ -26,7 +26,7 @@ export default function Navbar() {
   }, [pathname]);
 
   const isActive = (path) => pathname === path;
-  const isRecruiter = user?.role === "RECRUITER";
+  const isadmin = user?.role === "ADMIN";
 
   async function handleLogout() {
     try {
@@ -59,7 +59,7 @@ export default function Navbar() {
 
           {/* DESKTOP MENU */}
           <div className="hidden md:flex items-center bg-[#F4F7F5] rounded-full p-1 gap-1">
-            {!isRecruiter && (
+            {!isadmin && (
               <Link
                 href="/jobs"
                 className={`px-6 py-2 rounded-full font-semibold transition
@@ -73,7 +73,7 @@ export default function Navbar() {
               </Link>
             )}
 
-            {isRecruiter && (
+            {isadmin && (
               <>
                 <Link
                   href="/recruiter/dashboard"
@@ -91,7 +91,7 @@ export default function Navbar() {
                   href="/recruiter/jobs"
                   className={`px-6 py-2 rounded-full font-semibold transition
                     ${
-                      isActive("/recruiter/jobs")
+                      isActive("/admin/jobs")
                         ? "bg-[#6CB33F] text-white shadow"
                         : "text-gray-600 hover:text-[#4E8F2F]"
                     }`}
@@ -103,7 +103,7 @@ export default function Navbar() {
                   href="/recruiter/candidatures"
                   className={`px-6 py-2 rounded-full font-semibold transition
                     ${
-                      isActive("/recruiter/candidatures")
+                      isActive("/admin/candidatures")
                         ? "bg-[#6CB33F] text-white shadow"
                         : "text-gray-600 hover:text-[#4E8F2F]"
                     }`}
@@ -150,7 +150,7 @@ export default function Navbar() {
         {openMobile && (
           <div className="md:hidden pb-4">
             <div className="mt-3 rounded-2xl bg-white shadow border border-gray-200 p-3 space-y-2">
-              {!isRecruiter && (
+              {!isadmin && (
                 <Link
                   href="/jobs"
                   className={`block px-4 py-3 rounded-xl font-semibold transition
@@ -164,13 +164,13 @@ export default function Navbar() {
                 </Link>
               )}
 
-              {isRecruiter && (
+              {isadmin && (
                 <>
                   <Link
-                    href="/recruiter/dashboard"
+                    href="/admin/dashboard"
                     className={`block px-4 py-3 rounded-xl font-semibold transition
                       ${
-                        isActive("/recruiter/dashboard")
+                        isActive("/admin/dashboard")
                           ? "bg-[#6CB33F] text-white"
                           : "text-gray-700 hover:bg-gray-50"
                       }`}
@@ -179,10 +179,10 @@ export default function Navbar() {
                   </Link>
 
                   <Link
-                    href="/recruiter/jobs"
+                    href="/admin/jobs"
                     className={`block px-4 py-3 rounded-xl font-semibold transition
                       ${
-                        isActive("/recruiter/jobs")
+                        isActive("/admin/jobs")
                           ? "bg-[#6CB33F] text-white"
                           : "text-gray-700 hover:bg-gray-50"
                       }`}
@@ -191,10 +191,10 @@ export default function Navbar() {
                   </Link>
 
                   <Link
-                    href="/recruiter/candidatures"
+                    href="/admin/candidatures"
                     className={`block px-4 py-3 rounded-xl font-semibold transition
                       ${
-                        isActive("/recruiter/candidatures")
+                        isActive("/admin/candidatures")
                           ? "bg-[#6CB33F] text-white"
                           : "text-gray-700 hover:bg-gray-50"
                       }`}
