@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { Search, Plus } from "lucide-react";
+import { Search, Plus, AlertTriangle, X } from "lucide-react";
 
 import {
   getRoles,
@@ -16,7 +16,6 @@ function safeStr(v) {
   if (typeof v === "string") return v.trim();
   return String(v).trim();
 }
-
 
 function normalizeRoleName(name) {
   return safeStr(name).toUpperCase().replace(/\s+/g, "_");
@@ -39,53 +38,37 @@ export default function GestionRolesPage() {
   const [editId, setEditId] = useState(null);
   const [editName, setEditName] = useState("");
 
+  // delete modal
+  const [openDeleteModal, setOpenDeleteModal] = useState(false);
+  const [roleToDelete, setRoleToDelete] = useState(null);
+
   // alerts
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
 
-useEffect(() => {
-  const token = localStorage.getItem("token");
-  const user = JSON.parse(localStorage.getItem("user") || "null");
-
-  if (!token || !user) {
-    window.location.href = "/jobs";
-    return;
-  }
-
-  if (String(user.role).toUpperCase() !== "ADMIN") {
-    window.location.href = "/jobs"; // ولا /404
-    return;
-  }
-
-  fetchRoles();
-}, []);
-
+  useEffect(() => {
+    fetchRoles();
+  }, []);
 
   async function fetchRoles() {
     setError("");
     setSuccess("");
     setLoading(true);
-
     try {
       const res = await getRoles();
       const data = res?.data;
-
       const arr = Array.isArray(data) ? data : data?.roles || [];
       setRoles(arr);
     } catch (e) {
       setError(
         e?.response?.data?.message ||
-          safeStr(e?.message) ||
-          "Erreur lors du chargement des rôles"
+        safeStr(e?.message) ||
+        "Erreur lors du chargement des rôles"
       );
     } finally {
       setLoading(false);
     }
   }
-
-  useEffect(() => {
-    fetchRoles();
-  }, []);
 
   async function handleAddRole(e) {
     e.preventDefault();
@@ -108,8 +91,8 @@ useEffect(() => {
     } catch (e) {
       setError(
         e?.response?.data?.message ||
-          safeStr(e?.message) ||
-          "Erreur lors de l'ajout du rôle"
+        safeStr(e?.message) ||
+        "Erreur lors de l'ajout du rôle"
       );
     } finally {
       setLoading(false);
@@ -131,40 +114,35 @@ useEffect(() => {
     try {
       await updateRole(editId, finalName);
       setSuccess("Rôle modifié avec succès ✅");
-
       setOpenEdit(false);
       setEditId(null);
       setEditName("");
-
       await fetchRoles();
     } catch (e) {
       setError(
         e?.response?.data?.message ||
-          safeStr(e?.message) ||
-          "Erreur lors de la modification du rôle"
+        safeStr(e?.message) ||
+        "Erreur lors de la modification du rôle"
       );
     } finally {
       setLoading(false);
     }
   }
 
-  async function handleDeleteRole(roleId, roleLabel) {
-    const ok = confirm(`Supprimer le rôle "${roleLabel}" ?`);
-    if (!ok) return;
-
-    setError("");
-    setSuccess("");
+  async function confirmDeleteRole() {
+    if (!roleToDelete) return;
     setLoading(true);
-
     try {
-      await deleteRole(roleId);
+      await deleteRole(roleToDelete.id);
       setSuccess("Rôle supprimé ✅");
+      setOpenDeleteModal(false);
+      setRoleToDelete(null);
       await fetchRoles();
     } catch (e) {
       setError(
         e?.response?.data?.message ||
-          safeStr(e?.message) ||
-          "Erreur lors de la suppression du rôle"
+        safeStr(e?.message) ||
+        "Erreur lors de la suppression du rôle"
       );
     } finally {
       setLoading(false);
@@ -173,183 +151,183 @@ useEffect(() => {
 
   const filteredRoles = useMemo(() => {
     const query = safeStr(q).toLowerCase();
-    const base = Array.isArray(roles) ? roles : [];
-    if (!query) return base;
-
-    return base.filter((r) => safeStr(r?.name).toLowerCase().includes(query));
+    if (!query) return roles;
+    return roles.filter((r) =>
+      safeStr(r?.name).toLowerCase().includes(query)
+    );
   }, [roles, q]);
 
-  const sortedRoles = useMemo(() => {
-    return [...filteredRoles].sort((a, b) =>
-      safeStr(a?.name).localeCompare(safeStr(b?.name))
-    );
-  }, [filteredRoles]);
+  const sortedRoles = [...filteredRoles].sort((a, b) =>
+    safeStr(a?.name).localeCompare(safeStr(b?.name))
+  );
 
   return (
-    <div className="min-h-screen bg-green-50 px-6 py-10">
+    <div className="min-h-screen bg-[#F0FAF0] px-4 sm:px-6 py-10">
       <div className="mx-auto max-w-6xl">
-        {/* TITLE */}
-        <h1 className="text-[48px] font-extrabold text-slate-900">
-          Liste des Rôles
+        <h1 className="text-4xl font-extrabold text-gray-900 mb-6">
+          Liste des rôles
         </h1>
 
-        {/* ALERTS */}
         {error && (
-          <div className="mt-5 rounded-2xl border border-red-200 bg-red-50 px-5 py-4 text-sm font-semibold text-red-700">
+          <div className="mb-6 rounded-2xl border border-red-200 bg-red-50 px-5 py-4 text-sm font-semibold text-red-700">
             {error}
           </div>
         )}
 
         {success && (
-          <div className="mt-5 rounded-2xl border border-green-200 bg-green-50 px-5 py-4 text-sm font-semibold text-green-700">
+          <div className="mb-6 rounded-2xl border border-green-200 bg-green-50 px-5 py-4 text-sm font-semibold text-green-700">
             {success}
           </div>
         )}
 
         {/* SEARCH + ADD */}
-        <div className="mt-8 flex flex-col gap-4 lg:flex-row lg:items-center">
+        <div className="flex flex-col sm:flex-row gap-4 mb-8">
           <div className="relative flex-1">
-            <span className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-400">
-              <Search size={18} />
-            </span>
-
+            <Search className="absolute left-5 top-1/2 -translate-y-1/2 h-5 w-5 text-[#4E8F2F]" />
             <input
               value={q}
               onChange={(e) => setQ(e.target.value)}
-              placeholder="Rechercher un rôle..."
-              className="w-full rounded-full border border-slate-200 bg-white px-12 py-4 text-sm outline-none shadow-sm focus:border-slate-400"
+              placeholder="Rechercher un rôle…"
+              className="w-full rounded-full bg-white shadow-sm border border-gray-100
+              pl-12 pr-5 py-3 text-sm outline-none
+              focus:border-[#6CB33F] focus:ring-1 focus:ring-[#6CB33F]"
             />
           </div>
 
           <button
             onClick={() => setOpenAdd(true)}
-            className="flex items-center justify-center gap-2 rounded-full bg-[#6bb43f] px-8 py-4 text-sm font-extrabold text-white shadow-md hover:brightness-95"
+            className="rounded-full bg-[#6CB33F] hover:bg-[#4E8F2F]
+            px-6 py-3 text-sm font-semibold text-white"
           >
-            <Plus size={18} />
-            Ajouter
+            Ajouter un rôle
           </button>
         </div>
 
-        {/* TABLE CARD */}
-        <div className="mt-8 rounded-[28px] bg-white p-6 shadow-sm ring-1 ring-slate-200">
-          <div className="overflow-hidden rounded-2xl border border-slate-200">
-            <table className="w-full text-left text-sm">
-              <thead className="bg-green-100 text-green-800">
-                <tr>
-                  <th className="px-6 py-5 text-sm font-extrabold uppercase tracking-wide">
-                    Nom du rôle
-                  </th>
-                  <th className="px-6 py-5 text-sm font-extrabold uppercase tracking-wide text-center">
-                    Action
-                  </th>
-                </tr>
-              </thead>
+        {/* TABLE */}
+        <div className="bg-white rounded-3xl shadow-lg overflow-hidden">
+          <table className="w-full text-sm">
+            <thead className="bg-[#E9F5E3] text-[#4E8F2F]">
+              <tr>
+                <th className="px-8 py-5 text-xs font-extrabold uppercase">
+                  Nom du rôle
+                </th>
+                <th className="px-8 py-5 text-xs font-extrabold uppercase text-right">
+                  Actions
+                </th>
+              </tr>
+            </thead>
 
-              <tbody className="divide-y divide-slate-200">
-                {sortedRoles.length === 0 ? (
-                  <tr>
-                    <td className="px-6 py-6 text-slate-500" colSpan={2}>
-                      Aucun rôle trouvé.
+            <tbody className="divide-y divide-gray-100">
+              {sortedRoles.map((r) => {
+                const id = r?._id || r?.id;
+                const name = safeStr(r?.name);
+
+                return (
+                  <tr key={id} className="hover:bg-green-50/40 transition">
+                    <td className="px-8 py-5">
+                      <span className="inline-flex rounded-full
+                        bg-[#E9F5E3] text-[#4E8F2F]
+                        border border-[#d7ebcf]
+                        px-4 py-1 text-xs font-semibold">
+                        {name}
+                      </span>
+                    </td>
+
+                    <td className="px-8 py-5 text-right">
+                      <button
+                        onClick={() => {
+                          setOpenEdit(true);
+                          setEditId(id);
+                          setEditName(name);
+                        }}
+                        className="text-[#4E8F2F] font-semibold hover:underline mr-4"
+                      >
+                        Modifier
+                      </button>
+
+                      <button
+                        onClick={() => {
+                          setRoleToDelete({ id, name });
+                          setOpenDeleteModal(true);
+                        }}
+                        className="text-red-500 hover:underline"
+                      >
+                        Supprimer
+                      </button>
                     </td>
                   </tr>
-                ) : (
-                  sortedRoles.map((r) => {
-                    const id = r?._id || r?.id;
-                    const name = safeStr(r?.name);
-
-                    return (
-                      <tr key={id}>
-                        <td className="px-6 py-6">
-                          <span className="inline-flex items-center rounded-full bg-green-100 px-5 py-2 text-sm font-bold text-green-800 ring-1 ring-green-200">
-                            {name || "—"}
-                          </span>
-                        </td>
-
-                        <td className="px-6 py-6">
-                          <div className="flex items-center justify-center gap-3">
-                            <button
-                              onClick={() => {
-                                setOpenEdit(true);
-                                setEditId(id);
-                                setEditName(name);
-                              }}
-                              className="rounded-full bg-blue-50 px-6 py-2 text-sm font-extrabold text-blue-700 ring-1 ring-blue-200 hover:brightness-95"
-                            >
-                              Modifier
-                            </button>
-
-                            <button
-                              onClick={() => handleDeleteRole(id, name)}
-                              disabled={loading}
-                              className="rounded-full bg-red-50 px-6 py-2 text-sm font-extrabold text-red-700 ring-1 ring-red-200 hover:brightness-95 disabled:opacity-50"
-                            >
-                              Supprimer
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    );
-                  })
-                )}
-              </tbody>
-            </table>
-          </div>
-
-          
+                );
+              })}
+            </tbody>
+          </table>
         </div>
       </div>
 
-      {/* ================= MODAL ADD ================= */}
+      {/* ================= ADD MODAL ================= */}
       {openAdd && (
         <div className="fixed inset-0 z-50 flex items-center justify-center">
+          {/* OVERLAY */}
           <div
             className="absolute inset-0 bg-black/40"
             onClick={() => setOpenAdd(false)}
           />
 
+          {/* MODAL */}
           <div className="relative z-10 w-[95%] max-w-3xl rounded-[28px] bg-white shadow-xl">
-            <div className="flex items-start justify-between gap-4 px-8 pt-8">
+
+            {/* HEADER */}
+            <div className="flex items-start justify-between gap-4 px-8 pt-8 pb-6 border-b">
               <div>
                 <h2 className="text-3xl font-extrabold text-slate-900">
                   Ajouter un rôle
                 </h2>
-              
+                <p className="mt-1 text-sm text-slate-500">
+                  Créez un nouveau rôle pour gérer les autorisations.
+                </p>
               </div>
 
               <button
                 onClick={() => setOpenAdd(false)}
                 className="rounded-full px-3 py-2 text-slate-500 hover:bg-slate-100"
               >
-                ✕
+                <X size={18} />
               </button>
             </div>
 
-            <div className="mt-6 max-h-[65vh] overflow-auto px-8 pb-8">
+            {/* BODY */}
+            <div className="max-h-[65vh] overflow-auto px-8 py-6">
               <form onSubmit={handleAddRole} className="space-y-6">
+
                 <div>
                   <label className="mb-2 block text-sm font-extrabold uppercase tracking-wide text-slate-700">
                     Nom du rôle
                   </label>
-
                   <input
                     value={roleName}
                     onChange={(e) => setRoleName(e.target.value)}
-                    placeholder="ex: IT_MANAGER"
-                    className="w-full rounded-full border border-slate-200 bg-white px-5 py-3 text-sm outline-none focus:border-slate-400"
+                    placeholder="ex : HR_MANAGER"
+                    className="w-full rounded-full border border-slate-200 bg-white px-5 py-3 text-sm outline-none
+              focus:border-[#6CB33F] focus:ring-1 focus:ring-[#6CB33F]"
                   />
-
-               
                 </div>
 
-                <div className="mt-6 flex items-center gap-4">
+                {/* FOOTER */}
+                <div className="flex justify-end gap-4 pt-4">
+                  <button
+                    type="button"
+                    onClick={() => setOpenAdd(false)}
+                    className="rounded-full border border-slate-300 px-6 py-3 text-sm font-semibold text-slate-700 hover:bg-slate-100"
+                  >
+                    Annuler
+                  </button>
+
                   <button
                     type="submit"
                     disabled={loading}
-                    className="flex-1 rounded-full bg-[#6bb43f] px-6 py-3 text-sm font-extrabold text-white shadow-sm hover:brightness-95 disabled:opacity-50"
+                    className="rounded-full bg-[#6CB33F] px-6 py-3 text-sm font-extrabold text-white hover:bg-[#4E8F2F] disabled:opacity-50"
                   >
-                    {loading ? "Ajout..." : "Enregistrer"}
+                    Enregistrer
                   </button>
-
                 </div>
               </form>
             </div>
@@ -357,67 +335,96 @@ useEffect(() => {
         </div>
       )}
 
-      {/* ================= MODAL EDIT ================= */}
+      {/* ================= EDIT MODAL ================= */}
       {openEdit && (
         <div className="fixed inset-0 z-50 flex items-center justify-center">
+          {/* OVERLAY */}
           <div
             className="absolute inset-0 bg-black/40"
-            onClick={() => {
-              setOpenEdit(false);
-              setEditId(null);
-              setEditName("");
-            }}
+            onClick={() => setOpenEdit(false)}
           />
 
+          {/* MODAL */}
           <div className="relative z-10 w-[95%] max-w-3xl rounded-[28px] bg-white shadow-xl">
-            <div className="flex items-start justify-between gap-4 px-8 pt-8">
+
+            {/* HEADER */}
+            <div className="flex items-start justify-between gap-4 px-8 pt-8 pb-6 border-b">
               <div>
                 <h2 className="text-3xl font-extrabold text-slate-900">
-                  Modifier un rôle
+                  Modifier le rôle
                 </h2>
                 <p className="mt-1 text-sm text-slate-500">
-                  Modifier le nom du rôle sélectionné.
+                  Mettez à jour le nom du rôle sélectionné.
                 </p>
               </div>
 
               <button
-                onClick={() => {
-                  setOpenEdit(false);
-                  setEditId(null);
-                  setEditName("");
-                }}
+                onClick={() => setOpenEdit(false)}
                 className="rounded-full px-3 py-2 text-slate-500 hover:bg-slate-100"
               >
-                ✕
+                <X size={18} />
               </button>
             </div>
 
-            <div className="mt-6 max-h-[65vh] overflow-auto px-8 pb-8">
+            {/* BODY */}
+            <div className="max-h-[65vh] overflow-auto px-8 py-6">
               <form onSubmit={handleEditRole} className="space-y-6">
+
                 <div>
                   <label className="mb-2 block text-sm font-extrabold uppercase tracking-wide text-slate-700">
-                    Nouveau nom
+                    Nouveau nom du rôle
                   </label>
-
                   <input
                     value={editName}
                     onChange={(e) => setEditName(e.target.value)}
-                    placeholder="ex: HR_MANAGER"
-                    className="w-full rounded-full border border-slate-200 bg-white px-5 py-3 text-sm outline-none focus:border-slate-400"
+                    placeholder="ex : IT_MANAGER"
+                    className="w-full rounded-full border border-slate-200 bg-white px-5 py-3 text-sm outline-none
+              focus:border-[#6CB33F] focus:ring-1 focus:ring-[#6CB33F]"
                   />
                 </div>
 
-                <div className="mt-6 flex items-center gap-4">
+                {/* FOOTER */}
+                <div className="flex justify-end gap-4 pt-4">
+                  <button
+                    type="button"
+                    onClick={() => setOpenEdit(false)}
+                    className="rounded-full border border-slate-300 px-6 py-3 text-sm font-semibold text-slate-700 hover:bg-slate-100"
+                  >
+                    Annuler
+                  </button>
+
                   <button
                     type="submit"
                     disabled={loading}
-                    className="flex-1 rounded-full bg-[#6bb43f] px-6 py-3 text-sm font-extrabold text-white shadow-sm hover:brightness-95 disabled:opacity-50"
+                    className="rounded-full bg-[#6CB33F] px-6 py-3 text-sm font-extrabold text-white hover:bg-[#4E8F2F] disabled:opacity-50"
                   >
-                    {loading ? "Modification..." : "Enregistrer"}
+                    Enregistrer
                   </button>
-
                 </div>
               </form>
+            </div>
+          </div>
+        </div>
+      )}
+
+
+      {/* ================= DELETE MODAL ================= */}
+      {openDeleteModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/50" onClick={() => setOpenDeleteModal(false)} />
+          <div className="relative z-10 w-full max-w-xl rounded-3xl bg-white p-8 shadow-2xl">
+            <h2 className="text-xl font-extrabold text-red-600">Supprimer le rôle</h2>
+            <p className="mt-4">
+              Voulez-vous supprimer <b>{roleToDelete?.name}</b> ?
+            </p>
+            <div className="mt-6 flex justify-end gap-4">
+              <button onClick={() => setOpenDeleteModal(false)}>Annuler</button>
+              <button
+                onClick={confirmDeleteRole}
+                className="bg-red-500 text-white px-6 py-2 rounded-full"
+              >
+                Supprimer
+              </button>
             </div>
           </div>
         </div>

@@ -12,6 +12,8 @@ export default function Navbar() {
 
   const [user, setUser] = useState(null);
   const [openMobile, setOpenMobile] = useState(false);
+  const [openCandidatures, setOpenCandidatures] = useState(false);
+  const [openAdmin, setOpenAdmin] = useState(false);
 
   useEffect(() => {
     const storedUser = localStorage.getItem("user");
@@ -20,19 +22,30 @@ export default function Navbar() {
     }
   }, []);
 
-  // fermer le menu mobile quand on change de page
+  // ✅ يغلق dropdowns أوتوماتيك كي تتبدل الصفحة
   useEffect(() => {
     setOpenMobile(false);
+    setOpenCandidatures(false);
+    setOpenAdmin(false);
   }, [pathname]);
 
   const isActive = (path) => pathname === path;
-  const isadmin = user?.role === "ADMIN";
+  const isAdmin = user?.role === "ADMIN";
+
+  // ✅ parent active logic
+  const isInCandidatures =
+    pathname.startsWith("/recruiter/candidatures") ||
+    pathname.startsWith("/recruiter/CandidatureAnalysis");
+
+  const isInAdmin =
+    pathname.startsWith("/recruiter/roles") ||
+    pathname.startsWith("/recruiter/users");
 
   async function handleLogout() {
     try {
       await logout();
-    } catch (err) {
-      console.warn("Logout backend error (ignored)");
+    } catch {
+      console.warn("Logout backend error ignored");
     } finally {
       localStorage.removeItem("token");
       localStorage.removeItem("user");
@@ -57,65 +70,136 @@ export default function Navbar() {
             />
           </Link>
 
-          {/* DESKTOP MENU */}
+          {/* ================= DESKTOP MENU ================= */}
           <div className="hidden md:flex items-center bg-[#F4F7F5] rounded-full p-1 gap-1">
-            {!isadmin && (
+            {!isAdmin && (
               <Link
                 href="/jobs"
                 className={`px-6 py-2 rounded-full font-semibold transition
-                  ${
-                    isActive("/jobs")
-                      ? "bg-[#6CB33F] text-white shadow"
-                      : "text-gray-600 hover:text-[#4E8F2F]"
+                  ${isActive("/jobs")
+                    ? "bg-[#6CB33F] text-white shadow"
+                    : "text-gray-600 hover:text-[#4E8F2F]"
                   }`}
               >
                 Offres d’emploi
               </Link>
             )}
 
-            {isadmin && (
+            {isAdmin && (
               <>
                 <Link
                   href="/recruiter/dashboard"
                   className={`px-6 py-2 rounded-full font-semibold transition
-                    ${
-                      isActive("/recruiter/dashboard")
-                        ? "bg-[#6CB33F] text-white shadow"
-                        : "text-gray-600 hover:text-[#4E8F2F]"
+                    ${isActive("/recruiter/dashboard")
+                      ? "bg-[#6CB33F] text-white shadow"
+                      : "text-gray-600 hover:text-[#4E8F2F]"
                     }`}
                 >
-                  Dashboard
+                  Tableau de bord
                 </Link>
 
                 <Link
                   href="/recruiter/jobs"
                   className={`px-6 py-2 rounded-full font-semibold transition
-                    ${
-                      isActive("/admin/jobs")
-                        ? "bg-[#6CB33F] text-white shadow"
-                        : "text-gray-600 hover:text-[#4E8F2F]"
+                    ${isActive("/recruiter/jobs")
+                      ? "bg-[#6CB33F] text-white shadow"
+                      : "text-gray-600 hover:text-[#4E8F2F]"
                     }`}
                 >
                   Gestion offres
                 </Link>
 
-                <Link
-                  href="/recruiter/candidatures"
-                  className={`px-6 py-2 rounded-full font-semibold transition
-                    ${
-                      isActive("/admin/candidatures")
+                {/* ===== CANDIDATURES ===== */}
+                <div className="relative">
+                  <button
+                    onClick={() => {
+                      setOpenCandidatures((v) => !v);
+                      setOpenAdmin(false);
+                    }}
+                    className={`px-6 py-2 rounded-full font-semibold transition
+                      ${isInCandidatures
                         ? "bg-[#6CB33F] text-white shadow"
                         : "text-gray-600 hover:text-[#4E8F2F]"
-                    }`}
-                >
-                  Candidatures
-                </Link>
+                      }`}
+                  >
+                    Candidatures ▾
+                  </button>
+
+                  {openCandidatures && (
+                    <div className="absolute left-0 mt-2 w-64 rounded-xl bg-white shadow-lg border border-gray-200">
+                      <Link
+                        href="/recruiter/candidatures"
+                        className={`block px-4 py-3 rounded-t-xl
+                          ${isActive("/recruiter/candidatures")
+                            ? "bg-[#6CB33F]/10 text-[#4E8F2F] font-semibold"
+                            : "hover:bg-gray-50"
+                          }`}
+                      >
+                        Liste des candidatures
+                      </Link>
+
+                      <Link
+                        href="/recruiter/CandidatureAnalysis"
+                        className={`block px-4 py-3 rounded-b-xl
+                          ${isActive("/recruiter/CandidatureAnalysis")
+                            ? "bg-[#6CB33F]/10 text-[#4E8F2F] font-semibold"
+                            : "hover:bg-gray-50"
+                          }`}
+                      >
+                        Analyse des candidatures
+                      </Link>
+                    </div>
+                  )}
+                </div>
+
+                {/* ===== ADMIN ===== */}
+                <div className="relative">
+                  <button
+                    onClick={() => {
+                      setOpenAdmin((v) => !v);
+                      setOpenCandidatures(false);
+                    }}
+                    className={`px-6 py-2 rounded-full font-semibold transition
+                      ${isInAdmin
+                        ? "bg-[#6CB33F] text-white shadow"
+                        : "text-gray-600 hover:text-[#4E8F2F]"
+                      }`}
+                  >
+                    Administration ▾
+                  </button>
+
+                  {openAdmin && (
+                    <div className="absolute left-0 mt-2 w-64 rounded-xl bg-white shadow-lg border border-gray-200">
+                      <Link
+                        href="/recruiter/roles"
+                        className={`block px-4 py-3 rounded-t-xl
+                          ${isActive("/recruiter/roles")
+                            ? "bg-[#6CB33F]/10 text-[#4E8F2F] font-semibold"
+                            : "hover:bg-gray-50"
+                          }`}
+                      >
+                        Gestion des rôles
+                      </Link>
+
+                      <Link
+                        href="/recruiter/users"
+                        className={`block px-4 py-3 rounded-b-xl
+                          ${isActive("/recruiter/users")
+                            ? "bg-[#6CB33F]/10 text-[#4E8F2F] font-semibold"
+                            : "hover:bg-gray-50"
+                          }`}
+                      >
+                        Gestion des utilisateurs
+                      </Link>
+                    </div>
+                  )}
+                </div>
               </>
             )}
           </div>
 
           {/* RIGHT DESKTOP */}
-          <div className="hidden md:block">
+          <div className="hidden md:flex items-center gap-4">
             {!user ? (
               <Link
                 href="/login"
@@ -133,74 +217,74 @@ export default function Navbar() {
             )}
           </div>
 
-          {/* HAMBURGER (MOBILE) */}
+          {/* MOBILE MENU BUTTON */}
           <button
-            className="md:hidden inline-flex items-center justify-center p-2 rounded-lg hover:bg-gray-100 transition"
             onClick={() => setOpenMobile((v) => !v)}
-            aria-label="Ouvrir le menu"
+            className="md:hidden p-2 rounded-lg hover:bg-gray-100"
           >
-            {/* Icon hamburger / close */}
-            <span className="text-2xl">
-              {openMobile ? "✕" : "☰"}
-            </span>
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+            </svg>
           </button>
         </div>
 
-        {/* MOBILE MENU */}
+        {/* ================= MOBILE MENU ================= */}
         {openMobile && (
           <div className="md:hidden pb-4">
             <div className="mt-3 rounded-2xl bg-white shadow border border-gray-200 p-3 space-y-2">
-              {!isadmin && (
+              {!isAdmin && (
                 <Link
                   href="/jobs"
                   className={`block px-4 py-3 rounded-xl font-semibold transition
-                    ${
-                      isActive("/jobs")
-                        ? "bg-[#6CB33F] text-white"
-                        : "text-gray-700 hover:bg-gray-50"
+                    ${isActive("/jobs")
+                      ? "bg-[#6CB33F] text-white"
+                      : "text-gray-700 hover:bg-gray-50"
                     }`}
                 >
                   Offres d’emploi
                 </Link>
               )}
 
-              {isadmin && (
+              {isAdmin && (
                 <>
                   <Link
-                    href="/admin/dashboard"
-                    className={`block px-4 py-3 rounded-xl font-semibold transition
-                      ${
-                        isActive("/admin/dashboard")
-                          ? "bg-[#6CB33F] text-white"
-                          : "text-gray-700 hover:bg-gray-50"
-                      }`}
+                    href="/recruiter/dashboard"
+                    className="block px-4 py-3 rounded-xl hover:bg-gray-50"
                   >
-                    Dashboard
+                    Tableau de bord
                   </Link>
 
                   <Link
-                    href="/admin/jobs"
-                    className={`block px-4 py-3 rounded-xl font-semibold transition
-                      ${
-                        isActive("/admin/jobs")
-                          ? "bg-[#6CB33F] text-white"
-                          : "text-gray-700 hover:bg-gray-50"
-                      }`}
+                    href="/recruiter/jobs"
+                    className="block px-4 py-3 rounded-xl hover:bg-gray-50"
                   >
                     Gestion offres
                   </Link>
 
-                  <Link
-                    href="/admin/candidatures"
-                    className={`block px-4 py-3 rounded-xl font-semibold transition
-                      ${
-                        isActive("/admin/candidatures")
-                          ? "bg-[#6CB33F] text-white"
-                          : "text-gray-700 hover:bg-gray-50"
-                      }`}
-                  >
-                    Candidatures
-                  </Link>
+                    <Link
+                      href="/recruiter/candidatures"
+                      className="block px-4 py-3 rounded-xl hover:bg-gray-50"
+                    >
+                      Liste des candidatures
+                    </Link>
+                    <Link
+                      href="/recruiter/CandidatureAnalysis"
+                      className="block px-4 py-3 rounded-xl hover:bg-gray-50"
+                    >
+                      Analyse des candidatures
+                    </Link>
+                    <Link
+                      href="/recruiter/roles"
+                      className="block px-4 py-3 rounded-xl hover:bg-gray-50"
+                    >
+                      Gestion des rôles
+                    </Link>
+                    <Link
+                      href="/recruiter/users"
+                      className="block px-4 py-3 rounded-xl hover:bg-gray-50"
+                    >
+                      Gestion des utilisateurs
+                    </Link>
                 </>
               )}
 
@@ -208,14 +292,14 @@ export default function Navbar() {
                 {!user ? (
                   <Link
                     href="/login"
-                    className="block px-4 py-3 rounded-xl font-semibold text-[#6CB33F] hover:bg-gray-50 transition"
+                    className="block px-4 py-3 rounded-xl font-semibold text-[#6CB33F] hover:bg-gray-50"
                   >
                     Espace recruteur
                   </Link>
                 ) : (
                   <button
                     onClick={handleLogout}
-                    className="w-full text-left px-4 py-3 rounded-xl font-semibold text-gray-600 hover:text-red-600 hover:bg-gray-50 transition"
+                    className="w-full text-left px-4 py-3 rounded-xl font-semibold text-gray-600 hover:text-red-600 hover:bg-gray-50"
                   >
                     Déconnexion
                   </button>

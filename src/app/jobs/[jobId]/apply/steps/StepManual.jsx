@@ -63,31 +63,6 @@ function getPercentFromLevel(level) {
   return 0;
 }
 
-function ProgressSlider({ valuePercent, onChangePercent }) {
-  const p = clamp(valuePercent, 0, 100);
-
-  return (
-    <div className="space-y-2">
-      <div className="flex items-center justify-between text-sm">
-        <span className="font-semibold text-gray-700">Niveau</span>
-        <span className="font-bold text-green-700">{p}%</span>
-      </div>
-
-      <input
-        type="range"
-        min={0}
-        max={100}
-        step={5}
-        value={p}
-        onChange={(e) => onChangePercent(Number(e.target.value))}
-        className="range-green w-full"
-        style={{
-          background: `linear-gradient(to right, #16a34a ${p}%, #dcfce7 ${p}%)`,
-        }}
-      />
-    </div>
-  );
-}
 
 /* =======================
    COMPONENT
@@ -1171,61 +1146,64 @@ export default function StepManual({ parsedCV, cvFileUrl, onBack, onSubmit }) {
       ),
     },
 
-    {
-      key: "languages",
-      title: "Langues",
-      rightAction: (
-        <button
-          type="button"
-          onClick={addLanguage}
-          className="
-            w-full sm:w-auto
-            px-5 py-3 rounded-full bg-white border border-gray-900
-            font-semibold text-gray-900 hover:bg-gray-50 transition
-          "
-        >
-          + Ajouter
-        </button>
-      ),
-      render: () => (
-        <div className="space-y-6">
-          {safeArr(form.languages).length > 0 ? (
-            safeArr(form.languages).map((l, i) => (
-              <div
-                key={i}
-                className="p-4 sm:p-5 rounded-2xl sm:rounded-3xl border border-gray-200 bg-gray-50 space-y-4"
+   {
+  key: "languages",
+  title: "Langues",
+  rightAction: (
+    <button
+      type="button"
+      onClick={addLanguage}
+      className="
+        w-full sm:w-auto
+        px-5 py-3 rounded-full bg-white border border-gray-900
+        font-semibold text-gray-900 hover:bg-gray-50 transition
+      "
+    >
+      + Ajouter
+    </button>
+  ),
+  render: () => (
+    <div className="space-y-6">
+      {safeArr(form.languages).length > 0 ? (
+        safeArr(form.languages).map((l, i) => (
+          <div
+            key={i}
+            className="p-4 sm:p-5 rounded-2xl sm:rounded-3xl border border-gray-200 bg-gray-50 space-y-4"
+          >
+            <div className="flex items-center justify-end">
+              <button
+                type="button"
+                onClick={() => removeLanguage(i)}
+                className="text-red-600 font-semibold hover:underline"
               >
-                <div className="flex items-center justify-end">
-                  <button
-                    type="button"
-                    onClick={() => removeLanguage(i)}
-                    className="text-red-600 font-semibold hover:underline"
-                  >
-                    Supprimer
-                  </button>
-                </div>
+                Supprimer
+              </button>
+            </div>
 
-                <InputField
-                  label="Langue"
-                  placeholder="Ex : Français"
-                  value={l.name}
-                  onChange={(v) => updateLanguage(i, "name", v)}
-                />
+            {/* NOM DE LA LANGUE */}
+            <InputField
+              label="Langue"
+              placeholder="Ex : Français"
+              value={l.name}
+              onChange={(v) => updateLanguage(i, "name", v)}
+            />
 
-                <ProgressSlider
-                  valuePercent={getPercentFromLevel(l.level)}
-                  onChangePercent={(newPercent) =>
-                    updateLanguage(i, "level", `${newPercent}%`)
-                  }
-                />
-              </div>
-            ))
-          ) : (
-            <p className="text-sm text-gray-500">Aucune langue ajoutée.</p>
-          )}
-        </div>
-      ),
-    },
+            {/* NIVEAU TEXTE LIBRE */}
+            <InputField
+              label="Niveau"
+              placeholder="Ex : Débutant / Intermédiaire / Avancé / Native"
+              value={l.level}
+              onChange={(v) => updateLanguage(i, "level", v)}
+            />
+          </div>
+        ))
+      ) : (
+        <p className="text-sm text-gray-500">Aucune langue ajoutée.</p>
+      )}
+    </div>
+  ),
+}
+,
 
     {
       key: "interests",

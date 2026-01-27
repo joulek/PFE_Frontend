@@ -24,173 +24,193 @@ function safeStr(v) {
   return String(v);
 }
 
-/* ================= FULL NAME (EXTRACTED FIRST) ================= */
+/* ================= FULL NAME ================= */
 function getFullName(c) {
   const extracted = c?.extracted || {};
   const parsed = c?.parsed || {};
 
-  const full =
+  return (
     safeStr(c?.fullName) ||
     safeStr(extracted?.manual?.nom) ||
-    safeStr(extracted?.nom) ||
     safeStr(parsed?.manual?.nom) ||
-    safeStr(parsed?.nom) ||
-    safeStr(extracted?.full_name) ||
-    safeStr(parsed?.full_name) ||
-    safeStr(extracted?.personal_info?.full_name) ||
-    safeStr(parsed?.personal_info?.full_name) ||
-    `${safeStr(c?.prenom)} ${safeStr(c?.nom)}`.trim();
-
-  return full || "Candidat";
+    `${safeStr(c?.prenom)} ${safeStr(c?.nom)}`.trim() ||
+    "Candidat"
+  );
 }
-/* ================= EMAIL (EXTRACTED FIRST) ================= */
+
+/* ================= EMAIL ================= */
 function getEmail(c) {
   const extracted = c?.extracted || {};
   const parsed = c?.parsed || {};
 
   const e =
     safeStr(c?.email) ||
-    safeStr(extracted?.manual?.email) ||  // ← AJOUTEZ CETTE LIGNE
-    safeStr(extracted?.email) ||
-    safeStr(parsed?.manual?.email) ||     // ← AJOUTEZ CETTE LIGNE
-    safeStr(parsed?.email) ||
-    safeStr(extracted?.personal_info?.email) ||
-    safeStr(parsed?.personal_info?.email);
+    safeStr(extracted?.manual?.email) ||
+    safeStr(parsed?.manual?.email) ||
+    safeStr(extracted?.email);
 
-  if (!e) return "—";
-
-  return e.replace(/[^\w.@+-]/g, "") || "—";
+  return e || "";
 }
 
-/* ================= CV URL HELPERS ================= */
+/* ================= CONTACT ================= */
+function getPhone(c) {
+  return (
+    safeStr(c?.personalInfoForm?.telephone) ||
+    safeStr(c?.extracted?.parsed?.telephone) ||
+    ""
+  );
+}
+
+/* ================= LINKEDIN ================= */
+function getLinkedIn(c) {
+  const url =
+    safeStr(c?.personalInfoForm?.linkedin) ||
+    safeStr(c?.extracted?.parsed?.reseaux_sociaux?.linkedin);
+
+  if (!url) return "";
+  if (url.startsWith("http")) return url;
+  return `https://${url}`;
+}
+
+/* ================= CV ================= */
 function normalizeUrl(raw) {
-  const u = safeStr(raw);
-  if (!u) return "";
-
-  if (u.startsWith("http://") || u.startsWith("https://")) return u;
-
-  if (/^[a-zA-Z]:\\/.test(u)) return "";
-
-  if (u.startsWith("/")) return `${API_BASE}${u}`;
-
-  return `${API_BASE}/${u}`;
+  if (!raw) return "";
+  if (raw.startsWith("http")) return raw;
+  return `${API_BASE}/${raw}`;
 }
 
 function getCvUrl(c) {
-  let raw =
+  const raw =
     safeStr(c?.cv?.fileUrl) ||
     safeStr(c?.cv?.url) ||
-    safeStr(c?.cv?.filename) ||
-    safeStr(c?.cv?.path) ||
-    "";
-
-  // ✅ si le backend renvoie /uploads/xxx.pdf on corrige vers /uploads/cvs/xxx.pdf
-  if (raw.startsWith("/uploads/") && !raw.startsWith("/uploads/cvs/")) {
-    raw = raw.replace("/uploads/", "/uploads/cvs/");
-  }
+    safeStr(c?.cv?.filename);
 
   return normalizeUrl(raw);
 }
-
 
 /* ================= PAGE ================= */
 export default function CandidaturesTablePage() {
   const [candidatures, setCandidatures] = useState([]);
   const [loading, setLoading] = useState(true);
   const [q, setQ] = useState("");
-
   const [page, setPage] = useState(1);
   const pageSize = 10;
 
-  async function loadCandidatures() {
-    try {
+  useEffect(() => {
+    async function load() {
       setLoading(true);
       const res = await getCandidaturesWithJob();
       setCandidatures(res.data || []);
-    } catch (err) {
-      console.error("loadCandidatures error:", err);
-      setCandidatures([]);
-    } finally {
       setLoading(false);
     }
-  }
-
-  useEffect(() => {
-    loadCandidatures();
+    load();
   }, []);
 
   const filtered = useMemo(() => {
-    const query = q.trim().toLowerCase();
+    const query = q.toLowerCase().trim();
     if (!query) return candidatures;
 
-    return candidatures.filter((c) => {
-      const fullName = getFullName(c).toLowerCase();
-      const email = getEmail(c).toLowerCase();
-      const jobTitle = safeStr(c?.jobTitle).toLowerCase();
-
-      return (
-        fullName.includes(query) ||
-        email.includes(query) ||
-        jobTitle.includes(query)
-      );
-    });
+    return candidatures.filter(
+      (c) =>
+        getFullName(c).toLowerCase().includes(query) ||
+        getEmail(c).toLowerCase().includes(query) ||
+        safeStr(c?.jobTitle).toLowerCase().includes(query)
+    );
   }, [candidatures, q]);
 
-  useEffect(() => {
-    setPage(1);
-  }, [q]);
-
   const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
-
-  const paginated = useMemo(() => {
-    const start = (page - 1) * pageSize;
-    return filtered.slice(start, start + pageSize);
-  }, [filtered, page]);
-
-  useEffect(() => {
-    if (page > totalPages) setPage(totalPages);
-  }, [page, totalPages]);
+  const paginated = filtered.slice((page - 1) * pageSize, page * pageSize);
 
   return (
     <div className="min-h-screen bg-[#F0FAF0]">
-      <div className="max-w-6xl mx-auto px-6 pt-10 pb-16">
-        {/* HEADER */}
-        <div className="flex items-start justify-between gap-4 mb-6">
-          <h1 className="text-4xl font-extrabold text-gray-900">
-            Liste des Candidatures
-          </h1>
-        </div>
+<div className="max-w-full mx-auto px-6 pt-10 pb-16">        {/* HEADER */}
+        <h1 className="text-4xl font-extrabold text-gray-900 mb-6">
+          Liste des Candidatures
+        </h1>
 
-        {/* SEARCH BAR */}
+        {/* SEARCH */}
         <div className="bg-white rounded-full shadow-sm border border-gray-100 px-5 py-3 flex items-center gap-3 mb-8">
           <Search className="w-5 h-5 text-[#4E8F2F]" />
           <input
             value={q}
             onChange={(e) => setQ(e.target.value)}
             placeholder="Rechercher (nom, email, job)…"
-            className="w-full outline-none text-sm text-gray-700 placeholder:text-gray-400"
+            className="w-full outline-none text-sm text-gray-700"
           />
         </div>
 
-        {/* TABLE */}
-        <div className="bg-white rounded-3xl shadow-lg overflow-hidden">
-          <div className="overflow-x-auto">
+        {/* ================= MOBILE : CARDS ================= */}
+        <div className="md:hidden space-y-4">
+          {paginated.map((c) => (
+            <div
+              key={c._id}
+              className="bg-white rounded-3xl shadow-lg border border-[#E9F5E3] p-5"
+            >
+              <div className="font-extrabold text-gray-900">
+                {getFullName(c)}
+              </div>
+
+              <div className="text-sm text-gray-700">{getEmail(c)}</div>
+              <div className="text-sm text-gray-700">{getPhone(c)}</div>
+
+              {getLinkedIn(c) && (
+                <a
+                  href={getLinkedIn(c)}
+                  target="_blank"
+                  className="text-sm underline text-[#4E8F2F]"
+                >
+                  Profil LinkedIn
+                </a>
+              )}
+
+              <div className="mt-4 flex items-center justify-between">
+                <span className="inline-flex items-center px-4 py-2 rounded-full bg-[#E9F5E3] text-[#4E8F2F] text-xs font-semibold border border-[#d7ebcf]">
+                  {safeStr(c?.jobTitle)}
+                </span>
+
+                {getCvUrl(c) && (
+                  <a
+                    href={getCvUrl(c)}
+                    target="_blank"
+                    className="inline-flex items-center gap-2 bg-[#E9F5E3] border border-[#d7ebcf] text-[#4E8F2F] font-bold px-4 py-2 rounded-full"
+                  >
+                    Voir CV
+                  </a>
+                )}
+              </div>
+
+              <div className="mt-2 text-sm text-gray-600">
+                {formatDate(c?.createdAt)}
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* ================= DESKTOP : TABLE (INCHANGÉE) ================= */}
+        <div className="hidden md:block bg-white rounded-4xl shadow-lg overflow-visible">
+          <div className="overflow-x-hidden">
             <table className="w-full text-sm">
               <thead className="bg-[#E9F5E3] text-[#4E8F2F]">
                 <tr>
-                  <th className="text-left px-8 py-5 font-extrabold tracking-wide uppercase text-xs">
+                  <th className="text-left px-8 py-5 font-extrabold uppercase text-xs">
                     Candidat
                   </th>
-                  <th className="text-left px-8 py-5 font-extrabold tracking-wide uppercase text-xs">
+                  <th className="text-left px-8 py-5 font-extrabold uppercase text-xs">
                     Email
                   </th>
-                  <th className="text-left px-8 py-5 font-extrabold tracking-wide uppercase text-xs">
+                  <th className="text-left px-8 py-5 font-extrabold uppercase text-xs">
+                    Contact
+                  </th>
+                  <th className="text-left px-8 py-5 font-extrabold uppercase text-xs">
+                    Linkedin
+                  </th>
+                  <th className="text-left px-8 py-5 font-extrabold uppercase text-xs">
                     Poste
                   </th>
-                  <th className="text-left px-8 py-5 font-extrabold tracking-wide uppercase text-xs">
+                  <th className="text-left px-8 py-5 font-extrabold uppercase text-xs">
                     Date de candidature
                   </th>
-                  <th className="text-right px-8 py-5 font-extrabold tracking-wide uppercase text-xs">
+                  <th className="text-right px-8 py-5 font-extrabold uppercase text-xs">
                     CV
                   </th>
                 </tr>
@@ -199,95 +219,69 @@ export default function CandidaturesTablePage() {
               <tbody className="divide-y divide-gray-100">
                 {loading ? (
                   <tr>
-                    <td className="px-8 py-8 text-gray-500" colSpan={5}>
+                    <td colSpan={7} className="px-8 py-8 text-gray-500">
                       Chargement...
                     </td>
                   </tr>
-                ) : filtered.length === 0 ? (
-                  <tr>
-                    <td className="px-8 py-8 text-gray-500" colSpan={5}>
-                      Aucune candidature trouvée.
-                    </td>
-                  </tr>
                 ) : (
-                  paginated.map((c) => {
-                    const cvUrl = getCvUrl(c);
-                    const email = getEmail(c);
-
-                    return (
-                      <tr
-                        key={c._id}
-                        className="hover:bg-green-50/40 transition"
-                      >
-                        {/* CANDIDAT */}
-                        <td className="px-8 py-5">
-                          <div className="font-extrabold text-gray-900">
-                            {getFullName(c)}
-                          </div>
-                        </td>
-
-                        {/* EMAIL */}
-                        <td className="px-8 py-5 text-gray-700">
-                          {email !== "—" ? (
-                            <a
-                              href={`mailto:${email}`}
-                              className="underline decoration-[#6CB33F]/50 hover:decoration-[#6CB33F]"
-                            >
-                              {email}
-                            </a>
-                          ) : (
-                            <span className="text-gray-400">—</span>
-                          )}
-                        </td>
-
-                        {/* POSTE */}
-                        <td className="px-8 py-5">
-                          <span className="inline-flex items-center px-4 py-2 rounded-full bg-[#E9F5E3] text-[#4E8F2F] text-xs font-semibold border border-[#d7ebcf]">
-                            {safeStr(c?.jobTitle) || "Poste inconnu"}
-                          </span>
-                        </td>
-
-                        {/* DATE */}
-                        <td className="px-8 py-5 text-gray-600">
-                          {formatDate(c?.createdAt)}
-                        </td>
-
-                        {/* CV */}
-                        <td className="px-8 py-5 text-right">
-                          {cvUrl ? (
-                            <a
-                              href={cvUrl}
-                              target="_blank"
-                              rel="noreferrer"
-                              className="inline-flex items-center gap-2 bg-[#E9F5E3] border border-[#d7ebcf] text-[#4E8F2F] font-bold px-4 py-2 rounded-full hover:bg-[#dff0d6] transition"
-                            >
-                              Voir CV
-                            </a>
-                          ) : (
-                            <span className="text-gray-400">—</span>
-                          )}
-                        </td>
-                      </tr>
-                    );
-                  })
+                  paginated.map((c) => (
+                    <tr key={c._id} className="hover:bg-green-50/40 transition">
+                      <td className="px-8 py-5 font-extrabold text-gray-900">
+                        {getFullName(c)}
+                      </td>
+                      <td className="px-8 py-5">{getEmail(c)}</td>
+                      <td className="px-8 py-5">{getPhone(c)}</td>
+                      <td className="px-8 py-5">
+                        {getLinkedIn(c) ? (
+                          <a
+                            href={getLinkedIn(c)}
+                            target="_blank"
+                            className="underline"
+                          >
+                            Profil
+                          </a>
+                        ) : (
+                          ""
+                        )}
+                      </td>
+                      <td className="px-8 py-5">
+                        <span className="inline-flex items-center px-4 py-2 rounded-full bg-[#E9F5E3] text-[#4E8F2F] text-xs font-semibold border border-[#d7ebcf]">
+                          {safeStr(c?.jobTitle)}
+                        </span>
+                      </td>
+                      <td className="px-8 py-5 text-gray-600">
+                        {formatDate(c?.createdAt)}
+                      </td>
+                      <td className="px-8 py-5 text-right">
+                        {getCvUrl(c) && (
+                          <a
+                            href={getCvUrl(c)}
+                            target="_blank"
+                            className="inline-flex items-center gap-2 bg-[#E9F5E3] border border-[#d7ebcf] text-[#4E8F2F] font-bold px-4 py-2 rounded-full"
+                          >
+                            Voir CV
+                          </a>
+                        )}
+                      </td>
+                    </tr>
+                  ))
                 )}
               </tbody>
             </table>
           </div>
-
-          {/* FOOTER */}
-          {!loading && filtered.length > 0 && (
-            <div className="px-8 py-5 flex items-center justify-between text-sm text-gray-500">
-              <p>Total: {filtered.length} candidature(s)</p>
-
-              <Pagination
-                currentPage={page}
-                totalPages={totalPages}
-                onPageChange={setPage}
-              />
-            </div>
-          )}
         </div>
+
+        {!loading && filtered.length > 0 && (
+          <div className="px-8 py-5 flex items-center justify-between text-sm text-gray-500">
+            <p>Total: {filtered.length} candidature(s)</p>
+
+            <Pagination
+              currentPage={page}
+              totalPages={totalPages}
+              onPageChange={setPage}
+            />
+          </div>
+        )}
       </div>
     </div>
   );
