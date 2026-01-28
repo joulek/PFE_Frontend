@@ -234,6 +234,7 @@ function CandidatureCard({ c }) {
         : "—"
       : "—";
 
+  // eslint-disable-next-line react-hooks/preserve-manual-memoization
   const skillCloud = useMemo(() => {
     const arr = [
       ...(match?.matchedSkills || []),

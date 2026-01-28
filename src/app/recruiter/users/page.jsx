@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import {
   getUsers,
   createUser,
-  updateUserRole,
+  updateUser,
   deleteUser,
 } from "../../services/user.api";
 
@@ -41,6 +41,8 @@ export default function GestionUtilisateursPage() {
   const [loading, setLoading] = useState(false);
   const [users, setUsers] = useState([]);
   const [roles, setRoles] = useState([]);
+  const [nom, setNom] = useState("");
+  const [prenom, setPrenom] = useState("");
 
   const [openDeleteModal, setOpenDeleteModal] = useState(false);
   const [userToDelete, setUserToDelete] = useState(null);
@@ -61,6 +63,8 @@ export default function GestionUtilisateursPage() {
   function resetForm(nextRoles = roles) {
     setEmail("");
     setPassword("");
+    setNom("");
+    setPrenom("");
     setRole(nextRoles?.[0]?.name || "");
     setSelectedUser(null);
   }
@@ -80,7 +84,7 @@ export default function GestionUtilisateursPage() {
         .filter((r) => r.name);
 
       const unique = Array.from(
-        new Map(cleaned.map((r) => [r.name, r])).values()
+        new Map(cleaned.map((r) => [r.name, r])).values(),
       );
 
       setRoles(unique);
@@ -124,7 +128,11 @@ export default function GestionUtilisateursPage() {
   function openEditModal(user) {
     setModalMode("edit");
     setSelectedUser(user);
+
     setEmail(safeStr(user?.email));
+    setNom(safeStr(user?.nom)); // ✅ AJOUT
+    setPrenom(safeStr(user?.prenom)); // ✅ AJOUT
+
     setPassword("");
     setRole(normalizeRole(user?.role));
     setOpenModal(true);
@@ -137,14 +145,23 @@ export default function GestionUtilisateursPage() {
     try {
       if (modalMode === "add") {
         await createUser({
+          nom: safeStr(nom),
+          prenom: safeStr(prenom),
           email: safeStr(email).toLowerCase(),
           password: safeStr(password),
           role: normalizeRole(role),
         });
       } else {
-        const userId = selectedUser?._id || selectedUser?.id;
-        await updateUserRole(userId, normalizeRole(role));
-      }
+    const userId = selectedUser?._id || selectedUser?.id;
+
+    const payload = {};
+    if (safeStr(nom)) payload.nom = safeStr(nom);
+    if (safeStr(prenom)) payload.prenom = safeStr(prenom);
+    if (safeStr(email)) payload.email = safeStr(email).toLowerCase();
+    if (safeStr(role)) payload.role = normalizeRole(role);
+
+    await updateUser(userId, payload);
+  }
 
       setOpenModal(false);
       await fetchUsers();
@@ -170,18 +187,20 @@ export default function GestionUtilisateursPage() {
     return base.filter(
       (u) =>
         safeStr(u?.email).toLowerCase().includes(query) ||
-        safeStr(u?.role).toLowerCase().includes(query)
+        safeStr(u?.prenom).toLowerCase().includes(query) ||
+        safeStr(u?.nom).toLowerCase().includes(query) ||
+        safeStr(u?.role).toLowerCase().includes(query),
     );
   }, [users, q]);
 
   const sortedUsers = [...filteredUsers].sort((a, b) =>
-    safeStr(a?.email).localeCompare(safeStr(b?.email))
+    safeStr(a?.email).localeCompare(safeStr(b?.email)),
   );
 
   const totalPages = Math.ceil(sortedUsers.length / itemsPerPage) || 1;
   const paginatedUsers = sortedUsers.slice(
     (currentPage - 1) * itemsPerPage,
-    currentPage * itemsPerPage
+    currentPage * itemsPerPage,
   );
 
   // إذا user كتب search، رجّع للصفحة 1
@@ -229,6 +248,12 @@ export default function GestionUtilisateursPage() {
             <thead className="bg-[#E9F5E3] text-[#4E8F2F]">
               <tr>
                 <th className="px-8 py-5 text-xs font-extrabold uppercase">
+                  Prénom
+                </th>
+                <th className="px-8 py-5 text-xs font-extrabold uppercase">
+                  Nom
+                </th>
+                <th className="px-8 py-5 text-xs font-extrabold uppercase">
                   Utilisateur
                 </th>
                 <th className="px-8 py-5 text-xs font-extrabold uppercase">
@@ -246,15 +271,29 @@ export default function GestionUtilisateursPage() {
             <tbody className="divide-y divide-gray-100">
               {paginatedUsers.map((u) => (
                 <tr key={u._id} className="hover:bg-green-50/40 transition">
+                  {/* PRENOM */}
+                  <td className="px-8 py-5 font-semibold text-gray-900">
+                    {safeStr(u?.prenom) || "-"}
+                  </td>
+
+                  {/* NOM */}
+                  <td className="px-8 py-5 font-semibold text-gray-900">
+                    {safeStr(u?.nom) || "-"}
+                  </td>
+
+                  {/* UTILISATEUR (avatar + email) */}
                   <td className="px-8 py-5">
                     <div className="flex items-center gap-3">
-                      <div className="h-10 w-10 rounded-full bg-[#E9F5E3] text-[#4E8F2F] flex items-center justify-center font-extrabold">
-                        {safeStr(u?.email).substring(0, 2).toUpperCase()}
+                      <div
+                        className="h-10 w-10 rounded-full bg-[#E9F5E3] text-[#4E8F2F]
+                          flex items-center justify-center font-extrabold"
+                      >
+                        {(
+                          safeStr(u?.prenom)[0] || safeStr(u?.email)[0]
+                        ).toUpperCase()}
                       </div>
+
                       <div>
-                        <div className="font-bold">
-                          {safeStr(u?.email).split("@")[0]}
-                        </div>
                         <div className="text-xs text-gray-500">
                           {safeStr(u?.email)}
                         </div>
@@ -262,20 +301,23 @@ export default function GestionUtilisateursPage() {
                     </div>
                   </td>
 
+                  {/* ROLE */}
                   <td className="px-8 py-5">
                     <span
                       className={`px-3 py-1 rounded-full text-xs font-semibold ${getRoleBadgeStyle(
-                        u?.role
+                        u?.role,
                       )}`}
                     >
                       {normalizeRole(u?.role)}
                     </span>
                   </td>
 
+                  {/* DATE */}
                   <td className="px-8 py-5 text-gray-600">
                     {new Date(u.createdAt).toLocaleDateString("fr-FR")}
                   </td>
 
+                  {/* ACTIONS */}
                   <td className="px-8 py-5 text-right">
                     <button
                       onClick={() => openEditModal(u)}
@@ -390,13 +432,47 @@ export default function GestionUtilisateursPage() {
                 : "Modifier un utilisateur"}
             </h2>
             <p className="mt-2 text-center text-sm text-gray-500">
-              Remplissez les informations ci-dessous pour créer un nouvel accès à
-              la plateforme.
+              Remplissez les informations ci-dessous pour créer un nouvel accès
+              à la plateforme.
             </p>
 
             {/* FORM */}
             <form onSubmit={handleSubmit} className="mt-6 space-y-4">
               {/* EMAIL */}
+              {/* PRENOM */}
+              <div>
+                <label className="mb-1 block text-sm font-semibold text-gray-900">
+                  Prénom
+                </label>
+                <input
+                  type="text"
+                  value={prenom}
+                  onChange={(e) => setPrenom(e.target.value)}
+                  placeholder="Ex : Ahmed"
+                  required
+                  className="w-full rounded-xl border border-[#D7EBCF] bg-white py-3 px-4
+      text-sm outline-none focus:border-[#6CB33F]
+      focus:ring-1 focus:ring-[#6CB33F]"
+                />
+              </div>
+
+              {/* NOM */}
+              <div>
+                <label className="mb-1 block text-sm font-semibold text-gray-900">
+                  Nom
+                </label>
+                <input
+                  type="text"
+                  value={nom}
+                  onChange={(e) => setNom(e.target.value)}
+                  placeholder="Ex : Ben Ali"
+                  required
+                  className="w-full rounded-xl border border-[#D7EBCF] bg-white py-3 px-4
+      text-sm outline-none focus:border-[#6CB33F]
+      focus:ring-1 focus:ring-[#6CB33F]"
+                />
+              </div>
+
               <div>
                 <label className="mb-1 block text-sm font-semibold text-gray-900">
                   Email professionnel
@@ -557,8 +633,6 @@ export default function GestionUtilisateursPage() {
           </div>
         </div>
       )}
-
     </div>
-    
   );
 }

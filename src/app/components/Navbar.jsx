@@ -191,6 +191,16 @@ export default function Navbar() {
                       >
                         Gestion des utilisateurs
                       </Link>
+                       <Link
+                        href="/recruiter/fiche-renseignement/create"
+                        className={`block px-4 py-3 rounded-b-xl
+                          ${isActive("/recruiter/fiche-renseignement/create")
+                            ? "bg-[#6CB33F]/10 text-[#4E8F2F] font-semibold"
+                            : "hover:bg-gray-50"
+                          }`}
+                      >
+                        Fiche de Renseignement
+                      </Link>
                     </div>
                   )}
                 </div>

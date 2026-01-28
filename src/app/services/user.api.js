@@ -11,8 +11,9 @@ export const getUsers = () => api.get("/users");
 export const createUser = (payload) => api.post("/users/register", payload);
 
 // UPDATE user role
-export const updateUserRole = (id, role) =>
-  api.patch(`/users/${id}`, { role });
+export const updateUser = (id, data) =>
+  api.patch(`/users/${id}`, data);
+
 
 // DELETE user
 export const deleteUser = (id) => api.delete(`/users/${id}`);
