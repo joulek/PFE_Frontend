@@ -45,9 +45,9 @@ async function handleSubmit(e) {
       window.location.href = "/recruiter/dashboard";
     } 
     else {
-      window.location.href = "/"; // candidate/public
-    }
-  } catch (err) {
+  // أي user آخر (responsable, recruteur, …)
+  window.location.href = "/utilisateur/candidatures";
+  }} catch (err) {
     setError(
       err?.response?.data?.message ||
         err?.message ||

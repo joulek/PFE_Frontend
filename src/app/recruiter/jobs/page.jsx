@@ -8,6 +8,7 @@ import {
   deleteJob,
 } from "../../services/job.api";
 import JobModal from "./JobModal";
+import { getUsers } from "../../services/user.api";
 import DeleteJobModal from "./DeleteJobModal";
 import Pagination from "../../components/Pagination";
 import { Trash2, Edit2 } from "lucide-react";
@@ -23,7 +24,8 @@ export default function JobsPage() {
   const [modalOpen, setModalOpen] = useState(false);
   const [editingJob, setEditingJob] = useState(null);
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
-  const [jobToDelete, setJobToDelete] = useState(null);
+  const [jobToDelete, setJobToDelete] = useState(null); 
+  const [users, setUsers] = useState([]); // ✅ NEW
 
   // ✅ stocker les cartes ouvertes (par id)
   const [expandedJobs, setExpandedJobs] = useState({});
@@ -36,10 +38,28 @@ export default function JobsPage() {
     const res = await getJobs();
     setJobs(res.data || []);
   }
+ async function loadUsers() {
+  const res = await getUsers();
+
+  // ✅ support multiple response shapes
+  const list =
+    Array.isArray(res?.data) ? res.data :
+    Array.isArray(res?.data?.users) ? res.data.users :
+    Array.isArray(res?.data?.data) ? res.data.data :
+    Array.isArray(res?.data?.data?.users) ? res.data.data.users :
+    [];
+
+  setUsers(list);
+}
+
 
   useEffect(() => {
-    loadJobs();
+    (async () => {
+      await loadJobs();
+      await loadUsers();
+    })();
   }, []);
+ 
 
   async function handleCreate(data) {
     await createJob(data);
@@ -71,8 +91,11 @@ export default function JobsPage() {
 
   // إذا نقص عدد الjobs بعد delete، رجّع page لآخر صفحة موجودة
   useEffect(() => {
-    if (page > totalPages) setPage(totalPages);
-  }, [page, totalPages]);
+    if (page > totalPages) {
+      setPage(totalPages);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [totalPages]);
 
   return (
     /* 🌿 BACKGROUND GLOBAL */
@@ -216,14 +239,12 @@ export default function JobsPage() {
       </div>
 
       {/* ================= MODALS ================= */}
-      <JobModal
+     <JobModal
         open={modalOpen}
-        onClose={() => {
-          setModalOpen(false);
-          setEditingJob(null); // ✅ مهم
-        }}
+        onClose={() => setModalOpen(false)}
         onSubmit={editingJob ? handleUpdate : handleCreate}
         initialData={editingJob}
+        users={users} // ✅ IMPORTANT
       />
 
 

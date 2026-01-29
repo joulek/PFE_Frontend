@@ -2,7 +2,13 @@
 
 import { useState, useEffect, useMemo } from "react";
 
-export default function JobModal({ open, onClose, onSubmit, initialData }) {
+export default function JobModal({
+  open,
+  onClose,
+  onSubmit,
+  initialData,
+  users = [],
+}) {
   const emptyForm = {
     titre: "",
     description: "",
@@ -19,6 +25,7 @@ export default function JobModal({ open, onClose, onSubmit, initialData }) {
 
   const [form, setForm] = useState(emptyForm);
   const [formError, setFormError] = useState("");
+  const [assignedUserId, setAssignedUserId] = useState("");
 
   const items = useMemo(
     () => [
@@ -28,14 +35,14 @@ export default function JobModal({ open, onClose, onSubmit, initialData }) {
       { key: "educationFit", label: "Education / Certifications" },
       { key: "communicationFit", label: "Communication / Clarity signals" },
     ],
-    []
+    [],
   );
 
-  useEffect(() => {
-    if (!open) return;
+useEffect(() => {
+  if (!open) return;
 
-    setFormError("");
-
+  // Use a microtask to avoid cascading renders
+  Promise.resolve().then(() => {
     if (initialData) {
       setForm({
         titre: initialData.titre || "",
@@ -54,11 +61,25 @@ export default function JobModal({ open, onClose, onSubmit, initialData }) {
           communicationFit: initialData?.weights?.communicationFit ?? 10,
         },
       });
+
+      const id =
+        Array.isArray(initialData.assignedUserIds) &&
+        initialData.assignedUserIds.length > 0
+          ? (typeof initialData.assignedUserIds[0] === "string"
+              ? initialData.assignedUserIds[0]
+              : initialData.assignedUserIds[0]?._id)
+          : "";
+
+      setAssignedUserId(id);
     } else {
       setForm(emptyForm);
+      setAssignedUserId("");
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open, initialData]);
+
+    setFormError("");
+  });
+}, [open, initialData]);
+
 
   if (!open) return null;
 
@@ -81,7 +102,7 @@ export default function JobModal({ open, onClose, onSubmit, initialData }) {
 
   const totalWeights = Object.values(form.weights || {}).reduce(
     (sum, v) => sum + Number(v || 0),
-    0
+    0,
   );
 
   const isValidTotal = totalWeights === 100;
@@ -98,12 +119,13 @@ export default function JobModal({ open, onClose, onSubmit, initialData }) {
     onSubmit({
       titre: form.titre,
       description: form.description,
-      dateCloture: form.dateCloture,
+      dateCloture: form.dateCloture || null,
       technologies: String(form.technologies || "")
         .split(",")
         .map((t) => t.trim())
         .filter(Boolean),
       weights: form.weights,
+      assignedUserIds: assignedUserId ? [assignedUserId] : [], // ✅ NEW
     });
   }
 
@@ -123,7 +145,8 @@ export default function JobModal({ open, onClose, onSubmit, initialData }) {
                 {initialData ? "Modifier l’offre" : "Ajouter une offre"}
               </h2>
               <p className="text-sm text-gray-500 mt-1">
-                Mettez à jour les informations de l&apos;annonce pour les candidats.
+                Mettez à jour les informations de l&apos;annonce pour les
+                candidats.
               </p>
             </div>
 
@@ -173,7 +196,9 @@ export default function JobModal({ open, onClose, onSubmit, initialData }) {
                 <textarea
                   rows={5}
                   value={form.description}
-                  onChange={(e) => setForm({ ...form, description: e.target.value })}
+                  onChange={(e) =>
+                    setForm({ ...form, description: e.target.value })
+                  }
                   required
                   className="w-full px-4 sm:px-5 py-3 sm:py-4 rounded-2xl sm:rounded-3xl border border-gray-200 bg-white text-gray-800 resize-none
                              focus:border-[#6CB33F] focus:ring-4 focus:ring-[#6CB33F]/15 outline-none transition"
@@ -190,12 +215,16 @@ export default function JobModal({ open, onClose, onSubmit, initialData }) {
                   </label>
                   <input
                     value={form.technologies}
-                    onChange={(e) => setForm({ ...form, technologies: e.target.value })}
+                    onChange={(e) =>
+                      setForm({ ...form, technologies: e.target.value })
+                    }
                     placeholder="React, Node.js, Tailwind"
                     className="w-full h-11 sm:h-12 px-4 sm:px-5 rounded-xl sm:rounded-full border border-gray-200 bg-white text-gray-800
                                focus:border-[#6CB33F] focus:ring-4 focus:ring-[#6CB33F]/15 outline-none transition"
                   />
-                  <p className="text-xs text-gray-500 mt-2">Sépare avec une virgule.</p>
+                  <p className="text-xs text-gray-500 mt-2">
+                    Sépare avec une virgule.
+                  </p>
                 </div>
 
                 {/* DATE */}
@@ -206,11 +235,39 @@ export default function JobModal({ open, onClose, onSubmit, initialData }) {
                   <input
                     type="date"
                     value={form.dateCloture}
-                    onChange={(e) => setForm({ ...form, dateCloture: e.target.value })}
+                    onChange={(e) =>
+                      setForm({ ...form, dateCloture: e.target.value })
+                    }
                     className="w-full h-11 sm:h-12 px-4 sm:px-5 rounded-xl sm:rounded-full border border-gray-200 bg-white text-gray-800
                                focus:border-[#6CB33F] focus:ring-4 focus:ring-[#6CB33F]/15 outline-none transition"
                   />
                 </div>
+              </div>
+
+              {/* ✅ NEW: SELECT USERS */}
+              <div>
+                <label className="block text-xs sm:text-sm font-semibold tracking-wide text-gray-700 mb-2 uppercase">
+                  Affectation utilisateurs
+                </label>
+
+                <select
+                  value={assignedUserId}
+                  onChange={(e) => setAssignedUserId(e.target.value)}
+                  className="w-full h-12 px-4 py-3 rounded-2xl border border-gray-200 bg-white text-gray-800
+             focus:border-[#6CB33F] focus:ring-4 focus:ring-[#6CB33F]/15 outline-none transition"
+                >
+                  <option value="">-- Choisir un utilisateur --</option>
+
+                  {users.map((u) => (
+                    <option key={u._id} value={u._id}>
+                      [{u.role}] {u.prenom} {u.nom}
+                    </option>
+                  ))}
+                </select>
+
+                <p className="text-xs text-gray-500 mt-2">
+                  Ctrl (Windows) / Cmd (Mac) باش تختار أكثر من مستخدم.
+                </p>
               </div>
 
               {/* WEIGHTS */}
@@ -263,7 +320,8 @@ export default function JobModal({ open, onClose, onSubmit, initialData }) {
 
                 {!isValidTotal && (
                   <p className="mt-3 text-xs font-semibold text-red-600">
-                    La somme des pondérations doit être égale à 100% pour pouvoir enregistrer.
+                    La somme des pondérations doit être égale à 100% pour
+                    pouvoir enregistrer.
                   </p>
                 )}
               </div>
@@ -289,6 +347,7 @@ export default function JobModal({ open, onClose, onSubmit, initialData }) {
                 onClick={() => {
                   setForm(emptyForm);
                   setFormError("");
+                  setAssignedUserId(""); // ✅ reset single select
                   onClose();
                 }}
                 className="sm:flex-1 h-11 sm:h-12 rounded-xl sm:rounded-full font-semibold border border-gray-200 text-gray-700 hover:bg-gray-50 transition"

@@ -9,3 +9,5 @@ export const getCondidatureCount = () => api.get("/candidatures/count");
 
 
 export const getCandidaturesAnalysis = () => api.get("/candidatures/analysis");
+
+export const getMyCandidatures = () => api.get("/candidatures/my");
