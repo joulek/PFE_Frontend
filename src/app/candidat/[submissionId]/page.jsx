@@ -43,6 +43,19 @@ function ensureQuestionIds(questions = []) {
   }));
 }
 
+function defaultValueFor(q) {
+  if (!q) return null;
+  if (q.type === "text" || q.type === "textarea") return "";
+  if (q.type === "radio") return "";
+  if (q.type === "checkbox") return [];
+  if (q.type === "scale_group") {
+    const obj = {};
+    (q.items || []).forEach((it) => (obj[it.id] = String(q.scale?.min ?? 0)));
+    return obj;
+  }
+  return "";
+}
+
 /* =======================
    PAGE
 ======================= */
@@ -114,7 +127,6 @@ export default function CandidatFicheWizardPage() {
 
         // init
         setIdx(0);
-        // eslint-disable-next-line react-hooks/immutability
         setValue(defaultValueFor(qs[0]));
         setTimeLeft(Number(qs[0]?.timeLimit || 0));
 
@@ -130,37 +142,19 @@ export default function CandidatFicheWizardPage() {
   }, [submissionId]);
 
   /* =======================
-     TIMER
+     WHEN QUESTION CHANGES
   ======================= */
-useEffect(() => {
-  if (!question) return;
-
-  const limit = Number(question.timeLimit || 0);
-  if (limit <= 0) return;
-
-  // ⛔ ما نبدأوش timer كان timeLeft == 0 (initialisation)
-  if (timeLeft === 0) return;
-
-  if (timeLeft <= 0) {
-    handleNext(true);
-    return;
-  }
-
-  const t = setInterval(() => {
-    setTimeLeft((x) => x - 1);
-  }, 1000);
-
-  return () => clearInterval(t);
-}, [timeLeft, question?.id]);
-
-
   useEffect(() => {
     if (!question) return;
     setValue(defaultValueFor(question));
     setTimeLeft(Number(question.timeLimit || 0));
     nextLockRef.current = false;
+    setError("");
   }, [question?.id]);
 
+  /* =======================
+     CAN NEXT?
+  ======================= */
   const canNext = useMemo(() => {
     if (!question) return false;
     if (!question.required) return true;
@@ -180,31 +174,34 @@ useEffect(() => {
     return true;
   }, [question, value]);
 
-  function defaultValueFor(q) {
-    if (!q) return null;
-    if (q.type === "text" || q.type === "textarea") return "";
-    if (q.type === "radio") return "";
-    if (q.type === "checkbox") return [];
-    if (q.type === "scale_group") {
-      const obj = {};
-      (q.items || []).forEach(
-        (it) => (obj[it.id] = String(q.scale?.min ?? 0))
-      );
-      return obj;
+  /* =======================
+     TIMER (✅ FIXED)
+  ======================= */
+  useEffect(() => {
+    if (!question) return;
+
+    const limit = Number(question.timeLimit || 0);
+    if (limit <= 0) return;
+
+    // auto-next when reaches 0
+    if (timeLeft <= 0) {
+      handleNext(true);
+      return;
     }
-    return "";
-  }
+
+    const t = setInterval(() => {
+      setTimeLeft((x) => x - 1);
+    }, 1000);
+
+    return () => clearInterval(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [timeLeft, question?.id]);
 
   async function persistAnswer({ auto = false } = {}) {
     if (!question) return;
 
-    const spent =
-      Number(question.timeLimit || 0) > 0
-        ? Math.max(
-            0,
-            Number(question.timeLimit || 0) - Number(timeLeft || 0)
-          )
-        : 0;
+    const limit = Number(question.timeLimit || 0);
+    const spent = limit > 0 ? Math.max(0, limit - Number(timeLeft || 0)) : 0;
 
     await addAnswer(submissionId, {
       questionId: question.id,
@@ -214,44 +211,41 @@ useEffect(() => {
     });
   }
 
-async function handleNext(auto = false) {
-  if (!question || nextLockRef.current) return;
+  /* =======================
+     NEXT (✅ FIXED)
+  ======================= */
+  async function handleNext(auto = false) {
+    if (!question || nextLockRef.current) return;
 
-  try {
-    nextLockRef.current = true;
+    try {
+      nextLockRef.current = true;
 
-    // ❌ منع المرور اليدوي إذا ما جاوبش
-    if (!auto && !canNext) {
-      return;
+      // منع المرور اليدوي إذا ما جاوبش
+      if (!auto && !canNext) return;
+
+      // 1️⃣ نحفظ الجواب
+      await persistAnswer({ auto });
+
+      const isLast = idx >= questions.length - 1;
+
+      // 2️⃣ كان موش آخر سؤال → نمشي للي بعده
+      if (!isLast) {
+        setIdx((x) => x + 1);
+        return;
+      }
+
+      // 3️⃣ آخر سؤال: submit يصير كان بالضغط اليدوي
+      if (!auto) {
+        await submitSubmission(submissionId);
+        router.replace("/candidat/fiche/merci");
+      }
+    } catch (e) {
+      console.error(e);
+      setError("Erreur de sauvegarde.");
+    } finally {
+      nextLockRef.current = false;
     }
-
-    // 1️⃣ نحفظ الجواب
-    await persistAnswer({ auto });
-
-    const isLast = idx >= questions.length - 1;
-
-    // 2️⃣ كان موش آخر سؤال → نمشي للي بعده
-    if (!isLast) {
-      setIdx((x) => x + 1);
-      return;
-    }
-
-    // 3️⃣ آخر سؤال
-    // ❗ submit يصير كان بالضغط (auto === false)
-    if (!auto) {
-      await submitSubmission(submissionId);
-      router.replace("/candidat/fiche/merci");
-    }
-
-  } catch (e) {
-    console.error(e);
-    setError("Erreur de sauvegarde.");
-  } finally {
-    nextLockRef.current = false;
   }
-}
-
-
 
   /* =======================
      STATES
@@ -269,11 +263,20 @@ async function handleNext(auto = false) {
     );
   }
 
-  if (error) {
+  if (error && !fiche) {
     return (
       <div className="p-8 max-w-xl">
         <h1 className="text-2xl font-bold mb-2">Erreur</h1>
         <p className="text-red-600">{error}</p>
+      </div>
+    );
+  }
+
+  if (!question) {
+    return (
+      <div className="p-8 max-w-xl">
+        <h1 className="text-2xl font-bold mb-2">Aucune question</h1>
+        <p>Cette fiche ne contient pas de questions.</p>
       </div>
     );
   }
@@ -285,8 +288,8 @@ async function handleNext(auto = false) {
     <div className="min-h-screen bg-[#F3FBF6]">
       <div className="max-w-4xl mx-auto px-4 py-8">
         <div className="bg-white rounded-2xl shadow-sm border p-6">
-          <h1 className="text-2xl font-bold">{fiche.title}</h1>
-          {fiche.description && (
+          <h1 className="text-2xl font-bold">{fiche?.title}</h1>
+          {fiche?.description && (
             <p className="text-gray-600 mt-1">{fiche.description}</p>
           )}
 
@@ -296,11 +299,19 @@ async function handleNext(auto = false) {
               <span>
                 Question {idx + 1} / {total}
               </span>
-              <span>{progress}%</span>
+              <span className="flex items-center gap-3">
+                <span>{progress}%</span>
+                {/* timer display (optional) */}
+                {Number(question?.timeLimit || 0) > 0 && (
+                  <span className="px-2 py-1 rounded-lg bg-gray-100 text-gray-700">
+                    ⏱ {Math.max(0, timeLeft)}s
+                  </span>
+                )}
+              </span>
             </div>
             <div className="h-2 bg-gray-100 rounded-full mt-2">
               <div
-                className="h-full bg-green-600"
+                className="h-full bg-green-600 rounded-full transition-all"
                 style={{ width: `${progress}%` }}
               />
             </div>
@@ -309,12 +320,9 @@ async function handleNext(auto = false) {
           {/* Question */}
           <div className="mt-6">
             <h2 className="text-lg font-semibold">{question.label}</h2>
+
             <div className="mt-4">
-              <QuestionRenderer
-                q={question}
-                value={value}
-                setValue={setValue}
-              />
+              <QuestionRenderer q={question} value={value} setValue={setValue} />
             </div>
 
             {error && (
@@ -364,21 +372,21 @@ function QuestionRenderer({ q, value, setValue }) {
     );
 
   if (q.type === "radio")
-    return q.options.map((opt) => (
-      <label key={opt.label} className="flex gap-3">
+    return (q.options || []).map((opt) => (
+      <label key={opt.label} className="flex gap-3 items-center py-1">
         <input
           type="radio"
           checked={value === opt.label}
           onChange={() => setValue(opt.label)}
         />
-        {opt.label}
+        <span>{opt.label}</span>
       </label>
     ));
 
   if (q.type === "checkbox") {
     const arr = Array.isArray(value) ? value : [];
-    return q.options.map((opt) => (
-      <label key={opt.label} className="flex gap-3">
+    return (q.options || []).map((opt) => (
+      <label key={opt.label} className="flex gap-3 items-center py-1">
         <input
           type="checkbox"
           checked={arr.includes(opt.label)}
@@ -390,28 +398,27 @@ function QuestionRenderer({ q, value, setValue }) {
             )
           }
         />
-        {opt.label}
+        <span>{opt.label}</span>
       </label>
     ));
   }
 
   if (q.type === "scale_group") {
     const obj = value || {};
-    return q.items.map((it) => (
-      <div key={it.id} className="flex gap-3 items-center">
+    return (q.items || []).map((it) => (
+      <div key={it.id} className="flex gap-3 items-center py-2">
         <span className="min-w-[200px]">{it.label}</span>
         <select
+          className="border rounded-xl px-3 py-2"
           value={obj[it.id]}
-          onChange={(e) =>
-            setValue({ ...obj, [it.id]: e.target.value })
-          }
+          onChange={(e) => setValue({ ...obj, [it.id]: e.target.value })}
         >
           {Array.from(
-            { length: q.scale.max - q.scale.min + 1 },
-            (_, i) => q.scale.min + i
+            { length: (q.scale?.max ?? 4) - (q.scale?.min ?? 0) + 1 },
+            (_, i) => (q.scale?.min ?? 0) + i
           ).map((lvl) => (
             <option key={lvl} value={lvl}>
-              {lvl} – {q.scale.labels[lvl]}
+              {lvl} – {q.scale?.labels?.[lvl] ?? ""}
             </option>
           ))}
         </select>
