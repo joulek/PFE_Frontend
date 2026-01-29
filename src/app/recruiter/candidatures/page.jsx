@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { getCandidaturesWithJob } from "../../services/candidature.api";
 import Pagination from "../../components/Pagination";
-import { Search } from "lucide-react";
+import { Search, FileText } from "lucide-react";
 
 /* ================= CONFIG (.env) ================= */
 const API_BASE = process.env.NEXT_PUBLIC_API_URL;
@@ -123,14 +123,15 @@ export default function CandidaturesTablePage() {
 
   return (
     <div className="min-h-screen bg-[#F0FAF0]">
-<div className="max-w-full mx-auto px-6 pt-10 pb-16">        {/* HEADER */}
-        <h1 className="text-4xl font-extrabold text-gray-900 mb-6">
+      <div className="max-w-full mx-auto px-4 sm:px-6 pt-10 pb-16">
+        {/* HEADER */}
+        <h1 className="text-3xl sm:text-4xl font-extrabold text-gray-900 mb-6">
           Liste des Candidatures
         </h1>
 
         {/* SEARCH */}
-        <div className="bg-white rounded-full shadow-sm border border-gray-100 px-5 py-3 flex items-center gap-3 mb-8">
-          <Search className="w-5 h-5 text-[#4E8F2F]" />
+        <div className="bg-white rounded-full shadow-sm border border-gray-100 px-4 sm:px-5 py-3 flex items-center gap-3 mb-8">
+          <Search className="w-5 h-5 text-[#4E8F2F] flex-shrink-0" />
           <input
             value={q}
             onChange={(e) => setQ(e.target.value)}
@@ -139,141 +140,196 @@ export default function CandidaturesTablePage() {
           />
         </div>
 
-        {/* ================= MOBILE : CARDS ================= */}
-        <div className="md:hidden space-y-4">
-          {paginated.map((c) => (
-            <div
-              key={c._id}
-              className="bg-white rounded-3xl shadow-lg border border-[#E9F5E3] p-5"
-            >
-              <div className="font-extrabold text-gray-900">
-                {getFullName(c)}
+        {/* ================= LOADING ================= */}
+        {loading && (
+          <div className="bg-white rounded-3xl shadow-lg p-8 sm:p-12 text-center">
+            <div className="flex flex-col items-center justify-center gap-4">
+              <div className="animate-spin rounded-full h-12 w-12 border-4 border-[#E9F5E3] border-t-[#4E8F2F]"></div>
+              <p className="text-gray-500 text-lg">Chargement des candidatures...</p>
+            </div>
+          </div>
+        )}
+
+        {/* ================= EMPTY STATE ================= */}
+        {!loading && filtered.length === 0 && (
+          <div className="bg-white rounded-3xl shadow-lg p-8 sm:p-12 text-center">
+            <div className="flex flex-col items-center justify-center gap-4">
+              <div className="w-20 h-20 rounded-full bg-[#E9F5E3] flex items-center justify-center">
+                <FileText className="w-10 h-10 text-[#4E8F2F]" />
               </div>
-
-              <div className="text-sm text-gray-700">{getEmail(c)}</div>
-              <div className="text-sm text-gray-700">{getPhone(c)}</div>
-
-              {getLinkedIn(c) && (
-                <a
-                  href={getLinkedIn(c)}
-                  target="_blank"
-                  className="text-sm underline text-[#4E8F2F]"
+              <h2 className="text-2xl font-bold text-gray-900">
+                {q ? "Aucun résultat trouvé" : "Aucune candidature"}
+              </h2>
+              <p className="text-gray-600 max-w-md">
+                {q
+                  ? `Aucune candidature ne correspond à votre recherche "${q}".`
+                  : "Il n'y a actuellement aucune candidature dans le système."}
+              </p>
+              {q && (
+                <button
+                  onClick={() => setQ("")}
+                  className="mt-4 px-6 py-3 bg-[#6CB33F] hover:bg-[#4E8F2F] text-white rounded-full font-semibold transition-colors"
                 >
-                  Profil LinkedIn
-                </a>
+                  Effacer la recherche
+                </button>
               )}
+            </div>
+          </div>
+        )}
 
-              <div className="mt-4 flex items-center justify-between">
-                <span className="inline-flex items-center px-4 py-2 rounded-full bg-[#E9F5E3] text-[#4E8F2F] text-xs font-semibold border border-[#d7ebcf]">
-                  {safeStr(c?.jobTitle)}
-                </span>
+        {/* ================= MOBILE : CARDS ================= */}
+        {!loading && filtered.length > 0 && (
+          <div className="md:hidden space-y-4">
+            {paginated.map((c) => (
+              <div
+                key={c._id}
+                className="bg-white rounded-3xl shadow-lg border border-[#E9F5E3] p-5"
+              >
+                <div className="font-extrabold text-gray-900 text-lg mb-2">
+                  {getFullName(c)}
+                </div>
 
-                {getCvUrl(c) && (
+                {getEmail(c) && (
+                  <div className="text-sm text-gray-700 mb-1">
+                    📧 {getEmail(c)}
+                  </div>
+                )}
+
+                {getPhone(c) && (
+                  <div className="text-sm text-gray-700 mb-1">
+                    📱 {getPhone(c)}
+                  </div>
+                )}
+
+                {getLinkedIn(c) && (
                   <a
-                    href={getCvUrl(c)}
+                    href={getLinkedIn(c)}
                     target="_blank"
-                    className="inline-flex items-center gap-2 bg-[#E9F5E3] border border-[#d7ebcf] text-[#4E8F2F] font-bold px-4 py-2 rounded-full"
+                    rel="noopener noreferrer"
+                    className="text-sm underline text-[#4E8F2F] hover:text-[#3a6b23] block mb-3"
                   >
-                    Voir CV
+                    🔗 Profil LinkedIn
                   </a>
                 )}
+
+                <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
+                  <span className="inline-flex items-center px-4 py-2 rounded-full bg-[#E9F5E3] text-[#4E8F2F] text-xs font-semibold border border-[#d7ebcf]">
+                    {safeStr(c?.jobTitle) || "Poste non spécifié"}
+                  </span>
+
+                  {getCvUrl(c) && (
+                    <a
+                      href={getCvUrl(c)}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-2 bg-[#E9F5E3] border border-[#d7ebcf] text-[#4E8F2F] font-bold px-4 py-2 rounded-full hover:bg-[#d7ebcf] transition-colors"
+                    >
+                      Voir CV
+                    </a>
+                  )}
+                </div>
+
+                <div className="mt-3 text-sm text-gray-600">
+                  📅 {formatDate(c?.createdAt)}
+                </div>
               </div>
+            ))}
+          </div>
+        )}
 
-              <div className="mt-2 text-sm text-gray-600">
-                {formatDate(c?.createdAt)}
-              </div>
-            </div>
-          ))}
-        </div>
-
-        {/* ================= DESKTOP : TABLE (INCHANGÉE) ================= */}
-        <div className="hidden md:block bg-white rounded-4xl shadow-lg overflow-visible">
-          <div className="overflow-x-hidden">
-            <table className="w-full text-sm">
-              <thead className="bg-[#E9F5E3] text-[#4E8F2F]">
-                <tr>
-                  <th className="text-left px-8 py-5 font-extrabold uppercase text-xs">
-                    Candidat
-                  </th>
-                  <th className="text-left px-8 py-5 font-extrabold uppercase text-xs">
-                    Email
-                  </th>
-                  <th className="text-left px-8 py-5 font-extrabold uppercase text-xs">
-                    Contact
-                  </th>
-                  <th className="text-left px-8 py-5 font-extrabold uppercase text-xs">
-                    Linkedin
-                  </th>
-                  <th className="text-left px-8 py-5 font-extrabold uppercase text-xs">
-                    Poste
-                  </th>
-                  <th className="text-left px-8 py-5 font-extrabold uppercase text-xs">
-                    Date de candidature
-                  </th>
-                  <th className="text-right px-8 py-5 font-extrabold uppercase text-xs">
-                    CV
-                  </th>
-                </tr>
-              </thead>
-
-              <tbody className="divide-y divide-gray-100">
-                {loading ? (
+        {/* ================= DESKTOP : TABLE ================= */}
+        {!loading && filtered.length > 0 && (
+          <div className="hidden md:block bg-white rounded-3xl shadow-lg overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead className="bg-[#E9F5E3] text-[#4E8F2F]">
                   <tr>
-                    <td colSpan={7} className="px-8 py-8 text-gray-500">
-                      Chargement...
-                    </td>
+                    <th className="text-left px-6 lg:px-8 py-5 font-extrabold uppercase text-xs tracking-wider">
+                      Candidat
+                    </th>
+                    <th className="text-left px-6 lg:px-8 py-5 font-extrabold uppercase text-xs tracking-wider">
+                      Email
+                    </th>
+                    <th className="text-left px-6 lg:px-8 py-5 font-extrabold uppercase text-xs tracking-wider">
+                      Contact
+                    </th>
+                    <th className="text-left px-6 lg:px-8 py-5 font-extrabold uppercase text-xs tracking-wider">
+                      Linkedin
+                    </th>
+                    <th className="text-left px-6 lg:px-8 py-5 font-extrabold uppercase text-xs tracking-wider">
+                      Poste
+                    </th>
+                    <th className="text-left px-6 lg:px-8 py-5 font-extrabold uppercase text-xs tracking-wider">
+                      Date
+                    </th>
+                    <th className="text-right px-6 lg:px-8 py-5 font-extrabold uppercase text-xs tracking-wider">
+                      CV
+                    </th>
                   </tr>
-                ) : (
-                  paginated.map((c) => (
+                </thead>
+
+                <tbody className="divide-y divide-gray-100">
+                  {paginated.map((c) => (
                     <tr key={c._id} className="hover:bg-green-50/40 transition">
-                      <td className="px-8 py-5 font-extrabold text-gray-900">
+                      <td className="px-6 lg:px-8 py-5 font-extrabold text-gray-900">
                         {getFullName(c)}
                       </td>
-                      <td className="px-8 py-5">{getEmail(c)}</td>
-                      <td className="px-8 py-5">{getPhone(c)}</td>
-                      <td className="px-8 py-5">
+                      <td className="px-6 lg:px-8 py-5 text-gray-700">
+                        {getEmail(c) || "—"}
+                      </td>
+                      <td className="px-6 lg:px-8 py-5 text-gray-700">
+                        {getPhone(c) || "—"}
+                      </td>
+                      <td className="px-6 lg:px-8 py-5">
                         {getLinkedIn(c) ? (
                           <a
                             href={getLinkedIn(c)}
                             target="_blank"
-                            className="underline"
+                            rel="noopener noreferrer"
+                            className="text-[#4E8F2F] underline hover:text-[#3a6b23]"
                           >
                             Profil
                           </a>
                         ) : (
-                          ""
+                          <span className="text-gray-400">—</span>
                         )}
                       </td>
-                      <td className="px-8 py-5">
+                      <td className="px-6 lg:px-8 py-5">
                         <span className="inline-flex items-center px-4 py-2 rounded-full bg-[#E9F5E3] text-[#4E8F2F] text-xs font-semibold border border-[#d7ebcf]">
-                          {safeStr(c?.jobTitle)}
+                          {safeStr(c?.jobTitle) || "N/A"}
                         </span>
                       </td>
-                      <td className="px-8 py-5 text-gray-600">
+                      <td className="px-6 lg:px-8 py-5 text-gray-600">
                         {formatDate(c?.createdAt)}
                       </td>
-                      <td className="px-8 py-5 text-right">
-                        {getCvUrl(c) && (
+                      <td className="px-6 lg:px-8 py-5 text-right">
+                        {getCvUrl(c) ? (
                           <a
                             href={getCvUrl(c)}
                             target="_blank"
-                            className="inline-flex items-center gap-2 bg-[#E9F5E3] border border-[#d7ebcf] text-[#4E8F2F] font-bold px-4 py-2 rounded-full"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-2 bg-[#E9F5E3] border border-[#d7ebcf] text-[#4E8F2F] font-bold px-4 py-2 rounded-full hover:bg-[#d7ebcf] transition-colors"
                           >
                             Voir CV
                           </a>
+                        ) : (
+                          <span className="text-gray-400">—</span>
                         )}
                       </td>
                     </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
-        </div>
+        )}
 
+        {/* ================= PAGINATION ================= */}
         {!loading && filtered.length > 0 && (
-          <div className="px-8 py-5 flex items-center justify-between text-sm text-gray-500">
-            <p>Total: {filtered.length} candidature(s)</p>
+          <div className="mt-6 px-4 sm:px-8 py-5 flex flex-col sm:flex-row items-center justify-between gap-4 text-sm text-gray-500">
+            <p className="font-medium">
+              Total: {filtered.length} candidature{filtered.length > 1 ? "s" : ""}
+            </p>
 
             <Pagination
               currentPage={page}

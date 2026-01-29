@@ -295,6 +295,12 @@ export default function Navbar() {
                     >
                       Gestion des utilisateurs
                     </Link>
+                    <Link
+                      href="/recruiter/fiche-renseignement"
+                      className="block px-4 py-3 rounded-xl hover:bg-gray-50"
+                    >
+                      Fiche de Renseignement
+                    </Link>
                 </>
               )}
 

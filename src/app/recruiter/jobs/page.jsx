@@ -10,7 +10,7 @@ import {
 import JobModal from "./JobModal";
 import DeleteJobModal from "./DeleteJobModal";
 import Pagination from "../../components/Pagination";
-
+import { Trash2, Edit2 } from "lucide-react";
 /* ================= UTILS ================= */
 function formatDate(date) {
   if (!date) return "—";
@@ -175,7 +175,7 @@ export default function JobsPage() {
                       }}
                       className="text-[#4E8F2F] font-medium hover:underline"
                     >
-                      Modifier
+                      <Edit2 className="inline mb-1 mr-1" />
                     </button>
 
                     <button
@@ -185,7 +185,7 @@ export default function JobsPage() {
                       }}
                       className="text-red-500 hover:underline"
                     >
-                      Supprimer
+                      <Trash2 className="inline mb-1 mr-1" />
                     </button>
                   </div>
                 </div>

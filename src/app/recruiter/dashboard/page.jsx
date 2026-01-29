@@ -270,7 +270,7 @@ export default function AdminDashboard() {
           </h2>
 
           <Link
-            href="/admin/candidatures"
+            href="/recruiter/candidatures"
             className="text-sm font-semibold text-[#4E8F2F] hover:underline"
           >
             Voir tout

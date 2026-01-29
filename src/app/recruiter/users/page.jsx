@@ -7,6 +7,7 @@ import {
   updateUser,
   deleteUser,
 } from "../../services/user.api";
+import { Trash2, Edit2 } from "lucide-react";
 
 import {
   User,
@@ -152,16 +153,16 @@ export default function GestionUtilisateursPage() {
           role: normalizeRole(role),
         });
       } else {
-    const userId = selectedUser?._id || selectedUser?.id;
+        const userId = selectedUser?._id || selectedUser?.id;
 
-    const payload = {};
-    if (safeStr(nom)) payload.nom = safeStr(nom);
-    if (safeStr(prenom)) payload.prenom = safeStr(prenom);
-    if (safeStr(email)) payload.email = safeStr(email).toLowerCase();
-    if (safeStr(role)) payload.role = normalizeRole(role);
+        const payload = {};
+        if (safeStr(nom)) payload.nom = safeStr(nom);
+        if (safeStr(prenom)) payload.prenom = safeStr(prenom);
+        if (safeStr(email)) payload.email = safeStr(email).toLowerCase();
+        if (safeStr(role)) payload.role = normalizeRole(role);
 
-    await updateUser(userId, payload);
-  }
+        await updateUser(userId, payload);
+      }
 
       setOpenModal(false);
       await fetchUsers();
@@ -209,7 +210,7 @@ export default function GestionUtilisateursPage() {
   }, [q]);
 
   return (
-    <div className="min-h-screen bg-[#F0FAF0] px-6 py-10">
+    <div className="min-h-screen bg-green-50 px-6 py-10">
       <div className="mx-auto max-w-6xl">
         <h1 className="text-4xl font-extrabold text-gray-900 mb-6">
           Liste des utilisateurs
@@ -273,7 +274,17 @@ export default function GestionUtilisateursPage() {
                 <tr key={u._id} className="hover:bg-green-50/40 transition">
                   {/* PRENOM */}
                   <td className="px-8 py-5 font-semibold text-gray-900">
-                    {safeStr(u?.prenom) || "-"}
+                    <div className="flex items-center gap-3">
+                      <div
+                        className="h-10 w-10 rounded-full bg-[#E9F5E3] text-[#4E8F2F]
+        flex items-center justify-center font-extrabold flex-shrink-0"
+                      >
+                        {(
+                          safeStr(u?.prenom)[0] || safeStr(u?.email)[0]
+                        ).toUpperCase()}
+                      </div>
+                      <span>{safeStr(u?.prenom) || "-"}</span>
+                    </div>
                   </td>
 
                   {/* NOM */}
@@ -284,14 +295,6 @@ export default function GestionUtilisateursPage() {
                   {/* UTILISATEUR (avatar + email) */}
                   <td className="px-8 py-5">
                     <div className="flex items-center gap-3">
-                      <div
-                        className="h-10 w-10 rounded-full bg-[#E9F5E3] text-[#4E8F2F]
-                          flex items-center justify-center font-extrabold"
-                      >
-                        {(
-                          safeStr(u?.prenom)[0] || safeStr(u?.email)[0]
-                        ).toUpperCase()}
-                      </div>
 
                       <div>
                         <div className="text-xs text-gray-500">
@@ -323,7 +326,8 @@ export default function GestionUtilisateursPage() {
                       onClick={() => openEditModal(u)}
                       className="text-[#4E8F2F] font-semibold hover:underline mr-4"
                     >
-                      Modifier
+                      <Edit2 className="w-5 h-5 inline-block" />
+
                     </button>
                     <button
                       onClick={() => {
@@ -332,7 +336,7 @@ export default function GestionUtilisateursPage() {
                       }}
                       className="text-red-500 hover:underline"
                     >
-                      Supprimer
+                      <Trash2 className="w-5 h-5 inline-block" />
                     </button>
                   </td>
                 </tr>
@@ -378,25 +382,24 @@ export default function GestionUtilisateursPage() {
                   {new Date(u.createdAt).toLocaleDateString("fr-FR")}
                 </span>
 
-                <button
-                  onClick={() => openEditModal(u)}
-                  className="rounded-full bg-[#E9F5E3] px-5 py-2 text-sm font-semibold text-[#4E8F2F]"
-                >
-                  Modifier
-                </button>
-              </div>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => openEditModal(u)}
+                    className="rounded-full px-3 py-2 text-sm font-semibold text-[#4E8F2F] hover:bg-green-50 transition-colors"
+                  >
+                    <Edit2 className="w-5 h-5" />
+                  </button>
 
-              {/* نفس actions متاع desktop في mobile (اختياري: delete) */}
-              <div className="mt-4 flex justify-end">
-                <button
-                  onClick={() => {
-                    setUserToDelete(u);
-                    setOpenDeleteModal(true);
-                  }}
-                  className="text-red-500 hover:underline text-sm font-semibold"
-                >
-                  Supprimer
-                </button>
+                  <button
+                    onClick={() => {
+                      setUserToDelete(u);
+                      setOpenDeleteModal(true);
+                    }}
+                    className="rounded-full px-3 py-2 text-sm font-semibold text-red-500 hover:bg-red-50 transition-colors"
+                  >
+                    <Trash2 className="w-5 h-5" />
+                  </button>
+                </div>
               </div>
             </div>
           ))}
