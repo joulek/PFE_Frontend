@@ -265,9 +265,7 @@ useEffect(() => {
                   ))}
                 </select>
 
-                <p className="text-xs text-gray-500 mt-2">
-                  Ctrl (Windows) / Cmd (Mac) باش تختار أكثر من مستخدم.
-                </p>
+             
               </div>
 
               {/* WEIGHTS */}

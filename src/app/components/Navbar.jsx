@@ -5,6 +5,8 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { logout } from "../services/auth.api";
+import { Moon, Sun } from "lucide-react";
+
 
 export default function Navbar() {
   const pathname = usePathname();
@@ -73,16 +75,31 @@ export default function Navbar() {
           {/* ================= DESKTOP MENU ================= */}
           <div className="hidden md:flex items-center bg-[#F4F7F5] rounded-full p-1 gap-1">
             {!isAdmin && (
-              <Link
-                href="/jobs"
-                className={`px-6 py-2 rounded-full font-semibold transition
-                  ${isActive("/jobs")
-                    ? "bg-[#6CB33F] text-white shadow"
-                    : "text-gray-600 hover:text-[#4E8F2F]"
-                  }`}
-              >
-                Offres d’emploi
-              </Link>
+              <>
+                <Link
+                  href="/jobs"
+                  className={`px-6 py-2 rounded-full font-semibold transition
+                    ${isActive("/jobs")
+                      ? "bg-[#6CB33F] text-white shadow"
+                      : "text-gray-600 hover:text-[#4E8F2F]"
+                    }`}
+                >
+                  Offres d'emploi
+                </Link>
+
+                {user && (
+                  <Link
+                    href="/utilisateur/candidatures"
+                    className={`px-6 py-2 rounded-full font-semibold transition
+                      ${isActive("/utilisateur/candidatures")
+                        ? "bg-[#6CB33F] text-white shadow"
+                        : "text-gray-600 hover:text-[#4E8F2F]"
+                      }`}
+                  >
+                    Mes candidatures
+                  </Link>
+                )}
+              </>
             )}
 
             {isAdmin && (
@@ -192,9 +209,9 @@ export default function Navbar() {
                         Gestion des utilisateurs
                       </Link>
                        <Link
-                        href="/recruiter/fiche-renseignement/create"
+                        href="/recruiter/fiche-renseignement"
                         className={`block px-4 py-3 rounded-b-xl
-                          ${isActive("/recruiter/fiche-renseignement/create")
+                          ${isActive("/recruiter/fiche-renseignement")
                             ? "bg-[#6CB33F]/10 text-[#4E8F2F] font-semibold"
                             : "hover:bg-gray-50"
                           }`}
@@ -210,6 +227,8 @@ export default function Navbar() {
 
           {/* RIGHT DESKTOP */}
           <div className="hidden md:flex items-center gap-4">
+           
+
             {!user ? (
               <Link
                 href="/login"
@@ -243,16 +262,31 @@ export default function Navbar() {
           <div className="md:hidden pb-4">
             <div className="mt-3 rounded-2xl bg-white shadow border border-gray-200 p-3 space-y-2">
               {!isAdmin && (
-                <Link
-                  href="/jobs"
-                  className={`block px-4 py-3 rounded-xl font-semibold transition
-                    ${isActive("/jobs")
-                      ? "bg-[#6CB33F] text-white"
-                      : "text-gray-700 hover:bg-gray-50"
-                    }`}
-                >
-                  Offres d’emploi
-                </Link>
+                <>
+                  <Link
+                    href="/jobs"
+                    className={`block px-4 py-3 rounded-xl font-semibold transition
+                      ${isActive("/jobs")
+                        ? "bg-[#6CB33F] text-white"
+                        : "text-gray-700 hover:bg-gray-50"
+                      }`}
+                  >
+                    Offres d'emploi
+                  </Link>
+
+                  {user && (
+                    <Link
+                      href="/utilisateur/candidatures"
+                      className={`block px-4 py-3 rounded-xl font-semibold transition
+                        ${isActive("/utilisateur/candidatures")
+                          ? "bg-[#6CB33F] text-white"
+                          : "text-gray-700 hover:bg-gray-50"
+                        }`}
+                    >
+                      Mes candidatures
+                    </Link>
+                  )}
+                </>
               )}
 
               {isAdmin && (
