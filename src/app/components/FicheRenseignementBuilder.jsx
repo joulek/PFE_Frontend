@@ -183,7 +183,7 @@ export default function FicheRenseignementBuilder() {
   /* ================= SUBMIT ================= */
   async function submit() {
     if (saving) return;
-    
+
     try {
       setSaving(true);
       const payload = {
@@ -206,7 +206,7 @@ export default function FicheRenseignementBuilder() {
       }
     } catch (error) {
       console.error("Erreur lors de l'enregistrement:", error);
-      
+
       if (error.response) {
         alert(`Erreur: ${error.response.data?.message || error.message}`);
       } else if (error.request) {
@@ -214,7 +214,7 @@ export default function FicheRenseignementBuilder() {
       } else {
         alert("Une erreur est survenue");
       }
-      
+
       setSaving(false);
     }
   }
@@ -367,12 +367,12 @@ export default function FicheRenseignementBuilder() {
                     value={q.type}
                     onChange={(e) => onTypeChange(q.id, e.target.value)}
                     className="border rounded-xl px-3 py-2 
-                               border-green-200 dark:border-gray-600 
-                               bg-white dark:bg-gray-700 
-                               text-gray-800 dark:text-white 
-                               text-sm sm:text-base
-                               focus:border-green-500 dark:focus:border-emerald-500 
-                               outline-none transition-colors"
+                 border-green-200 dark:border-gray-600 
+                 bg-white dark:bg-gray-700 
+                 text-gray-800 dark:text-white 
+                 text-sm sm:text-base
+                 focus:border-green-500 dark:focus:border-emerald-500 
+                 outline-none transition-colors"
                   >
                     <option value="text">Texte</option>
                     <option value="textarea">Paragraphe</option>
@@ -380,6 +380,16 @@ export default function FicheRenseignementBuilder() {
                     <option value="checkbox">Choix multiple</option>
                     <option value="scale_group">Code de niveau</option>
                   </select>
+
+                  {q.type === "scale_group" && (
+                    <div className="mt-2 text-xs text-gray-600 dark:text-gray-400">
+                      Niveaux :
+                      <span className="font-medium ml-1">
+                        0 = Néant · 1 = Débutant · 2 = Intermédiaire · 3 = Avancé · 4 = Expert
+                      </span>
+                    </div>
+                  )}
+
                 </div>
 
                 <div className="flex items-center sm:items-end gap-3 sm:gap-4">
@@ -406,12 +416,12 @@ export default function FicheRenseignementBuilder() {
                       type="number"
                       min={0}
                       className="w-full sm:w-32 border rounded-xl px-3 py-2 
-                                 border-green-200 dark:border-gray-600 
-                                 bg-white dark:bg-gray-700 
-                                 text-gray-800 dark:text-white 
-                                 text-sm sm:text-base
-                                 focus:border-green-500 dark:focus:border-emerald-500 
-                                 outline-none transition-colors"
+                   border-green-200 dark:border-gray-600 
+                   bg-white dark:bg-gray-700 
+                   text-gray-800 dark:text-white 
+                   text-sm sm:text-base
+                   focus:border-green-500 dark:focus:border-emerald-500 
+                   outline-none transition-colors"
                       value={q.timeLimit}
                       onChange={(e) =>
                         updateQuestion(q.id, {
@@ -452,7 +462,7 @@ export default function FicheRenseignementBuilder() {
                           ✕
                         </button>
                       </div>
-                      
+
                       {/* Checkbox pour activer le champ texte "Autre" */}
                       <div className="ml-3 flex items-center gap-2">
                         <input
@@ -464,7 +474,7 @@ export default function FicheRenseignementBuilder() {
                           }
                           className="w-4 h-4 text-green-600 dark:text-emerald-500 bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 rounded"
                         />
-                        <label 
+                        <label
                           htmlFor={`hasText-${o.id}`}
                           className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 cursor-pointer"
                         >

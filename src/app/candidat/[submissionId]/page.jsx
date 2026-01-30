@@ -28,10 +28,10 @@ function ensureQuestionIds(questions = []) {
     id: q.id || uid(),
     options: Array.isArray(q.options)
       ? q.options.map((opt) => ({
-          ...opt,
-          id: opt.id || uid(),
-          hasText: opt.hasText || false,
-        }))
+        ...opt,
+        id: opt.id || uid(),
+        hasText: opt.hasText || false,
+      }))
       : [],
     items: Array.isArray(q.items) ? q.items.map(it => ({ ...it, id: it.id || uid() })) : [],
     scale:
@@ -396,10 +396,9 @@ export default function CandidatFicheWizardPage() {
                 disabled={!canNext}
                 className={`
                   px-7 py-3 rounded-xl font-semibold text-base transition-colors
-                  ${
-                    canNext
-                      ? "bg-green-600 hover:bg-green-700 dark:bg-emerald-600 dark:hover:bg-emerald-500 text-white shadow-md"
-                      : "bg-gray-200 dark:bg-gray-700 text-gray-500 dark:text-gray-500 cursor-not-allowed"
+                  ${canNext
+                    ? "bg-green-600 hover:bg-green-700 dark:bg-emerald-600 dark:hover:bg-emerald-500 text-white shadow-md"
+                    : "bg-gray-200 dark:bg-gray-700 text-gray-500 dark:text-gray-500 cursor-not-allowed"
                   }
                 `}
               >
@@ -525,38 +524,73 @@ function QuestionRenderer({ q, value, setValue }) {
       </div>
     );
   }
-
   if (q.type === "scale_group") {
     const obj = value || {};
+    const min = q.scale?.min ?? 0;
+    const max = q.scale?.max ?? 4;
+    const levels = Array.from({ length: max - min + 1 }, (_, i) => min + i);
+
     return (
       <div className="space-y-4">
         {q.items.map((it) => (
           <div
             key={it.id}
-            className="flex flex-col sm:flex-row sm:items-center gap-3 py-3 px-4 rounded-xl border border-gray-100 dark:border-gray-700 hover:border-green-200 dark:hover:border-gray-600 transition-colors"
+            className="
+            grid grid-cols-1 sm:grid-cols-2 gap-4
+            items-center
+            py-3
+            border-b border-gray-200 dark:border-gray-700
+          "
           >
-            <span className="font-medium text-gray-700 dark:text-gray-200 min-w-[180px]">
+            {/* ✅ Texte compétence seul */}
+            <div className="
+            font-medium
+            text-gray-800 dark:text-gray-100
+            text-base
+          ">
               {it.label}
-            </span>
-            <select
-              className="w-full sm:w-auto rounded-xl border border-green-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 px-4 py-2.5 focus:border-green-500 dark:focus:border-emerald-500 focus:ring-1 outline-none transition-colors"
-              value={obj[it.id] ?? ""}
-              onChange={(e) => setValue({ ...obj, [it.id]: e.target.value })}
-            >
-              {Array.from(
-                { length: (q.scale?.max ?? 4) - (q.scale?.min ?? 0) + 1 },
-                (_, i) => (q.scale?.min ?? 0) + i
-              ).map((lvl) => (
-                <option key={lvl} value={lvl}>
-                  {lvl} – {q.scale?.labels?.[lvl] ?? `Niveau ${lvl}`}
+            </div>
+
+            {/* ✅ Select réponse seul */}
+            <div>
+              <select
+                className="
+                w-full sm:max-w-xs
+                rounded-lg
+                border border-gray-300 dark:border-gray-600
+                bg-white dark:bg-gray-700
+                text-gray-900 dark:text-gray-100
+                px-4 py-2.5
+                text-sm sm:text-base
+                focus:border-green-500
+                focus:ring-2 focus:ring-green-400/30
+                outline-none
+                transition-all
+                cursor-pointer
+                shadow-sm
+              "
+                value={obj[it.id] ?? ""}
+                onChange={(e) =>
+                  setValue({ ...obj, [it.id]: e.target.value })
+                }
+              >
+                <option value="" disabled>
+                  — Choisir un niveau —
                 </option>
-              ))}
-            </select>
+
+                {levels.map((lvl) => (
+                  <option key={lvl} value={String(lvl)}>
+                    {lvl} – {q.scale?.labels?.[lvl] ?? `Niveau ${lvl}`}
+                  </option>
+                ))}
+              </select>
+            </div>
           </div>
         ))}
       </div>
     );
   }
+
 
   return null;
 }
