@@ -6,11 +6,12 @@ import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { logout } from "../services/auth.api";
 import { Moon, Sun } from "lucide-react";
-
+import { useTheme } from "../providers/ThemeProvider";
 
 export default function Navbar() {
   const pathname = usePathname();
   const router = useRouter();
+  const { theme, toggleTheme } = useTheme();
 
   const [user, setUser] = useState(null);
   const [openMobile, setOpenMobile] = useState(false);
@@ -24,7 +25,6 @@ export default function Navbar() {
     }
   }, []);
 
-  // ✅ يغلق dropdowns أوتوماتيك كي تتبدل الصفحة
   useEffect(() => {
     setOpenMobile(false);
     setOpenCandidatures(false);
@@ -34,7 +34,6 @@ export default function Navbar() {
   const isActive = (path) => pathname === path;
   const isAdmin = user?.role === "ADMIN";
 
-  // ✅ parent active logic
   const isInCandidatures =
     pathname.startsWith("/recruiter/candidatures") ||
     pathname.startsWith("/recruiter/CandidatureAnalysis");
@@ -56,45 +55,58 @@ export default function Navbar() {
     }
   }
 
+  // Classes communes
+  const linkBase = "px-6 py-2 rounded-full font-semibold transition";
+  const activeLink = "bg-[#6CB33F] text-white shadow";
+  const inactiveLink = "text-gray-600 dark:text-gray-300 hover:text-[#4E8F2F] dark:hover:text-[#86efac]";
+
+  const dropdownBase = "absolute left-0 mt-2 w-64 rounded-xl shadow-lg border transition-colors";
+  const dropdownLight = "bg-white border-gray-200";
+  const dropdownDark = "dark:bg-gray-800 dark:border-gray-700";
+
+  const dropdownItemBase = "block px-4 py-3 transition";
+  const dropdownActive = "bg-[#6CB33F]/10 text-[#4E8F2F] font-semibold";
+  const dropdownHover = "hover:bg-gray-50 dark:hover:bg-gray-700";
+
   return (
-    <header className="sticky top-0 z-50 backdrop-blur-md bg-white/80 border-b border-gray-200 shadow-sm">
+    <header className="sticky top-0 z-50 backdrop-blur-md bg-white/80 dark:bg-gray-900/85 border-b border-gray-200 dark:border-gray-700 shadow-sm transition-colors duration-300">
       <div className="max-w-7xl mx-auto px-4 sm:px-6">
         <div className="h-16 flex items-center justify-between">
-          {/* LOGO */}
+          {/* LOGO — Deux versions selon le thème */}
           <Link href="/" className="flex items-center">
+            {/* Version claire (texte sombre) */}
             <Image
-              src="/images/optylab.png"
+              src="/images/optylab_logo.png"
               alt="Optylab"
               width={180}
               height={60}
               priority
-              className="h-auto w-[140px] sm:w-[180px]"
+              className="h-auto w-[140px] sm:w-[180px] dark:hidden"
+            />
+
+            {/* Version sombre (texte clair/blanc) */}
+            <Image
+              src="/images/logo_dark.png"
+              alt="Optylab"
+              width={180}
+              height={60}
+              priority
+              className="h-auto w-[140px] sm:w-[180px] hidden dark:block"
             />
           </Link>
 
-          {/* ================= DESKTOP MENU ================= */}
-          <div className="hidden md:flex items-center bg-[#F4F7F5] rounded-full p-1 gap-1">
+          {/* DESKTOP MENU */}
+          <div className="hidden md:flex items-center bg-[#F4F7F5] dark:bg-gray-800/60 rounded-full p-1 gap-1 transition-colors duration-200">
             {!isAdmin && (
               <>
-                <Link
-                  href="/jobs"
-                  className={`px-6 py-2 rounded-full font-semibold transition
-                    ${isActive("/jobs")
-                      ? "bg-[#6CB33F] text-white shadow"
-                      : "text-gray-600 hover:text-[#4E8F2F]"
-                    }`}
-                >
+                <Link href="/jobs" className={`${linkBase} ${isActive("/jobs") ? activeLink : inactiveLink}`}>
                   Offres d'emploi
                 </Link>
 
                 {user && (
                   <Link
                     href="/utilisateur/candidatures"
-                    className={`px-6 py-2 rounded-full font-semibold transition
-                      ${isActive("/utilisateur/candidatures")
-                        ? "bg-[#6CB33F] text-white shadow"
-                        : "text-gray-600 hover:text-[#4E8F2F]"
-                      }`}
+                    className={`${linkBase} ${isActive("/utilisateur/candidatures") ? activeLink : inactiveLink}`}
                   >
                     Mes candidatures
                   </Link>
@@ -106,62 +118,41 @@ export default function Navbar() {
               <>
                 <Link
                   href="/recruiter/dashboard"
-                  className={`px-6 py-2 rounded-full font-semibold transition
-                    ${isActive("/recruiter/dashboard")
-                      ? "bg-[#6CB33F] text-white shadow"
-                      : "text-gray-600 hover:text-[#4E8F2F]"
-                    }`}
+                  className={`${linkBase} ${isActive("/recruiter/dashboard") ? activeLink : inactiveLink}`}
                 >
                   Tableau de bord
                 </Link>
 
                 <Link
                   href="/recruiter/jobs"
-                  className={`px-6 py-2 rounded-full font-semibold transition
-                    ${isActive("/recruiter/jobs")
-                      ? "bg-[#6CB33F] text-white shadow"
-                      : "text-gray-600 hover:text-[#4E8F2F]"
-                    }`}
+                  className={`${linkBase} ${isActive("/recruiter/jobs") ? activeLink : inactiveLink}`}
                 >
                   Gestion offres
                 </Link>
 
-                {/* ===== CANDIDATURES ===== */}
+                {/* CANDIDATURES DROPDOWN */}
                 <div className="relative">
                   <button
                     onClick={() => {
                       setOpenCandidatures((v) => !v);
                       setOpenAdmin(false);
                     }}
-                    className={`px-6 py-2 rounded-full font-semibold transition
-                      ${isInCandidatures
-                        ? "bg-[#6CB33F] text-white shadow"
-                        : "text-gray-600 hover:text-[#4E8F2F]"
-                      }`}
+                    className={`${linkBase} ${isInCandidatures ? activeLink : inactiveLink}`}
                   >
                     Candidatures ▾
                   </button>
 
                   {openCandidatures && (
-                    <div className="absolute left-0 mt-2 w-64 rounded-xl bg-white shadow-lg border border-gray-200">
+                    <div className={`${dropdownBase} ${dropdownLight} ${dropdownDark}`}>
                       <Link
                         href="/recruiter/candidatures"
-                        className={`block px-4 py-3 rounded-t-xl
-                          ${isActive("/recruiter/candidatures")
-                            ? "bg-[#6CB33F]/10 text-[#4E8F2F] font-semibold"
-                            : "hover:bg-gray-50"
-                          }`}
+                        className={`${dropdownItemBase} ${isActive("/recruiter/candidatures") ? dropdownActive : dropdownHover}`}
                       >
                         Liste des candidatures
                       </Link>
-
                       <Link
                         href="/recruiter/CandidatureAnalysis"
-                        className={`block px-4 py-3 rounded-b-xl
-                          ${isActive("/recruiter/CandidatureAnalysis")
-                            ? "bg-[#6CB33F]/10 text-[#4E8F2F] font-semibold"
-                            : "hover:bg-gray-50"
-                          }`}
+                        className={`${dropdownItemBase} ${isActive("/recruiter/CandidatureAnalysis") ? dropdownActive : dropdownHover}`}
                       >
                         Analyse des candidatures
                       </Link>
@@ -169,52 +160,35 @@ export default function Navbar() {
                   )}
                 </div>
 
-                {/* ===== ADMIN ===== */}
+                {/* ADMIN DROPDOWN */}
                 <div className="relative">
                   <button
                     onClick={() => {
                       setOpenAdmin((v) => !v);
                       setOpenCandidatures(false);
                     }}
-                    className={`px-6 py-2 rounded-full font-semibold transition
-                      ${isInAdmin
-                        ? "bg-[#6CB33F] text-white shadow"
-                        : "text-gray-600 hover:text-[#4E8F2F]"
-                      }`}
+                    className={`${linkBase} ${isInAdmin ? activeLink : inactiveLink}`}
                   >
                     Administration ▾
                   </button>
 
                   {openAdmin && (
-                    <div className="absolute left-0 mt-2 w-64 rounded-xl bg-white shadow-lg border border-gray-200">
+                    <div className={`${dropdownBase} ${dropdownLight} ${dropdownDark}`}>
                       <Link
                         href="/recruiter/roles"
-                        className={`block px-4 py-3 rounded-t-xl
-                          ${isActive("/recruiter/roles")
-                            ? "bg-[#6CB33F]/10 text-[#4E8F2F] font-semibold"
-                            : "hover:bg-gray-50"
-                          }`}
+                        className={`${dropdownItemBase} ${isActive("/recruiter/roles") ? dropdownActive : dropdownHover}`}
                       >
                         Gestion des rôles
                       </Link>
-
                       <Link
                         href="/recruiter/users"
-                        className={`block px-4 py-3 rounded-b-xl
-                          ${isActive("/recruiter/users")
-                            ? "bg-[#6CB33F]/10 text-[#4E8F2F] font-semibold"
-                            : "hover:bg-gray-50"
-                          }`}
+                        className={`${dropdownItemBase} ${isActive("/recruiter/users") ? dropdownActive : dropdownHover}`}
                       >
                         Gestion des utilisateurs
                       </Link>
-                       <Link
+                      <Link
                         href="/recruiter/fiche-renseignement"
-                        className={`block px-4 py-3 rounded-b-xl
-                          ${isActive("/recruiter/fiche-renseignement")
-                            ? "bg-[#6CB33F]/10 text-[#4E8F2F] font-semibold"
-                            : "hover:bg-gray-50"
-                          }`}
+                        className={`${dropdownItemBase} ${isActive("/recruiter/fiche-renseignement") ? dropdownActive : dropdownHover}`}
                       >
                         Fiche de Renseignement
                       </Link>
@@ -225,51 +199,55 @@ export default function Navbar() {
             )}
           </div>
 
-          {/* RIGHT DESKTOP */}
-          <div className="hidden md:flex items-center gap-4">
-           
+          {/* RIGHT SIDE (desktop) */}
+          <div className="hidden md:flex items-center gap-5">
+            <button
+              onClick={toggleTheme}
+              className="p-2.5 rounded-full hover:bg-gray-200/70 dark:hover:bg-gray-700/50 transition-colors"
+              aria-label="Changer de thème"
+              title={theme === "dark" ? "Passer en mode clair" : "Passer en mode sombre"}
+            >
+              {theme === "dark" ? (
+                <Sun className="h-5 w-5 text-amber-400" />
+              ) : (
+                <Moon className="h-5 w-5 text-gray-700" />
+              )}
+            </button>
 
             {!user ? (
-              <Link
-                href="/login"
-                className="font-semibold text-[#6CB33F] hover:underline"
-              >
+              <Link href="/login" className="font-semibold text-[#6CB33F] hover:underline">
                 Espace recruteur
               </Link>
             ) : (
               <button
                 onClick={handleLogout}
-                className="font-semibold text-gray-500 hover:text-red-600 transition"
+                className="font-semibold text-gray-600 dark:text-gray-300 hover:text-red-600 transition-colors"
               >
                 Déconnexion
               </button>
             )}
           </div>
 
-          {/* MOBILE MENU BUTTON */}
+          {/* MOBILE HAMBURGER */}
           <button
             onClick={() => setOpenMobile((v) => !v)}
-            className="md:hidden p-2 rounded-lg hover:bg-gray-100"
+            className="md:hidden p-2 rounded-lg hover:bg-gray-100/70 dark:hover:bg-gray-700/50 transition-colors"
           >
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="w-6 h-6 text-gray-700 dark:text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
             </svg>
           </button>
         </div>
 
-        {/* ================= MOBILE MENU ================= */}
+        {/* MOBILE MENU */}
         {openMobile && (
-          <div className="md:hidden pb-4">
-            <div className="mt-3 rounded-2xl bg-white shadow border border-gray-200 p-3 space-y-2">
+          <div className="md:hidden pb-5 pt-2">
+            <div className="rounded-2xl bg-white/95 dark:bg-gray-900/85 shadow-xl border border-gray-200/70 dark:border-gray-700/60 p-4 space-y-2 backdrop-blur-sm transition-colors duration-200">
               {!isAdmin && (
                 <>
                   <Link
                     href="/jobs"
-                    className={`block px-4 py-3 rounded-xl font-semibold transition
-                      ${isActive("/jobs")
-                        ? "bg-[#6CB33F] text-white"
-                        : "text-gray-700 hover:bg-gray-50"
-                      }`}
+                    className={`block px-5 py-3.5 rounded-xl font-medium transition ${isActive("/jobs") ? "bg-[#6CB33F] text-white" : "text-gray-700 dark:text-gray-200 hover:bg-gray-100/70 dark:hover:bg-gray-800/60"}`}
                   >
                     Offres d'emploi
                   </Link>
@@ -277,11 +255,7 @@ export default function Navbar() {
                   {user && (
                     <Link
                       href="/utilisateur/candidatures"
-                      className={`block px-4 py-3 rounded-xl font-semibold transition
-                        ${isActive("/utilisateur/candidatures")
-                          ? "bg-[#6CB33F] text-white"
-                          : "text-gray-700 hover:bg-gray-50"
-                        }`}
+                      className={`block px-5 py-3.5 rounded-xl font-medium transition ${isActive("/utilisateur/candidatures") ? "bg-[#6CB33F] text-white" : "text-gray-700 dark:text-gray-200 hover:bg-gray-100/70 dark:hover:bg-gray-800/60"}`}
                     >
                       Mes candidatures
                     </Link>
@@ -291,65 +265,59 @@ export default function Navbar() {
 
               {isAdmin && (
                 <>
-                  <Link
-                    href="/recruiter/dashboard"
-                    className="block px-4 py-3 rounded-xl hover:bg-gray-50"
-                  >
+                  <Link href="/recruiter/dashboard" className="block px-5 py-3.5 rounded-xl text-gray-700 dark:text-gray-200 hover:bg-gray-100/70 dark:hover:bg-gray-800/60">
                     Tableau de bord
                   </Link>
-
-                  <Link
-                    href="/recruiter/jobs"
-                    className="block px-4 py-3 rounded-xl hover:bg-gray-50"
-                  >
+                  <Link href="/recruiter/jobs" className="block px-5 py-3.5 rounded-xl text-gray-700 dark:text-gray-200 hover:bg-gray-100/70 dark:hover:bg-gray-800/60">
                     Gestion offres
                   </Link>
-
-                    <Link
-                      href="/recruiter/candidatures"
-                      className="block px-4 py-3 rounded-xl hover:bg-gray-50"
-                    >
-                      Liste des candidatures
-                    </Link>
-                    <Link
-                      href="/recruiter/CandidatureAnalysis"
-                      className="block px-4 py-3 rounded-xl hover:bg-gray-50"
-                    >
-                      Analyse des candidatures
-                    </Link>
-                    <Link
-                      href="/recruiter/roles"
-                      className="block px-4 py-3 rounded-xl hover:bg-gray-50"
-                    >
-                      Gestion des rôles
-                    </Link>
-                    <Link
-                      href="/recruiter/users"
-                      className="block px-4 py-3 rounded-xl hover:bg-gray-50"
-                    >
-                      Gestion des utilisateurs
-                    </Link>
-                    <Link
-                      href="/recruiter/fiche-renseignement"
-                      className="block px-4 py-3 rounded-xl hover:bg-gray-50"
-                    >
-                      Fiche de Renseignement
-                    </Link>
+                  <Link href="/recruiter/candidatures" className="block px-5 py-3.5 rounded-xl text-gray-700 dark:text-gray-200 hover:bg-gray-100/70 dark:hover:bg-gray-800/60">
+                    Liste des candidatures
+                  </Link>
+                  <Link href="/recruiter/CandidatureAnalysis" className="block px-5 py-3.5 rounded-xl text-gray-700 dark:text-gray-200 hover:bg-gray-100/70 dark:hover:bg-gray-800/60">
+                    Analyse des candidatures
+                  </Link>
+                  <Link href="/recruiter/roles" className="block px-5 py-3.5 rounded-xl text-gray-700 dark:text-gray-200 hover:bg-gray-100/70 dark:hover:bg-gray-800/60">
+                    Gestion des rôles
+                  </Link>
+                  <Link href="/recruiter/users" className="block px-5 py-3.5 rounded-xl text-gray-700 dark:text-gray-200 hover:bg-gray-100/70 dark:hover:bg-gray-800/60">
+                    Gestion des utilisateurs
+                  </Link>
+                  <Link href="/recruiter/fiche-renseignement" className="block px-5 py-3.5 rounded-xl text-gray-700 dark:text-gray-200 hover:bg-gray-100/70 dark:hover:bg-gray-800/60">
+                    Fiche de Renseignement
+                  </Link>
                 </>
               )}
 
-              <div className="pt-2 border-t border-gray-200">
+              <div className="pt-3 mt-2 border-t border-gray-200/70 dark:border-gray-700/60">
+                <button
+                  onClick={toggleTheme}
+                  className="w-full flex items-center gap-3 px-5 py-3.5 rounded-xl font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-100/70 dark:hover:bg-gray-800/60 transition-colors"
+                >
+                  {theme === "dark" ? (
+                    <>
+                      <Sun className="h-5 w-5 text-amber-400" />
+                      <span>Mode clair</span>
+                    </>
+                  ) : (
+                    <>
+                      <Moon className="h-5 w-5 text-gray-700" />
+                      <span>Mode sombre</span>
+                    </>
+                  )}
+                </button>
+
                 {!user ? (
                   <Link
                     href="/login"
-                    className="block px-4 py-3 rounded-xl font-semibold text-[#6CB33F] hover:bg-gray-50"
+                    className="block px-5 py-3.5 rounded-xl font-semibold text-[#6CB33F] hover:bg-gray-100/70 dark:hover:bg-gray-800/60"
                   >
                     Espace recruteur
                   </Link>
                 ) : (
                   <button
                     onClick={handleLogout}
-                    className="w-full text-left px-4 py-3 rounded-xl font-semibold text-gray-600 hover:text-red-600 hover:bg-gray-50"
+                    className="w-full text-left px-5 py-3.5 rounded-xl font-semibold text-gray-600 dark:text-gray-300 hover:text-red-600 hover:bg-gray-100/70 dark:hover:bg-gray-800/60"
                   >
                     Déconnexion
                   </button>

@@ -5,7 +5,7 @@ import { getCandidaturesWithJob } from "../../services/candidature.api";
 import Pagination from "../../components/Pagination";
 import { Search, FileText } from "lucide-react";
 
-/* ================= CONFIG (.env) ================= */
+/* ================= CONFIG ================= */
 const API_BASE = process.env.NEXT_PUBLIC_API_URL;
 
 /* ================= UTILS ================= */
@@ -24,7 +24,6 @@ function safeStr(v) {
   return String(v);
 }
 
-/* ================= FULL NAME ================= */
 function getFullName(c) {
   const extracted = c?.extracted || {};
   const parsed = c?.parsed || {};
@@ -38,21 +37,19 @@ function getFullName(c) {
   );
 }
 
-/* ================= EMAIL ================= */
 function getEmail(c) {
   const extracted = c?.extracted || {};
   const parsed = c?.parsed || {};
 
-  const e =
+  return (
     safeStr(c?.email) ||
     safeStr(extracted?.manual?.email) ||
     safeStr(parsed?.manual?.email) ||
-    safeStr(extracted?.email);
-
-  return e || "";
+    safeStr(extracted?.email) ||
+    ""
+  );
 }
 
-/* ================= CONTACT ================= */
 function getPhone(c) {
   return (
     safeStr(c?.personalInfoForm?.telephone) ||
@@ -61,7 +58,6 @@ function getPhone(c) {
   );
 }
 
-/* ================= LINKEDIN ================= */
 function getLinkedIn(c) {
   const url =
     safeStr(c?.personalInfoForm?.linkedin) ||
@@ -72,7 +68,6 @@ function getLinkedIn(c) {
   return `https://${url}`;
 }
 
-/* ================= CV ================= */
 function normalizeUrl(raw) {
   if (!raw) return "";
   if (raw.startsWith("http")) return raw;
@@ -122,45 +117,45 @@ export default function CandidaturesTablePage() {
   const paginated = filtered.slice((page - 1) * pageSize, page * pageSize);
 
   return (
-    <div className="min-h-screen bg-[#F0FAF0]">
+    <div className="min-h-screen bg-[#F0FAF0] dark:bg-gray-950 text-gray-900 dark:text-gray-100 transition-colors duration-300">
       <div className="max-w-full mx-auto px-4 sm:px-6 pt-10 pb-16">
         {/* HEADER */}
-        <h1 className="text-3xl sm:text-4xl font-extrabold text-gray-900 mb-6">
+        <h1 className="text-3xl sm:text-4xl font-extrabold text-gray-900 dark:text-white mb-6">
           Liste des Candidatures
         </h1>
 
         {/* SEARCH */}
-        <div className="bg-white rounded-full shadow-sm border border-gray-100 px-4 sm:px-5 py-3 flex items-center gap-3 mb-8">
-          <Search className="w-5 h-5 text-[#4E8F2F] flex-shrink-0" />
+        <div className="bg-white dark:bg-gray-800 rounded-full shadow-sm border border-gray-100 dark:border-gray-700 px-4 sm:px-5 py-3 flex items-center gap-3 mb-8 transition-colors duration-300">
+          <Search className="w-5 h-5 text-[#4E8F2F] dark:text-emerald-400 flex-shrink-0" />
           <input
             value={q}
             onChange={(e) => setQ(e.target.value)}
             placeholder="Rechercher (nom, email, job)…"
-            className="w-full outline-none text-sm text-gray-700"
+            className="w-full outline-none text-sm bg-transparent text-gray-700 dark:text-gray-300 placeholder-gray-500 dark:placeholder-gray-400"
           />
         </div>
 
-        {/* ================= LOADING ================= */}
+        {/* LOADING */}
         {loading && (
-          <div className="bg-white rounded-3xl shadow-lg p-8 sm:p-12 text-center">
+          <div className="bg-white dark:bg-gray-800 rounded-3xl shadow-lg border border-gray-200 dark:border-gray-700 p-8 sm:p-12 text-center transition-colors duration-300">
             <div className="flex flex-col items-center justify-center gap-4">
-              <div className="animate-spin rounded-full h-12 w-12 border-4 border-[#E9F5E3] border-t-[#4E8F2F]"></div>
-              <p className="text-gray-500 text-lg">Chargement des candidatures...</p>
+              <div className="animate-spin rounded-full h-12 w-12 border-4 border-[#E9F5E3] dark:border-gray-700 border-t-[#4E8F2F] dark:border-t-emerald-400"></div>
+              <p className="text-gray-500 dark:text-gray-400 text-lg">Chargement des candidatures...</p>
             </div>
           </div>
         )}
 
-        {/* ================= EMPTY STATE ================= */}
+        {/* EMPTY STATE */}
         {!loading && filtered.length === 0 && (
-          <div className="bg-white rounded-3xl shadow-lg p-8 sm:p-12 text-center">
+          <div className="bg-white dark:bg-gray-800 rounded-3xl shadow-lg border border-gray-200 dark:border-gray-700 p-8 sm:p-12 text-center transition-colors duration-300">
             <div className="flex flex-col items-center justify-center gap-4">
-              <div className="w-20 h-20 rounded-full bg-[#E9F5E3] flex items-center justify-center">
-                <FileText className="w-10 h-10 text-[#4E8F2F]" />
+              <div className="w-20 h-20 rounded-full bg-[#E9F5E3] dark:bg-gray-700 flex items-center justify-center">
+                <FileText className="w-10 h-10 text-[#4E8F2F] dark:text-emerald-400" />
               </div>
-              <h2 className="text-2xl font-bold text-gray-900">
+              <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
                 {q ? "Aucun résultat trouvé" : "Aucune candidature"}
               </h2>
-              <p className="text-gray-600 max-w-md">
+              <p className="text-gray-600 dark:text-gray-400 max-w-md">
                 {q
                   ? `Aucune candidature ne correspond à votre recherche "${q}".`
                   : "Il n'y a actuellement aucune candidature dans le système."}
@@ -168,7 +163,7 @@ export default function CandidaturesTablePage() {
               {q && (
                 <button
                   onClick={() => setQ("")}
-                  className="mt-4 px-6 py-3 bg-[#6CB33F] hover:bg-[#4E8F2F] text-white rounded-full font-semibold transition-colors"
+                  className="mt-4 px-6 py-3 bg-[#6CB33F] hover:bg-[#4E8F2F] dark:bg-emerald-600 dark:hover:bg-emerald-500 text-white rounded-full font-semibold transition-colors"
                 >
                   Effacer la recherche
                 </button>
@@ -177,26 +172,26 @@ export default function CandidaturesTablePage() {
           </div>
         )}
 
-        {/* ================= MOBILE : CARDS ================= */}
+        {/* MOBILE : CARDS */}
         {!loading && filtered.length > 0 && (
           <div className="md:hidden space-y-4">
             {paginated.map((c) => (
               <div
                 key={c._id}
-                className="bg-white rounded-3xl shadow-lg border border-[#E9F5E3] p-5"
+                className="bg-white dark:bg-gray-800 rounded-3xl shadow-lg border border-[#E9F5E3] dark:border-gray-700 p-5 transition-colors duration-300"
               >
-                <div className="font-extrabold text-gray-900 text-lg mb-2">
+                <div className="font-extrabold text-gray-900 dark:text-white text-lg mb-2">
                   {getFullName(c)}
                 </div>
 
                 {getEmail(c) && (
-                  <div className="text-sm text-gray-700 mb-1">
+                  <div className="text-sm text-gray-700 dark:text-gray-300 mb-1">
                     📧 {getEmail(c)}
                   </div>
                 )}
 
                 {getPhone(c) && (
-                  <div className="text-sm text-gray-700 mb-1">
+                  <div className="text-sm text-gray-700 dark:text-gray-300 mb-1">
                     📱 {getPhone(c)}
                   </div>
                 )}
@@ -206,14 +201,14 @@ export default function CandidaturesTablePage() {
                     href={getLinkedIn(c)}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-sm underline text-[#4E8F2F] hover:text-[#3a6b23] block mb-3"
+                    className="text-sm underline text-[#4E8F2F] dark:text-emerald-400 hover:text-[#3a6b23] dark:hover:text-emerald-300 block mb-3 transition-colors"
                   >
                     🔗 Profil LinkedIn
                   </a>
                 )}
 
                 <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
-                  <span className="inline-flex items-center px-4 py-2 rounded-full bg-[#E9F5E3] text-[#4E8F2F] text-xs font-semibold border border-[#d7ebcf]">
+                  <span className="inline-flex items-center px-4 py-2 rounded-full bg-[#E9F5E3] dark:bg-gray-700 text-[#4E8F2F] dark:text-emerald-400 text-xs font-semibold border border-[#d7ebcf] dark:border-gray-600 transition-colors">
                     {safeStr(c?.jobTitle) || "Poste non spécifié"}
                   </span>
 
@@ -222,14 +217,14 @@ export default function CandidaturesTablePage() {
                       href={getCvUrl(c)}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="inline-flex items-center gap-2 bg-[#E9F5E3] border border-[#d7ebcf] text-[#4E8F2F] font-bold px-4 py-2 rounded-full hover:bg-[#d7ebcf] transition-colors"
+                      className="inline-flex items-center gap-2 bg-[#E9F5E3] dark:bg-gray-700 border border-[#d7ebcf] dark:border-gray-600 text-[#4E8F2F] dark:text-emerald-400 font-bold px-4 py-2 rounded-full hover:bg-[#d7ebcf] dark:hover:bg-gray-600 transition-colors"
                     >
                       Voir CV
                     </a>
                   )}
                 </div>
 
-                <div className="mt-3 text-sm text-gray-600">
+                <div className="mt-3 text-sm text-gray-600 dark:text-gray-400">
                   📅 {formatDate(c?.createdAt)}
                 </div>
               </div>
@@ -237,12 +232,12 @@ export default function CandidaturesTablePage() {
           </div>
         )}
 
-        {/* ================= DESKTOP : TABLE ================= */}
+        {/* DESKTOP : TABLE */}
         {!loading && filtered.length > 0 && (
-          <div className="hidden md:block bg-white rounded-3xl shadow-lg overflow-hidden">
+          <div className="hidden md:block bg-white dark:bg-gray-800 rounded-3xl shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden transition-colors duration-300">
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
-                <thead className="bg-[#E9F5E3] text-[#4E8F2F]">
+                <thead className="bg-[#E9F5E3] dark:bg-gray-700 text-[#4E8F2F] dark:text-emerald-400">
                   <tr>
                     <th className="text-left px-6 lg:px-8 py-5 font-extrabold uppercase text-xs tracking-wider">
                       Candidat
@@ -268,16 +263,16 @@ export default function CandidaturesTablePage() {
                   </tr>
                 </thead>
 
-                <tbody className="divide-y divide-gray-100">
+                <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
                   {paginated.map((c) => (
-                    <tr key={c._id} className="hover:bg-green-50/40 transition">
-                      <td className="px-6 lg:px-8 py-5 font-extrabold text-gray-900">
+                    <tr key={c._id} className="hover:bg-green-50/40 dark:hover:bg-gray-700/40 transition-colors">
+                      <td className="px-6 lg:px-8 py-5 font-extrabold text-gray-900 dark:text-white">
                         {getFullName(c)}
                       </td>
-                      <td className="px-6 lg:px-8 py-5 text-gray-700">
+                      <td className="px-6 lg:px-8 py-5 text-gray-700 dark:text-gray-300">
                         {getEmail(c) || "—"}
                       </td>
-                      <td className="px-6 lg:px-8 py-5 text-gray-700">
+                      <td className="px-6 lg:px-8 py-5 text-gray-700 dark:text-gray-300">
                         {getPhone(c) || "—"}
                       </td>
                       <td className="px-6 lg:px-8 py-5">
@@ -286,20 +281,20 @@ export default function CandidaturesTablePage() {
                             href={getLinkedIn(c)}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="text-[#4E8F2F] underline hover:text-[#3a6b23]"
+                            className="text-[#4E8F2F] dark:text-emerald-400 underline hover:text-[#3a6b23] dark:hover:text-emerald-300 transition-colors"
                           >
                             Profil
                           </a>
                         ) : (
-                          <span className="text-gray-400">—</span>
+                          <span className="text-gray-400 dark:text-gray-500">—</span>
                         )}
                       </td>
                       <td className="px-6 lg:px-8 py-5">
-                        <span className="inline-flex items-center px-4 py-2 rounded-full bg-[#E9F5E3] text-[#4E8F2F] text-xs font-semibold border border-[#d7ebcf]">
+                        <span className="inline-flex items-center px-4 py-2 rounded-full bg-[#E9F5E3] dark:bg-gray-700 text-[#4E8F2F] dark:text-emerald-400 text-xs font-semibold border border-[#d7ebcf] dark:border-gray-600 transition-colors">
                           {safeStr(c?.jobTitle) || "N/A"}
                         </span>
                       </td>
-                      <td className="px-6 lg:px-8 py-5 text-gray-600">
+                      <td className="px-6 lg:px-8 py-5 text-gray-600 dark:text-gray-400">
                         {formatDate(c?.createdAt)}
                       </td>
                       <td className="px-6 lg:px-8 py-5 text-right">
@@ -308,12 +303,12 @@ export default function CandidaturesTablePage() {
                             href={getCvUrl(c)}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="inline-flex items-center gap-2 bg-[#E9F5E3] border border-[#d7ebcf] text-[#4E8F2F] font-bold px-4 py-2 rounded-full hover:bg-[#d7ebcf] transition-colors"
+                            className="inline-flex items-center gap-2 bg-[#E9F5E3] dark:bg-gray-700 border border-[#d7ebcf] dark:border-gray-600 text-[#4E8F2F] dark:text-emerald-400 font-bold px-4 py-2 rounded-full hover:bg-[#d7ebcf] dark:hover:bg-gray-600 transition-colors"
                           >
                             Voir CV
                           </a>
                         ) : (
-                          <span className="text-gray-400">—</span>
+                          <span className="text-gray-400 dark:text-gray-500">—</span>
                         )}
                       </td>
                     </tr>
@@ -324,9 +319,9 @@ export default function CandidaturesTablePage() {
           </div>
         )}
 
-        {/* ================= PAGINATION ================= */}
+        {/* PAGINATION */}
         {!loading && filtered.length > 0 && (
-          <div className="mt-6 px-4 sm:px-8 py-5 flex flex-col sm:flex-row items-center justify-between gap-4 text-sm text-gray-500">
+          <div className="mt-6 px-4 sm:px-8 py-5 flex flex-col sm:flex-row items-center justify-between gap-4 text-sm text-gray-500 dark:text-gray-400 transition-colors">
             <p className="font-medium">
               Total: {filtered.length} candidature{filtered.length > 1 ? "s" : ""}
             </p>

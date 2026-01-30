@@ -1,4 +1,5 @@
 "use client";
+
 import { useMemo, useState } from "react";
 
 /* =======================
@@ -49,11 +50,9 @@ function getPercentFromLevel(level) {
   const v = safeStr(level).toLowerCase();
   if (!v) return 0;
 
-  // si "80%" => 80
   const m = v.match(/(\d{1,3})\s*%/);
   if (m) return clamp(m[1], 0, 100);
 
-  // si "0.8" => 80
   const num = Number(v);
   if (Number.isFinite(num)) {
     if (num >= 0 && num <= 1) return Math.round(num * 100);
@@ -63,7 +62,6 @@ function getPercentFromLevel(level) {
   return 0;
 }
 
-
 /* =======================
    COMPONENT
 ======================= */
@@ -71,7 +69,6 @@ export default function StepManual({ parsedCV, cvFileUrl, onBack, onSubmit }) {
   const initial = useMemo(() => {
     const p = parsedCV || {};
 
-    // ✅ CLEAN EMAIL ICI
     const fixedEmail = cleanEmail(safeStr(p.email));
 
     return {
@@ -310,10 +307,7 @@ export default function StepManual({ parsedCV, cvFileUrl, onBack, onSubmit }) {
   async function handleSubmitFinal() {
     const payload = {
       nom: safeStr(form.personal_info.full_name),
-
-      // ✅ CLEAN EMAIL AUSSI AU SUBMIT (sécurité)
       email: cleanEmail(safeStr(form.personal_info.email)),
-
       telephone: safeStr(form.personal_info.phone),
       adresse: safeStr(form.personal_info.address),
       titre_poste: safeStr(form.personal_info.job_title),
@@ -429,7 +423,7 @@ export default function StepManual({ parsedCV, cvFileUrl, onBack, onSubmit }) {
                   ...prev,
                   personal_info: {
                     ...prev.personal_info,
-                    email: cleanEmail(v), // ✅ clean pendant la saisie aussi
+                    email: cleanEmail(v),
                   },
                 }))
               }
@@ -548,7 +542,7 @@ export default function StepManual({ parsedCV, cvFileUrl, onBack, onSubmit }) {
 
           {/* PERMIS */}
           <div className="space-y-2">
-            <p className="text-sm font-semibold text-gray-700">
+            <p className="text-sm font-semibold text-gray-700 dark:text-gray-300">
               Permis de conduire
             </p>
 
@@ -569,8 +563,8 @@ export default function StepManual({ parsedCV, cvFileUrl, onBack, onSubmit }) {
                 ${
                   safeStr(form.personal_info.permis_conduire).toLowerCase() ===
                   "oui"
-                    ? "bg-green-600 text-white border-green-600"
-                    : "bg-white text-gray-700 border-gray-200 hover:bg-gray-50"
+                    ? "bg-green-600 dark:bg-emerald-600 text-white border-green-600 dark:border-emerald-600"
+                    : "bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700"
                 }`}
               >
                 Oui
@@ -593,8 +587,8 @@ export default function StepManual({ parsedCV, cvFileUrl, onBack, onSubmit }) {
                 ${
                   safeStr(form.personal_info.permis_conduire).toLowerCase() ===
                   "non"
-                    ? "bg-green-600 text-white border-green-600"
-                    : "bg-white text-gray-700 border-gray-200 hover:bg-gray-50"
+                    ? "bg-green-600 dark:bg-emerald-600 text-white border-green-600 dark:border-emerald-600"
+                    : "bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700"
                 }`}
               >
                 Non
@@ -623,7 +617,7 @@ export default function StepManual({ parsedCV, cvFileUrl, onBack, onSubmit }) {
           {/* Situation familiale */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <p className="text-sm font-semibold text-gray-700">
+              <p className="text-sm font-semibold text-gray-700 dark:text-gray-300">
                 Situation familiale
               </p>
 
@@ -631,8 +625,9 @@ export default function StepManual({ parsedCV, cvFileUrl, onBack, onSubmit }) {
                 data-cy="situation-familiale"
                 className="
                   w-full px-5 py-3 sm:px-6 sm:py-4
-                  border border-gray-200 rounded-full bg-white
-                  focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none transition
+                  border border-gray-200 dark:border-gray-600 rounded-full bg-white dark:bg-gray-800
+                  focus:ring-2 focus:ring-green-500 dark:focus:ring-emerald-500 focus:border-green-500 dark:focus:border-emerald-500 outline-none transition
+                  text-gray-900 dark:text-gray-100
                 "
                 value={form.personal_info.situation_familiale}
                 onChange={(e) =>
@@ -753,15 +748,16 @@ export default function StepManual({ parsedCV, cvFileUrl, onBack, onSubmit }) {
       rightAction: null,
       render: () => (
         <div className="space-y-4">
-          <p className="text-sm font-semibold text-gray-700">Résumé / Profil</p>
+          <p className="text-sm font-semibold text-gray-700 dark:text-gray-300">Résumé / Profil</p>
           <textarea
             data-cy="profile"
             className="
               w-full min-h-[160px]
               px-5 py-3 sm:px-6 sm:py-4
-              border border-gray-200 rounded-2xl sm:rounded-3xl bg-white
-              focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none transition
-              placeholder:text-gray-400
+              border border-gray-200 dark:border-gray-600 rounded-2xl sm:rounded-3xl bg-white dark:bg-gray-800
+              focus:ring-2 focus:ring-green-500 dark:focus:ring-emerald-500 focus:border-green-500 dark:focus:border-emerald-500 outline-none transition
+              placeholder:text-gray-400 dark:placeholder:text-gray-500
+              text-gray-900 dark:text-gray-100
             "
             placeholder="Parlez brièvement de vous..."
             value={form.profile || ""}
@@ -780,7 +776,7 @@ export default function StepManual({ parsedCV, cvFileUrl, onBack, onSubmit }) {
       render: () => (
         <div className="space-y-6">
           <div className="space-y-2">
-            <p className="text-sm font-semibold text-gray-700">
+            <p className="text-sm font-semibold text-gray-700 dark:text-gray-300">
               Ajouter une compétence
             </p>
 
@@ -790,9 +786,10 @@ export default function StepManual({ parsedCV, cvFileUrl, onBack, onSubmit }) {
                 className="
                   w-full sm:flex-1
                   px-5 py-3 sm:px-6 sm:py-4
-                  border border-gray-200 rounded-full bg-white
-                  focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none transition
-                  placeholder:text-gray-400
+                  border border-gray-200 dark:border-gray-600 rounded-full bg-white dark:bg-gray-800
+                  focus:ring-2 focus:ring-green-500 dark:focus:ring-emerald-500 focus:border-green-500 dark:focus:border-emerald-500 outline-none transition
+                  placeholder:text-gray-400 dark:placeholder:text-gray-500
+                  text-gray-900 dark:text-gray-100
                 "
                 placeholder="Ex : React, Node.js, MongoDB..."
                 value={newSkill}
@@ -808,8 +805,8 @@ export default function StepManual({ parsedCV, cvFileUrl, onBack, onSubmit }) {
                 className="
                   w-full sm:w-auto
                   px-6 py-3 sm:px-8 sm:py-4
-                  rounded-full bg-green-600 text-white font-semibold
-                  hover:bg-green-700 transition
+                  rounded-full bg-green-600 dark:bg-emerald-600 text-white font-semibold
+                  hover:bg-green-700 dark:hover:bg-emerald-500 transition
                 "
               >
                 Ajouter
@@ -825,7 +822,8 @@ export default function StepManual({ parsedCV, cvFileUrl, onBack, onSubmit }) {
                   className="
                     inline-flex items-center gap-2
                     px-4 py-2 rounded-full
-                    bg-green-50 border border-green-200 text-green-800
+                    bg-green-50 dark:bg-emerald-950/40 border border-green-200 dark:border-emerald-800
+                    text-green-800 dark:text-emerald-300
                     text-sm font-semibold
                   "
                 >
@@ -833,7 +831,7 @@ export default function StepManual({ parsedCV, cvFileUrl, onBack, onSubmit }) {
                   <button
                     type="button"
                     onClick={() => removeSkill(s)}
-                    className="text-green-700 hover:text-red-600 transition"
+                    className="text-green-700 dark:text-emerald-400 hover:text-red-600 dark:hover:text-red-400 transition"
                     title="Supprimer"
                   >
                     ✕
@@ -842,7 +840,7 @@ export default function StepManual({ parsedCV, cvFileUrl, onBack, onSubmit }) {
               ))}
             </div>
           ) : (
-            <p className="text-sm text-gray-500">Aucune compétence ajoutée.</p>
+            <p className="text-sm text-gray-500 dark:text-gray-400">Aucune compétence ajoutée.</p>
           )}
         </div>
       ),
@@ -857,8 +855,8 @@ export default function StepManual({ parsedCV, cvFileUrl, onBack, onSubmit }) {
           onClick={addEducation}
           className="
             w-full sm:w-auto
-            px-5 py-3 rounded-full bg-white border border-gray-900
-            font-semibold text-gray-900 hover:bg-gray-50 transition
+            px-5 py-3 rounded-full bg-white dark:bg-gray-800 border border-gray-900 dark:border-gray-300
+            font-semibold text-gray-900 dark:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-700 transition
           "
         >
           + Ajouter
@@ -870,13 +868,13 @@ export default function StepManual({ parsedCV, cvFileUrl, onBack, onSubmit }) {
             safeArr(form.education).map((edu, i) => (
               <div
                 key={i}
-                className="p-4 sm:p-5 rounded-2xl sm:rounded-3xl border border-gray-200 bg-gray-50 space-y-4"
+                className="p-4 sm:p-5 rounded-2xl sm:rounded-3xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50 space-y-4"
               >
                 <div className="flex items-center justify-end">
                   <button
                     type="button"
                     onClick={() => removeEducation(i)}
-                    className="text-red-600 font-semibold hover:underline"
+                    className="text-red-600 dark:text-red-400 font-semibold hover:underline"
                   >
                     Supprimer
                   </button>
@@ -903,7 +901,7 @@ export default function StepManual({ parsedCV, cvFileUrl, onBack, onSubmit }) {
               </div>
             ))
           ) : (
-            <p className="text-sm text-gray-500">Aucune formation ajoutée.</p>
+            <p className="text-sm text-gray-500 dark:text-gray-400">Aucune formation ajoutée.</p>
           )}
         </div>
       ),
@@ -918,8 +916,8 @@ export default function StepManual({ parsedCV, cvFileUrl, onBack, onSubmit }) {
           onClick={addExperience}
           className="
             w-full sm:w-auto
-            px-5 py-3 rounded-full bg-white border border-gray-900
-            font-semibold text-gray-900 hover:bg-gray-50 transition
+            px-5 py-3 rounded-full bg-white dark:bg-gray-800 border border-gray-900 dark:border-gray-300
+            font-semibold text-gray-900 dark:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-700 transition
           "
         >
           + Ajouter
@@ -931,13 +929,13 @@ export default function StepManual({ parsedCV, cvFileUrl, onBack, onSubmit }) {
             safeArr(form.experience).map((exp, i) => (
               <div
                 key={i}
-                className="p-4 sm:p-5 rounded-2xl sm:rounded-3xl border border-gray-200 bg-gray-50 space-y-4"
+                className="p-4 sm:p-5 rounded-2xl sm:rounded-3xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50 space-y-4"
               >
                 <div className="flex items-center justify-end">
                   <button
                     type="button"
                     onClick={() => removeExperience(i)}
-                    className="text-red-600 font-semibold hover:underline"
+                    className="text-red-600 dark:text-red-400 font-semibold hover:underline"
                   >
                     Supprimer
                   </button>
@@ -973,16 +971,17 @@ export default function StepManual({ parsedCV, cvFileUrl, onBack, onSubmit }) {
                 />
 
                 <div className="space-y-2">
-                  <p className="text-sm font-semibold text-gray-700">
+                  <p className="text-sm font-semibold text-gray-700 dark:text-gray-300">
                     Description
                   </p>
                   <textarea
                     className="
                       w-full min-h-[120px]
                       px-5 py-3 sm:px-6 sm:py-4
-                      border border-gray-200 rounded-2xl sm:rounded-3xl bg-white
-                      focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none transition
-                      placeholder:text-gray-400
+                      border border-gray-200 dark:border-gray-600 rounded-2xl sm:rounded-3xl bg-white dark:bg-gray-800
+                      focus:ring-2 focus:ring-green-500 dark:focus:ring-emerald-500 focus:border-green-500 dark:focus:border-emerald-500 outline-none transition
+                      placeholder:text-gray-400 dark:placeholder:text-gray-500
+                      text-gray-900 dark:text-gray-100
                     "
                     placeholder="Décrivez vos missions..."
                     value={exp.description || ""}
@@ -994,7 +993,7 @@ export default function StepManual({ parsedCV, cvFileUrl, onBack, onSubmit }) {
               </div>
             ))
           ) : (
-            <p className="text-sm text-gray-500">Aucune expérience ajoutée.</p>
+            <p className="text-sm text-gray-500 dark:text-gray-400">Aucune expérience ajoutée.</p>
           )}
         </div>
       ),
@@ -1009,8 +1008,8 @@ export default function StepManual({ parsedCV, cvFileUrl, onBack, onSubmit }) {
           onClick={addProject}
           className="
             w-full sm:w-auto
-            px-5 py-3 rounded-full bg-white border border-gray-900
-            font-semibold text-gray-900 hover:bg-gray-50 transition
+            px-5 py-3 rounded-full bg-white dark:bg-gray-800 border border-gray-900 dark:border-gray-300
+            font-semibold text-gray-900 dark:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-700 transition
           "
         >
           + Ajouter
@@ -1022,13 +1021,13 @@ export default function StepManual({ parsedCV, cvFileUrl, onBack, onSubmit }) {
             safeArr(form.projects).map((pr, i) => (
               <div
                 key={i}
-                className="p-4 sm:p-5 rounded-2xl sm:rounded-3xl border border-gray-200 bg-gray-50 space-y-4"
+                className="p-4 sm:p-5 rounded-2xl sm:rounded-3xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50 space-y-4"
               >
                 <div className="flex items-center justify-end">
                   <button
                     type="button"
                     onClick={() => removeProject(i)}
-                    className="text-red-600 font-semibold hover:underline"
+                    className="text-red-600 dark:text-red-400 font-semibold hover:underline"
                   >
                     Supprimer
                   </button>
@@ -1042,16 +1041,17 @@ export default function StepManual({ parsedCV, cvFileUrl, onBack, onSubmit }) {
                 />
 
                 <div className="space-y-2">
-                  <p className="text-sm font-semibold text-gray-700">
+                  <p className="text-sm font-semibold text-gray-700 dark:text-gray-300">
                     Description
                   </p>
                   <textarea
                     className="
                       w-full min-h-[120px]
                       px-5 py-3 sm:px-6 sm:py-4
-                      border border-gray-200 rounded-2xl sm:rounded-3xl bg-white
-                      focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none transition
-                      placeholder:text-gray-400
+                      border border-gray-200 dark:border-gray-600 rounded-2xl sm:rounded-3xl bg-white dark:bg-gray-800
+                      focus:ring-2 focus:ring-green-500 dark:focus:ring-emerald-500 focus:border-green-500 dark:focus:border-emerald-500 outline-none transition
+                      placeholder:text-gray-400 dark:placeholder:text-gray-500
+                      text-gray-900 dark:text-gray-100
                     "
                     placeholder="Décrivez le projet..."
                     value={pr.description || ""}
@@ -1079,7 +1079,7 @@ export default function StepManual({ parsedCV, cvFileUrl, onBack, onSubmit }) {
               </div>
             ))
           ) : (
-            <p className="text-sm text-gray-500">Aucun projet ajouté.</p>
+            <p className="text-sm text-gray-500 dark:text-gray-400">Aucun projet ajouté.</p>
           )}
         </div>
       ),
@@ -1094,8 +1094,8 @@ export default function StepManual({ parsedCV, cvFileUrl, onBack, onSubmit }) {
           onClick={addCertification}
           className="
             w-full sm:w-auto
-            px-5 py-3 rounded-full bg-white border border-gray-900
-            font-semibold text-gray-900 hover:bg-gray-50 transition
+            px-5 py-3 rounded-full bg-white dark:bg-gray-800 border border-gray-900 dark:border-gray-300
+            font-semibold text-gray-900 dark:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-700 transition
           "
         >
           + Ajouter
@@ -1107,13 +1107,13 @@ export default function StepManual({ parsedCV, cvFileUrl, onBack, onSubmit }) {
             safeArr(form.certifications).map((c, i) => (
               <div
                 key={i}
-                className="p-4 sm:p-5 rounded-2xl sm:rounded-3xl border border-gray-200 bg-gray-50 space-y-4"
+                className="p-4 sm:p-5 rounded-2xl sm:rounded-3xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50 space-y-4"
               >
                 <div className="flex items-center justify-end">
                   <button
                     type="button"
                     onClick={() => removeCertification(i)}
-                    className="text-red-600 font-semibold hover:underline"
+                    className="text-red-600 dark:text-red-400 font-semibold hover:underline"
                   >
                     Supprimer
                   </button>
@@ -1140,70 +1140,67 @@ export default function StepManual({ parsedCV, cvFileUrl, onBack, onSubmit }) {
               </div>
             ))
           ) : (
-            <p className="text-sm text-gray-500">Aucune certification.</p>
+            <p className="text-sm text-gray-500 dark:text-gray-400">Aucune certification.</p>
           )}
         </div>
       ),
     },
 
-   {
-  key: "languages",
-  title: "Langues",
-  rightAction: (
-    <button
-      type="button"
-      onClick={addLanguage}
-      className="
-        w-full sm:w-auto
-        px-5 py-3 rounded-full bg-white border border-gray-900
-        font-semibold text-gray-900 hover:bg-gray-50 transition
-      "
-    >
-      + Ajouter
-    </button>
-  ),
-  render: () => (
-    <div className="space-y-6">
-      {safeArr(form.languages).length > 0 ? (
-        safeArr(form.languages).map((l, i) => (
-          <div
-            key={i}
-            className="p-4 sm:p-5 rounded-2xl sm:rounded-3xl border border-gray-200 bg-gray-50 space-y-4"
-          >
-            <div className="flex items-center justify-end">
-              <button
-                type="button"
-                onClick={() => removeLanguage(i)}
-                className="text-red-600 font-semibold hover:underline"
+    {
+      key: "languages",
+      title: "Langues",
+      rightAction: (
+        <button
+          type="button"
+          onClick={addLanguage}
+          className="
+            w-full sm:w-auto
+            px-5 py-3 rounded-full bg-white dark:bg-gray-800 border border-gray-900 dark:border-gray-300
+            font-semibold text-gray-900 dark:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-700 transition
+          "
+        >
+          + Ajouter
+        </button>
+      ),
+      render: () => (
+        <div className="space-y-6">
+          {safeArr(form.languages).length > 0 ? (
+            safeArr(form.languages).map((l, i) => (
+              <div
+                key={i}
+                className="p-4 sm:p-5 rounded-2xl sm:rounded-3xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50 space-y-4"
               >
-                Supprimer
-              </button>
-            </div>
+                <div className="flex items-center justify-end">
+                  <button
+                    type="button"
+                    onClick={() => removeLanguage(i)}
+                    className="text-red-600 dark:text-red-400 font-semibold hover:underline"
+                  >
+                    Supprimer
+                  </button>
+                </div>
 
-            {/* NOM DE LA LANGUE */}
-            <InputField
-              label="Langue"
-              placeholder="Ex : Français"
-              value={l.name}
-              onChange={(v) => updateLanguage(i, "name", v)}
-            />
+                <InputField
+                  label="Langue"
+                  placeholder="Ex : Français"
+                  value={l.name}
+                  onChange={(v) => updateLanguage(i, "name", v)}
+                />
 
-            {/* NIVEAU TEXTE LIBRE */}
-            <InputField
-              label="Niveau"
-              placeholder="Ex : Débutant / Intermédiaire / Avancé / Native"
-              value={l.level}
-              onChange={(v) => updateLanguage(i, "level", v)}
-            />
-          </div>
-        ))
-      ) : (
-        <p className="text-sm text-gray-500">Aucune langue ajoutée.</p>
-      )}
-    </div>
-  ),
-}
-,
+                <InputField
+                  label="Niveau"
+                  placeholder="Ex : Débutant / Intermédiaire / Avancé / Native"
+                  value={l.level}
+                  onChange={(v) => updateLanguage(i, "level", v)}
+                />
+              </div>
+            ))
+          ) : (
+            <p className="text-sm text-gray-500 dark:text-gray-400">Aucune langue ajoutée.</p>
+          )}
+        </div>
+      ),
+    },
 
     {
       key: "interests",
@@ -1211,7 +1208,7 @@ export default function StepManual({ parsedCV, cvFileUrl, onBack, onSubmit }) {
       rightAction: null,
       render: () => (
         <div className="space-y-4">
-          <p className="text-sm font-semibold text-gray-700">
+          <p className="text-sm font-semibold text-gray-700 dark:text-gray-300">
             Activités / Intérêts (une ligne = un intérêt)
           </p>
 
@@ -1220,9 +1217,10 @@ export default function StepManual({ parsedCV, cvFileUrl, onBack, onSubmit }) {
             className="
               w-full min-h-[160px]
               px-5 py-3 sm:px-6 sm:py-4
-              border border-gray-200 rounded-2xl sm:rounded-3xl bg-white
-              focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none transition
-              placeholder:text-gray-400
+              border border-gray-200 dark:border-gray-600 rounded-2xl sm:rounded-3xl bg-white dark:bg-gray-800
+              focus:ring-2 focus:ring-green-500 dark:focus:ring-emerald-500 focus:border-green-500 dark:focus:border-emerald-500 outline-none transition
+              placeholder:text-gray-400 dark:placeholder:text-gray-500
+              text-gray-900 dark:text-gray-100
             "
             placeholder={`Ex :\nSport\nLecture\nHackathons`}
             value={safeArr(form.interests).join("\n")}
@@ -1248,27 +1246,27 @@ export default function StepManual({ parsedCV, cvFileUrl, onBack, onSubmit }) {
   const currentSection = sections[sectionIndex];
 
   return (
-    <div className="min-h-screen bg-green-50 py-8 sm:py-14">
+    <div className="min-h-screen bg-green-50 dark:bg-gray-950 py-8 sm:py-14">
       <div className="max-w-5xl mx-auto px-4 sm:px-6">
         <div className="text-center mb-6 sm:mb-8">
-          <p className="text-xs tracking-[0.25em] text-gray-500 font-semibold">
+          <p className="text-xs tracking-[0.25em] text-gray-500 dark:text-gray-400 font-semibold">
             SECTION {current} / {total}
           </p>
 
-          <h2 className="text-2xl sm:text-4xl font-extrabold text-gray-900 mt-2">
+          <h2 className="text-2xl sm:text-4xl font-extrabold text-gray-900 dark:text-white mt-2">
             Étape 2 — Vérification & Complément
           </h2>
         </div>
 
         <div className="mb-6 sm:mb-8">
-          <div className="flex items-center justify-between text-sm text-gray-600 mb-2">
+          <div className="flex items-center justify-between text-sm text-gray-600 dark:text-gray-400 mb-2">
             <span>Progression de la candidature</span>
-            <span className="font-semibold text-green-700">{percent}%</span>
+            <span className="font-semibold text-green-700 dark:text-emerald-400">{percent}%</span>
           </div>
 
-          <div className="w-full h-2 bg-green-100 rounded-full overflow-hidden">
+          <div className="w-full h-2 bg-green-100 dark:bg-gray-700 rounded-full overflow-hidden">
             <div
-              className="h-full bg-green-600 rounded-full transition-all"
+              className="h-full bg-green-600 dark:bg-emerald-600 rounded-full transition-all"
               style={{ width: `${percent}%` }}
             />
           </div>
@@ -1279,13 +1277,13 @@ export default function StepManual({ parsedCV, cvFileUrl, onBack, onSubmit }) {
         </Card>
 
         {successMsg && (
-          <div className="mt-6 bg-green-50 border border-green-200 text-green-700 p-4 rounded-2xl text-center">
+          <div className="mt-6 bg-green-50 dark:bg-emerald-950/30 border border-green-200 dark:border-emerald-800 text-green-700 dark:text-emerald-300 p-4 rounded-2xl text-center">
             {successMsg}
           </div>
         )}
 
         {errorMsg && (
-          <div className="mt-6 bg-red-50 border border-red-200 text-red-600 p-4 rounded-2xl text-center">
+          <div className="mt-6 bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800 text-red-600 dark:text-red-400 p-4 rounded-2xl text-center">
             {errorMsg}
           </div>
         )}
@@ -1300,8 +1298,8 @@ export default function StepManual({ parsedCV, cvFileUrl, onBack, onSubmit }) {
               className="
                 w-full sm:w-auto
                 px-6 sm:px-10 py-3 sm:py-4
-                rounded-full border border-gray-900 bg-white
-                font-semibold text-gray-900 hover:bg-gray-50 transition
+                rounded-full border border-gray-900 dark:border-gray-300 bg-white dark:bg-gray-800
+                font-semibold text-gray-900 dark:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-700 transition
               "
             >
               ← Retour
@@ -1315,8 +1313,8 @@ export default function StepManual({ parsedCV, cvFileUrl, onBack, onSubmit }) {
                 className="
                   w-full sm:w-auto
                   px-6 sm:px-10 py-3 sm:py-4
-                  rounded-full bg-green-600 text-white font-semibold
-                  hover:bg-green-700 transition shadow-lg
+                  rounded-full bg-green-600 dark:bg-emerald-600 text-white font-semibold
+                  hover:bg-green-700 dark:hover:bg-emerald-500 transition shadow-lg
                 "
               >
                 Continuer →
@@ -1328,8 +1326,8 @@ export default function StepManual({ parsedCV, cvFileUrl, onBack, onSubmit }) {
                 className="
                   w-full sm:w-auto
                   px-6 sm:px-10 py-3 sm:py-4
-                  rounded-full bg-green-600 text-white font-semibold
-                  hover:bg-green-700 transition shadow-lg disabled:opacity-50
+                  rounded-full bg-green-600 dark:bg-emerald-600 text-white font-semibold
+                  hover:bg-green-700 dark:hover:bg-emerald-500 transition shadow-lg disabled:opacity-50
                 "
               >
                 {loadingSubmit ? "Envoi..." : "Envoyer ma candidature →"}
@@ -1339,7 +1337,7 @@ export default function StepManual({ parsedCV, cvFileUrl, onBack, onSubmit }) {
         )}
 
         {!successMsg && (
-          <p className="text-center text-sm text-gray-500 mt-6">
+          <p className="text-center text-sm text-gray-500 dark:text-gray-400 mt-6">
             Vos modifications sont enregistrées automatiquement.
           </p>
         )}
@@ -1355,15 +1353,15 @@ function Card({ title, rightAction, children, className = "" }) {
   return (
     <div
       className={`
-        bg-white
+        bg-white dark:bg-gray-800
         rounded-2xl sm:rounded-[28px]
-        shadow-sm border border-green-100
+        shadow-sm border border-green-100 dark:border-gray-700
         p-4 sm:p-8
         ${className}
       `}
     >
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4 mb-5 sm:mb-6">
-        <h3 className="font-bold text-xl sm:text-2xl text-gray-900">{title}</h3>
+        <h3 className="font-bold text-xl sm:text-2xl text-gray-900 dark:text-white">{title}</h3>
         {rightAction ? <div className="w-full sm:w-auto">{rightAction}</div> : null}
       </div>
 
@@ -1375,15 +1373,16 @@ function Card({ title, rightAction, children, className = "" }) {
 function InputField({ label, value, onChange, placeholder, dataCy }) {
   return (
     <div className="space-y-2">
-      <p className="text-sm font-semibold text-gray-700">{label}</p>
+      <p className="text-sm font-semibold text-gray-700 dark:text-gray-300">{label}</p>
       <input
         data-cy={dataCy}
         className="
           w-full
           px-5 py-3 sm:px-6 sm:py-4
-          border border-gray-200 rounded-full bg-white
-          focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none transition
-          placeholder:text-gray-400
+          border border-gray-200 dark:border-gray-600 rounded-full bg-white dark:bg-gray-800
+          focus:ring-2 focus:ring-green-500 dark:focus:ring-emerald-500 focus:border-green-500 dark:focus:border-emerald-500 outline-none transition
+          placeholder:text-gray-400 dark:placeholder:text-gray-500
+          text-gray-900 dark:text-gray-100
         "
         value={value}
         placeholder={placeholder}
@@ -1396,20 +1395,20 @@ function InputField({ label, value, onChange, placeholder, dataCy }) {
 function IconInputField({ label, value, onChange, placeholder, icon }) {
   return (
     <div className="space-y-2">
-      <p className="text-sm font-semibold text-gray-700">{label}</p>
+      <p className="text-sm font-semibold text-gray-700 dark:text-gray-300">{label}</p>
 
       <div
         className="
-          flex items-center border border-gray-200 rounded-full bg-white overflow-hidden
-          focus-within:ring-2 focus-within:ring-green-500 focus-within:border-green-500 transition
+          flex items-center border border-gray-200 dark:border-gray-600 rounded-full bg-white dark:bg-gray-800 overflow-hidden
+          focus-within:ring-2 focus-within:ring-green-500 dark:focus-within:ring-emerald-500 focus-within:border-green-500 dark:focus-within:border-emerald-500 transition
         "
       >
-        <div className="w-12 h-12 sm:w-14 sm:h-14 flex items-center justify-center border-r border-gray-200 text-gray-500">
+        <div className="w-12 h-12 sm:w-14 sm:h-14 flex items-center justify-center border-r border-gray-200 dark:border-gray-600 text-gray-500 dark:text-gray-400">
           <span className="text-sm font-bold">{icon}</span>
         </div>
 
         <input
-          className="flex-1 px-4 sm:px-5 py-3 sm:py-4 outline-none bg-transparent placeholder:text-gray-400"
+          className="flex-1 px-4 sm:px-5 py-3 sm:py-4 outline-none bg-transparent placeholder:text-gray-400 dark:placeholder:text-gray-500 text-gray-900 dark:text-gray-100"
           value={value}
           placeholder={placeholder}
           onChange={(e) => onChange(e.target.value)}

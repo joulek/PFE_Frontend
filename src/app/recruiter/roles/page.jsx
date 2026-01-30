@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { Search, X , Trash2, Edit2, Edit, Trash} from "lucide-react";
+import { Search, X, Trash2, Edit2 } from "lucide-react";
 
 import {
   getRoles,
@@ -162,20 +162,20 @@ export default function GestionRolesPage() {
   );
 
   return (
-    <div className="min-h-screen bg-green-50 px-4 sm:px-6 py-10">
+    <div className="min-h-screen bg-[#F0FAF0] dark:bg-gray-950 px-4 sm:px-6 py-10 transition-colors duration-300">
       <div className="mx-auto max-w-5xl">
-        <h1 className="text-3xl sm:text-4xl font-extrabold text-gray-900 mb-6">
+        <h1 className="text-3xl sm:text-4xl font-extrabold text-gray-900 dark:text-white mb-6">
           Liste des rôles
         </h1>
 
         {error && (
-          <div className="mb-6 rounded-2xl border border-red-200 bg-red-50 px-5 py-4 text-sm font-semibold text-red-700">
+          <div className="mb-6 rounded-2xl border border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-900/30 px-5 py-4 text-sm font-semibold text-red-700 dark:text-red-400 transition-colors">
             {error}
           </div>
         )}
 
         {success && (
-          <div className="mb-6 rounded-2xl border border-green-200 bg-green-50 px-5 py-4 text-sm font-semibold text-green-700">
+          <div className="mb-6 rounded-2xl border border-green-200 dark:border-green-800 bg-green-50 dark:bg-green-900/30 px-5 py-4 text-sm font-semibold text-green-700 dark:text-green-400 transition-colors">
             {success}
           </div>
         )}
@@ -183,31 +183,37 @@ export default function GestionRolesPage() {
         {/* SEARCH + ADD */}
         <div className="flex flex-col sm:flex-row gap-4 mb-8">
           <div className="relative flex-1">
-            <Search className="absolute left-4 sm:left-5 top-1/2 -translate-y-1/2 h-5 w-5 text-[#4E8F2F]" />
+            <Search className="absolute left-4 sm:left-5 top-1/2 -translate-y-1/2 h-5 w-5 text-[#4E8F2F] dark:text-emerald-400" />
             <input
               value={q}
               onChange={(e) => setQ(e.target.value)}
               placeholder="Rechercher un rôle…"
-              className="w-full rounded-full bg-white shadow-sm border border-gray-100
-              pl-11 sm:pl-12 pr-4 sm:pr-5 py-3 text-sm outline-none
-              focus:border-[#6CB33F] focus:ring-1 focus:ring-[#6CB33F]"
+              className="w-full rounded-full bg-white dark:bg-gray-800 shadow-sm 
+                border border-gray-100 dark:border-gray-700
+                pl-11 sm:pl-12 pr-4 sm:pr-5 py-3 text-sm 
+                text-gray-800 dark:text-gray-100
+                placeholder-gray-400 dark:placeholder-gray-500
+                outline-none
+                focus:border-[#6CB33F] dark:focus:border-emerald-500 
+                focus:ring-1 focus:ring-[#6CB33F] dark:focus:ring-emerald-500
+                transition-colors"
             />
           </div>
 
           <button
             onClick={() => setOpenAdd(true)}
-            className="rounded-full bg-[#6CB33F] hover:bg-[#4E8F2F]
-            px-6 py-3 text-sm font-semibold text-white whitespace-nowrap"
+            className="rounded-full bg-[#6CB33F] hover:bg-[#4E8F2F] dark:bg-emerald-600 dark:hover:bg-emerald-500
+              px-6 py-3 text-sm font-semibold text-white whitespace-nowrap transition-colors"
           >
             Ajouter un rôle
           </button>
         </div>
 
         {/* TABLE - VERSION RESPONSIVE */}
-        <div className="bg-white rounded-3xl shadow-lg overflow-hidden">
+        <div className="bg-white dark:bg-gray-800 rounded-3xl shadow-lg overflow-hidden transition-colors duration-300">
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
-              <thead className="bg-[#E9F5E3] text-[#4E8F2F]">
+              <thead className="bg-[#E9F5E3] dark:bg-gray-700 text-[#4E8F2F] dark:text-emerald-400">
                 <tr>
                   <th className="px-4 sm:px-6 py-4 text-left text-xs font-extrabold uppercase tracking-wider">
                     Nom du rôle
@@ -218,18 +224,18 @@ export default function GestionRolesPage() {
                 </tr>
               </thead>
 
-              <tbody className="divide-y divide-gray-100">
+              <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
                 {sortedRoles.map((r) => {
                   const id = r?._id || r?.id;
                   const name = safeStr(r?.name);
 
                   return (
-                    <tr key={id} className="hover:bg-green-50/40 transition">
+                    <tr key={id} className="hover:bg-green-50/40 dark:hover:bg-gray-700/40 transition-colors">
                       <td className="px-4 sm:px-6 py-4">
                         <span className="inline-flex rounded-full
-                          bg-[#E9F5E3] text-[#4E8F2F]
-                          border border-[#d7ebcf]
-                          px-3 sm:px-4 py-1 text-xs font-semibold">
+                          bg-[#E9F5E3] dark:bg-gray-700 text-[#4E8F2F] dark:text-emerald-400
+                          border border-[#d7ebcf] dark:border-gray-600
+                          px-3 sm:px-4 py-1 text-xs font-semibold transition-colors">
                           {name}
                         </span>
                       </td>
@@ -242,7 +248,7 @@ export default function GestionRolesPage() {
                               setEditId(id);
                               setEditName(name);
                             }}
-                            className="text-[#4E8F2F] hover:text-[#3a6b23] transition-colors"
+                            className="text-[#4E8F2F] dark:text-emerald-400 hover:text-[#3a6b23] dark:hover:text-emerald-300 transition-colors"
                             aria-label="Modifier"
                           >
                             <Edit2 className="h-4 w-4 sm:h-5 sm:w-5" />
@@ -253,7 +259,7 @@ export default function GestionRolesPage() {
                               setRoleToDelete({ id, name });
                               setOpenDeleteModal(true);
                             }}
-                            className="text-red-500 hover:text-red-600 transition-colors"
+                            className="text-red-500 dark:text-red-400 hover:text-red-600 dark:hover:text-red-300 transition-colors"
                             aria-label="Supprimer"
                           >
                             <Trash2 className="h-4 w-4 sm:h-5 sm:w-5" />
@@ -274,27 +280,27 @@ export default function GestionRolesPage() {
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           {/* OVERLAY */}
           <div
-            className="absolute inset-0 bg-black/40"
+            className="absolute inset-0 bg-black/40 dark:bg-black/60"
             onClick={() => setOpenAdd(false)}
           />
 
           {/* MODAL */}
-          <div className="relative z-10 w-full max-w-lg sm:max-w-2xl lg:max-w-3xl rounded-2xl sm:rounded-[28px] bg-white shadow-xl">
+          <div className="relative z-10 w-full max-w-lg sm:max-w-2xl lg:max-w-3xl rounded-2xl sm:rounded-[28px] bg-white dark:bg-gray-800 shadow-xl transition-colors duration-300">
 
             {/* HEADER */}
-            <div className="flex items-start justify-between gap-4 px-5 sm:px-8 pt-6 sm:pt-8 pb-4 sm:pb-6 border-b">
+            <div className="flex items-start justify-between gap-4 px-5 sm:px-8 pt-6 sm:pt-8 pb-4 sm:pb-6 border-b border-gray-200 dark:border-gray-700">
               <div>
-                <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900">
+                <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white">
                   Ajouter un rôle
                 </h2>
-                <p className="mt-1 text-xs sm:text-sm text-slate-500">
+                <p className="mt-1 text-xs sm:text-sm text-slate-500 dark:text-gray-400">
                   Créez un nouveau rôle pour gérer les autorisations.
                 </p>
               </div>
 
               <button
                 onClick={() => setOpenAdd(false)}
-                className="rounded-full p-2 text-slate-500 hover:bg-slate-100 transition-colors"
+                className="rounded-full p-2 text-slate-500 dark:text-gray-400 hover:bg-slate-100 dark:hover:bg-gray-700 transition-colors"
               >
                 <X className="h-5 w-5" />
               </button>
@@ -305,15 +311,21 @@ export default function GestionRolesPage() {
               <form onSubmit={handleAddRole} className="space-y-6">
 
                 <div>
-                  <label className="mb-2 block text-xs sm:text-sm font-extrabold uppercase tracking-wide text-slate-700">
+                  <label className="mb-2 block text-xs sm:text-sm font-extrabold uppercase tracking-wide text-slate-700 dark:text-gray-300">
                     Nom du rôle
                   </label>
                   <input
                     value={roleName}
                     onChange={(e) => setRoleName(e.target.value)}
                     placeholder="ex : HR_MANAGER"
-                    className="w-full rounded-full border border-slate-200 bg-white px-4 sm:px-5 py-2.5 sm:py-3 text-sm outline-none
-              focus:border-[#6CB33F] focus:ring-1 focus:ring-[#6CB33F]"
+                    className="w-full rounded-full border border-slate-200 dark:border-gray-600 
+                      bg-white dark:bg-gray-700 px-4 sm:px-5 py-2.5 sm:py-3 text-sm 
+                      text-gray-800 dark:text-gray-100
+                      placeholder-gray-400 dark:placeholder-gray-500
+                      outline-none
+                      focus:border-[#6CB33F] dark:focus:border-emerald-500 
+                      focus:ring-1 focus:ring-[#6CB33F] dark:focus:ring-emerald-500
+                      transition-colors"
                   />
                 </div>
 
@@ -322,7 +334,7 @@ export default function GestionRolesPage() {
                   <button
                     type="button"
                     onClick={() => setOpenAdd(false)}
-                    className="w-full sm:w-auto rounded-full border border-slate-300 px-6 py-3 text-sm font-semibold text-slate-700 hover:bg-slate-100 transition-colors"
+                    className="w-full sm:w-auto rounded-full border border-slate-300 dark:border-gray-600 px-6 py-3 text-sm font-semibold text-slate-700 dark:text-gray-200 hover:bg-slate-100 dark:hover:bg-gray-700 transition-colors"
                   >
                     Annuler
                   </button>
@@ -330,7 +342,7 @@ export default function GestionRolesPage() {
                   <button
                     type="submit"
                     disabled={loading}
-                    className="w-full sm:w-auto rounded-full bg-[#6CB33F] px-6 py-3 text-sm font-extrabold text-white hover:bg-[#4E8F2F] disabled:opacity-50 transition-colors"
+                    className="w-full sm:w-auto rounded-full bg-[#6CB33F] dark:bg-emerald-600 px-6 py-3 text-sm font-extrabold text-white hover:bg-[#4E8F2F] dark:hover:bg-emerald-500 disabled:opacity-50 transition-colors"
                   >
                     Enregistrer
                   </button>
@@ -346,27 +358,27 @@ export default function GestionRolesPage() {
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           {/* OVERLAY */}
           <div
-            className="absolute inset-0 bg-black/40"
+            className="absolute inset-0 bg-black/40 dark:bg-black/60"
             onClick={() => setOpenEdit(false)}
           />
 
           {/* MODAL */}
-          <div className="relative z-10 w-full max-w-lg sm:max-w-2xl lg:max-w-3xl rounded-2xl sm:rounded-[28px] bg-white shadow-xl">
+          <div className="relative z-10 w-full max-w-lg sm:max-w-2xl lg:max-w-3xl rounded-2xl sm:rounded-[28px] bg-white dark:bg-gray-800 shadow-xl transition-colors duration-300">
 
             {/* HEADER */}
-            <div className="flex items-start justify-between gap-4 px-5 sm:px-8 pt-6 sm:pt-8 pb-4 sm:pb-6 border-b">
+            <div className="flex items-start justify-between gap-4 px-5 sm:px-8 pt-6 sm:pt-8 pb-4 sm:pb-6 border-b border-gray-200 dark:border-gray-700">
               <div>
-                <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900">
+                <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white">
                   Modifier le rôle
                 </h2>
-                <p className="mt-1 text-xs sm:text-sm text-slate-500">
+                <p className="mt-1 text-xs sm:text-sm text-slate-500 dark:text-gray-400">
                   Mettez à jour le nom du rôle sélectionné.
                 </p>
               </div>
 
               <button
                 onClick={() => setOpenEdit(false)}
-                className="rounded-full p-2 text-slate-500 hover:bg-slate-100 transition-colors"
+                className="rounded-full p-2 text-slate-500 dark:text-gray-400 hover:bg-slate-100 dark:hover:bg-gray-700 transition-colors"
               >
                 <X className="h-5 w-5" />
               </button>
@@ -377,15 +389,21 @@ export default function GestionRolesPage() {
               <form onSubmit={handleEditRole} className="space-y-6">
 
                 <div>
-                  <label className="mb-2 block text-xs sm:text-sm font-extrabold uppercase tracking-wide text-slate-700">
+                  <label className="mb-2 block text-xs sm:text-sm font-extrabold uppercase tracking-wide text-slate-700 dark:text-gray-300">
                     Nouveau nom du rôle
                   </label>
                   <input
                     value={editName}
                     onChange={(e) => setEditName(e.target.value)}
                     placeholder="ex : IT_MANAGER"
-                    className="w-full rounded-full border border-slate-200 bg-white px-4 sm:px-5 py-2.5 sm:py-3 text-sm outline-none
-              focus:border-[#6CB33F] focus:ring-1 focus:ring-[#6CB33F]"
+                    className="w-full rounded-full border border-slate-200 dark:border-gray-600 
+                      bg-white dark:bg-gray-700 px-4 sm:px-5 py-2.5 sm:py-3 text-sm 
+                      text-gray-800 dark:text-gray-100
+                      placeholder-gray-400 dark:placeholder-gray-500
+                      outline-none
+                      focus:border-[#6CB33F] dark:focus:border-emerald-500 
+                      focus:ring-1 focus:ring-[#6CB33F] dark:focus:ring-emerald-500
+                      transition-colors"
                   />
                 </div>
 
@@ -394,7 +412,7 @@ export default function GestionRolesPage() {
                   <button
                     type="button"
                     onClick={() => setOpenEdit(false)}
-                    className="w-full sm:w-auto rounded-full border border-slate-300 px-6 py-3 text-sm font-semibold text-slate-700 hover:bg-slate-100 transition-colors"
+                    className="w-full sm:w-auto rounded-full border border-slate-300 dark:border-gray-600 px-6 py-3 text-sm font-semibold text-slate-700 dark:text-gray-200 hover:bg-slate-100 dark:hover:bg-gray-700 transition-colors"
                   >
                     Annuler
                   </button>
@@ -402,7 +420,7 @@ export default function GestionRolesPage() {
                   <button
                     type="submit"
                     disabled={loading}
-                    className="w-full sm:w-auto rounded-full bg-[#6CB33F] px-6 py-3 text-sm font-extrabold text-white hover:bg-[#4E8F2F] disabled:opacity-50 transition-colors"
+                    className="w-full sm:w-auto rounded-full bg-[#6CB33F] dark:bg-emerald-600 px-6 py-3 text-sm font-extrabold text-white hover:bg-[#4E8F2F] dark:hover:bg-emerald-500 disabled:opacity-50 transition-colors"
                   >
                     Enregistrer
                   </button>
@@ -417,24 +435,24 @@ export default function GestionRolesPage() {
       {/* ================= DELETE MODAL ================= */}
       {openDeleteModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-black/50" onClick={() => setOpenDeleteModal(false)} />
-          <div className="relative z-10 w-full max-w-md sm:max-w-xl rounded-2xl sm:rounded-3xl bg-white p-6 sm:p-8 shadow-2xl">
-            <h2 className="text-lg sm:text-xl font-extrabold text-red-600">
+          <div className="absolute inset-0 bg-black/50 dark:bg-black/70" onClick={() => setOpenDeleteModal(false)} />
+          <div className="relative z-10 w-full max-w-md sm:max-w-xl rounded-2xl sm:rounded-3xl bg-white dark:bg-gray-800 p-6 sm:p-8 shadow-2xl transition-colors duration-300">
+            <h2 className="text-lg sm:text-xl font-extrabold text-red-600 dark:text-red-400">
               Supprimer le rôle
             </h2>
-            <p className="mt-4 text-sm sm:text-base">
-              Voulez-vous vraiment supprimer le rôle <span className="font-bold">{roleToDelete?.name}</span> ?
+            <p className="mt-4 text-sm sm:text-base text-gray-700 dark:text-gray-300">
+              Voulez-vous vraiment supprimer le rôle <span className="font-bold text-gray-900 dark:text-white">{roleToDelete?.name}</span> ?
             </p>
             <div className="mt-6 flex flex-col-reverse sm:flex-row justify-end gap-3 sm:gap-4">
               <button 
                 onClick={() => setOpenDeleteModal(false)}
-                className="w-full sm:w-auto px-6 py-2.5 rounded-full border border-slate-300 text-slate-700 font-semibold hover:bg-slate-100 transition-colors"
+                className="w-full sm:w-auto px-6 py-2.5 rounded-full border border-slate-300 dark:border-gray-600 text-slate-700 dark:text-gray-200 font-semibold hover:bg-slate-100 dark:hover:bg-gray-700 transition-colors"
               >
                 Annuler
               </button>
               <button
                 onClick={confirmDeleteRole}
-                className="w-full sm:w-auto bg-red-500 hover:bg-red-600 text-white px-6 py-2.5 rounded-full font-semibold transition-colors"
+                className="w-full sm:w-auto bg-red-500 dark:bg-red-600 hover:bg-red-600 dark:hover:bg-red-500 text-white px-6 py-2.5 rounded-full font-semibold transition-colors"
               >
                 Supprimer
               </button>

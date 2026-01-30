@@ -14,13 +14,10 @@ function formatDate(date) {
 /* ================= PAGE ================= */
 export default function PublicJobsPage() {
   const [jobs, setJobs] = useState([]);
-
-  // ✅ NEW: stocker les cartes ouvertes
   const [expandedJobs, setExpandedJobs] = useState({});
 
-  // ✅ Pagination
   const [page, setPage] = useState(1);
-  const pageSize = 6; // 🔥 change comme tu veux
+  const pageSize = 6;
 
   useEffect(() => {
     getJobs().then((res) => setJobs(res.data || []));
@@ -33,7 +30,6 @@ export default function PublicJobsPage() {
     }));
   }
 
-  // ✅ Pagination logic
   const totalPages = Math.max(1, Math.ceil(jobs.length / pageSize));
 
   const paginatedJobs = useMemo(() => {
@@ -46,17 +42,15 @@ export default function PublicJobsPage() {
   }, [page, totalPages]);
 
   return (
-    /* 🌿 BACKGROUND GLOBAL */
-    <div className="min-h-screen bg-green-50">
-      {/* 📦 CONTAINER */}
+    <div className="min-h-screen bg-green-50 dark:bg-gray-950">
       <div className="max-w-6xl mx-auto px-6 py-12">
         {/* ================= HEADER ================= */}
         <div className="mb-12">
-          <h1 className="text-4xl font-extrabold text-gray-900">
+          <h1 className="text-4xl font-extrabold text-gray-900 dark:text-white">
             Offres d’emploi
           </h1>
 
-          <p className="text-gray-600 max-w-2xl mb-6">
+          <p className="text-gray-600 dark:text-gray-400 max-w-2xl mb-6">
             Rejoignez une équipe dynamique et participez à l’aventure de demain.
             Découvrez nos opportunités actuelles.
           </p>
@@ -74,30 +68,29 @@ export default function PublicJobsPage() {
             return (
               <div
                 key={job._id}
-                className="bg-white rounded-2xl shadow p-6
-                           flex flex-col hover:shadow-lg transition"
+                className="bg-white dark:bg-gray-800 rounded-2xl shadow p-6 flex flex-col hover:shadow-lg transition"
               >
                 {/* ===== TOP CONTENT ===== */}
                 <div>
-                  <h3 className="text-xl font-semibold text-gray-800 mb-2">
+                  <h3 className="text-xl font-semibold text-gray-800 dark:text-gray-100 mb-2">
                     {job.titre}
                   </h3>
 
                   {/* DESCRIPTION */}
                   <p
-                    className={`text-gray-600 text-sm mb-2 whitespace-pre-line ${
+                    className={`text-gray-600 dark:text-gray-300 text-sm mb-2 whitespace-pre-line ${
                       !isExpanded ? "line-clamp-3" : ""
                     }`}
                   >
                     {job.description}
                   </p>
 
-                  {/* ✅ Lire la suite / Réduire */}
+                  {/* Lire la suite / Réduire */}
                   {hasLongDescription && (
                     <button
                       type="button"
                       onClick={() => toggleReadMore(job._id)}
-                      className="text-sm text-[#4E8F2F] font-semibold hover:underline"
+                      className="text-sm text-[#4E8F2F] dark:text-emerald-400 font-semibold hover:underline"
                     >
                       {isExpanded ? "Réduire ↑" : "Lire la suite →"}
                     </button>
@@ -108,8 +101,7 @@ export default function PublicJobsPage() {
                     {job.technologies?.map((tech, i) => (
                       <span
                         key={i}
-                        className="bg-[#E9F5E3] text-[#4E8F2F]
-                                   text-xs font-medium px-3 py-1 rounded-full"
+                        className="bg-[#E9F5E3] dark:bg-emerald-950/40 text-[#4E8F2F] dark:text-emerald-300 text-xs font-medium px-3 py-1 rounded-full"
                       >
                         {tech}
                       </span>
@@ -118,12 +110,12 @@ export default function PublicJobsPage() {
                 </div>
 
                 {/* ===== DIVIDER ===== */}
-                <div className="border-t border-gray-100 my-4" />
+                <div className="border-t border-gray-100 dark:border-gray-700 my-4" />
 
                 {/* ===== BOTTOM BAR ===== */}
                 <div className="flex items-center justify-between">
                   {/* DATE */}
-                  <div className="flex items-center gap-2 text-sm text-gray-500">
+                  <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
                     <svg
                       xmlns="http://www.w3.org/2000/svg"
                       className="h-4 w-4"
@@ -135,9 +127,7 @@ export default function PublicJobsPage() {
                         strokeLinecap="round"
                         strokeLinejoin="round"
                         strokeWidth={1.5}
-                        d="M8 7V3m8 4V3m-9 8h10M5 21h14a2
-                           2 0 002-2V7a2 2 0 00-2-2H5a2
-                           2 0 00-2 2v12a2 2 0 002 2z"
+                        d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
                       />
                     </svg>
 
@@ -148,16 +138,14 @@ export default function PublicJobsPage() {
                   {isExpired ? (
                     <button
                       disabled
-                      className="px-5 py-2 rounded-full text-sm font-medium
-                                 bg-gray-200 text-gray-400 cursor-not-allowed"
+                      className="px-5 py-2 rounded-full text-sm font-medium bg-gray-200 dark:bg-gray-700 text-gray-400 dark:text-gray-500 cursor-not-allowed"
                     >
                       Offre expirée
                     </button>
                   ) : (
                     <Link href={`/jobs/${job._id}/apply`}>
                       <button
-                        className="px-5 py-2 rounded-full text-sm font-medium transition
-                                   bg-[#6CB33F] text-white hover:bg-[#4E8F2F] shadow"
+                        className="px-5 py-2 rounded-full text-sm font-medium transition bg-[#6CB33F] dark:bg-emerald-600 text-white hover:bg-[#4E8F2F] dark:hover:bg-emerald-500 shadow"
                       >
                         Postuler
                       </button>
@@ -170,13 +158,13 @@ export default function PublicJobsPage() {
 
           {/* ===== EMPTY STATE ===== */}
           {jobs.length === 0 && (
-            <p className="text-gray-500 text-sm">Aucune offre disponible.</p>
+            <p className="text-gray-500 dark:text-gray-400 text-sm">Aucune offre disponible.</p>
           )}
         </div>
 
         {/* ✅ PAGINATION FOOTER */}
         {jobs.length > 0 && (
-          <div className="mt-10 flex items-center justify-between text-sm text-gray-500">
+          <div className="mt-10 flex items-center justify-between text-sm text-gray-500 dark:text-gray-400">
             <p>
               Total: {jobs.length} offre(s) — Page {page} / {totalPages}
             </p>

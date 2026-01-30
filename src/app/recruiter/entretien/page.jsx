@@ -24,21 +24,12 @@ function safeStr(v) {
   return String(v);
 }
 
-/* ================= DATA HELPERS (ADAPTÉS AU BACKEND) ================= */
 function getFullName(c) {
-  return (
-    safeStr(c?.extracted?.manual?.nom) ||
-    safeStr(c?.fullName) ||
-    "Candidat"
-  );
+  return safeStr(c?.extracted?.manual?.nom) || safeStr(c?.fullName) || "Candidat";
 }
 
 function getEmail(c) {
-  return (
-    safeStr(c?.extracted?.manual?.email) || // ✅ المصدر الصحيح
-    safeStr(c?.personalInfoForm?.email) ||
-    ""
-  );
+  return safeStr(c?.extracted?.manual?.email) || safeStr(c?.personalInfoForm?.email) || "";
 }
 
 function cleanEmail(email) {
@@ -60,28 +51,21 @@ export default function CandidaturesTablePage() {
   const [page, setPage] = useState(1);
   const pageSize = 8;
 
-  /* ===== fiche modal ===== */
   const [openModal, setOpenModal] = useState(false);
   const [selectedCandidature, setSelectedCandidature] = useState(null);
   const [fiches, setFiches] = useState([]);
   const [loadingFiches, setLoadingFiches] = useState(false);
 
-  /* ================= LOAD ================= */
   useEffect(() => {
     async function load() {
       setLoading(true);
       const res = await getCandidaturesWithJob();
-
-      console.log("RAW RESPONSE FROM API 👇", res);
-      console.log("CANDIDATURES DATA 👇", res.data);
-
       setCandidatures(res.data || []);
       setLoading(false);
     }
     load();
   }, []);
 
-  /* ================= SEARCH ================= */
   const filtered = useMemo(() => {
     const query = q.toLowerCase().trim();
     if (!query) return candidatures;
@@ -91,22 +75,14 @@ export default function CandidaturesTablePage() {
       const email = cleanEmail(getEmail(c)).toLowerCase();
       const job = safeStr(c?.jobTitle).toLowerCase();
 
-      return (
-        name.includes(query) ||
-        email.includes(query) ||
-        job.includes(query)
-      );
+      return name.includes(query) || email.includes(query) || job.includes(query);
     });
   }, [candidatures, q]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
   const paginated = filtered.slice((page - 1) * pageSize, page * pageSize);
 
-  /* ================= FICHE ACTIONS ================= */
   async function openFicheModal(c) {
-    console.log("SELECTED CANDIDATURE 👇", c);
-    console.log("EMAIL FOUND 👇", cleanEmail(getEmail(c)));
-
     setSelectedCandidature(c);
     setOpenModal(true);
     setLoadingFiches(true);
@@ -115,8 +91,6 @@ export default function CandidaturesTablePage() {
       const res = await fetch(`${API_BASE}/fiches`);
       const data = await res.json();
       setFiches(Array.isArray(data) ? data : []);
-    } catch {
-      alert("Erreur chargement fiches");
     } finally {
       setLoadingFiches(false);
     }
@@ -134,65 +108,49 @@ export default function CandidaturesTablePage() {
     const candidatureId = selectedCandidature._id;
     const email = cleanEmail(getEmail(selectedCandidature));
 
-    if (!email) {
-      alert("Email du candidat introuvable");
-      console.error("EMAIL NOT FOUND IN:", selectedCandidature);
-      return;
-    }
+    if (!email) return alert("Email introuvable");
 
-    console.log("SEND FICHE PAYLOAD 👇", {
-      candidatureId,
-      ficheId,
-      email,
+    await fetch(`${API_BASE}/candidatures/${candidatureId}/send-form`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ ficheId, email }),
     });
 
-    try {
-      const res = await fetch(
-        `${API_BASE}/candidatures/${candidatureId}/send-form`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ ficheId, email }),
-        }
-      );
-
-      if (!res.ok) {
-        const err = await res.json();
-        console.error("SEND FICHE ERROR:", err);
-        alert(err.message || "Erreur backend");
-        return;
-      }
-
-      alert("Fiche envoyée avec succès");
-      closeFicheModal();
-    } catch (e) {
-      console.error(e);
-      alert("Erreur lors de l’envoi");
-    }
+    alert("Fiche envoyée");
+    closeFicheModal();
   }
 
-  /* ================= RENDER ================= */
   return (
-    <div className="min-h-screen bg-[#F0FAF0] px-6 py-10">
-      <h1 className="text-4xl font-extrabold mb-6">
+    <div className="min-h-screen px-6 py-10
+                    bg-[#F0FAF0] dark:bg-zinc-950">
+
+      <h1 className="text-4xl font-extrabold mb-6
+                     text-gray-900 dark:text-white">
         Liste des candidatures
       </h1>
 
       {/* SEARCH */}
-      <div className="bg-white rounded-full px-5 py-3 flex gap-3 mb-8">
-        <Search className="text-green-700" />
+      <div className="rounded-full px-5 py-3 flex gap-3 mb-8
+                      bg-white dark:bg-zinc-900
+                      border border-gray-200 dark:border-zinc-700">
+        <Search className="text-green-700 dark:text-green-400" />
         <input
           value={q}
           onChange={(e) => setQ(e.target.value)}
           placeholder="Rechercher..."
-          className="w-full outline-none"
+          className="w-full outline-none bg-transparent
+                     text-gray-900 dark:text-gray-200"
         />
       </div>
 
       {/* TABLE */}
-      <div className="bg-white rounded-3xl shadow overflow-hidden">
+      <div className="rounded-3xl shadow overflow-hidden
+                      bg-white dark:bg-zinc-900
+                      border border-gray-200 dark:border-zinc-700">
+
         <table className="w-full text-sm">
-          <thead className="bg-[#E9F5E3] text-green-700">
+          <thead className="bg-[#E9F5E3] dark:bg-green-900/30
+                             text-green-700 dark:text-green-300">
             <tr>
               <th className="px-6 py-4 text-left">Candidat</th>
               <th className="px-6 py-4 text-left">Email</th>
@@ -206,26 +164,28 @@ export default function CandidaturesTablePage() {
           <tbody>
             {loading ? (
               <tr>
-                <td colSpan={6} className="px-6 py-8">
+                <td colSpan={6} className="px-6 py-8 text-gray-500 dark:text-gray-400">
                   Chargement...
                 </td>
               </tr>
             ) : (
               paginated.map((c) => (
-                <tr key={c._id} className="border-t">
-                  <td className="px-6 py-4 font-bold">
+                <tr key={c._id}
+                    className="border-t border-gray-200 dark:border-zinc-800">
+
+                  <td className="px-6 py-4 font-bold text-gray-900 dark:text-white">
                     {getFullName(c)}
                   </td>
 
-                  <td className="px-6 py-4">
+                  <td className="px-6 py-4 text-gray-700 dark:text-gray-300">
                     {cleanEmail(getEmail(c)) || "—"}
                   </td>
 
-                  <td className="px-6 py-4">
+                  <td className="px-6 py-4 text-gray-700 dark:text-gray-300">
                     {c.jobTitle}
                   </td>
 
-                  <td className="px-6 py-4">
+                  <td className="px-6 py-4 text-gray-600 dark:text-gray-400">
                     {formatDate(c.createdAt)}
                   </td>
 
@@ -234,7 +194,7 @@ export default function CandidaturesTablePage() {
                       <a
                         href={getCvUrl(c)}
                         target="_blank"
-                        className="underline"
+                        className="underline text-green-700 dark:text-green-400"
                       >
                         Voir CV
                       </a>
@@ -244,7 +204,10 @@ export default function CandidaturesTablePage() {
                   <td className="px-6 py-4 text-right">
                     <button
                       onClick={() => openFicheModal(c)}
-                      className="inline-flex items-center gap-2 bg-green-600 text-white px-4 py-2 rounded-full"
+                      className="inline-flex items-center gap-2
+                                 bg-green-600 hover:bg-green-700
+                                 dark:bg-green-700 dark:hover:bg-green-600
+                                 text-white px-4 py-2 rounded-full"
                     >
                       <Send size={16} />
                       Envoyer fiche
@@ -263,23 +226,30 @@ export default function CandidaturesTablePage() {
         onPageChange={setPage}
       />
 
-      {/* MODAL */}
-      {openModal && selectedCandidature && (
-        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
-          <div className="bg-white rounded-3xl p-6 w-full max-w-md">
-            <h2 className="text-xl font-extrabold mb-4">
+      {/* MODAL DARK READY */}
+      {openModal && (
+        <div className="fixed inset-0 flex items-center justify-center z-50
+                        bg-black/40 dark:bg-black/70">
+          <div className="bg-white dark:bg-zinc-900
+                          border border-gray-200 dark:border-zinc-700
+                          rounded-3xl p-6 w-full max-w-md">
+
+            <h2 className="text-xl font-extrabold mb-4
+                           text-gray-900 dark:text-white">
               Choisir la fiche
             </h2>
 
             {loadingFiches ? (
-              <p>Chargement...</p>
+              <p className="text-gray-600 dark:text-gray-400">Chargement...</p>
             ) : (
               <div className="space-y-3">
                 {fiches.map((f) => (
                   <button
                     key={f._id}
                     onClick={() => sendFiche(f._id)}
-                    className="w-full bg-[#E9F5E3] text-green-700 py-2 rounded-full font-bold"
+                    className="w-full rounded-full py-2 font-bold
+                               bg-[#E9F5E3] dark:bg-green-900/40
+                               text-green-700 dark:text-green-300"
                   >
                     {f.title}
                   </button>
@@ -289,7 +259,8 @@ export default function CandidaturesTablePage() {
 
             <button
               onClick={closeFicheModal}
-              className="mt-5 w-full text-gray-500 underline text-sm"
+              className="mt-5 w-full underline text-sm
+                         text-gray-500 dark:text-gray-400"
             >
               Annuler
             </button>

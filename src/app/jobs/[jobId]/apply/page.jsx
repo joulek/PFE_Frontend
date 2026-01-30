@@ -18,7 +18,7 @@ export default function ApplyPage() {
   const [cvFileUrl, setCvFileUrl] = useState(null);
 
   return (
-    <div className="min-h-screen bg-green-50 px-6 py-10">
+    <div className="min-h-screen bg-green-50 dark:bg-gray-950 px-6 py-10">
       {/* ===== STEPPER ===== */}
       <div className="flex justify-center gap-6 mb-10">
         <Step label="Upload CV" active={step >= 1} />
@@ -27,7 +27,7 @@ export default function ApplyPage() {
 
       {/* ===== STEP 1 ===== */}
       {step === 1 && (
-        <div className="max-w-3xl mx-auto bg-white rounded-3xl shadow p-10">
+        <div className="max-w-3xl mx-auto bg-white dark:bg-gray-800 rounded-3xl shadow p-10">
           <StepUploadCV
             jobId={jobId}
             onParsed={(data) => {
@@ -65,9 +65,7 @@ export default function ApplyPage() {
             };
 
             await confirmCandidature(candidatureId, parsedCV, manualPayload);
-
           }}
-
         />
       )}
     </div>
@@ -80,11 +78,13 @@ function Step({ label, active }) {
     <div className="flex flex-col items-center">
       <div
         className={`w-9 h-9 rounded-full flex items-center justify-center
-        ${active ? "bg-green-600 text-white" : "bg-gray-300 text-gray-500"}`}
+          ${active 
+            ? "bg-green-600 dark:bg-emerald-600 text-white" 
+            : "bg-gray-300 dark:bg-gray-700 text-gray-500 dark:text-gray-400"}`}
       >
         ✓
       </div>
-      <span className="text-xs mt-2">{label}</span>
+      <span className="text-xs mt-2 text-gray-600 dark:text-gray-400">{label}</span>
     </div>
   );
 }

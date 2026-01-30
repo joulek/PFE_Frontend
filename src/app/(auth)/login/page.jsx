@@ -12,57 +12,50 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
-async function handleSubmit(e) {
-  e.preventDefault();
-  setError("");
-  setLoading(true);
+  async function handleSubmit(e) {
+    e.preventDefault();
+    setError("");
+    setLoading(true);
 
-  try {
-    const res = await login(email, password);
+    try {
+      const res = await login(email, password);
 
-    const token = res?.data?.token;
-    const user = res?.data?.user;
+      const token = res?.data?.token;
+      const user = res?.data?.user;
 
-    if (!token || !user) {
-      throw new Error("Réponse login invalide (token/user manquant)");
+      if (!token || !user) {
+        throw new Error("Réponse login invalide (token/user manquant)");
+      }
+
+      const role = String(user?.role || "").trim().toUpperCase();
+
+      localStorage.setItem("token", token);
+      localStorage.setItem("user", JSON.stringify({ ...user, role }));
+
+      const maxAge = 60 * 60 * 24 * 7;
+
+      document.cookie = `token=${token}; path=/; max-age=${maxAge}; SameSite=Lax`;
+      document.cookie = `role=${role}; path=/; max-age=${maxAge}; SameSite=Lax`;
+
+      if (role === "ADMIN") {
+        window.location.href = "/recruiter/dashboard";
+      } else {
+        window.location.href = "/utilisateur/candidatures";
+      }
+    } catch (err) {
+      setError(
+        err?.response?.data?.message ||
+          err?.message ||
+          "Erreur de connexion. Vérifiez vos informations."
+      );
+    } finally {
+      setLoading(false);
     }
-
-    const role = String(user?.role || "").trim().toUpperCase();
-
-    // ✅ localStorage (اختياري)
-    localStorage.setItem("token", token);
-    localStorage.setItem("user", JSON.stringify({ ...user, role }));
-
-    // ✅ Cookies (ضروري للمiddleware)
-    // 7 أيام
-    const maxAge = 60 * 60 * 24 * 7;
-
-    document.cookie = `token=${token}; path=/; max-age=${maxAge}; SameSite=Lax`;
-    document.cookie = `role=${role}; path=/; max-age=${maxAge}; SameSite=Lax`;
-
-    // ✅ Redirect حسب role
-    if (role === "ADMIN") {
-      window.location.href = "/recruiter/dashboard";
-    } 
-    else {
-  // أي user آخر (responsable, recruteur, …)
-  window.location.href = "/utilisateur/candidatures";
-  }} catch (err) {
-    setError(
-      err?.response?.data?.message ||
-        err?.message ||
-        "Erreur de connexion. Vérifiez vos informations."
-    );
-  } finally {
-    setLoading(false);
   }
-}
-
 
   return (
-    // 🌿 prend l'écran SANS la navbar
-    <div className="h-[calc(100vh-80px)] bg-green-50 flex items-center justify-center px-4 overflow-hidden">
-      <div className="w-full max-w-6xl bg-white rounded-3xl shadow-xl overflow-hidden grid grid-cols-1 lg:grid-cols-2">
+    <div className="h-[calc(100vh-80px)] bg-green-50 dark:bg-gray-950 flex items-center justify-center px-4 overflow-hidden transition-colors duration-300">
+      <div className="w-full max-w-6xl bg-white dark:bg-gray-800 rounded-3xl shadow-xl overflow-hidden grid grid-cols-1 lg:grid-cols-2 transition-colors duration-300">
         {/* ================= LEFT ================= */}
         <div className="relative flex flex-col justify-center px-14 bg-gradient-to-br from-[#6CB33F] to-[#4E8F2F] text-white">
           <h1 className="text-[44px] font-semibold mb-6">Bienvenue</h1>
@@ -72,7 +65,6 @@ async function handleSubmit(e) {
             d’Optylab.
           </p>
 
-          {/* Cercles décoratifs */}
           <div className="absolute -bottom-24 -left-24 w-80 h-80 bg-white/15 rounded-full pointer-events-none" />
           <div className="absolute top-16 right-16 w-48 h-48 bg-white/10 rounded-full pointer-events-none" />
         </div>
@@ -80,38 +72,49 @@ async function handleSubmit(e) {
         {/* ================= RIGHT ================= */}
         <div className="p-10 lg:p-12 flex flex-col justify-center">
           <div className="mb-8 flex justify-center">
+            {/* Logo version claire (texte sombre) */}
             <Image
-              src="/images/optylab.png"
+              src="/images/optylab_logo.png"
               alt="Optylab"
               width={180}
               height={70}
               priority
+              className="dark:hidden"
+            />
+
+            {/* Logo version sombre (texte clair / blanc) */}
+            <Image
+              src="/images/logo_dark.png"
+              alt="Optylab"
+              width={180}
+              height={70}
+              priority
+              className="hidden dark:block"
             />
           </div>
 
-          <h2 className="text-[28px] font-semibold text-gray-800 text-center mb-2">
+          <h2 className="text-[28px] font-semibold text-gray-800 dark:text-gray-100 text-center mb-2">
             Connexion Recruteur
           </h2>
 
-          <p className="text-[14.5px] text-gray-500 text-center mb-8">
+          <p className="text-[14.5px] text-gray-500 dark:text-gray-400 text-center mb-8">
             Accès réservé à l’équipe RH d’Optylab
           </p>
 
           {error && (
-            <div className="mb-5 bg-red-50 border border-red-200 text-red-600 p-3 rounded-lg text-sm">
+            <div className="mb-5 bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800 text-red-600 dark:text-red-400 p-3 rounded-lg text-sm">
               {error}
             </div>
           )}
 
           <form onSubmit={handleSubmit} className="space-y-6">
             <div>
-              <label className="text-sm font-medium text-gray-600 mb-1 block">
+              <label className="text-sm font-medium text-gray-600 dark:text-gray-300 mb-1 block">
                 Email professionnel
               </label>
 
               <div className="relative">
-                {/* Icône email */}
-                <span className="absolute inset-y-0 left-4 flex items-center text-gray-400">
+                <span className="absolute inset-y-0 left-4 flex items-center text-gray-400 dark:text-gray-500">
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
                     className="h-5 w-5"
@@ -135,25 +138,26 @@ async function handleSubmit(e) {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   className="
-        w-full pl-12 pr-4 py-3
-        border border-gray-300
-        rounded-xl
-        text-gray-700
-        focus:ring-2 focus:ring-[#6CB33F]
-        outline-none
-      "
+                    w-full pl-12 pr-4 py-3
+                    border border-gray-300 dark:border-gray-600
+                    rounded-xl
+                    text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-800
+                    focus:ring-2 focus:ring-[#6CB33F] dark:focus:ring-emerald-500
+                    focus:border-[#6CB33F] dark:focus:border-emerald-500
+                    outline-none transition
+                    placeholder:text-gray-400 dark:placeholder:text-gray-500
+                  "
                 />
               </div>
             </div>
 
             <div>
-              <label className="text-sm font-medium text-gray-600 mb-1 block">
+              <label className="text-sm font-medium text-gray-600 dark:text-gray-300 mb-1 block">
                 Mot de passe
               </label>
 
               <div className="relative">
-                {/* Icône cadenas */}
-                <span className="absolute inset-y-0 left-4 flex items-center text-gray-400">
+                <span className="absolute inset-y-0 left-4 flex items-center text-gray-400 dark:text-gray-500">
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
                     className="h-5 w-5"
@@ -177,23 +181,23 @@ async function handleSubmit(e) {
                   placeholder="********"
                   onChange={(e) => setPassword(e.target.value)}
                   className="
-        w-full pl-12 pr-12 py-3
-        border border-gray-300
-        rounded-xl
-        text-gray-700
-        focus:ring-2 focus:ring-[#6CB33F]
-        outline-none
-      "
+                    w-full pl-12 pr-12 py-3
+                    border border-gray-300 dark:border-gray-600
+                    rounded-xl
+                    text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-800
+                    focus:ring-2 focus:ring-[#6CB33F] dark:focus:ring-emerald-500
+                    focus:border-[#6CB33F] dark:focus:border-emerald-500
+                    outline-none transition
+                    placeholder:text-gray-400 dark:placeholder:text-gray-500
+                  "
                 />
 
-                {/* Icône œil */}
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute inset-y-0 right-4 flex items-center text-gray-400 hover:text-gray-600"
+                  className="absolute inset-y-0 right-4 flex items-center text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300"
                 >
                   {showPassword ? (
-                    // eye-off
                     <svg
                       xmlns="http://www.w3.org/2000/svg"
                       className="h-5 w-5"
@@ -209,7 +213,6 @@ async function handleSubmit(e) {
                       />
                     </svg>
                   ) : (
-                    // eye
                     <svg
                       xmlns="http://www.w3.org/2000/svg"
                       className="h-5 w-5"
@@ -238,7 +241,7 @@ async function handleSubmit(e) {
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-[#6CB33F] hover:bg-[#4E8F2F] text-white py-3 rounded-xl transition"
+              className="w-full bg-[#6CB33F] dark:bg-emerald-600 hover:bg-[#4E8F2F] dark:hover:bg-emerald-500 text-white py-3 rounded-xl transition disabled:opacity-50"
             >
               {loading ? "Connexion..." : "Se connecter"}
             </button>

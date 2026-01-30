@@ -163,7 +163,6 @@ export default function AdminDashboard() {
         setLastCandidatures(sorted.slice(0, 3));
 
         // ===== Histogramme =====
-        // ===== Histogramme (uniquement offres avec candidatures > 0) =====
         const chartData = (chartRes.data || [])
           .filter((j) => Number(j?.candidaturesCount || 0) > 0)
           .map((j) => {
@@ -189,44 +188,46 @@ export default function AdminDashboard() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-green-50 px-6 py-14">
+    <div className="min-h-screen bg-[#F0FAF0] dark:bg-gray-950 px-6 py-14 transition-colors duration-300">
       <div className="max-w-7xl mx-auto">
         {/* ===== Header ===== */}
-        <h1 className="text-4xl font-extrabold text-gray-900">
+        <h1 className="text-4xl font-extrabold text-gray-900 dark:text-white">
           Bienvenue dans votre espace RH 👋
         </h1>
 
-        <p className="text-gray-600 mb-10">
+        <p className="text-gray-600 dark:text-gray-400 mb-10">
           Voici un aperçu de vos activités de recrutement.
         </p>
 
         {/* ===== Stats Cards ===== */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-8 mb-14">
           {/* Offres */}
-          <div className="bg-white rounded-3xl shadow-md p-8 flex items-center gap-6">
-            <div className="h-14 w-14 rounded-full bg-green-100 flex items-center justify-center">
-              <Briefcase className="w-7 h-7 text-[#4E8F2F]" />
+          <div className="bg-white dark:bg-gray-800 rounded-3xl shadow-md p-8 flex items-center gap-6 transition-colors duration-300">
+            <div className="h-14 w-14 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
+              <Briefcase className="w-7 h-7 text-[#4E8F2F] dark:text-emerald-400" />
             </div>
 
             <div>
-              <p className="text-gray-500 text-sm font-medium">
-                Offres d’emploi
+              <p className="text-gray-500 dark:text-gray-400 text-sm font-medium">
+                Offres d'emploi
               </p>
-              <p className="text-4xl font-bold text-gray-900">
+              <p className="text-4xl font-bold text-gray-900 dark:text-white">
                 {stats.jobOffers}
               </p>
             </div>
           </div>
 
           {/* Candidatures */}
-          <div className="bg-white rounded-3xl shadow-md p-8 flex items-center gap-6">
-            <div className="h-14 w-14 rounded-full bg-blue-100 flex items-center justify-center">
-              <Users className="w-7 h-7 text-blue-600" />
+          <div className="bg-white dark:bg-gray-800 rounded-3xl shadow-md p-8 flex items-center gap-6 transition-colors duration-300">
+            <div className="h-14 w-14 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
+              <Users className="w-7 h-7 text-blue-600 dark:text-blue-400" />
             </div>
 
             <div>
-              <p className="text-gray-500 text-sm font-medium">Candidatures</p>
-              <p className="text-4xl font-bold text-gray-900">
+              <p className="text-gray-500 dark:text-gray-400 text-sm font-medium">
+                Candidatures
+              </p>
+              <p className="text-4xl font-bold text-gray-900 dark:text-white">
                 {stats.candidatures}
               </p>
             </div>
@@ -234,29 +235,49 @@ export default function AdminDashboard() {
         </div>
 
         {/* ===== Chart ===== */}
-        <div className="bg-white rounded-3xl shadow-md p-8 mb-14">
+        <div className="bg-white dark:bg-gray-800 rounded-3xl shadow-md p-8 mb-14 transition-colors duration-300">
           <div className="flex items-center justify-between mb-6">
-            <h2 className="text-xl font-bold text-gray-900">
+            <h2 className="text-xl font-bold text-gray-900 dark:text-white">
               Candidatures par offre
             </h2>
-            <p className="text-sm text-gray-500">
+            <p className="text-sm text-gray-500 dark:text-gray-400">
               Répartition des candidatures selon les offres
             </p>
           </div>
 
           {loadingChart ? (
-            <p className="text-gray-500 text-sm">Chargement du graphique...</p>
+            <p className="text-gray-500 dark:text-gray-400 text-sm">Chargement du graphique...</p>
           ) : jobsStats.length === 0 ? (
-            <p className="text-gray-500 text-sm">Aucune donnée disponible.</p>
+            <p className="text-gray-500 dark:text-gray-400 text-sm">Aucune donnée disponible.</p>
           ) : (
             <div className="w-full h-[320px]">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={jobsStats}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="name" tick={{ fontSize: 12 }} />
-                  <YAxis allowDecimals={false} />
-                  <Tooltip />
-                  <Bar dataKey="candidatures" radius={[10, 10, 0, 0]} />
+                  <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
+                  <XAxis
+                    dataKey="name"
+                    tick={{ fontSize: 12, fill: '#6B7280' }}
+                    stroke="#6B7280"
+                  />
+                  <YAxis
+                    allowDecimals={false}
+                    tick={{ fill: '#6B7280' }}
+                    stroke="#6B7280"
+                  />
+                  <Tooltip
+                    contentStyle={{
+                      backgroundColor: '#1F2937',
+                      border: 'none',
+                      borderRadius: '8px',
+                      color: '#F3F4F6'
+                    }}
+                  />
+                  <Bar
+                    dataKey="candidatures"
+                    radius={[10, 10, 0, 0]}
+                    fill="#00000"           // noir pur en mode clair
+                    className="dark:fill-[#D1D5DB]"  // gris très clair en mode sombre (visible)
+                  />
                 </BarChart>
               </ResponsiveContainer>
             </div>
@@ -265,39 +286,39 @@ export default function AdminDashboard() {
 
         {/* ===== Title + Voir tout OUTSIDE table container ===== */}
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-xl font-bold text-gray-900">
+          <h2 className="text-xl font-bold text-gray-900 dark:text-white">
             Dernières Candidatures
           </h2>
 
           <Link
             href="/recruiter/candidatures"
-            className="text-sm font-semibold text-[#4E8F2F] hover:underline"
+            className="text-sm font-semibold text-[#4E8F2F] dark:text-emerald-400 hover:underline"
           >
             Voir tout
           </Link>
         </div>
 
         {/* ===== TABLE CONTAINER ===== */}
-        <div className="bg-white rounded-3xl shadow-md overflow-hidden">
+        <div className="bg-white dark:bg-gray-800 rounded-3xl shadow-md overflow-hidden transition-colors duration-300">
           {loadingLast ? (
-            <div className="p-8 text-gray-500 text-sm">Chargement...</div>
+            <div className="p-8 text-gray-500 dark:text-gray-400 text-sm">Chargement...</div>
           ) : lastCandidatures.length === 0 ? (
-            <div className="p-8 text-gray-500 text-sm">
+            <div className="p-8 text-gray-500 dark:text-gray-400 text-sm">
               Aucune candidature disponible.
             </div>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 {/* HEADER */}
-                <thead className="bg-white">
-                  <tr className="text-gray-400 uppercase text-xs">
+                <thead className="bg-white dark:bg-gray-800">
+                  <tr className="text-gray-400 dark:text-gray-500 uppercase text-xs">
                     <th className="text-left px-10 py-6">Candidat</th>
                     <th className="text-left px-10 py-6">Poste</th>
                   </tr>
                 </thead>
 
                 {/* BODY */}
-                <tbody className="divide-y divide-gray-100">
+                <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
                   {lastCandidatures.map((c) => {
                     const fullName = getFullName(c);
                     const jobTitle = safeStr(c?.jobTitle) || "—";
@@ -305,20 +326,20 @@ export default function AdminDashboard() {
                     return (
                       <tr
                         key={c._id}
-                        className="hover:bg-green-50/40 transition"
+                        className="hover:bg-green-50/40 dark:hover:bg-gray-700/40 transition"
                       >
                         {/* CANDIDAT */}
                         <td className="px-10 py-6">
                           <div className="flex items-center gap-4">
-                            <div className="h-11 w-11 rounded-full bg-green-100 flex items-center justify-center text-[#4E8F2F] font-bold">
+                            <div className="h-11 w-11 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center text-[#4E8F2F] dark:text-emerald-400 font-bold">
                               {getInitials(fullName)}
                             </div>
 
                             <div>
-                              <p className="font-semibold text-gray-900">
+                              <p className="font-semibold text-gray-900 dark:text-white">
                                 {fullName}
                               </p>
-                              <p className="text-xs text-gray-400">
+                              <p className="text-xs text-gray-400 dark:text-gray-500">
                                 {formatTimeAgo(c?.createdAt)}
                               </p>
                             </div>
@@ -326,7 +347,7 @@ export default function AdminDashboard() {
                         </td>
 
                         {/* POSTE */}
-                        <td className="px-10 py-6 text-gray-600">{jobTitle}</td>
+                        <td className="px-10 py-6 text-gray-600 dark:text-gray-300">{jobTitle}</td>
                       </tr>
                     );
                   })}

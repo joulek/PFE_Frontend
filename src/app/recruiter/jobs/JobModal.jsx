@@ -38,48 +38,46 @@ export default function JobModal({
     [],
   );
 
-useEffect(() => {
-  if (!open) return;
+  useEffect(() => {
+    if (!open) return;
 
-  // Use a microtask to avoid cascading renders
-  Promise.resolve().then(() => {
-    if (initialData) {
-      setForm({
-        titre: initialData.titre || "",
-        description: initialData.description || "",
-        technologies: Array.isArray(initialData.technologies)
-          ? initialData.technologies.join(", ")
-          : initialData.technologies || "",
-        dateCloture: initialData.dateCloture
-          ? String(initialData.dateCloture).slice(0, 10)
-          : "",
-        weights: {
-          skillsFit: initialData?.weights?.skillsFit ?? 30,
-          experienceFit: initialData?.weights?.experienceFit ?? 30,
-          projectsFit: initialData?.weights?.projectsFit ?? 20,
-          educationFit: initialData?.weights?.educationFit ?? 10,
-          communicationFit: initialData?.weights?.communicationFit ?? 10,
-        },
-      });
+    Promise.resolve().then(() => {
+      if (initialData) {
+        setForm({
+          titre: initialData.titre || "",
+          description: initialData.description || "",
+          technologies: Array.isArray(initialData.technologies)
+            ? initialData.technologies.join(", ")
+            : initialData.technologies || "",
+          dateCloture: initialData.dateCloture
+            ? String(initialData.dateCloture).slice(0, 10)
+            : "",
+          weights: {
+            skillsFit: initialData?.weights?.skillsFit ?? 30,
+            experienceFit: initialData?.weights?.experienceFit ?? 30,
+            projectsFit: initialData?.weights?.projectsFit ?? 20,
+            educationFit: initialData?.weights?.educationFit ?? 10,
+            communicationFit: initialData?.weights?.communicationFit ?? 10,
+          },
+        });
 
-      const id =
-        Array.isArray(initialData.assignedUserIds) &&
-        initialData.assignedUserIds.length > 0
-          ? (typeof initialData.assignedUserIds[0] === "string"
-              ? initialData.assignedUserIds[0]
-              : initialData.assignedUserIds[0]?._id)
-          : "";
+        const id =
+          Array.isArray(initialData.assignedUserIds) &&
+          initialData.assignedUserIds.length > 0
+            ? (typeof initialData.assignedUserIds[0] === "string"
+                ? initialData.assignedUserIds[0]
+                : initialData.assignedUserIds[0]?._id)
+            : "";
 
-      setAssignedUserId(id);
-    } else {
-      setForm(emptyForm);
-      setAssignedUserId("");
-    }
+        setAssignedUserId(id);
+      } else {
+        setForm(emptyForm);
+        setAssignedUserId("");
+      }
 
-    setFormError("");
-  });
-}, [open, initialData]);
-
+      setFormError("");
+    });
+  }, [open, initialData]);
 
   if (!open) return null;
 
@@ -125,26 +123,26 @@ useEffect(() => {
         .map((t) => t.trim())
         .filter(Boolean),
       weights: form.weights,
-      assignedUserIds: assignedUserId ? [assignedUserId] : [], // ✅ NEW
+      assignedUserIds: assignedUserId ? [assignedUserId] : [],
     });
   }
 
   return (
     <div
-      className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4 sm:p-6"
+      className="fixed inset-0 z-50 bg-black/40 dark:bg-black/60 flex items-center justify-center p-4 sm:p-6"
       onMouseDown={(e) => {
         if (e.target === e.currentTarget) onClose();
       }}
     >
-      <div className="bg-white w-full max-w-2xl rounded-2xl sm:rounded-3xl shadow-2xl overflow-hidden max-h-[90vh] flex flex-col">
+      <div className="bg-white dark:bg-gray-800 w-full max-w-2xl rounded-2xl sm:rounded-3xl shadow-2xl overflow-hidden max-h-[90vh] flex flex-col transition-colors duration-300">
         {/* ===== HEADER ===== */}
-        <div className="px-5 sm:px-8 pt-5 sm:pt-7 pb-4 sm:pb-5 border-b border-gray-200">
+        <div className="px-5 sm:px-8 pt-5 sm:pt-7 pb-4 sm:pb-5 border-b border-gray-200 dark:border-gray-700">
           <div className="flex items-start justify-between gap-4">
             <div>
-              <h2 className="text-xl sm:text-2xl font-extrabold text-gray-900">
-                {initialData ? "Modifier l’offre" : "Ajouter une offre"}
+              <h2 className="text-xl sm:text-2xl font-extrabold text-gray-900 dark:text-white">
+                {initialData ? "Modifier l'offre" : "Ajouter une offre"}
               </h2>
-              <p className="text-sm text-gray-500 mt-1">
+              <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
                 Mettez à jour les informations de l&apos;annonce pour les
                 candidats.
               </p>
@@ -153,7 +151,11 @@ useEffect(() => {
             <button
               type="button"
               onClick={onClose}
-              className="shrink-0 h-10 w-10 rounded-full grid place-items-center text-gray-500 hover:text-gray-800 hover:bg-gray-100 transition"
+              className="shrink-0 h-10 w-10 rounded-full grid place-items-center 
+                         text-gray-500 dark:text-gray-400 
+                         hover:text-gray-800 dark:hover:text-white 
+                         hover:bg-gray-100 dark:hover:bg-gray-700 
+                         transition-colors"
               aria-label="Fermer"
               title="Fermer"
             >
@@ -168,29 +170,35 @@ useEffect(() => {
             <div className="space-y-5 sm:space-y-6">
               {/* ERROR */}
               {formError && (
-                <div className="rounded-xl border border-red-200 bg-red-50 p-3 text-sm font-semibold text-red-700">
+                <div className="rounded-xl border border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-900/30 p-3 text-sm font-semibold text-red-700 dark:text-red-400">
                   {formError}
                 </div>
               )}
 
               {/* TITRE */}
               <div>
-                <label className="block text-xs sm:text-sm font-semibold tracking-wide text-gray-700 mb-2 uppercase">
+                <label className="block text-xs sm:text-sm font-semibold tracking-wide text-gray-700 dark:text-gray-300 mb-2 uppercase">
                   Titre du poste
                 </label>
                 <input
                   value={form.titre}
                   onChange={(e) => setForm({ ...form, titre: e.target.value })}
                   required
-                  className="w-full h-11 sm:h-12 px-4 sm:px-5 rounded-xl sm:rounded-full border border-gray-200 bg-white text-gray-800
-                             focus:border-[#6CB33F] focus:ring-4 focus:ring-[#6CB33F]/15 outline-none transition"
+                  className="w-full h-11 sm:h-12 px-4 sm:px-5 rounded-xl sm:rounded-full 
+                             border border-gray-200 dark:border-gray-600 
+                             bg-white dark:bg-gray-700 
+                             text-gray-800 dark:text-gray-100
+                             placeholder-gray-400 dark:placeholder-gray-500
+                             focus:border-[#6CB33F] dark:focus:border-emerald-500 
+                             focus:ring-4 focus:ring-[#6CB33F]/15 dark:focus:ring-emerald-500/20 
+                             outline-none transition-colors"
                   placeholder="Ex: Fullstack Developer (React/Node)"
                 />
               </div>
 
               {/* DESCRIPTION */}
               <div>
-                <label className="block text-xs sm:text-sm font-semibold tracking-wide text-gray-700 mb-2 uppercase">
+                <label className="block text-xs sm:text-sm font-semibold tracking-wide text-gray-700 dark:text-gray-300 mb-2 uppercase">
                   Description
                 </label>
                 <textarea
@@ -200,8 +208,15 @@ useEffect(() => {
                     setForm({ ...form, description: e.target.value })
                   }
                   required
-                  className="w-full px-4 sm:px-5 py-3 sm:py-4 rounded-2xl sm:rounded-3xl border border-gray-200 bg-white text-gray-800 resize-none
-                             focus:border-[#6CB33F] focus:ring-4 focus:ring-[#6CB33F]/15 outline-none transition"
+                  className="w-full px-4 sm:px-5 py-3 sm:py-4 rounded-2xl sm:rounded-3xl 
+                             border border-gray-200 dark:border-gray-600 
+                             bg-white dark:bg-gray-700 
+                             text-gray-800 dark:text-gray-100
+                             placeholder-gray-400 dark:placeholder-gray-500
+                             resize-none
+                             focus:border-[#6CB33F] dark:focus:border-emerald-500 
+                             focus:ring-4 focus:ring-[#6CB33F]/15 dark:focus:ring-emerald-500/20 
+                             outline-none transition-colors"
                   placeholder="Décrivez la mission, le profil recherché, responsabilités..."
                 />
               </div>
@@ -210,7 +225,7 @@ useEffect(() => {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-5 sm:gap-6">
                 {/* TECHNOLOGIES */}
                 <div>
-                  <label className="block text-xs sm:text-sm font-semibold tracking-wide text-gray-700 mb-2 uppercase">
+                  <label className="block text-xs sm:text-sm font-semibold tracking-wide text-gray-700 dark:text-gray-300 mb-2 uppercase">
                     Technologies
                   </label>
                   <input
@@ -219,17 +234,23 @@ useEffect(() => {
                       setForm({ ...form, technologies: e.target.value })
                     }
                     placeholder="React, Node.js, Tailwind"
-                    className="w-full h-11 sm:h-12 px-4 sm:px-5 rounded-xl sm:rounded-full border border-gray-200 bg-white text-gray-800
-                               focus:border-[#6CB33F] focus:ring-4 focus:ring-[#6CB33F]/15 outline-none transition"
+                    className="w-full h-11 sm:h-12 px-4 sm:px-5 rounded-xl sm:rounded-full 
+                               border border-gray-200 dark:border-gray-600 
+                               bg-white dark:bg-gray-700 
+                               text-gray-800 dark:text-gray-100
+                               placeholder-gray-400 dark:placeholder-gray-500
+                               focus:border-[#6CB33F] dark:focus:border-emerald-500 
+                               focus:ring-4 focus:ring-[#6CB33F]/15 dark:focus:ring-emerald-500/20 
+                               outline-none transition-colors"
                   />
-                  <p className="text-xs text-gray-500 mt-2">
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
                     Sépare avec une virgule.
                   </p>
                 </div>
 
                 {/* DATE */}
                 <div>
-                  <label className="block text-xs sm:text-sm font-semibold tracking-wide text-gray-700 mb-2 uppercase">
+                  <label className="block text-xs sm:text-sm font-semibold tracking-wide text-gray-700 dark:text-gray-300 mb-2 uppercase">
                     Date de clôture
                   </label>
                   <input
@@ -238,23 +259,33 @@ useEffect(() => {
                     onChange={(e) =>
                       setForm({ ...form, dateCloture: e.target.value })
                     }
-                    className="w-full h-11 sm:h-12 px-4 sm:px-5 rounded-xl sm:rounded-full border border-gray-200 bg-white text-gray-800
-                               focus:border-[#6CB33F] focus:ring-4 focus:ring-[#6CB33F]/15 outline-none transition"
+                    className="w-full h-11 sm:h-12 px-4 sm:px-5 rounded-xl sm:rounded-full 
+                               border border-gray-200 dark:border-gray-600 
+                               bg-white dark:bg-gray-700 
+                               text-gray-800 dark:text-gray-100
+                               focus:border-[#6CB33F] dark:focus:border-emerald-500 
+                               focus:ring-4 focus:ring-[#6CB33F]/15 dark:focus:ring-emerald-500/20 
+                               outline-none transition-colors"
                   />
                 </div>
               </div>
 
-              {/* ✅ NEW: SELECT USERS */}
+              {/* ✅ SELECT USERS */}
               <div>
-                <label className="block text-xs sm:text-sm font-semibold tracking-wide text-gray-700 mb-2 uppercase">
+                <label className="block text-xs sm:text-sm font-semibold tracking-wide text-gray-700 dark:text-gray-300 mb-2 uppercase">
                   Affectation utilisateurs
                 </label>
 
                 <select
                   value={assignedUserId}
                   onChange={(e) => setAssignedUserId(e.target.value)}
-                  className="w-full h-12 px-4 py-3 rounded-2xl border border-gray-200 bg-white text-gray-800
-             focus:border-[#6CB33F] focus:ring-4 focus:ring-[#6CB33F]/15 outline-none transition"
+                  className="w-full h-12 px-4 py-3 rounded-2xl 
+                             border border-gray-200 dark:border-gray-600 
+                             bg-white dark:bg-gray-700 
+                             text-gray-800 dark:text-gray-100
+                             focus:border-[#6CB33F] dark:focus:border-emerald-500 
+                             focus:ring-4 focus:ring-[#6CB33F]/15 dark:focus:ring-emerald-500/20 
+                             outline-none transition-colors"
                 >
                   <option value="">-- Choisir un utilisateur --</option>
 
@@ -264,20 +295,18 @@ useEffect(() => {
                     </option>
                   ))}
                 </select>
-
-             
               </div>
 
               {/* WEIGHTS */}
-              <div className="border-t border-gray-200 pt-6">
+              <div className="border-t border-gray-200 dark:border-gray-700 pt-6">
                 <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-sm font-extrabold text-gray-900 uppercase tracking-wide">
+                  <h3 className="text-sm font-extrabold text-gray-900 dark:text-white uppercase tracking-wide">
                     Pondérations (0 - 100)
                   </h3>
 
                   <span
                     className={`text-sm font-extrabold ${
-                      isValidTotal ? "text-green-600" : "text-red-600"
+                      isValidTotal ? "text-green-600 dark:text-emerald-400" : "text-red-600 dark:text-red-400"
                     }`}
                   >
                     Total: {totalWeights}%
@@ -293,7 +322,7 @@ useEffect(() => {
                         key={it.key}
                         className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4"
                       >
-                        <p className="sm:flex-1 text-sm font-semibold text-gray-700">
+                        <p className="sm:flex-1 text-sm font-semibold text-gray-700 dark:text-gray-300">
                           {it.label}
                         </p>
 
@@ -304,10 +333,15 @@ useEffect(() => {
                             max={100}
                             value={v}
                             onChange={(e) => setWeight(it.key, e.target.value)}
-                            className="w-24 h-11 px-4 rounded-xl sm:rounded-full border border-gray-200 text-gray-800
-                                       focus:border-[#6CB33F] focus:ring-4 focus:ring-[#6CB33F]/15 outline-none transition"
+                            className="w-24 h-11 px-4 rounded-xl sm:rounded-full 
+                                       border border-gray-200 dark:border-gray-600 
+                                       bg-white dark:bg-gray-700 
+                                       text-gray-800 dark:text-gray-100
+                                       focus:border-[#6CB33F] dark:focus:border-emerald-500 
+                                       focus:ring-4 focus:ring-[#6CB33F]/15 dark:focus:ring-emerald-500/20 
+                                       outline-none transition-colors"
                           />
-                          <span className="text-sm font-extrabold text-[#4E8F2F] w-10">
+                          <span className="text-sm font-extrabold text-[#4E8F2F] dark:text-emerald-400 w-10">
                             %
                           </span>
                         </div>
@@ -317,7 +351,7 @@ useEffect(() => {
                 </div>
 
                 {!isValidTotal && (
-                  <p className="mt-3 text-xs font-semibold text-red-600">
+                  <p className="mt-3 text-xs font-semibold text-red-600 dark:text-red-400">
                     La somme des pondérations doit être égale à 100% pour
                     pouvoir enregistrer.
                   </p>
@@ -326,15 +360,15 @@ useEffect(() => {
             </div>
 
             {/* FOOTER */}
-            <div className="mt-7 sm:mt-8 pt-5 sm:pt-6 border-t border-gray-200 flex flex-col sm:flex-row gap-3 sm:gap-4">
+            <div className="mt-7 sm:mt-8 pt-5 sm:pt-6 border-t border-gray-200 dark:border-gray-700 flex flex-col sm:flex-row gap-3 sm:gap-4">
               <button
                 type="submit"
                 disabled={!isValidTotal}
-                className={`sm:flex-1 h-11 sm:h-12 rounded-xl sm:rounded-full font-semibold transition shadow-sm
+                className={`sm:flex-1 h-11 sm:h-12 rounded-xl sm:rounded-full font-semibold transition-colors shadow-sm
                   ${
                     isValidTotal
-                      ? "bg-[#6CB33F] hover:bg-[#5AA332] text-white"
-                      : "bg-gray-300 text-gray-500 cursor-not-allowed"
+                      ? "bg-[#6CB33F] hover:bg-[#5AA332] dark:bg-emerald-600 dark:hover:bg-emerald-500 text-white"
+                      : "bg-gray-300 dark:bg-gray-600 text-gray-500 dark:text-gray-400 cursor-not-allowed"
                   }`}
               >
                 Enregistrer
@@ -345,10 +379,14 @@ useEffect(() => {
                 onClick={() => {
                   setForm(emptyForm);
                   setFormError("");
-                  setAssignedUserId(""); // ✅ reset single select
+                  setAssignedUserId("");
                   onClose();
                 }}
-                className="sm:flex-1 h-11 sm:h-12 rounded-xl sm:rounded-full font-semibold border border-gray-200 text-gray-700 hover:bg-gray-50 transition"
+                className="sm:flex-1 h-11 sm:h-12 rounded-xl sm:rounded-full font-semibold 
+                           border border-gray-200 dark:border-gray-600 
+                           text-gray-700 dark:text-gray-300 
+                           hover:bg-gray-50 dark:hover:bg-gray-700 
+                           transition-colors"
               >
                 Annuler
               </button>
