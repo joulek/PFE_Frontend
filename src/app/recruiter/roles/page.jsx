@@ -50,9 +50,12 @@ export default function GestionRolesPage() {
     fetchRoles();
   }, []);
 
-  async function fetchRoles() {
-    setError("");
-    setSuccess("");
+  // ✅ CORRIGÉ : ajout du paramètre clearMessages pour ne pas effacer le succès après une action
+  async function fetchRoles(clearMessages = true) {
+    if (clearMessages) {
+      setError("");
+      setSuccess("");
+    }
     setLoading(true);
     try {
       const res = await getRoles();
@@ -84,10 +87,10 @@ export default function GestionRolesPage() {
     setLoading(true);
     try {
       await createRole(finalName);
-      setSuccess("Rôle ajouté avec succès ✅");
+      setSuccess("Rôle ajouté avec succès");
       setRoleName("");
       setOpenAdd(false);
-      await fetchRoles();
+      await fetchRoles(false); // ✅ Ne pas effacer le message de succès
     } catch (e) {
       setError(
         e?.response?.data?.message ||
@@ -113,11 +116,11 @@ export default function GestionRolesPage() {
     setLoading(true);
     try {
       await updateRole(editId, finalName);
-      setSuccess("Rôle modifié avec succès ✅");
+      setSuccess("Rôle modifié avec succès");
       setOpenEdit(false);
       setEditId(null);
       setEditName("");
-      await fetchRoles();
+      await fetchRoles(false); // ✅ Ne pas effacer le message de succès
     } catch (e) {
       setError(
         e?.response?.data?.message ||
@@ -134,10 +137,10 @@ export default function GestionRolesPage() {
     setLoading(true);
     try {
       await deleteRole(roleToDelete.id);
-      setSuccess("Rôle supprimé ✅");
+      setSuccess("Rôle supprimé");
       setOpenDeleteModal(false);
       setRoleToDelete(null);
-      await fetchRoles();
+      await fetchRoles(false); // ✅ Ne pas effacer le message de succès
     } catch (e) {
       setError(
         e?.response?.data?.message ||

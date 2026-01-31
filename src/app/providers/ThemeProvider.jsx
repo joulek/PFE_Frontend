@@ -15,47 +15,28 @@ export function useTheme() {
 
 export function ThemeProvider({ children }) {
   const [theme, setThemeState] = useState("light");
-  const [mounted, setMounted] = useState(false);
 
-  // Initialiser le thème depuis localStorage
+  // ✅ Client-only side effect
   useEffect(() => {
-    setMounted(true);
-    const savedTheme = localStorage.getItem("optylab-theme");
-    if (savedTheme) {
-      setThemeState(savedTheme);
-      applyTheme(savedTheme);
-    } else {
-      applyTheme("light");
-    }
+    const savedTheme = localStorage.getItem("optylab-theme") || "light";
+    setThemeState(savedTheme);
+    applyTheme(savedTheme);
   }, []);
 
-  // Appliquer le thème au document
   const applyTheme = (newTheme) => {
     const root = document.documentElement;
-    if (newTheme === "dark") {
-      root.classList.add("dark");
-    } else {
-      root.classList.remove("dark");
-    }
+    root.classList.toggle("dark", newTheme === "dark");
   };
 
-  // Changer le thème
   const setTheme = (newTheme) => {
     setThemeState(newTheme);
     localStorage.setItem("optylab-theme", newTheme);
     applyTheme(newTheme);
   };
 
-  // Toggle le thème
   const toggleTheme = () => {
-    const newTheme = theme === "dark" ? "light" : "dark";
-    setTheme(newTheme);
+    setTheme(theme === "dark" ? "light" : "dark");
   };
-
-  // Éviter le flash pendant l'hydration
-  if (!mounted) {
-    return null;
-  }
 
   return (
     <ThemeContext.Provider value={{ theme, setTheme, toggleTheme }}>

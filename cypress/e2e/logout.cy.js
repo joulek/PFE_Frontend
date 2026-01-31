@@ -4,12 +4,12 @@ describe("Test Logout Recruteur", () => {
       cy.visit("http://localhost:3000/login");
   
       // 2️⃣ Se connecter
-      cy.get('input[type="email"]').type("yosr@test.com");
-      cy.get('input[type="password"]').type("123456");
+      cy.get('input[type="email"]').type("admin@optylab.tn");
+      cy.get('input[type="password"]').type("Admin@123456");
       cy.contains("Se connecter").click();
   
       // 3️⃣ Vérifier qu’on est bien sur le dashboard
-      cy.url().should("include", "/admin/dashboard");
+      cy.url().should("include", "/recruiter/dashboard");
   
       // 4️⃣ Cliquer sur Déconnexion
       cy.contains("Déconnexion").click();
@@ -18,7 +18,7 @@ describe("Test Logout Recruteur", () => {
       cy.url().should("include", "/login");
   
       // 6️⃣ Vérifier que le dashboard n’est plus accessible
-      cy.visit("http://localhost:3000/admin/dashboard");
+      cy.visit("http://localhost:3000/recruiter/dashboard");
       cy.url().should("include", "/login");
     });
   });

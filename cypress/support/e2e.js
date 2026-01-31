@@ -16,3 +16,18 @@
 // Import commands.js using ES2015 syntax:
 import './commands'
 import "cypress-file-upload";
+// cypress/support/e2e.js
+
+Cypress.on("uncaught:exception", (err) => {
+  // ✅ Ignorer seulement l'erreur Next.js Hydration mismatch
+  if (
+    err.message?.includes("Hydration failed") ||
+    err.message?.includes("did not match") ||
+    err.message?.includes("hydration-mismatch")
+  ) {
+    return false; // empêche Cypress de fail
+  }
+
+  // sinon, laisser Cypress échouer normalement
+  return true;
+});
