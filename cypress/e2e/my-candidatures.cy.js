@@ -1,7 +1,7 @@
 /// <reference types="cypress" />
 
 describe("Mes candidatures – utilisateur", () => {
-  const PAGE_URL = "/utilisateur/candidatures";
+  const PAGE_URL = "/ResponsableMetier/candidatures";
 
   const mockUser = {
     _id: "u1",

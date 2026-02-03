@@ -40,7 +40,7 @@ export default function LoginPage() {
       if (role === "ADMIN") {
         window.location.href = "/recruiter/dashboard";
       } else {
-        window.location.href = "/utilisateur/candidatures";
+        window.location.href = "/ResponsableMetier/candidatures";
       }
     } catch (err) {
       setError(

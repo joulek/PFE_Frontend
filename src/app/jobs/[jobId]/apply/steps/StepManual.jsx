@@ -798,6 +798,7 @@ export default function StepManual({ parsedCV, cvFileUrl, onBack, onSubmit }) {
 
               <button
                 type="button"
+                data-cy="add-skill-btn"
                 onClick={() => {
                   addSkill(newSkill);
                   setNewSkill("");
@@ -1321,6 +1322,7 @@ export default function StepManual({ parsedCV, cvFileUrl, onBack, onSubmit }) {
               </button>
             ) : (
               <button
+              data-cy="submit-application"
                 onClick={handleSubmitFinal}
                 disabled={loadingSubmit}
                 className="

@@ -8,7 +8,7 @@ import {
   deleteJob,
 } from "../../services/job.api";
 import JobModal from "./JobModal";
-import { getUsers } from "../../services/user.api";
+import { getUsers } from "../../services/ResponsableMetier.api";
 import DeleteJobModal from "./DeleteJobModal";
 import Pagination from "../../components/Pagination";
 import { Trash2, Edit2 } from "lucide-react";

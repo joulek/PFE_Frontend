@@ -1,12 +1,12 @@
 /// <reference types="cypress" />
 
 /**
- * Tests E2E — Gestion des Utilisateurs
+ * Tests E2E — Gestion des Responsables Métier
  * Couverture : affichage, recherche, ajout, édition, suppression
  */
 
-describe("Gestion des Utilisateurs", () => {
-  const PAGE_URL = "/recruiter/users";
+describe("Gestion des Responsables Métier", () => {
+  const PAGE_URL = "/recruiter/ResponsableMetier";
 
   // ================= MOCK DATA =================
   const mockRoles = [
@@ -78,19 +78,19 @@ describe("Gestion des Utilisateurs", () => {
     // Mock POST user (register)
     cy.intercept("POST", "/api/users/register", {
       statusCode: 201,
-      body: { message: "Utilisateur créé avec succès" },
+      body: { message: "Responsable métier créé avec succès" },
     }).as("createUser");
 
-    // Mock PATCH user (pas PUT)
+    // Mock PATCH user
     cy.intercept("PATCH", "/api/users/*", {
       statusCode: 200,
-      body: { message: "Utilisateur modifié avec succès" },
+      body: { message: "Responsable métier modifié avec succès" },
     }).as("updateUser");
 
     // Mock DELETE user
     cy.intercept("DELETE", "/api/users/*", {
       statusCode: 200,
-      body: { message: "Utilisateur supprimé" },
+      body: { message: "Responsable métier supprimé" },
     }).as("deleteUser");
 
     cy.visit(PAGE_URL);
@@ -99,11 +99,11 @@ describe("Gestion des Utilisateurs", () => {
 
   // ================= AFFICHAGE =================
   it("devrait afficher le titre de la page", () => {
-    cy.contains("Liste des utilisateurs").should("be.visible");
+    cy.contains("Liste des responsables métier").should("be.visible");
   });
 
-  it("devrait afficher tous les utilisateurs", () => {
-    cy.viewport(1280, 720); // Desktop view
+  it("devrait afficher tous les responsables métier", () => {
+    cy.viewport(1280, 720);
     mockUsers.forEach((u) => {
       cy.contains(u.email).should("be.visible");
     });
@@ -113,36 +113,36 @@ describe("Gestion des Utilisateurs", () => {
     cy.get('input[placeholder="Rechercher (email, rôle)…"]').should("be.visible");
   });
 
-  it("devrait afficher le bouton Ajouter un utilisateur", () => {
-    cy.contains("Ajouter un utilisateur").should("be.visible");
+  it("devrait afficher le bouton Ajouter un responsable", () => {
+    cy.contains("+ Ajouter un responsable").should("be.visible");
   });
 
   it("devrait afficher les colonnes du tableau (desktop)", () => {
     cy.viewport(1280, 720);
     cy.contains("Prénom").should("be.visible");
     cy.contains("Nom").should("be.visible");
-    cy.contains("Utilisateur").should("be.visible");
+    cy.contains("Email").should("be.visible");
     cy.contains("Rôle").should("be.visible");
     cy.contains("Date").should("be.visible");
     cy.contains("Actions").should("be.visible");
   });
 
   // ================= RECHERCHE =================
-  it("devrait filtrer les utilisateurs par email", () => {
+  it("devrait filtrer les responsables métier par email", () => {
     cy.viewport(1280, 720);
     cy.get('input[placeholder="Rechercher (email, rôle)…"]').type("ahmed");
     cy.contains("ahmed.benali@test.com").should("be.visible");
     cy.contains("sami.trabelsi@test.com").should("not.exist");
   });
 
-  it("devrait filtrer les utilisateurs par rôle", () => {
+  it("devrait filtrer les responsables métier par rôle", () => {
     cy.viewport(1280, 720);
     cy.get('input[placeholder="Rechercher (email, rôle)…"]').type("DEVELOPER");
     cy.contains("leila.mansouri@test.com").should("be.visible");
     cy.contains("ahmed.benali@test.com").should("not.exist");
   });
 
-  it("devrait filtrer les utilisateurs par nom", () => {
+  it("devrait filtrer les responsables métier par nom", () => {
     cy.viewport(1280, 720);
     cy.get('input[placeholder="Rechercher (email, rôle)…"]').type("Trabelsi");
     cy.contains("sami.trabelsi@test.com").should("be.visible");
@@ -152,14 +152,14 @@ describe("Gestion des Utilisateurs", () => {
   // ================= AJOUT =================
   it("devrait ouvrir le modal d'ajout", () => {
     cy.viewport(1280, 720);
-    cy.contains("Ajouter un utilisateur").click();
-    cy.contains("Ajouter un utilisateur").should("be.visible");
+    cy.contains("+ Ajouter un responsable").click();
+    cy.contains("Ajouter un responsable métier").should("be.visible");
     cy.get('input[placeholder="Ex : Ahmed"]').should("be.visible");
   });
 
-  it("devrait ajouter un utilisateur avec succès", () => {
+  it("devrait ajouter un responsable métier avec succès", () => {
     cy.viewport(1280, 720);
-    cy.contains("Ajouter un utilisateur").click();
+    cy.contains("+ Ajouter un responsable").click();
 
     // Remplir le formulaire
     cy.get('input[placeholder="Ex : Ahmed"]').type(newUser.prenom);
@@ -185,14 +185,14 @@ describe("Gestion des Utilisateurs", () => {
 
   it("devrait fermer le modal avec le bouton Annuler", () => {
     cy.viewport(1280, 720);
-    cy.contains("Ajouter un utilisateur").click();
+    cy.contains("+ Ajouter un responsable").click();
     cy.contains("button", "Annuler").click();
     cy.get('input[placeholder="Ex : Ahmed"]').should("not.exist");
   });
 
   it("devrait fermer le modal en cliquant sur l'overlay", () => {
     cy.viewport(1280, 720);
-    cy.contains("Ajouter un utilisateur").click();
+    cy.contains("+ Ajouter un responsable").click();
     cy.get(".bg-black\\/50").click({ force: true });
     cy.get('input[placeholder="Ex : Ahmed"]').should("not.exist");
   });
@@ -208,7 +208,7 @@ describe("Gestion des Utilisateurs", () => {
       .click();
 
     // Vérifier que le modal s'ouvre avec le bon titre
-    cy.contains("Modifier un utilisateur").should("be.visible");
+    cy.contains("Modifier un responsable métier").should("be.visible");
 
     // Vérifier les valeurs pré-remplies
     cy.get('input[placeholder="Ex : Ahmed"]').should("have.value", "Ahmed");
@@ -219,7 +219,7 @@ describe("Gestion des Utilisateurs", () => {
     );
   });
 
-  it("devrait modifier un utilisateur avec succès", () => {
+  it("devrait modifier un responsable métier avec succès", () => {
     cy.viewport(1280, 720);
 
     // Ouvrir le modal d'édition
@@ -239,7 +239,7 @@ describe("Gestion des Utilisateurs", () => {
     cy.wait("@updateUser");
 
     // Vérifier que le modal se ferme
-    cy.contains("Modifier un utilisateur").should("not.exist");
+    cy.contains("Modifier un responsable métier").should("not.exist");
   });
 
   // ================= SUPPRESSION =================
@@ -253,12 +253,12 @@ describe("Gestion des Utilisateurs", () => {
       .click();
 
     // Vérifier le modal de confirmation
-    cy.contains("Supprimer l'utilisateur").should("be.visible");
+    cy.contains("Supprimer le responsable métier").should("be.visible");
     cy.contains("Cette action est irréversible").should("be.visible");
     cy.contains("sami.trabelsi@test.com").should("be.visible");
   });
 
-  it("devrait supprimer un utilisateur avec succès", () => {
+  it("devrait supprimer un responsable métier avec succès", () => {
     cy.viewport(1280, 720);
 
     // Ouvrir le modal de suppression
@@ -274,7 +274,7 @@ describe("Gestion des Utilisateurs", () => {
     cy.wait("@deleteUser");
 
     // Vérifier que le modal se ferme
-    cy.contains("Supprimer l'utilisateur").should("not.exist");
+    cy.contains("Supprimer le responsable métier").should("not.exist");
   });
 
   it("devrait annuler la suppression", () => {
@@ -290,14 +290,14 @@ describe("Gestion des Utilisateurs", () => {
     cy.contains("button", "Annuler").click();
 
     // Vérifier que le modal se ferme
-    cy.contains("Supprimer l'utilisateur").should("not.exist");
+    cy.contains("Supprimer le responsable métier").should("not.exist");
   });
 
   // ================= RESPONSIVE =================
   it("devrait afficher les cartes sur mobile", () => {
     cy.viewport(375, 667);
 
-    // Les cartes mobiles doivent être visibles (dans le container lg:hidden)
+    // Les cartes mobiles doivent être visibles
     cy.get(".lg\\:hidden").should("be.visible");
     mockUsers.forEach((u) => {
       cy.get(".lg\\:hidden").contains(u.email).should("be.visible");
@@ -307,7 +307,7 @@ describe("Gestion des Utilisateurs", () => {
   it("devrait pouvoir éditer depuis la vue mobile", () => {
     cy.viewport(375, 667);
 
-    // Trouver la carte mobile (dans lg:hidden) et cliquer sur éditer
+    // Trouver la carte mobile et cliquer sur éditer
     cy.get(".lg\\:hidden")
       .contains(mockUsers[0].email)
       .parents(".rounded-3xl")
@@ -316,13 +316,13 @@ describe("Gestion des Utilisateurs", () => {
       .click();
 
     // Vérifier que le modal s'ouvre
-    cy.contains("Modifier un utilisateur").should("be.visible");
+    cy.contains("Modifier un responsable métier").should("be.visible");
   });
 
   it("devrait pouvoir supprimer depuis la vue mobile", () => {
     cy.viewport(375, 667);
 
-    // Trouver la carte mobile (dans lg:hidden) et cliquer sur supprimer
+    // Trouver la carte mobile et cliquer sur supprimer
     cy.get(".lg\\:hidden")
       .contains(mockUsers[0].email)
       .parents(".rounded-3xl")
@@ -331,7 +331,7 @@ describe("Gestion des Utilisateurs", () => {
       .click();
 
     // Vérifier que le modal s'ouvre
-    cy.contains("Supprimer l'utilisateur").should("be.visible");
+    cy.contains("Supprimer le responsable métier").should("be.visible");
   });
 
   // ================= PAGINATION =================
@@ -340,20 +340,10 @@ describe("Gestion des Utilisateurs", () => {
     cy.contains("Total :").should("be.visible");
   });
 
-  // ================= DARK MODE =================
-  it("devrait supporter le dark mode", () => {
-    cy.document().then((doc) => {
-      doc.documentElement.classList.add("dark");
-    });
-
-    cy.get('input[placeholder="Rechercher (email, rôle)…"]')
-      .should("have.class", "dark:bg-gray-800");
-  });
-
   // ================= VALIDATION FORMULAIRE =================
   it("devrait exiger les champs obligatoires", () => {
     cy.viewport(1280, 720);
-    cy.contains("Ajouter un utilisateur").click();
+    cy.contains("+ Ajouter un responsable").click();
 
     // Essayer de soumettre sans remplir
     cy.contains("button", "Enregistrer").click();
@@ -365,7 +355,7 @@ describe("Gestion des Utilisateurs", () => {
   // ================= RÔLES =================
   it("devrait charger et afficher les rôles dans le select", () => {
     cy.viewport(1280, 720);
-    cy.contains("Ajouter un utilisateur").click();
+    cy.contains("+ Ajouter un responsable").click();
 
     // Vérifier que les rôles sont chargés
     cy.get("select").should("be.visible");

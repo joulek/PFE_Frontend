@@ -105,8 +105,8 @@ export default function Navbar() {
 
                 {user && (
                   <Link
-                    href="/utilisateur/candidatures"
-                    className={`${linkBase} ${isActive("/utilisateur/candidatures") ? activeLink : inactiveLink}`}
+                    href="/ResponsableMetier/candidatures"
+                    className={`${linkBase} ${isActive("/ResponsableMetier/candidatures") ? activeLink : inactiveLink}`}
                   >
                     Mes candidatures
                   </Link>
@@ -181,8 +181,8 @@ export default function Navbar() {
                         Gestion des rôles
                       </Link>
                       <Link
-                        href="/recruiter/users"
-                        className={`${dropdownItemBase} ${isActive("/recruiter/users") ? dropdownActive : dropdownHover}`}
+                        href="/recruiter/ResponsableMetier"
+                        className={`${dropdownItemBase} ${isActive("/recruiter/ResponsableMetier") ? dropdownActive : dropdownHover}`}
                       >
                         Gestion des utilisateurs
                       </Link>
@@ -254,8 +254,8 @@ export default function Navbar() {
 
                   {user && (
                     <Link
-                      href="/utilisateur/candidatures"
-                      className={`block px-5 py-3.5 rounded-xl font-medium transition ${isActive("/utilisateur/candidatures") ? "bg-[#6CB33F] text-white" : "text-gray-700 dark:text-gray-200 hover:bg-gray-100/70 dark:hover:bg-gray-800/60"}`}
+                      href="/ResponsableMetier/candidatures"
+                      className={`block px-5 py-3.5 rounded-xl font-medium transition ${isActive("/ResponsableMetier/candidatures") ? "bg-[#6CB33F] text-white" : "text-gray-700 dark:text-gray-200 hover:bg-gray-100/70 dark:hover:bg-gray-800/60"}`}
                     >
                       Mes candidatures
                     </Link>

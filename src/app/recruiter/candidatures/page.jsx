@@ -71,7 +71,12 @@ function getLinkedIn(c) {
 function normalizeUrl(raw) {
   if (!raw) return "";
   if (raw.startsWith("http")) return raw;
-  return `${API_BASE}/${raw}`;
+  
+  // Supprimer le slash au début si présent
+  const cleanPath = raw.startsWith("/") ? raw : `/${raw}`;
+  
+  // Éviter le double slash
+  return `${API_BASE}${cleanPath}`;
 }
 
 function getCvUrl(c) {

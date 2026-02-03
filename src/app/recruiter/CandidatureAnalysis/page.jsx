@@ -91,10 +91,10 @@ function Tag({ children, variant = "gray" }) {
     variant === "green"
       ? "bg-green-50 dark:bg-green-900/30 text-green-700 dark:text-green-400 border-green-200 dark:border-green-800"
       : variant === "red"
-      ? "bg-red-50 dark:bg-red-900/30 text-red-700 dark:text-red-400 border-red-200 dark:border-red-800"
-      : variant === "yellow"
-      ? "bg-yellow-50 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-400 border-yellow-200 dark:border-yellow-800"
-      : "bg-gray-50 dark:bg-gray-700 text-gray-700 dark:text-gray-300 border-gray-200 dark:border-gray-600";
+        ? "bg-red-50 dark:bg-red-900/30 text-red-700 dark:text-red-400 border-red-200 dark:border-red-800"
+        : variant === "yellow"
+          ? "bg-yellow-50 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-400 border-yellow-200 dark:border-yellow-800"
+          : "bg-gray-50 dark:bg-gray-700 text-gray-700 dark:text-gray-300 border-gray-200 dark:border-gray-600";
 
   return (
     <span
@@ -224,14 +224,14 @@ function CandidatureCard({ c }) {
     typeof match?.yearsOfRelevantExperience === "number"
       ? `${match.yearsOfRelevantExperience} Years`
       : match?.seniorityFit
-      ? match.seniorityFit === "senior"
-        ? "5+ Years"
-        : match.seniorityFit === "mid"
-        ? "2-5 Years"
-        : match.seniorityFit === "junior"
-        ? "0-2 Years"
-        : "—"
-      : "—";
+        ? match.seniorityFit === "senior"
+          ? "5+ Years"
+          : match.seniorityFit === "mid"
+            ? "2-5 Years"
+            : match.seniorityFit === "junior"
+              ? "0-2 Years"
+              : "—"
+        : "—";
 
   const skillCloud = useMemo(() => {
     const arr = [
@@ -256,7 +256,8 @@ function CandidatureCard({ c }) {
   }, [c]);
 
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-3xl border border-gray-100 dark:border-gray-700 shadow-sm overflow-hidden transition-colors duration-300">
+    <div data-cy="candidature-card"
+      className="bg-white dark:bg-gray-800 rounded-3xl border border-gray-100 dark:border-gray-700 shadow-sm overflow-hidden transition-colors duration-300">
       <div className="p-6">
         {/* TOP HEADER */}
         <div className="flex items-start justify-between gap-4">
@@ -331,7 +332,8 @@ function CandidatureCard({ c }) {
           <div className="rounded-2xl border border-gray-100 dark:border-gray-700 p-4 bg-white dark:bg-gray-800/50 transition-colors">
             <p className="text-xs font-semibold text-gray-500 dark:text-gray-400">MATCH SCORE</p>
             <div className="flex items-end justify-between mt-2">
-              <p className="text-3xl font-extrabold text-green-600 dark:text-emerald-400">
+              <p data-cy="match-score"
+                className="text-3xl font-extrabold text-green-600 dark:text-emerald-400">
                 {typeof score === "number" ? pct(score) : "—"}
               </p>
               <span
@@ -379,7 +381,8 @@ function CandidatureCard({ c }) {
                     <CheckCircle2 className="w-6 h-6 text-green-600 dark:text-emerald-400" />
                   )}
 
-                  <p className="text-3xl font-extrabold text-gray-900 dark:text-white">
+                  <p data-cy="ai-detection-result"
+                    className="text-3xl font-extrabold text-gray-900 dark:text-white">
                     {ai.isAIGenerated ? "AI" : "Human"}
                   </p>
                 </div>
@@ -500,10 +503,10 @@ function CandidatureCard({ c }) {
                           isMatched
                             ? "green"
                             : isMust
-                            ? "red"
-                            : isNice
-                            ? "yellow"
-                            : "gray"
+                              ? "red"
+                              : isNice
+                                ? "yellow"
+                                : "gray"
                         }
                       >
                         {s}
@@ -730,6 +733,8 @@ export default function CandidatureAnalysisPage() {
               <input
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
+                data-cy="search-candidate"
+
                 placeholder="Rechercher (nom, email, job)..."
                 className="w-full outline-none text-sm bg-transparent text-gray-800 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500"
               />
@@ -749,6 +754,8 @@ export default function CandidatureAnalysisPage() {
 
             <select
               value={aiFilter}
+                data-cy="ai-filter"
+
               onChange={(e) => setAiFilter(e.target.value)}
               className="border border-gray-200 dark:border-gray-600 rounded-xl px-3 py-2 text-sm bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 transition-colors"
             >
