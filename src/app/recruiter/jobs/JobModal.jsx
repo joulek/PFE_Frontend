@@ -14,7 +14,7 @@ export default function JobModal({
     description: "",
     technologies: "",
     dateCloture: "",
-    weights: {
+    scores: {
       skillsFit: 30,
       experienceFit: 30,
       projectsFit: 20,
@@ -52,12 +52,12 @@ export default function JobModal({
           dateCloture: initialData.dateCloture
             ? String(initialData.dateCloture).slice(0, 10)
             : "",
-          weights: {
-            skillsFit: initialData?.weights?.skillsFit ?? 30,
-            experienceFit: initialData?.weights?.experienceFit ?? 30,
-            projectsFit: initialData?.weights?.projectsFit ?? 20,
-            educationFit: initialData?.weights?.educationFit ?? 10,
-            communicationFit: initialData?.weights?.communicationFit ?? 10,
+          scores: {
+            skillsFit: initialData?.scores?.skillsFit ?? 30,
+            experienceFit: initialData?.scores?.experienceFit ?? 30,
+            projectsFit: initialData?.scores?.projectsFit ?? 20,
+            educationFit: initialData?.scores?.educationFit ?? 10,
+            communicationFit: initialData?.scores?.communicationFit ?? 10,
           },
         });
 
@@ -91,14 +91,14 @@ export default function JobModal({
 
     setForm((prev) => ({
       ...prev,
-      weights: {
-        ...prev.weights,
+      scores: {
+        ...prev.scores,
         [key]: v,
       },
     }));
   }
 
-  const totalWeights = Object.values(form.weights || {}).reduce(
+  const totalWeights = Object.values(form.scores || {}).reduce(
     (sum, v) => sum + Number(v || 0),
     0,
   );
@@ -122,7 +122,7 @@ export default function JobModal({
         .split(",")
         .map((t) => t.trim())
         .filter(Boolean),
-      weights: form.weights,
+      scores: form.scores,
       assignedUserIds: assignedUserId ? [assignedUserId] : [],
     });
   }
@@ -315,7 +315,7 @@ export default function JobModal({
 
                 <div className="space-y-4">
                   {items.map((it) => {
-                    const v = form.weights[it.key] ?? 0;
+                    const v = form.scores[it.key] ?? 0;
 
                     return (
                       <div
