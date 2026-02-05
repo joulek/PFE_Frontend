@@ -10,7 +10,11 @@ import {
 import {
   getCondidatureCount,
   getCandidaturesWithJob,
+  getMatchingStats, getAcademicStats
 } from "../../services/candidature.api";
+
+import CircularStatCard from "../../components/CircularStatCard";
+import { GraduationCap } from "lucide-react";
 
 // ✅ Icons modernes
 import { Briefcase, Users } from "lucide-react";
@@ -24,6 +28,10 @@ import {
   YAxis,
   Tooltip,
   CartesianGrid,
+  PieChart,
+  Pie,
+  Cell,
+  Legend,
 } from "recharts";
 
 /* ================= UTILS ================= */
@@ -127,65 +135,111 @@ export default function AdminDashboard() {
   const [stats, setStats] = useState({
     jobOffers: 0,
     candidatures: 0,
+    matchingStats: null,
   });
 
   const [lastCandidatures, setLastCandidatures] = useState([]);
   const [loadingLast, setLoadingLast] = useState(true);
 
+  const [matchingStats, setMatchingStats] = useState(null);
+  const [loadingMatching, setLoadingMatching] = useState(true);
+
   // ✅ Chart states
   const [jobsStats, setJobsStats] = useState([]);
   const [loadingChart, setLoadingChart] = useState(true);
-
+  const [academicStats, setAcademicStats] = useState(null);
+  const [loadingAcademic, setLoadingAcademic] = useState(true);
   useEffect(() => {
     async function loadDashboard() {
       try {
-        const [jobsRes, candRes, lastRes, chartRes] = await Promise.all([
-          getJobCount(),
-          getCondidatureCount(),
-          getCandidaturesWithJob(),
-          getJobsWithCandidatureCount(),
+        const [
+          jobsRes,
+          candRes,
+          lastRes,
+          chartRes,
+          matchingRes,
+          academicRes,
+          analysisRes
+        ] = await Promise.all([
+          getJobCount().catch(() => ({ data: { count: 0 } })),
+          getCondidatureCount().catch(() => ({ data: { count: 0 } })),
+          getCandidaturesWithJob().catch(() => ({ data: [] })),
+          getJobsWithCandidatureCount().catch(() => ({ data: [] })),
+          getMatchingStats().catch(() => ({
+            data: { averageScore: 0, percentAbove80: 0, percentBelow50: 0 }
+          })),
+          getAcademicStats().catch(() => ({ data: null })),
         ]);
 
         setStats({
-          jobOffers: jobsRes.data.count,
-          candidatures: candRes.data.count,
+          jobOffers: jobsRes.data.count || 0,
+          candidatures: candRes.data.count || 0,
+          matchingStats: matchingRes.data || {},
         });
 
-        // ===== Dernières candidatures =====
-        const list = lastRes.data || [];
-
-        const sorted = [...list].sort((a, b) => {
-          return (
-            new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-          );
-        });
-
+        // dernières candidatures
+        const sorted = [...(lastRes.data || [])].sort(
+          (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
+        );
         setLastCandidatures(sorted.slice(0, 3));
+        setLoadingLast(false);
 
-        // ===== Histogramme =====
+        // chart offres
         const chartData = (chartRes.data || [])
-          .filter((j) => Number(j?.candidaturesCount || 0) > 0)
-          .map((j) => {
-            const title = safeStr(j?.titre) || "Offre";
-            return {
-              name: title.length > 14 ? title.slice(0, 14) + "..." : title,
-              candidatures: Number(j?.candidaturesCount || 0),
-            };
-          });
-
+          .filter(j => Number(j?.candidaturesCount || 0) > 0)
+          .map(j => ({
+            name: safeStr(j?.titre)?.slice(0, 14) || "Offre",
+            candidatures: Number(j?.candidaturesCount || 0),
+          }));
         setJobsStats(chartData);
+        setLoadingChart(false);
+
+        setMatchingStats(matchingRes.data || {});
+        setLoadingMatching(false);
+
+        // ✅ ACADEMIC STATS (MANQUANT AVANT)
+        setAcademicStats(academicRes?.data || null);
+        setLoadingAcademic(false);
+
       } catch (err) {
-        console.error("Erreur dashboard", err);
+        console.error("Erreur dashboard générale:", err);
+
         setLastCandidatures([]);
         setJobsStats([]);
-      } finally {
+        setMatchingStats({});
+        setAcademicStats(null);
+
         setLoadingLast(false);
         setLoadingChart(false);
+        setLoadingMatching(false);
+        setLoadingAcademic(false);
       }
     }
 
     loadDashboard();
   }, []);
+
+
+  // ✅ Couleurs harmonisées avec le thème vert de l'application
+  const degreeColors = {
+    "Bac+2": "#86EFAC",    // Vert très clair
+    "Bac+3": "#4E8F2F",    // Vert principal
+    "Bac+5": "#22C55E",    // Vert clair
+    "PhD": "#166534",      // Vert foncé
+    "Autre": "#9CA3AF",    // Gris pour autres
+  };
+
+  const pieData = (academicStats?.degreeDistribution || []).map(d => ({
+    name: d._id || "Autre",
+    value: d.total,
+  }));
+
+  // ✅ NORMALISATION FRONT (0–1 → 0–100)
+  const normalizedMatchingStats = {
+    averageScore: Math.round((matchingStats?.averageScore || 0) * 100),
+    percentAbove80: matchingStats?.percentAbove80 || 0,
+    percentBelow50: matchingStats?.percentBelow50 || 0,
+  };
 
   return (
     <div className="min-h-screen bg-[#F0FAF0] dark:bg-gray-950 px-6 py-14 transition-colors duration-300">
@@ -234,6 +288,108 @@ export default function AdminDashboard() {
           </div>
         </div>
 
+        {/* ===== QUALITÉ MATCHING ===== */}
+        <div className="mb-14">
+          <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-2">
+            Qualité du matching
+          </h2>
+          <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">
+            Indicateurs clés sur la pertinence des candidatures
+          </p>
+
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-8">
+            <CircularStatCard
+              title="Score moyen"
+              value={normalizedMatchingStats.averageScore}
+              color="#4E8F2F"
+              subtitle="Moyenne globale"
+            />
+
+            <CircularStatCard
+              title="Candidats > 80%"
+              value={normalizedMatchingStats.percentAbove80}
+              color="#22C55E"
+              subtitle="Très bons profils"
+            />
+
+            <CircularStatCard
+              title="Candidats < 50%"
+              value={normalizedMatchingStats.percentBelow50}
+              color="#EF4444"
+              subtitle="Profils à écarter"
+            />
+
+          </div>
+        </div>
+
+        {/* ===== ANALYSE ACADÉMIQUE ===== */}
+        <div className="mb-14">
+          <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-2 flex items-center gap-2">
+            <GraduationCap className="w-6 h-6 text-[#4E8F2F]" />
+            Analyse académique
+          </h2>
+
+          <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">
+            Répartition des niveaux d'études des candidats
+          </p>
+
+          {loadingAcademic || !academicStats ? (
+            <p className="text-sm text-gray-500">Chargement...</p>
+          ) : (
+            <div className="max-w-lg">
+              {/* ===== Pie Chart - Répartition des diplômes ===== */}
+              <div className="bg-white dark:bg-gray-800 rounded-3xl shadow-md p-8">
+                <p className="text-sm font-semibold mb-4 text-gray-700 dark:text-gray-300">
+                  Répartition des diplômes
+                </p>
+
+                <ResponsiveContainer width="100%" height={280}>
+                  <PieChart>
+                    <Pie
+                      data={pieData}
+                      dataKey="value"
+                      nameKey="name"
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={60}
+                      outerRadius={100}
+                      paddingAngle={4}
+                      strokeWidth={2}
+                      stroke="#fff"
+                    >
+                      {pieData.map((entry, index) => (
+                        <Cell
+                          key={index}
+                          fill={degreeColors[entry.name] || "#9CA3AF"}
+                        />
+                      ))}
+                    </Pie>
+                    <Tooltip
+                      contentStyle={{
+                        backgroundColor: "white",
+                        border: "1px solid #E5E7EB",
+                        borderRadius: "8px",
+                        color: "#1F2937",
+                        boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.1)",
+                      }}
+                      itemStyle={{ color: "#1F2937" }}
+                      formatter={(value, name) => [`${value} candidats`, name]}
+                    />
+                    <Legend
+                      verticalAlign="bottom"
+                      height={36}
+                      formatter={(value) => (
+                        <span className="text-gray-700 dark:text-gray-300 text-sm">{value}</span>
+                      )}
+                    />
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+          )}
+        </div>
+
+
         {/* ===== Chart ===== */}
         <div className="bg-white dark:bg-gray-800 rounded-3xl shadow-md p-8 mb-14 transition-colors duration-300">
           <div className="flex items-center justify-between mb-6">
@@ -251,32 +407,34 @@ export default function AdminDashboard() {
             <p className="text-gray-500 dark:text-gray-400 text-sm">Aucune donnée disponible.</p>
           ) : (
             <div className="w-full h-[320px]">
-              <ResponsiveContainer width="100%" height="100%">
+              <ResponsiveContainer width="100%" height={300}>
                 <BarChart data={jobsStats}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
                   <XAxis
                     dataKey="name"
-                    tick={{ fontSize: 12, fill: '#6B7280' }}
+                    tick={{ fontSize: 12, fill: "#6B7280" }}
                     stroke="#6B7280"
                   />
                   <YAxis
                     allowDecimals={false}
-                    tick={{ fill: '#6B7280' }}
+                    tick={{ fill: "#6B7280" }}
                     stroke="#6B7280"
                   />
                   <Tooltip
                     contentStyle={{
-                      backgroundColor: '#1F2937',
-                      border: 'none',
-                      borderRadius: '8px',
-                      color: '#F3F4F6'
+                      backgroundColor: "white",
+                      border: "1px solid #E5E7EB",
+                      borderRadius: "8px",
+                      color: "#1F2937",
+                      boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.1)",
                     }}
+                    itemStyle={{ color: "#1F2937" }}
                   />
                   <Bar
                     dataKey="candidatures"
                     radius={[10, 10, 0, 0]}
-                    fill="#00000"           // noir pur en mode clair
-                    className="dark:fill-[#D1D5DB]"  // gris très clair en mode sombre (visible)
+                    fill="#000000"
+                    className="dark:fill-emerald-500"
                   />
                 </BarChart>
               </ResponsiveContainer>
@@ -347,7 +505,9 @@ export default function AdminDashboard() {
                         </td>
 
                         {/* POSTE */}
-                        <td className="px-10 py-6 text-gray-600 dark:text-gray-300">{jobTitle}</td>
+                        <td className="px-10 py-6 text-gray-600 dark:text-gray-300">
+                          {jobTitle}
+                        </td>
                       </tr>
                     );
                   })}

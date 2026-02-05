@@ -66,8 +66,6 @@ export default function LoginPage() {
     }
   }
 
-  // Handler pour mot de passe oublié
-  // Handler pour mot de passe oublié
   async function handleForgotSubmit(e) {
     e.preventDefault();
     setForgotError("");

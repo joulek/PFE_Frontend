@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { X, Calendar, Clock, MessageSquare, Send } from "lucide-react";
+import { X, Calendar, Clock, MessageSquare, Send, User, Sparkles } from "lucide-react";
 
 export default function ScheduleInterviewModal({
   isOpen,
@@ -18,118 +18,86 @@ export default function ScheduleInterviewModal({
 
   if (!isOpen) return null;
 
- const handleSubmit = async (e) => {
-  e.preventDefault();
-  setLoading(true);
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setLoading(true);
 
-  try {
-    // 1. Extraire et préparer les données importantes
-    const candidatureId = candidature?._id;
+    try {
+      const candidatureId = candidature?._id;
 
-    // Tentatives pour trouver jobOfferId
-    const jobOfferId =
-      candidature?.jobOfferId ||
-      candidature?.analysis?.jobOfferId ||
-      candidature?.jobId ||
-      candidature?.analysis?.jobMatch?.jobOfferId ||
-      "";
+      const jobOfferId =
+        candidature?.jobOfferId ||
+        candidature?.analysis?.jobOfferId ||
+        candidature?.jobId ||
+        candidature?.analysis?.jobMatch?.jobOfferId ||
+        "";
 
-    // Tentatives pour trouver l'email du candidat
-    const candidateEmail =
-      candidature?.email ||
-      candidature?.candidateEmail ||
-      candidature?.analysis?.candidateEmail ||
-      candidature?.extracted?.email ||
-      candidature?.extracted?.manual?.email ||
-      candidature?.extracted?.parsed?.email ||
-      "";
+      const candidateEmail =
+        candidature?.email ||
+        candidature?.candidateEmail ||
+        candidature?.analysis?.candidateEmail ||
+        candidature?.extracted?.email ||
+        candidature?.extracted?.manual?.email ||
+        candidature?.extracted?.parsed?.email ||
+        "";
 
-    // Nom du candidat (avec plusieurs fallbacks)
-    const candidateName =
-      candidature?.fullName ||
-      candidature?.analysis?.candidateName ||
-      (candidature?.prenom && candidature?.nom
-        ? `${candidature.prenom} ${candidature.nom}`.trim()
-        : candidature?.nom ||
-          candidature?.prenom ||
-          "Candidat inconnu");
+      const candidateName =
+        candidature?.fullName ||
+        candidature?.analysis?.candidateName ||
+        (candidature?.prenom && candidature?.nom
+          ? `${candidature.prenom} ${candidature.nom}`.trim()
+          : candidature?.nom ||
+            candidature?.prenom ||
+            "Candidat inconnu");
 
-    // 2. Validation stricte avant envoi
-    const errors = [];
+      const errors = [];
 
-    if (!candidatureId) errors.push("ID de la candidature manquant");
-    if (!jobOfferId) errors.push("ID de l'offre d'emploi manquant");
-    if (!candidateEmail) errors.push("Email du candidat manquant");
-    if (!candidateName || candidateName === "Candidat inconnu") {
-      console.warn("Nom du candidat non trouvé, utilisation de la valeur par défaut");
-    }
-    if (!formData.proposedDate) errors.push("Date proposée manquante");
-    if (!formData.proposedTime) errors.push("Heure proposée manquante");
+      if (!candidatureId) errors.push("ID de la candidature manquant");
+      if (!jobOfferId) errors.push("ID de l'offre d'emploi manquant");
+      if (!candidateEmail) errors.push("Email du candidat manquant");
+      if (!formData.proposedDate) errors.push("Date proposée manquante");
+      if (!formData.proposedTime) errors.push("Heure proposée manquante");
 
-    if (errors.length > 0) {
-      alert(`Impossible de planifier l'entretien :\n${errors.join("\n")}`);
+      if (errors.length > 0) {
+        alert(`Impossible de planifier l'entretien :\n${errors.join("\n")}`);
+        setLoading(false);
+        return;
+      }
+
+      const payload = {
+        candidatureId,
+        jobOfferId,
+        candidateEmail,
+        candidateName,
+        proposedDate: formData.proposedDate,
+        proposedTime: formData.proposedTime,
+        notes: formData.notes || "",
+      };
+
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/interviews/schedule`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload),
+      });
+
+      const data = await response.json();
+
+      if (response.ok && data.success) {
+        alert("✅ Entretien planifié avec succès ! Un email a été envoyé au responsable.");
+        onSuccess?.();
+        onClose();
+      } else {
+        alert(`❌ Erreur : ${data.message || "Erreur serveur inconnue"}`);
+      }
+    } catch (error) {
+      console.error("🚨 Erreur lors de la planification :", error);
+      alert("Une erreur est survenue lors de la connexion au serveur.");
+    } finally {
       setLoading(false);
-      return;
     }
-
-    // 3. Préparer le payload
-    const payload = {
-      candidatureId,
-      jobOfferId,
-      candidateEmail,
-      candidateName,
-      proposedDate: formData.proposedDate,
-      proposedTime: formData.proposedTime,
-      notes: formData.notes || "",
-    };
-
-    // Log très détaillé pour le débogage
-    console.log("📤 Tentative d’envoi – Données préparées :", {
-      payload,
-      candidatureOriginal: {
-        _id: candidature?._id,
-        jobOfferId: candidature?.jobOfferId,
-        email: candidature?.email,
-        candidateEmail: candidature?.candidateEmail,
-        fullName: candidature?.fullName,
-        nom: candidature?.nom,
-        prenom: candidature?.prenom,
-        analysisKeys: candidature?.analysis ? Object.keys(candidature.analysis) : null,
-      },
-    });
-
-    // 4. Envoi de la requête
-    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/interviews/schedule`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        // Ajoute ici ton token d'auth si nécessaire :
-        // "Authorization": `Bearer ${token}`,
-      },
-      body: JSON.stringify(payload),
-    });
-
-    console.log("📡 Statut de la réponse :", response.status);
-
-    const data = await response.json();
-
-    console.log("📥 Réponse du serveur :", data);
-
-    if (response.ok && data.success) {
-      alert("✅ Entretien planifié avec succès ! Un email a été envoyé au responsable.");
-      onSuccess?.();
-      onClose();
-    } else {
-      alert(`❌ Erreur : ${data.message || "Erreur serveur inconnue"}`);
-      console.error("Erreur détaillée :", data);
-    }
-  } catch (error) {
-    console.error("🚨 Erreur lors de la planification :", error);
-    alert("Une erreur est survenue lors de la connexion au serveur.");
-  } finally {
-    setLoading(false);
-  }
-};
+  };
 
   const handleChange = (e) => {
     setFormData({
@@ -138,115 +106,171 @@ export default function ScheduleInterviewModal({
     });
   };
 
-  // Get minimum date (today)
   const today = new Date().toISOString().split("T")[0];
 
+  const candidateName =
+    candidature?.fullName ||
+    (candidature?.prenom && candidature?.nom
+      ? `${candidature.prenom} ${candidature.nom}`.trim()
+      : candidature?.nom || candidature?.prenom || "le candidat");
+
+  const getInitials = (name) => {
+    if (!name || name === "le candidat") return "?";
+    const parts = name.split(" ").filter(Boolean);
+    const a = parts[0]?.[0] || "";
+    const b = parts[1]?.[0] || "";
+    return (a + b).toUpperCase() || "?";
+  };
+
   return (
-    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-      <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-md max-h-[90vh] overflow-y-auto transition-colors">
-        {/* Header */}
-        <div className="sticky top-0 bg-gradient-to-r from-green-500 to-emerald-600 p-6 rounded-t-2xl">
-          <div className="flex items-center justify-between">
-            <div>
-              <h2 className="text-2xl font-bold text-white flex items-center gap-2">
-                <Calendar className="w-6 h-6" />
-                Planifier Entretien
-              </h2>
-              <p className="text-green-50 text-sm mt-1">
-                Pour {candidature.fullName || candidature.nom || "le candidat"}
-              </p>
+    <div 
+      className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+      onClick={(e) => e.target === e.currentTarget && onClose()}
+    >
+      <div 
+        className="bg-white dark:bg-gray-900 rounded-3xl shadow-2xl w-full max-w-lg overflow-hidden transform transition-all animate-in fade-in zoom-in-95 duration-200"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Header avec design moderne */}
+        <div className="relative bg-gradient-to-br from-[#4E8F2F] via-[#5a9e38] to-[#3d7524] p-8 overflow-hidden">
+          {/* Cercles décoratifs */}
+          <div className="absolute -top-10 -right-10 w-40 h-40 bg-white/10 rounded-full blur-2xl" />
+          <div className="absolute -bottom-10 -left-10 w-32 h-32 bg-white/10 rounded-full blur-xl" />
+          
+          {/* Bouton fermer */}
+          <button
+            onClick={onClose}
+            className="absolute top-4 right-4 text-white/80 hover:text-white hover:bg-white/20 rounded-full p-2 transition-all duration-200"
+          >
+            <X className="w-5 h-5" />
+          </button>
+
+          {/* Contenu header */}
+          <div className="relative flex items-center gap-4">
+            {/* Avatar candidat */}
+            <div className="h-16 w-16 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center text-white text-xl font-bold shadow-lg">
+              {getInitials(candidateName)}
             </div>
-            <button
-              onClick={onClose}
-              className="text-white hover:bg-white/20 rounded-full p-2 transition-colors"
-            >
-              <X className="w-5 h-5" />
-            </button>
+            
+            <div>
+              <div className="flex items-center gap-2 mb-1">
+                <Sparkles className="w-5 h-5 text-yellow-300" />
+                <span className="text-white/80 text-sm font-medium">Planifier un entretien</span>
+              </div>
+              <h2 className="text-2xl font-bold text-white">
+                {candidateName}
+              </h2>
+              {candidature?.jobTitle && (
+                <p className="text-white/70 text-sm mt-1">
+                  {candidature.jobTitle}
+                </p>
+              )}
+            </div>
           </div>
         </div>
 
-        {/* Form */}
+        {/* Formulaire */}
         <form onSubmit={handleSubmit} className="p-6 space-y-5">
-          {/* Info Box */}
-          <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
-            <p className="text-sm text-blue-800 dark:text-blue-200">
-              💡 <strong>Information:</strong> Le responsable métier recevra un
-              email pour confirmer ou modifier cette date.
-            </p>
+          {/* Info Box moderne */}
+          <div className="flex items-start gap-3 bg-[#F0FAF0] dark:bg-[#4E8F2F]/10 border border-[#4E8F2F]/20 rounded-2xl p-4">
+            <div className="h-10 w-10 rounded-xl bg-[#4E8F2F]/10 flex items-center justify-center flex-shrink-0">
+              <Send className="w-5 h-5 text-[#4E8F2F]" />
+            </div>
+            <div>
+              <p className="text-sm font-medium text-gray-800 dark:text-gray-200">
+                Notification automatique
+              </p>
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                Le responsable métier recevra un email pour confirmer ou modifier cette date.
+              </p>
+            </div>
           </div>
 
-          {/* Date Field */}
-          <div>
-            <label className="block text-sm font-semibold text-gray-700 dark:text-gray-200 mb-2">
-              <Calendar className="w-4 h-4 inline mr-2" />
-              Date proposée *
-            </label>
-            <input
-              type="date"
-              name="proposedDate"
-              value={formData.proposedDate}
-              onChange={handleChange}
-              min={today}
-              required
-              className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white transition-colors"
-            />
-          </div>
+          {/* Grille Date et Heure */}
+          <div className="grid grid-cols-2 gap-4">
+            {/* Date Field */}
+            <div className="space-y-2">
+              <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 dark:text-gray-200">
+                <div className="h-6 w-6 rounded-lg bg-[#4E8F2F]/10 flex items-center justify-center">
+                  <Calendar className="w-3.5 h-3.5 text-[#4E8F2F]" />
+                </div>
+                Date
+              </label>
+              <input
+                type="date"
+                name="proposedDate"
+                value={formData.proposedDate}
+                onChange={handleChange}
+                min={today}
+                required
+                className="w-full px-4 py-3.5 border-2 border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-[#4E8F2F]/20 focus:border-[#4E8F2F] bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-white transition-all duration-200 outline-none"
+              />
+            </div>
 
-          {/* Time Field */}
-          <div>
-            <label className="block text-sm font-semibold text-gray-700 dark:text-gray-200 mb-2">
-              <Clock className="w-4 h-4 inline mr-2" />
-              Heure proposée *
-            </label>
-            <input
-              type="time"
-              name="proposedTime"
-              value={formData.proposedTime}
-              onChange={handleChange}
-              required
-              className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white transition-colors"
-            />
+            {/* Time Field */}
+            <div className="space-y-2">
+              <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 dark:text-gray-200">
+                <div className="h-6 w-6 rounded-lg bg-[#4E8F2F]/10 flex items-center justify-center">
+                  <Clock className="w-3.5 h-3.5 text-[#4E8F2F]" />
+                </div>
+                Heure
+              </label>
+              <input
+                type="time"
+                name="proposedTime"
+                value={formData.proposedTime}
+                onChange={handleChange}
+                required
+                className="w-full px-4 py-3.5 border-2 border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-[#4E8F2F]/20 focus:border-[#4E8F2F] bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-white transition-all duration-200 outline-none"
+              />
+            </div>
           </div>
 
           {/* Notes Field */}
-          <div>
-            <label className="block text-sm font-semibold text-gray-700 dark:text-gray-200 mb-2">
-              <MessageSquare className="w-4 h-4 inline mr-2" />
-              Notes (optionnel)
+          <div className="space-y-2">
+            <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 dark:text-gray-200">
+              <div className="h-6 w-6 rounded-lg bg-[#4E8F2F]/10 flex items-center justify-center">
+                <MessageSquare className="w-3.5 h-3.5 text-[#4E8F2F]" />
+              </div>
+              Notes
+              <span className="text-gray-400 font-normal">(optionnel)</span>
             </label>
             <textarea
               name="notes"
               value={formData.notes}
               onChange={handleChange}
               rows={3}
-              placeholder="Informations complémentaires pour le responsable..."
-              className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent resize-none bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 transition-colors"
+              placeholder="Ajoutez des informations complémentaires..."
+              className="w-full px-4 py-3.5 border-2 border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-[#4E8F2F]/20 focus:border-[#4E8F2F] resize-none bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 transition-all duration-200 outline-none"
             />
           </div>
 
+          {/* Divider */}
+          <div className="border-t border-gray-100 dark:border-gray-800" />
+
           {/* Actions */}
-          <div className="flex gap-3 pt-4">
+          <div className="flex gap-3">
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 px-4 py-3 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-200 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 font-medium transition-colors"
+              className="flex-1 px-5 py-3.5 border-2 border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-800 font-semibold transition-all duration-200"
             >
               Annuler
             </button>
             <button
               type="submit"
               disabled={loading}
-              className="flex-1 px-4 py-3 bg-green-500 hover:bg-green-600 disabled:bg-gray-300 dark:disabled:bg-gray-600 text-white rounded-lg font-medium transition-colors flex items-center justify-center gap-2"
+              className="flex-1 px-5 py-3.5 bg-[#4E8F2F] hover:bg-[#3d7524] disabled:bg-gray-300 dark:disabled:bg-gray-700 text-white rounded-xl font-semibold transition-all duration-200 flex items-center justify-center gap-2 shadow-lg shadow-[#4E8F2F]/25 hover:shadow-xl hover:shadow-[#4E8F2F]/30 disabled:shadow-none"
             >
               {loading ? (
                 <>
-                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                  Envoi...
+                  <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  <span>Envoi...</span>
                 </>
               ) : (
                 <>
-                  <Send className="w-4 h-4" />
-                  Planifier
+                  <Calendar className="w-5 h-5" />
+                  <span>Planifier</span>
                 </>
               )}
             </button>

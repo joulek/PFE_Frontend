@@ -40,7 +40,7 @@ export default function Navbar() {
 
   const isInAdmin =
     pathname.startsWith("/recruiter/roles") ||
-    pathname.startsWith("/recruiter/users");
+    pathname.startsWith("/recruiter/ResponsableMetier") ;
 
   async function handleLogout() {
     try {
@@ -280,7 +280,7 @@ export default function Navbar() {
                   <Link href="/recruiter/roles" className="block px-5 py-3.5 rounded-xl text-gray-700 dark:text-gray-200 hover:bg-gray-100/70 dark:hover:bg-gray-800/60">
                     Gestion des rôles
                   </Link>
-                  <Link href="/recruiter/users" className="block px-5 py-3.5 rounded-xl text-gray-700 dark:text-gray-200 hover:bg-gray-100/70 dark:hover:bg-gray-800/60">
+                  <Link href="/recruiter/ResponsableMetier" className="block px-5 py-3.5 rounded-xl text-gray-700 dark:text-gray-200 hover:bg-gray-100/70 dark:hover:bg-gray-800/60">
                     Gestion des utilisateurs
                   </Link>
                   <Link href="/recruiter/fiche-renseignement" className="block px-5 py-3.5 rounded-xl text-gray-700 dark:text-gray-200 hover:bg-gray-100/70 dark:hover:bg-gray-800/60">

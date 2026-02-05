@@ -11,3 +11,10 @@ export const getCondidatureCount = () => api.get("/candidatures/count");
 export const getCandidaturesAnalysis = () => api.get("/candidatures/analysis");
 
 export const getMyCandidatures = () => api.get("/candidatures/my");
+
+export const getMatchingStats = () =>
+  api.get("/candidatures/stats/matching");
+
+export async function getAcademicStats() {
+  return api.get("/candidatures/stats/academic");
+}
