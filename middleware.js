@@ -19,12 +19,10 @@ export function middleware(req) {
   // 2) إذا connecté و يمشي login
   if (isLogin && token) {
     // redirect حسب role
-    if (role === "ADMIN") {
-      return NextResponse.redirect(new URL("/admin/dashboard", req.url));
-    }
-    if (role === "RECRUITER") {
+    if (role === "ADMIN" || role === "RECRUITER") {
       return NextResponse.redirect(new URL("/recruiter/dashboard", req.url));
     }
+
     return NextResponse.redirect(new URL("/jobs", req.url));
   }
 
