@@ -20,7 +20,7 @@ export function middleware(req) {
   if (isLogin && token) {
     // redirect حسب role
     if (role === "ADMIN") {
-      return NextResponse.redirect(new URL("/recruiter/dashboard", req.url));
+      return NextResponse.redirect(new URL("/admin/dashboard", req.url));
     }
     if (role === "RECRUITER") {
       return NextResponse.redirect(new URL("/recruiter/dashboard", req.url));
@@ -42,5 +42,5 @@ export function middleware(req) {
 }
 
 export const config = {
-  matcher: ["/login", "/recruiter/:path*", "/recruiter/:path*"],
+  matcher: ["/login", "/admin/:path*", "/recruiter/:path*"],
 };
