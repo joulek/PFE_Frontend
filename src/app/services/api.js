@@ -1,14 +1,13 @@
 import axios from "axios";
 
 const api = axios.create({
-  baseURL: "/api",                // ⭐ IMPORTANT
-  withCredentials: true,          // pour cookies si besoin
+  baseURL: process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000",
+  withCredentials: true,
   headers: {
     "Content-Type": "application/json",
   },
 });
 
-// Ajouter automatiquement le token
 api.interceptors.request.use((config) => {
   if (typeof window !== "undefined") {
     const token = localStorage.getItem("token");
