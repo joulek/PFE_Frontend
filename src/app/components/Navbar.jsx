@@ -40,20 +40,27 @@ export default function Navbar() {
 
   const isInAdmin =
     pathname.startsWith("/recruiter/roles") ||
-    pathname.startsWith("/recruiter/ResponsableMetier") ;
+    pathname.startsWith("/recruiter/ResponsableMetier");
 
   async function handleLogout() {
     try {
-      await logout();
+      await logout(); // backend
     } catch {
       console.warn("Logout backend error ignored");
     } finally {
+      // ✅ امسح cookies (هذا هو السطر الحاسم)
+      document.cookie = "token=; path=/; max-age=0";
+      document.cookie = "role=; path=/; max-age=0";
+
+      // localStorage
       localStorage.removeItem("token");
       localStorage.removeItem("user");
+
       setUser(null);
       router.replace("/login");
     }
   }
+
 
   // Classes communes
   const linkBase = "px-6 py-2 rounded-full font-semibold transition";
