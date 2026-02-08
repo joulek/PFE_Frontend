@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { X, Calendar, Clock, MessageSquare, Send, User, Sparkles } from "lucide-react";
+import { useState, useEffect } from "react";
+import { X, Calendar, Clock, MessageSquare, Send, Sparkles } from "lucide-react";
 
 export default function ScheduleInterviewModal({
   isOpen,
@@ -16,6 +16,17 @@ export default function ScheduleInterviewModal({
     notes: "",
   });
 
+  // 🔍 DEBUG: Logger la structure au chargement
+  useEffect(() => {
+    if (isOpen && candidature) {
+      console.log("📦 Objet candidature complet:", candidature);
+      console.log("📦 Clés disponibles:", Object.keys(candidature));
+      console.log("📦 candidature.jobOfferId:", candidature.jobOfferId);
+      console.log("📦 candidature.jobId:", candidature.jobId);
+      console.log("📦 candidature.job:", candidature.job);
+    }
+  }, [isOpen, candidature]);
+
   if (!isOpen) return null;
 
   const handleSubmit = async (e) => {
@@ -24,37 +35,21 @@ export default function ScheduleInterviewModal({
 
     try {
       const candidatureId = candidature?._id;
-
-      const jobOfferId =
+      
+      // ✅ Extraction robuste du jobOfferId
+      const jobOfferId = 
         candidature?.jobOfferId ||
-        candidature?.analysis?.jobOfferId ||
         candidature?.jobId ||
-        candidature?.analysis?.jobMatch?.jobOfferId ||
-        "";
+        candidature?.job?._id ||
+        candidature?.analysis?.jobOfferId;
 
-      const candidateEmail =
-        candidature?.email ||
-        candidature?.candidateEmail ||
-        candidature?.analysis?.candidateEmail ||
-        candidature?.extracted?.email ||
-        candidature?.extracted?.manual?.email ||
-        candidature?.extracted?.parsed?.email ||
-        "";
-
-      const candidateName =
-        candidature?.fullName ||
-        candidature?.analysis?.candidateName ||
-        (candidature?.prenom && candidature?.nom
-          ? `${candidature.prenom} ${candidature.nom}`.trim()
-          : candidature?.nom ||
-            candidature?.prenom ||
-            "Candidat inconnu");
+      console.log("🔍 DEBUG - candidature:", candidature);
+      console.log("🔍 DEBUG - jobOfferId extrait:", jobOfferId);
 
       const errors = [];
 
       if (!candidatureId) errors.push("ID de la candidature manquant");
       if (!jobOfferId) errors.push("ID de l'offre d'emploi manquant");
-      if (!candidateEmail) errors.push("Email du candidat manquant");
       if (!formData.proposedDate) errors.push("Date proposée manquante");
       if (!formData.proposedTime) errors.push("Heure proposée manquante");
 
@@ -64,23 +59,27 @@ export default function ScheduleInterviewModal({
         return;
       }
 
+      // ✅ Le backend récupérera automatiquement le nom et l'email depuis la DB
       const payload = {
         candidatureId,
         jobOfferId,
-        candidateEmail,
-        candidateName,
         proposedDate: formData.proposedDate,
         proposedTime: formData.proposedTime,
         notes: formData.notes || "",
       };
 
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/interviews/schedule`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(payload),
-      });
+      console.log("📤 Payload envoyé:", payload);
+
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/api/interviews/schedule`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(payload),
+        }
+      );
 
       const data = await response.json();
 
@@ -108,14 +107,16 @@ export default function ScheduleInterviewModal({
 
   const today = new Date().toISOString().split("T")[0];
 
+  // Extraction simplifiée du nom pour l'affichage UI uniquement
   const candidateName =
-    candidature?.fullName ||
-    (candidature?.prenom && candidature?.nom
-      ? `${candidature.prenom} ${candidature.nom}`.trim()
-      : candidature?.nom || candidature?.prenom || "le candidat");
+    candidature?.extracted?.parsed?.nom ||
+    candidature?.extracted?.parsed?.name ||
+    candidature?.nom ||
+    candidature?.name ||
+    "Chargement...";
 
   const getInitials = (name) => {
-    if (!name || name === "le candidat") return "?";
+    if (!name || name === "Chargement...") return "?";
     const parts = name.split(" ").filter(Boolean);
     const a = parts[0]?.[0] || "";
     const b = parts[1]?.[0] || "";
@@ -123,11 +124,11 @@ export default function ScheduleInterviewModal({
   };
 
   return (
-    <div 
+    <div
       className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-4"
       onClick={(e) => e.target === e.currentTarget && onClose()}
     >
-      <div 
+      <div
         className="bg-white dark:bg-gray-900 rounded-3xl shadow-2xl w-full max-w-lg overflow-hidden transform transition-all animate-in fade-in zoom-in-95 duration-200"
         onClick={(e) => e.stopPropagation()}
       >
@@ -136,7 +137,7 @@ export default function ScheduleInterviewModal({
           {/* Cercles décoratifs */}
           <div className="absolute -top-10 -right-10 w-40 h-40 bg-white/10 rounded-full blur-2xl" />
           <div className="absolute -bottom-10 -left-10 w-32 h-32 bg-white/10 rounded-full blur-xl" />
-          
+
           {/* Bouton fermer */}
           <button
             onClick={onClose}
@@ -151,15 +152,15 @@ export default function ScheduleInterviewModal({
             <div className="h-16 w-16 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center text-white text-xl font-bold shadow-lg">
               {getInitials(candidateName)}
             </div>
-            
+
             <div>
               <div className="flex items-center gap-2 mb-1">
                 <Sparkles className="w-5 h-5 text-yellow-300" />
-                <span className="text-white/80 text-sm font-medium">Planifier un entretien</span>
+                <span className="text-white/80 text-sm font-medium">
+                  Planifier un entretien
+                </span>
               </div>
-              <h2 className="text-2xl font-bold text-white">
-                {candidateName}
-              </h2>
+              <h2 className="text-2xl font-bold text-white">{candidateName}</h2>
               {candidature?.jobTitle && (
                 <p className="text-white/70 text-sm mt-1">
                   {candidature.jobTitle}
@@ -181,7 +182,8 @@ export default function ScheduleInterviewModal({
                 Notification automatique
               </p>
               <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
-                Le responsable métier recevra un email pour confirmer ou modifier cette date.
+                Le responsable métier recevra un email pour confirmer ou modifier
+                cette date.
               </p>
             </div>
           </div>
