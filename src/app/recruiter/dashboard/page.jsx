@@ -237,7 +237,7 @@ export default function AdminDashboard() {
   // ✅ NORMALISATION FRONT (0–1 → 0–100)
   const normalizedMatchingStats = {
     averageScore: Math.round((matchingStats?.averageScore || 0) * 100),
-    percentAbove80: matchingStats?.percentAbove80 || 0,
+    percentAbove70: matchingStats?.percentAbove70 || 0,
     percentBelow50: matchingStats?.percentBelow50 || 0,
   };
 
@@ -306,7 +306,7 @@ export default function AdminDashboard() {
             />
 
             <CircularStatCard
-              title="Candidats > 80%"
+              title="Candidats > 70%"
               value={normalizedMatchingStats.percentAbove80}
               color="#22C55E"
               subtitle="Très bons profils"

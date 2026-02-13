@@ -10,9 +10,12 @@ export default function CircularStatCard({
   const stroke = 6;
   const normalizedRadius = radius - stroke * 2;
   const circumference = normalizedRadius * 2 * Math.PI;
-  const progress = Math.min(Math.max(value, 0), 100);
+
+  // ✅ FIX: guard against undefined / null / NaN before any math
+  const safeValue = isNaN(value) || value == null ? 0 : Math.min(Math.max(value, 0), 100);
+
   const strokeDashoffset =
-    circumference - (progress / 100) * circumference;
+    circumference - (safeValue / 100) * circumference;
 
   return (
     <div className="bg-white dark:bg-gray-800 rounded-3xl shadow-md p-6 flex flex-col items-center justify-center gap-3">
@@ -48,7 +51,7 @@ export default function CircularStatCard({
       </svg>
 
       <p className="text-2xl font-bold text-gray-900 dark:text-white">
-        {value}%
+        {safeValue}%
       </p>
 
       {subtitle && (
