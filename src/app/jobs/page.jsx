@@ -30,11 +30,20 @@ export default function PublicJobsPage() {
     }));
   }
 
-  const totalPages = Math.max(1, Math.ceil(jobs.length / pageSize));
+  // ✅ Filtrer les offres NON expirées
+  const activeJobs = useMemo(() => {
+    const now = new Date();
+    return jobs.filter((job) => {
+      if (!job.dateCloture) return true; // si pas de date, on affiche
+      return new Date(job.dateCloture) >= now;
+    });
+  }, [jobs]);
+
+  const totalPages = Math.max(1, Math.ceil(activeJobs.length / pageSize));
 
   const paginatedJobs = useMemo(() => {
     const start = (page - 1) * pageSize;
-    return jobs.slice(start, start + pageSize);
+    return activeJobs.slice(start, start + pageSize);
   }, [jobs, page]);
 
   useEffect(() => {
@@ -78,9 +87,8 @@ export default function PublicJobsPage() {
 
                   {/* DESCRIPTION */}
                   <p
-                    className={`text-gray-600 dark:text-gray-300 text-sm mb-2 whitespace-pre-line ${
-                      !isExpanded ? "line-clamp-3" : ""
-                    }`}
+                    className={`text-gray-600 dark:text-gray-300 text-sm mb-2 whitespace-pre-line ${!isExpanded ? "line-clamp-3" : ""
+                      }`}
                   >
                     {job.description}
                   </p>
@@ -157,7 +165,7 @@ export default function PublicJobsPage() {
           })}
 
           {/* ===== EMPTY STATE ===== */}
-          {jobs.length === 0 && (
+          {activeJobs.length === 0 && (
             <p className="text-gray-500 dark:text-gray-400 text-sm">Aucune offre disponible.</p>
           )}
         </div>
@@ -166,7 +174,8 @@ export default function PublicJobsPage() {
         {jobs.length > 0 && (
           <div className="mt-10 flex items-center justify-between text-sm text-gray-500 dark:text-gray-400">
             <p>
-              Total: {jobs.length} offre(s) — Page {page} / {totalPages}
+              Total: {activeJobs.length} offre(s)
+              — Page {page} / {totalPages}
             </p>
 
             <Pagination

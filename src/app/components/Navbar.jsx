@@ -111,12 +111,21 @@ export default function Navbar() {
                 </Link>
 
                 {user && (
-                  <Link
-                    href="/ResponsableMetier/candidatures"
-                    className={`${linkBase} ${isActive("/ResponsableMetier/candidatures") ? activeLink : inactiveLink}`}
-                  >
-                    Mes candidatures
-                  </Link>
+                  <>
+                    <Link
+                      href="/ResponsableMetier/candidatures"
+                      className={`${linkBase} ${isActive("/ResponsableMetier/candidatures") ? activeLink : inactiveLink}`}
+                    >
+                      Mes candidatures
+                    </Link>
+
+                    <Link
+                      href="/ResponsableMetier/job"
+                      className={`${linkBase} ${isActive("/ResponsableMetier/job") ? activeLink : inactiveLink}`}
+                    >
+                      Offres d'emploi
+                    </Link>
+                  </>
                 )}
               </>
             )}

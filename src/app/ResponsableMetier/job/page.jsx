@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import {
   createJob,
   getMyOffers,
+  updateMyJob,
 } from "../../services/job.api";
 import Pagination from "../../components/Pagination";
 import {
@@ -12,6 +13,10 @@ import {
   CheckCircle2,
   XCircle,
   Clock,
+  Edit2,
+  Calendar,
+  CalendarClock,
+  CalendarCheck,
 } from "lucide-react";
 
 /* ================= UTILS ================= */
@@ -41,7 +46,7 @@ const STATUS_CONFIG = {
     text: "text-amber-700 dark:text-amber-400",
     border: "border-amber-200 dark:border-amber-800",
     icon: Clock,
-    cardBorder: "border-amber-300 dark:border-amber-700",
+    cardBorder: "border-amber-700 dark:border-amber-500/40"
   },
   REJETEE: {
     label: "Rejetée",
@@ -57,9 +62,7 @@ function StatusBadge({ status }) {
   const config = STATUS_CONFIG[status] || STATUS_CONFIG.EN_ATTENTE;
   const Icon = config.icon;
   return (
-    <span
-      className={`inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1 rounded-full border ${config.bg} ${config.text} ${config.border}`}
-    >
+    <span className={`inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1 rounded-full border ${config.bg} ${config.text} ${config.border}`}>
       <Icon size={13} />
       {config.label}
     </span>
@@ -84,21 +87,19 @@ const SCORE_ITEMS = [
 ];
 
 /* =================================================================
-   PAGE PRINCIPALE — ResponsableMetier/job/page.jsx
+   PAGE — ResponsableMetier/job/page.jsx
 ================================================================= */
 export default function UserJobsPage() {
   const [jobs, setJobs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [modalOpen, setModalOpen] = useState(false);
+  const [editingJob, setEditingJob] = useState(null);
   const [user, setUser] = useState(null);
   const [activeTab, setActiveTab] = useState("all");
   const [expandedJobs, setExpandedJobs] = useState({});
-
-  // Pagination
   const [page, setPage] = useState(1);
   const pageSize = 6;
 
-  /* ---- loader ---- */
   async function loadMyOffers() {
     setLoading(true);
     try {
@@ -116,14 +117,25 @@ export default function UserJobsPage() {
     loadMyOffers();
   }, []);
 
-  /* ---- handlers ---- */
   async function handleCreate(data) {
     try {
       await createJob(data);
       setModalOpen(false);
+      setEditingJob(null);
       loadMyOffers();
     } catch (err) {
       console.error("Erreur création:", err);
+    }
+  }
+
+  async function handleUpdate(data) {
+    try {
+      await updateMyJob(editingJob._id, data);
+      setModalOpen(false);
+      setEditingJob(null);
+      loadMyOffers();
+    } catch (err) {
+      console.error("Erreur modification:", err);
     }
   }
 
@@ -131,7 +143,6 @@ export default function UserJobsPage() {
     setExpandedJobs((prev) => ({ ...prev, [jobId]: !prev[jobId] }));
   }
 
-  /* ---- normalize + filter + paginate ---- */
   const normalizedJobs = useMemo(
     () => jobs.map((j) => ({ ...j, _status: getJobStatus(j) })),
     [jobs]
@@ -151,21 +162,13 @@ export default function UserJobsPage() {
 
   const counts = useMemo(() => {
     const c = { all: normalizedJobs.length, EN_ATTENTE: 0, CONFIRMEE: 0, REJETEE: 0 };
-    normalizedJobs.forEach((j) => {
-      if (c[j._status] !== undefined) c[j._status]++;
-    });
+    normalizedJobs.forEach((j) => { if (c[j._status] !== undefined) c[j._status]++; });
     return c;
   }, [normalizedJobs]);
 
-  useEffect(() => {
-    if (page > totalPages) setPage(totalPages);
-  }, [totalPages]);
+  useEffect(() => { if (page > totalPages) setPage(totalPages); }, [totalPages]);
+  useEffect(() => { setPage(1); }, [activeTab]);
 
-  useEffect(() => {
-    setPage(1);
-  }, [activeTab]);
-
-  /* ================= LOADING ================= */
   if (loading) {
     return (
       <div className="min-h-screen bg-[#F0FAF0] dark:bg-gray-950 p-10">
@@ -178,89 +181,66 @@ export default function UserJobsPage() {
     );
   }
 
-  /* ================= RENDER ================= */
   return (
     <div className="min-h-screen bg-[#F0FAF0] dark:bg-gray-950 transition-colors duration-300">
       <div className="max-w-6xl mx-auto px-6 pt-10 pb-16">
 
-        {/* ========== HEADER ========== */}
+        {/* HEADER */}
         <div className="flex justify-between items-start mb-8">
           <div>
-            <h1 className="text-4xl font-extrabold text-gray-900 dark:text-white">
-              Mes offres d&apos;emploi
-            </h1>
-            <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-              Rôle : {user?.role || "—"}
-            </p>
-            <p className="text-sm text-gray-600 dark:text-gray-300 mt-1">
-              {jobs.length} offre(s) soumise(s)
-            </p>
+            <h1 className="text-4xl font-extrabold text-gray-900 dark:text-white">Mes offres d&apos;emploi</h1>
+            <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Rôle : {user?.role || "—"}</p>
+            <p className="text-sm text-gray-600 dark:text-gray-300 mt-1">{jobs.length} offre(s) soumise(s)</p>
           </div>
-
-          <button
-            onClick={() => setModalOpen(true)}
-            className="bg-[#6CB33F] hover:bg-[#4E8F2F] dark:bg-emerald-600 dark:hover:bg-emerald-500
-                       text-white px-6 py-3 rounded-xl
-                       font-semibold shadow transition-colors
-                       flex items-center gap-2"
-          >
-            <Plus size={18} />
-            Proposer une offre
+          <button onClick={() => { setEditingJob(null); setModalOpen(true); }}
+            className="bg-[#6CB33F] hover:bg-[#4E8F2F] dark:bg-emerald-600 dark:hover:bg-emerald-500 text-white px-6 py-3 rounded-xl font-semibold shadow transition-colors flex items-center gap-2">
+            <Plus size={18} /> Nouvelle offre
           </button>
         </div>
 
-        {/* ========== STATS ========== */}
+        {/* STATS */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
           {[
             { label: "Total", value: counts.all, color: "text-gray-800 dark:text-white", bg: "bg-white dark:bg-gray-800" },
             { label: "En attente", value: counts.EN_ATTENTE, color: "text-amber-700 dark:text-amber-400", bg: "bg-amber-50 dark:bg-amber-900/20" },
             { label: "Confirmées", value: counts.CONFIRMEE, color: "text-green-700 dark:text-emerald-400", bg: "bg-green-50 dark:bg-emerald-900/20" },
             { label: "Rejetées", value: counts.REJETEE, color: "text-red-700 dark:text-red-400", bg: "bg-red-50 dark:bg-red-900/20" },
-          ].map((stat) => (
-            <div key={stat.label} className={`${stat.bg} rounded-2xl p-5 border border-gray-200 dark:border-gray-700`}>
-              <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">{stat.label}</p>
-              <p className={`text-3xl font-extrabold mt-1 ${stat.color}`}>{stat.value}</p>
+          ].map((s) => (
+            <div key={s.label} className={`${s.bg} rounded-2xl p-5 border border-gray-200 dark:border-gray-700`}>
+              <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">{s.label}</p>
+              <p className={`text-3xl font-extrabold mt-1 ${s.color}`}>{s.value}</p>
             </div>
           ))}
         </div>
 
-        {/* ========== TABS ========== */}
+        {/* TABS */}
         <div className="flex gap-2 mb-8 flex-wrap">
           {TABS.map((tab) => {
             const isActive = activeTab === tab.key;
-            const count = counts[tab.key] || 0;
             return (
-              <button
-                key={tab.key}
-                onClick={() => setActiveTab(tab.key)}
-                className={`px-5 py-2.5 rounded-full text-sm font-semibold transition-all duration-200
-                  ${isActive
-                    ? "bg-[#6CB33F] dark:bg-emerald-600 text-white shadow-md shadow-green-500/20"
-                    : "bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 border border-gray-200 dark:border-gray-700 hover:border-[#6CB33F] dark:hover:border-emerald-500"
-                  }`}
-              >
+              <button key={tab.key} onClick={() => setActiveTab(tab.key)}
+                className={`px-5 py-2.5 rounded-full text-sm font-semibold transition-all duration-200 ${isActive ? "bg-[#6CB33F] dark:bg-emerald-600 text-white shadow-md shadow-green-500/20" : "bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 border border-gray-200 dark:border-gray-700 hover:border-[#6CB33F] dark:hover:border-emerald-500"}`}>
                 {tab.label}
                 <span className={`ml-2 text-xs px-2 py-0.5 rounded-full ${isActive ? "bg-white/20 text-white" : "bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400"}`}>
-                  {count}
+                  {counts[tab.key] || 0}
                 </span>
               </button>
             );
           })}
         </div>
 
-        {/* ========== JOBS GRID ========== */}
+        {/* JOBS GRID */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {paginatedJobs.map((job) => {
             const isExpanded = !!expandedJobs[job._id];
             const hasLongDesc = (job.description || "").length > 160;
             const status = job._status;
+            const isPending = status === "EN_ATTENTE";
             const statusConfig = STATUS_CONFIG[status] || STATUS_CONFIG.EN_ATTENTE;
 
             return (
-              <div
-                key={job._id}
-                className={`bg-white dark:bg-gray-800 rounded-2xl shadow p-6 flex flex-col hover:shadow-lg transition-all duration-300 border ${statusConfig.cardBorder}`}
-              >
+              <div key={job._id} className={`bg-white dark:bg-gray-800 rounded-2xl shadow p-6 flex flex-col hover:shadow-lg transition-all duration-300 border ${statusConfig.cardBorder}`}>
+
                 {/* TITLE + STATUS */}
                 <div className="flex items-start justify-between gap-3 mb-3">
                   <h3 className="text-xl font-semibold text-gray-800 dark:text-white">{job.titre}</h3>
@@ -276,9 +256,7 @@ export default function UserJobsPage() {
                 )}
 
                 {/* DESCRIPTION */}
-                <p className={`text-gray-600 dark:text-gray-300 text-sm mb-2 whitespace-pre-line ${!isExpanded ? "line-clamp-3" : ""}`}>
-                  {job.description}
-                </p>
+                <p className={`text-gray-600 dark:text-gray-300 text-sm mb-2 whitespace-pre-line ${!isExpanded ? "line-clamp-3" : ""}`}>{job.description}</p>
                 {hasLongDesc && (
                   <button type="button" onClick={() => toggleReadMore(job._id)} className="text-sm text-[#4E8F2F] dark:text-emerald-400 font-semibold hover:underline self-start">
                     {isExpanded ? "Réduire ↑" : "Lire la suite →"}
@@ -288,27 +266,43 @@ export default function UserJobsPage() {
                 {/* TECHNOLOGIES */}
                 <div className="flex flex-wrap gap-2 mt-4 mb-4">
                   {job.technologies?.map((tech, i) => (
-                    <span key={i} className="bg-[#E9F5E3] dark:bg-gray-700 text-[#4E8F2F] dark:text-emerald-400 text-xs font-medium px-3 py-1 rounded-full border border-[#d7ebcf] dark:border-gray-600">
-                      {tech}
-                    </span>
+                    <span key={i} className="bg-[#E9F5E3] dark:bg-gray-700 text-[#4E8F2F] dark:text-emerald-400 text-xs font-medium px-3 py-1 rounded-full border border-[#d7ebcf] dark:border-gray-600">{tech}</span>
                   ))}
                 </div>
 
                 <div className="border-t border-gray-100 dark:border-gray-700 my-4" />
 
-                {/* DATES */}
-                <div className="text-sm text-gray-500 dark:text-gray-400 space-y-1 mt-auto">
-                  <div className="flex items-center gap-2">
-                    <span>📅</span><span>Créée : {formatDate(job.createdAt)}</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span>⏳</span><span>Clôture : {formatDate(job.dateCloture)}</span>
-                  </div>
-                  {job.confirmedAt && (
+                {/* BOTTOM: DATES + EDIT BUTTON */}
+                <div className="flex items-center justify-between mt-auto">
+                  <div className="text-sm text-gray-500 dark:text-gray-400 space-y-1">
                     <div className="flex items-center gap-2">
-                      <span>✅</span>
-                      <span>{status === "CONFIRMEE" ? "Confirmée" : "Traitée"} : {formatDate(job.confirmedAt)}</span>
+                      <Calendar size={16} className="text-gray-400 dark:text-gray-500" />
+                      <span>Créée : {formatDate(job.createdAt)}</span>
                     </div>
+                    <div className="flex items-center gap-2">
+                      <CalendarClock size={16} className="text-gray-400 dark:text-gray-500" />
+                      <span>Clôture : {formatDate(job.dateCloture)}</span>
+                    </div>
+                    {job.confirmedAt && (
+                      <div className="flex items-center gap-2">
+                        <CalendarCheck size={16} className="text-gray-400 dark:text-gray-500" />
+                        <span>{status === "CONFIRMEE" ? "Confirmée" : "Traitée"} : {formatDate(job.confirmedAt)}</span>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* ✅ BOUTON MODIFIER — uniquement si EN_ATTENTE */}
+                  {isPending && (
+                    <button
+                      onClick={() => { setEditingJob(job); setModalOpen(true); }}
+                      title="Modifier cette offre"
+                      className="h-10 w-10 rounded-full grid place-items-center
+                                 text-[#4E8F2F] dark:text-emerald-400
+                                 hover:bg-green-100 dark:hover:bg-emerald-900/30
+                                 transition-colors "
+                    >
+                      <Edit2 size={18} />
+                    </button>
                   )}
                 </div>
               </div>
@@ -317,13 +311,14 @@ export default function UserJobsPage() {
 
           {/* EMPTY */}
           {filteredJobs.length === 0 && (
-            <div className="col-span-full bg-white dark:bg-gray-800 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-2xl p-12 text-center">
+            <div className="col-span-full bg-white dark:bg-gray-800 border-2 border-dashed border-[#6CB33F] dark:border-emerald-600 rounded-2xl p-12 text-center">
               <Briefcase className="mx-auto w-10 h-10 text-gray-400 dark:text-gray-500" />
               <p className="mt-4 text-gray-600 dark:text-gray-300">
                 {activeTab === "all" ? "Vous n'avez pas encore soumis d'offre." : "Aucune offre dans cette catégorie."}
               </p>
               {activeTab === "all" && (
-                <button onClick={() => setModalOpen(true)} className="mt-4 inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-[#6CB33F] hover:bg-[#4E8F2F] dark:bg-emerald-600 dark:hover:bg-emerald-500 text-white text-sm font-semibold transition-colors">
+                <button onClick={() => { setEditingJob(null); setModalOpen(true); }}
+                  className="mt-4 inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-[#6CB33F] hover:bg-[#4E8F2F] dark:bg-emerald-600 dark:hover:bg-emerald-500 text-white text-sm font-semibold transition-colors">
                   <Plus size={16} /> Proposer une offre
                 </button>
               )}
@@ -340,26 +335,24 @@ export default function UserJobsPage() {
         )}
       </div>
 
-      {/* ✅ MODAL — intégré dans le même fichier */}
+      {/* ✅ MODAL — création + modification */}
       <JobOfferModal
         open={modalOpen}
-        onClose={() => setModalOpen(false)}
-        onSubmit={handleCreate}
+        onClose={() => { setModalOpen(false); setEditingJob(null); }}
+        onSubmit={editingJob ? handleUpdate : handleCreate}
+        initialData={editingJob}
       />
     </div>
   );
 }
 
 /* =================================================================
-   COMPOSANT MODAL — Proposer une offre
-   ✅ TOUT DANS LE MÊME FICHIER — pas d'import séparé
+   MODAL — Proposer / Modifier une offre
+   ✅ Tout dans le même fichier
 ================================================================= */
-function JobOfferModal({ open, onClose, onSubmit }) {
+function JobOfferModal({ open, onClose, onSubmit, initialData }) {
   const emptyForm = {
-    titre: "",
-    description: "",
-    technologies: "",
-    dateCloture: "",
+    titre: "", description: "", technologies: "", dateCloture: "",
     scores: { skillsFit: 30, experienceFit: 30, projectsFit: 20, educationFit: 10, communicationFit: 10 },
   };
 
@@ -368,8 +361,26 @@ function JobOfferModal({ open, onClose, onSubmit }) {
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
-    if (open) { setForm(emptyForm); setFormError(""); }
-  }, [open]);
+    if (!open) return;
+    if (initialData) {
+      setForm({
+        titre: initialData.titre || "",
+        description: initialData.description || "",
+        technologies: Array.isArray(initialData.technologies) ? initialData.technologies.join(", ") : initialData.technologies || "",
+        dateCloture: initialData.dateCloture ? String(initialData.dateCloture).slice(0, 10) : "",
+        scores: {
+          skillsFit: initialData?.scores?.skillsFit ?? 30,
+          experienceFit: initialData?.scores?.experienceFit ?? 30,
+          projectsFit: initialData?.scores?.projectsFit ?? 20,
+          educationFit: initialData?.scores?.educationFit ?? 10,
+          communicationFit: initialData?.scores?.communicationFit ?? 10,
+        },
+      });
+    } else {
+      setForm(emptyForm);
+    }
+    setFormError("");
+  }, [open, initialData]);
 
   if (!open) return null;
 
@@ -379,17 +390,17 @@ function JobOfferModal({ open, onClose, onSubmit }) {
     if (Number.isNaN(v)) v = 0;
     if (v < 0) v = 0;
     if (v > 100) v = 100;
-    setForm((prev) => ({ ...prev, scores: { ...prev.scores, [key]: v } }));
+    setForm((p) => ({ ...p, scores: { ...p.scores, [key]: v } }));
   }
 
   const totalWeights = Object.values(form.scores || {}).reduce((s, v) => s + Number(v || 0), 0);
   const isValidTotal = totalWeights === 100;
+  const isEditing = !!initialData;
 
   async function handleSubmit(e) {
     e.preventDefault();
     setFormError("");
     if (!isValidTotal) { setFormError("❌ La somme des pondérations doit être égale à 100%"); return; }
-
     setSubmitting(true);
     try {
       await onSubmit({
@@ -412,8 +423,12 @@ function JobOfferModal({ open, onClose, onSubmit }) {
         <div className="px-5 sm:px-8 pt-5 sm:pt-7 pb-4 sm:pb-5 border-b border-gray-200 dark:border-gray-700">
           <div className="flex items-start justify-between gap-4">
             <div>
-              <h2 className="text-xl sm:text-2xl font-extrabold text-gray-900 dark:text-white">Proposer une offre</h2>
-              <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Votre offre sera soumise à l&apos;administrateur pour confirmation.</p>
+              <h2 className="text-xl sm:text-2xl font-extrabold text-gray-900 dark:text-white">
+                {isEditing ? "Modifier l'offre" : "Proposer une offre"}
+              </h2>
+              <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                {isEditing ? "Modifiez votre offre en attente." : "Votre offre sera soumise à l'administrateur pour confirmation."}
+              </p>
             </div>
             <button type="button" onClick={onClose} className="shrink-0 h-10 w-10 rounded-full grid place-items-center text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors" aria-label="Fermer">✕</button>
           </div>
@@ -423,15 +438,14 @@ function JobOfferModal({ open, onClose, onSubmit }) {
         <div className="overflow-y-auto">
           <form onSubmit={handleSubmit} className="px-5 sm:px-8 py-5 sm:py-7">
             <div className="space-y-5 sm:space-y-6">
-              {formError && (
-                <div className="rounded-xl border border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-900/30 p-3 text-sm font-semibold text-red-700 dark:text-red-400">{formError}</div>
-              )}
+              {formError && <div className="rounded-xl border border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-900/30 p-3 text-sm font-semibold text-red-700 dark:text-red-400">{formError}</div>}
 
-              {/* INFO */}
-              <div className="rounded-xl border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-900/20 p-4 flex items-start gap-3">
-                <span className="text-amber-600 dark:text-amber-400 text-lg mt-0.5">⏳</span>
-                <p className="text-sm text-amber-700 dark:text-amber-300">Votre offre sera en <strong>attente de confirmation</strong> par l&apos;administrateur avant d&apos;être publiée.</p>
-              </div>
+              {!isEditing && (
+                <div className="rounded-xl border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-900/20 p-4 flex items-start gap-3">
+                  <span className="text-amber-600 dark:text-amber-400 text-lg mt-0.5">⏳</span>
+                  <p className="text-sm text-amber-700 dark:text-amber-300">Votre offre sera en <strong>attente de confirmation</strong> par l&apos;administrateur avant d&apos;être publiée.</p>
+                </div>
+              )}
 
               {/* TITRE */}
               <div>
@@ -443,7 +457,7 @@ function JobOfferModal({ open, onClose, onSubmit }) {
               {/* DESCRIPTION */}
               <div>
                 <label className="block text-xs sm:text-sm font-semibold tracking-wide text-gray-700 dark:text-gray-300 mb-2 uppercase">Description</label>
-                <textarea rows={5} value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} required placeholder="Décrivez la mission, le profil recherché, responsabilités..."
+                <textarea rows={5} value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} required placeholder="Décrivez la mission, le profil recherché..."
                   className="w-full px-4 sm:px-5 py-3 sm:py-4 rounded-2xl sm:rounded-3xl border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 resize-none focus:border-[#6CB33F] dark:focus:border-emerald-500 focus:ring-4 focus:ring-[#6CB33F]/15 dark:focus:ring-emerald-500/20 outline-none transition-colors" />
               </div>
 
@@ -469,21 +483,18 @@ function JobOfferModal({ open, onClose, onSubmit }) {
                   <span className={`text-sm font-extrabold ${isValidTotal ? "text-green-600 dark:text-emerald-400" : "text-red-600 dark:text-red-400"}`}>Total: {totalWeights}%</span>
                 </div>
                 <div className="space-y-4">
-                  {SCORE_ITEMS.map((it) => {
-                    const v = form.scores[it.key] ?? 0;
-                    return (
-                      <div key={it.key} className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4">
-                        <p className="sm:flex-1 text-sm font-semibold text-gray-700 dark:text-gray-300">{it.label}</p>
-                        <div className="flex items-center gap-3">
-                          <input type="number" min={0} max={100} value={v} onChange={(e) => setWeight(it.key, e.target.value)}
-                            className="w-24 h-11 px-4 rounded-xl sm:rounded-full border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 focus:border-[#6CB33F] dark:focus:border-emerald-500 focus:ring-4 focus:ring-[#6CB33F]/15 dark:focus:ring-emerald-500/20 outline-none transition-colors" />
-                          <span className="text-sm font-extrabold text-[#4E8F2F] dark:text-emerald-400 w-10">%</span>
-                        </div>
+                  {SCORE_ITEMS.map((it) => (
+                    <div key={it.key} className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4">
+                      <p className="sm:flex-1 text-sm font-semibold text-gray-700 dark:text-gray-300">{it.label}</p>
+                      <div className="flex items-center gap-3">
+                        <input type="number" min={0} max={100} value={form.scores[it.key] ?? 0} onChange={(e) => setWeight(it.key, e.target.value)}
+                          className="w-24 h-11 px-4 rounded-xl sm:rounded-full border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 focus:border-[#6CB33F] dark:focus:border-emerald-500 focus:ring-4 focus:ring-[#6CB33F]/15 dark:focus:ring-emerald-500/20 outline-none transition-colors" />
+                        <span className="text-sm font-extrabold text-[#4E8F2F] dark:text-emerald-400 w-10">%</span>
                       </div>
-                    );
-                  })}
+                    </div>
+                  ))}
                 </div>
-                {!isValidTotal && <p className="mt-3 text-xs font-semibold text-red-600 dark:text-red-400">La somme des pondérations doit être égale à 100% pour pouvoir enregistrer.</p>}
+                {!isValidTotal && <p className="mt-3 text-xs font-semibold text-red-600 dark:text-red-400">La somme des pondérations doit être égale à 100%.</p>}
               </div>
             </div>
 
@@ -491,9 +502,9 @@ function JobOfferModal({ open, onClose, onSubmit }) {
             <div className="mt-7 sm:mt-8 pt-5 sm:pt-6 border-t border-gray-200 dark:border-gray-700 flex flex-col sm:flex-row gap-3 sm:gap-4">
               <button type="submit" disabled={!isValidTotal || submitting}
                 className={`sm:flex-1 h-11 sm:h-12 rounded-xl sm:rounded-full font-semibold transition-colors shadow-sm ${isValidTotal && !submitting ? "bg-[#6CB33F] hover:bg-[#5AA332] dark:bg-emerald-600 dark:hover:bg-emerald-500 text-white" : "bg-gray-300 dark:bg-gray-600 text-gray-500 dark:text-gray-400 cursor-not-allowed"}`}>
-                {submitting ? "Envoi en cours..." : "Soumettre l'offre"}
+                {submitting ? "Envoi..." : isEditing ? "Enregistrer" : "Soumettre l'offre"}
               </button>
-              <button type="button" onClick={() => { setForm(emptyForm); setFormError(""); onClose(); }}
+              <button type="button" onClick={onClose}
                 className="sm:flex-1 h-11 sm:h-12 rounded-xl sm:rounded-full font-semibold border border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
                 Annuler
               </button>
