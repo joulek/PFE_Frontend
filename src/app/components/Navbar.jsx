@@ -7,7 +7,7 @@ import { useEffect, useState } from "react";
 import { logout } from "../services/auth.api";
 import { Moon, Sun } from "lucide-react";
 import { useTheme } from "../providers/ThemeProvider";
-
+import api from "../services/api";
 export default function Navbar() {
   const pathname = usePathname();
   const router = useRouter();
@@ -17,13 +17,25 @@ export default function Navbar() {
   const [openMobile, setOpenMobile] = useState(false);
   const [openCandidatures, setOpenCandidatures] = useState(false);
   const [openAdmin, setOpenAdmin] = useState(false);
+  
 
   useEffect(() => {
-    const storedUser = localStorage.getItem("user");
-    if (storedUser) {
-      setUser(JSON.parse(storedUser));
-    }
-  }, []);
+    const loadUser = () => {
+      const storedUser = localStorage.getItem("user");
+      if (storedUser) setUser(JSON.parse(storedUser));
+    };
+
+    loadUser();
+
+    // écoute les mises à jour (depuis le login)
+    window.addEventListener("storage", loadUser);
+    window.addEventListener("user-updated", loadUser);
+
+    return () => {
+      window.removeEventListener("storage", loadUser);
+      window.removeEventListener("user-updated", loadUser);
+    };
+}, []);
 
   useEffect(() => {
     setOpenMobile(false);
@@ -42,32 +54,33 @@ export default function Navbar() {
     pathname.startsWith("/recruiter/roles") ||
     pathname.startsWith("/recruiter/ResponsableMetier");
 
-  async function handleLogout() {
-    try {
-      await logout(); // backend
-    } catch {
-      console.warn("Logout backend error ignored");
-    } finally {
-      // ✅ امسح cookies (هذا هو السطر الحاسم)
-      document.cookie = "token=; path=/; max-age=0";
-      document.cookie = "role=; path=/; max-age=0";
+ async function handleLogout() {
+  try {
+    await logout(); // backend revoke (اختياري)
+  } catch {}
+  finally {
+    document.cookie = "token=; Path=/; Max-Age=0; SameSite=Lax";
+    document.cookie = "role=; Path=/; Max-Age=0; SameSite=Lax";
 
-      // localStorage
-      localStorage.removeItem("token");
-      localStorage.removeItem("user");
+    localStorage.removeItem("token");
+    localStorage.removeItem("user");
 
-      setUser(null);
-      router.replace("/login");
-    }
+    delete api.defaults.headers.common.Authorization;
+
+    setUser(null);
+    router.replace("/login");
+    router.refresh();
   }
-
+}
 
   // Classes communes
   const linkBase = "px-6 py-2 rounded-full font-semibold transition";
   const activeLink = "bg-[#6CB33F] text-white shadow";
-  const inactiveLink = "text-gray-600 dark:text-gray-300 hover:text-[#4E8F2F] dark:hover:text-[#86efac]";
+  const inactiveLink =
+    "text-gray-600 dark:text-gray-300 hover:text-[#4E8F2F] dark:hover:text-[#86efac]";
 
-  const dropdownBase = "absolute left-0 mt-2 w-64 rounded-xl shadow-lg border transition-colors";
+  const dropdownBase =
+    "absolute left-0 mt-2 w-64 rounded-xl shadow-lg border transition-colors";
   const dropdownLight = "bg-white border-gray-200";
   const dropdownDark = "dark:bg-gray-800 dark:border-gray-700";
 
@@ -106,7 +119,10 @@ export default function Navbar() {
           <div className="hidden md:flex items-center bg-[#F4F7F5] dark:bg-gray-800/60 rounded-full p-1 gap-1 transition-colors duration-200">
             {!isAdmin && (
               <>
-                <Link href="/jobs" className={`${linkBase} ${isActive("/jobs") ? activeLink : inactiveLink}`}>
+                <Link
+                  href="/jobs"
+                  className={`${linkBase} ${isActive("/jobs") ? activeLink : inactiveLink}`}
+                >
                   Offres d'emploi
                 </Link>
 
@@ -159,7 +175,9 @@ export default function Navbar() {
                   </button>
 
                   {openCandidatures && (
-                    <div className={`${dropdownBase} ${dropdownLight} ${dropdownDark}`}>
+                    <div
+                      className={`${dropdownBase} ${dropdownLight} ${dropdownDark}`}
+                    >
                       <Link
                         href="/recruiter/candidatures"
                         className={`${dropdownItemBase} ${isActive("/recruiter/candidatures") ? dropdownActive : dropdownHover}`}
@@ -189,7 +207,9 @@ export default function Navbar() {
                   </button>
 
                   {openAdmin && (
-                    <div className={`${dropdownBase} ${dropdownLight} ${dropdownDark}`}>
+                    <div
+                      className={`${dropdownBase} ${dropdownLight} ${dropdownDark}`}
+                    >
                       <Link
                         href="/recruiter/roles"
                         className={`${dropdownItemBase} ${isActive("/recruiter/roles") ? dropdownActive : dropdownHover}`}
@@ -221,7 +241,11 @@ export default function Navbar() {
               onClick={toggleTheme}
               className="p-2.5 rounded-full hover:bg-gray-200/70 dark:hover:bg-gray-700/50 transition-colors"
               aria-label="Changer de thème"
-              title={theme === "dark" ? "Passer en mode clair" : "Passer en mode sombre"}
+              title={
+                theme === "dark"
+                  ? "Passer en mode clair"
+                  : "Passer en mode sombre"
+              }
             >
               {theme === "dark" ? (
                 <Sun className="h-5 w-5 text-amber-400" />
@@ -231,7 +255,10 @@ export default function Navbar() {
             </button>
 
             {!user ? (
-              <Link href="/login" className="font-semibold text-[#6CB33F] hover:underline">
+              <Link
+                href="/login"
+                className="font-semibold text-[#6CB33F] hover:underline"
+              >
                 Espace recruteur
               </Link>
             ) : (
@@ -249,8 +276,18 @@ export default function Navbar() {
             onClick={() => setOpenMobile((v) => !v)}
             className="md:hidden p-2 rounded-lg hover:bg-gray-100/70 dark:hover:bg-gray-700/50 transition-colors"
           >
-            <svg className="w-6 h-6 text-gray-700 dark:text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+            <svg
+              className="w-6 h-6 text-gray-700 dark:text-gray-300"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M4 6h16M4 12h16M4 18h16"
+              />
             </svg>
           </button>
         </div>
@@ -281,25 +318,46 @@ export default function Navbar() {
 
               {isAdmin && (
                 <>
-                  <Link href="/recruiter/dashboard" className="block px-5 py-3.5 rounded-xl text-gray-700 dark:text-gray-200 hover:bg-gray-100/70 dark:hover:bg-gray-800/60">
+                  <Link
+                    href="/recruiter/dashboard"
+                    className="block px-5 py-3.5 rounded-xl text-gray-700 dark:text-gray-200 hover:bg-gray-100/70 dark:hover:bg-gray-800/60"
+                  >
                     Tableau de bord
                   </Link>
-                  <Link href="/recruiter/jobs" className="block px-5 py-3.5 rounded-xl text-gray-700 dark:text-gray-200 hover:bg-gray-100/70 dark:hover:bg-gray-800/60">
+                  <Link
+                    href="/recruiter/jobs"
+                    className="block px-5 py-3.5 rounded-xl text-gray-700 dark:text-gray-200 hover:bg-gray-100/70 dark:hover:bg-gray-800/60"
+                  >
                     Gestion offres
                   </Link>
-                  <Link href="/recruiter/candidatures" className="block px-5 py-3.5 rounded-xl text-gray-700 dark:text-gray-200 hover:bg-gray-100/70 dark:hover:bg-gray-800/60">
+                  <Link
+                    href="/recruiter/candidatures"
+                    className="block px-5 py-3.5 rounded-xl text-gray-700 dark:text-gray-200 hover:bg-gray-100/70 dark:hover:bg-gray-800/60"
+                  >
                     Liste des candidatures
                   </Link>
-                  <Link href="/recruiter/CandidatureAnalysis" className="block px-5 py-3.5 rounded-xl text-gray-700 dark:text-gray-200 hover:bg-gray-100/70 dark:hover:bg-gray-800/60">
+                  <Link
+                    href="/recruiter/CandidatureAnalysis"
+                    className="block px-5 py-3.5 rounded-xl text-gray-700 dark:text-gray-200 hover:bg-gray-100/70 dark:hover:bg-gray-800/60"
+                  >
                     Analyse des candidatures
                   </Link>
-                  <Link href="/recruiter/roles" className="block px-5 py-3.5 rounded-xl text-gray-700 dark:text-gray-200 hover:bg-gray-100/70 dark:hover:bg-gray-800/60">
+                  <Link
+                    href="/recruiter/roles"
+                    className="block px-5 py-3.5 rounded-xl text-gray-700 dark:text-gray-200 hover:bg-gray-100/70 dark:hover:bg-gray-800/60"
+                  >
                     Gestion des rôles
                   </Link>
-                  <Link href="/recruiter/ResponsableMetier" className="block px-5 py-3.5 rounded-xl text-gray-700 dark:text-gray-200 hover:bg-gray-100/70 dark:hover:bg-gray-800/60">
+                  <Link
+                    href="/recruiter/ResponsableMetier"
+                    className="block px-5 py-3.5 rounded-xl text-gray-700 dark:text-gray-200 hover:bg-gray-100/70 dark:hover:bg-gray-800/60"
+                  >
                     Gestion des utilisateurs
                   </Link>
-                  <Link href="/recruiter/fiche-renseignement" className="block px-5 py-3.5 rounded-xl text-gray-700 dark:text-gray-200 hover:bg-gray-100/70 dark:hover:bg-gray-800/60">
+                  <Link
+                    href="/recruiter/fiche-renseignement"
+                    className="block px-5 py-3.5 rounded-xl text-gray-700 dark:text-gray-200 hover:bg-gray-100/70 dark:hover:bg-gray-800/60"
+                  >
                     Fiche de Renseignement
                   </Link>
                 </>

@@ -3,42 +3,71 @@ import { NextResponse } from "next/server";
 export function middleware(req) {
   const { pathname } = req.nextUrl;
 
-  const token = req.cookies.get("token")?.value || null;
-  const role = req.cookies.get("role")?.value || null; // ADMIN / RECRUITER / CANDIDATE
+  const rawToken = req.cookies.get("token")?.value ?? "";
+  const decodedToken = rawToken ? decodeURIComponent(rawToken) : "";
+  const token =
+    decodedToken &&
+    decodedToken !== "null" &&
+    decodedToken !== "undefined" &&
+    decodedToken.trim() !== ""
+      ? decodedToken
+      : null;
 
-  const isLogin = pathname.startsWith("/login");
+  const role = (req.cookies.get("role")?.value || "").trim().toUpperCase();
+  const isAdmin = role === "ADMIN";
 
-  const isAdminPath = pathname.startsWith("/admin");
   const isRecruiterPath = pathname.startsWith("/recruiter");
+  const isResponsablePath =
+    pathname.startsWith("/ResponsableMetier") ||
+    pathname.startsWith("/responsableMetier");
 
-  // 1) إذا موش connecté و داخل zone protégée
-  if ((isAdminPath || isRecruiterPath) && !token) {
-    return NextResponse.redirect(new URL("/login", req.url));
-  }
+  const isLoginPage = pathname.startsWith("/login");
+  const isUnauthorized = pathname.startsWith("/unauthorized");
+  const isProtected = isRecruiterPath || isResponsablePath;
 
-  // 2) إذا connecté و يمشي login
-  if (isLogin && token) {
-    // redirect حسب role
-    if (role === "ADMIN" || role === "RECRUITER") {
-      return NextResponse.redirect(new URL("/recruiter/dashboard", req.url));
-    }
+  const redirect = (to) => {
+    const url = req.nextUrl.clone();
+    url.pathname = to;
+    const res = NextResponse.redirect(url);
+    res.headers.set(
+      "Cache-Control",
+      "no-store, no-cache, must-revalidate, private",
+    );
+    res.headers.set("Pragma", "no-cache");
+    res.headers.set("Expires", "0");
+    return res;
+  };
 
-    return NextResponse.redirect(new URL("/jobs", req.url));
-  }
+  // 1) Protected + pas connecté => login
+  if (isProtected && !token) return redirect("/login");
 
-  // 3) حماية admin
-  if (isAdminPath && token && role !== "ADMIN") {
-    return NextResponse.redirect(new URL("/404", req.url));
-  }
+  // 2) Routing par rôle
+  if (isRecruiterPath && token && !isAdmin) return redirect("/unauthorized");
+  if (isResponsablePath && token && isAdmin) return redirect("/unauthorized");
 
-  // 4) حماية recruiter
-  if (isRecruiterPath && token && (role !== "RECRUITER" && role !== "ADMIN")) {
-    return NextResponse.redirect(new URL("/404", req.url));
+  // 3) Connecté et va /login
+  if (isLoginPage && token)
+    return redirect(
+      isAdmin ? "/recruiter/dashboard" : "/ResponsableMetier/candidatures",
+    );
+
+  // 4) No cache pages sensibles
+  if (isProtected || isLoginPage || isUnauthorized) {
+    const res = NextResponse.next();
+    res.headers.set(
+      "Cache-Control",
+      "no-store, no-cache, must-revalidate, private",
+    );
+    res.headers.set("Pragma", "no-cache");
+    res.headers.set("Expires", "0");
+    res.headers.set("x-middleware-cache", "no-cache");
+
+    return res;
   }
 
   return NextResponse.next();
 }
 
 export const config = {
-  matcher: ["/login", "/admin/:path*", "/recruiter/:path*"],
+  matcher: ["/((?!api|_next|.*\\..*).*)"],
 };
