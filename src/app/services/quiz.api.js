@@ -15,6 +15,10 @@ export const generateQuiz = (jobId) => api.post(`/quizzes/generate/${jobId}`);
 /** Regénérer le quiz d'une offre */
 export const regenerateQuiz = (jobId) => api.post(`/quizzes/regenerate/${jobId}`);
 
+/** ✅ Générer des questions supplémentaires (append au quiz existant) */
+export const generateMoreQuestions = (quizId, numQuestions) =>
+  api.post(`/quizzes/${quizId}/generate-more`, { numQuestions });
+
 /** Modifier tout le quiz */
 export const updateQuiz = (id, questions) =>
   api.put(`/quizzes/${id}`, { questions });
