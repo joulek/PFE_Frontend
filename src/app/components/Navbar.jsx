@@ -5,7 +5,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState, useRef, useCallback } from "react";
 import { logout } from "../services/auth.api";
-import { Moon, Sun, Bell, Check, CheckCheck, Briefcase, FileText, X } from "lucide-react";
+import { Moon, Sun, Bell, Check, CheckCheck, Briefcase, FileText, X, Calendar, Clock, AlertTriangle } from "lucide-react";
 import { useTheme } from "../providers/ThemeProvider";
 import api from "../services/api";
 import {
@@ -42,6 +42,38 @@ function NotificationIcon({ type }) {
       return (
         <span className={`${base} bg-red-100 dark:bg-red-900/40`}>
           <X className="w-4 h-4 text-red-600 dark:text-red-400" />
+        </span>
+      );
+    case "INTERVIEW_SCHEDULED":
+      return (
+        <span className={`${base} bg-blue-100 dark:bg-blue-900/40`}>
+          <Calendar className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+        </span>
+      );
+    case "INTERVIEW_RESPONSABLE_CONFIRMED":
+    case "INTERVIEW_CANDIDATE_CONFIRMED":
+      return (
+        <span className={`${base} bg-green-100 dark:bg-green-900/40`}>
+          <Check className="w-4 h-4 text-green-600 dark:text-green-400" />
+        </span>
+      );
+    case "INTERVIEW_RESPONSABLE_MODIFIED":
+    case "INTERVIEW_CANDIDATE_RESCHEDULE":
+      return (
+        <span className={`${base} bg-orange-100 dark:bg-orange-900/40`}>
+          <Clock className="w-4 h-4 text-orange-600 dark:text-orange-400" />
+        </span>
+      );
+    case "INTERVIEW_ADMIN_APPROVED_MODIF":
+      return (
+        <span className={`${base} bg-emerald-100 dark:bg-emerald-900/40`}>
+          <Check className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+        </span>
+      );
+    case "INTERVIEW_ADMIN_REJECTED_MODIF":
+      return (
+        <span className={`${base} bg-red-100 dark:bg-red-900/40`}>
+          <AlertTriangle className="w-4 h-4 text-red-600 dark:text-red-400" />
         </span>
       );
     default:

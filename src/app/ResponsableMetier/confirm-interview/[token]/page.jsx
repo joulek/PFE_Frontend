@@ -85,7 +85,7 @@ export default function ConfirmInterviewPage() {
       const data = await response.json();
 
       if (data.success) {
-        setSuccessMessage("Entretien confirmé avec succès! Le candidat a été notifié par email.");
+        setSuccessMessage("Date confirmée ! Un email a été envoyé au candidat pour qu'il confirme sa disponibilité.");
         setTimeout(() => {
           router.push("/login");
         }, 2000);
@@ -120,7 +120,7 @@ export default function ConfirmInterviewPage() {
       const data = await response.json();
 
       if (data.success) {
-        setSuccessMessage("Demande de modification envoyée! Le recruteur a été notifié.");
+        setSuccessMessage("Demande de modification envoyée à l'administrateur pour validation.");
         setTimeout(() => {
           router.push("/login");
         }, 2000);
@@ -587,7 +587,10 @@ export default function ConfirmInterviewPage() {
                 <div className="flex gap-3">
                   <AlertCircle className="w-5 h-5 text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5" />
                   <p className="text-sm text-blue-800 dark:text-blue-300 transition-colors">
-                    L'équipe de recrutement recevra votre demande instantanément. Vous serez informé par e-mail dès que la nouvelle date sera validée par les intervenants.
+                    {action === "confirm" 
+                      ? "Le candidat recevra un email avec un lien pour confirmer ou proposer une autre date."
+                      : "Votre demande sera envoyée à l'administrateur pour validation. Le candidat ne sera pas contacté tant que l'admin n'a pas approuvé."
+                    }
                   </p>
                 </div>
               </div>
