@@ -724,9 +724,8 @@ export default function CandidatureAnalysisPage() {
   };
 
   const handleScheduleSuccess = () => {
-    setShowScheduleModal(false);
-    setSelectedCandidature(null);
-    // Optionally reload data
+    // Ne pas fermer le modal ici — le modal se ferme lui-même après 2.5s
+    // On peut recharger les données si besoin
   };
 
   return (

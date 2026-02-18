@@ -35,8 +35,6 @@ export default function CandidaturesPage() {
     load();
   }, []);
 
-  /* ================= EXTRACTION LOGIC — INCHANGÉ ================= */
-
   const extractField = (c, field) => {
     if (c[field]) return c[field];
     if (c.extracted?.[field]) return c.extracted[field];
@@ -86,11 +84,9 @@ export default function CandidaturesPage() {
     return null;
   };
 
-  /* ================= LOADING ================= */
-
   if (loading) {
     return (
-      <div className="min-h-screen bg-green-50 dark:bg-gray-950 p-10">
+      <div className="min-h-screen bg-green-50 dark:bg-gray-950 p-4 sm:p-10">
         <div className="max-w-6xl mx-auto space-y-6 animate-pulse">
           {[1, 2, 3].map(i => (
             <div key={i} className="h-40 bg-white dark:bg-gray-800 rounded-2xl shadow-sm" />
@@ -100,15 +96,13 @@ export default function CandidaturesPage() {
     );
   }
 
-  /* ================= UI ================= */
-
   return (
     <div className="min-h-screen bg-green-50 dark:bg-gray-950">
-      <div className="max-w-6xl mx-auto px-6 py-12">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 py-6 sm:py-12">
 
         {/* HEADER */}
-        <div className="mb-10">
-          <h1 className="text-4xl font-extrabold text-gray-900 dark:text-white">
+        <div className="mb-6 sm:mb-10">
+          <h1 className="text-2xl sm:text-4xl font-extrabold text-gray-900 dark:text-white">
             Mes candidatures
           </h1>
 
@@ -144,77 +138,60 @@ export default function CandidaturesPage() {
               <div
                 key={c._id}
                 className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700
-                           p-8 hover:shadow-md transition"
+                           p-5 sm:p-8 hover:shadow-md transition"
               >
 
                 {/* TOP */}
-                <div className="flex items-start justify-between">
+                <div className="flex items-start justify-between gap-3">
 
-                  {/* LEFT : avatar + nom */}
-                  <div className="flex items-center gap-4">
-                    <UserCircle className="w-14 h-14 text-gray-300 dark:text-gray-600" />
-
+                  <div className="flex items-center gap-3 sm:gap-4">
+                    <UserCircle className="w-10 h-10 sm:w-14 sm:h-14 text-gray-300 dark:text-gray-600 flex-shrink-0" />
                     <div>
-                      <h3 className="text-xl font-bold text-gray-900 dark:text-white">
+                      <h3 className="text-base sm:text-xl font-bold text-gray-900 dark:text-white">
                         {name}
                       </h3>
                     </div>
                   </div>
 
-                  {/* RIGHT : titre offre */}
-                  <p
-                    className="text-xs font-semibold
+                  <p className="text-xs font-semibold
                              bg-green-100 dark:bg-emerald-950/40 text-green-800 dark:text-emerald-300
-                             px-3 py-1 rounded-full
-                             whitespace-nowrap"
-                  >
+                             px-3 py-1 rounded-full whitespace-nowrap flex-shrink-0">
                     {jobTitle}
                   </p>
 
                 </div>
 
-
-                <div className="border-t border-gray-200 dark:border-gray-700 my-6" />
+                <div className="border-t border-gray-200 dark:border-gray-700 my-4 sm:my-6" />
 
                 {/* CONTACT */}
-                <div className="grid md:grid-cols-2 gap-8">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-8">
 
-                  <div className="flex items-center gap-4">
-                    <div className="bg-green-100 dark:bg-emerald-900/30 p-3 rounded-full">
+                  <div className="flex items-center gap-3 sm:gap-4">
+                    <div className="bg-green-100 dark:bg-emerald-900/30 p-2.5 sm:p-3 rounded-full flex-shrink-0">
                       <Mail size={18} className="text-green-700 dark:text-emerald-400" />
                     </div>
-                    <div>
-                      <p className="text-xs font-semibold text-gray-500 dark:text-gray-400">
-                        EMAIL
-                      </p>
-                      <p className="text-sm text-gray-900 dark:text-gray-100">
-                        {email}
-                      </p>
+                    <div className="min-w-0">
+                      <p className="text-xs font-semibold text-gray-500 dark:text-gray-400">EMAIL</p>
+                      <p className="text-sm text-gray-900 dark:text-gray-100 truncate">{email}</p>
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-4">
-                    <div className="bg-green-100 dark:bg-emerald-900/30 p-3 rounded-full">
+                  <div className="flex items-center gap-3 sm:gap-4">
+                    <div className="bg-green-100 dark:bg-emerald-900/30 p-2.5 sm:p-3 rounded-full flex-shrink-0">
                       <Phone size={18} className="text-green-700 dark:text-emerald-400" />
                     </div>
                     <div>
-                      <p className="text-xs font-semibold text-gray-500 dark:text-gray-400">
-                        TÉLÉPHONE
-                      </p>
-                      <p className="text-sm text-gray-900 dark:text-gray-100">
-                        {phone}
-                      </p>
+                      <p className="text-xs font-semibold text-gray-500 dark:text-gray-400">TÉLÉPHONE</p>
+                      <p className="text-sm text-gray-900 dark:text-gray-100">{phone}</p>
                     </div>
                   </div>
                 </div>
 
-                <div className="border-t border-gray-200 dark:border-gray-700 my-6" />
+                <div className="border-t border-gray-200 dark:border-gray-700 my-4 sm:my-6" />
 
                 {/* FOOTER */}
                 <div className="flex items-center justify-between flex-wrap gap-4">
-
                   <div className="flex gap-3">
-
                     {cvLink && (
                       <a
                         href={cvLink}
@@ -228,7 +205,6 @@ export default function CandidaturesPage() {
                         Voir CV
                       </a>
                     )}
-
                   </div>
                 </div>
 
