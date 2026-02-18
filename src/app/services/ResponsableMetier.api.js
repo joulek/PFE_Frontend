@@ -7,13 +7,11 @@ import api from "./api";
 // GET all users
 export const getUsers = () => api.get("/users");
 
-// CREATE user
-export const createUser = (payload) => api.post("/users/register", payload);
+// CREATE user — ✅ /admin/create (sans mot de passe, envoie email d'activation)
+export const createUser = (payload) => api.post("/users/admin/create", payload);
 
-// UPDATE user role
-export const updateUser = (id, data) =>
-  api.patch(`/users/${id}`, data);
-
+// UPDATE user
+export const updateUser = (id, data) => api.patch(`/users/${id}`, data);
 
 // DELETE user
 export const deleteUser = (id) => api.delete(`/users/${id}`);

@@ -18,6 +18,7 @@ import {
   AlertTriangle,
   X,
   Search,
+  Send,
 } from "lucide-react";
 
 import { getRoles } from "../../services/role.api";
@@ -58,16 +59,18 @@ export default function GestionUtilisateursPage() {
   const [selectedUser, setSelectedUser] = useState(null);
 
   const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
   const [role, setRole] = useState("");
+
+  // ✅ Feedback après création
+  const [successMessage, setSuccessMessage] = useState("");
 
   function resetForm(nextRoles = roles) {
     setEmail("");
-    setPassword("");
     setNom("");
     setPrenom("");
     setRole(nextRoles?.[0]?.name || "");
     setSelectedUser(null);
+    setSuccessMessage("");
   }
 
   /* ================= FETCH ROLES ================= */
@@ -129,29 +132,41 @@ export default function GestionUtilisateursPage() {
   function openEditModal(user) {
     setModalMode("edit");
     setSelectedUser(user);
-
     setEmail(safeStr(user?.email));
     setNom(safeStr(user?.nom));
     setPrenom(safeStr(user?.prenom));
-
-    setPassword("");
     setRole(normalizeRole(user?.role));
+    setSuccessMessage("");
     setOpenModal(true);
   }
 
   async function handleSubmit(e) {
     e.preventDefault();
     setLoading(true);
+    setSuccessMessage("");
 
     try {
       if (modalMode === "add") {
+        // ✅ Pas de mot de passe — le backend enverra l'email d'activation
         await createUser({
           nom: safeStr(nom),
           prenom: safeStr(prenom),
           email: safeStr(email).toLowerCase(),
-          password: safeStr(password),
           role: normalizeRole(role),
         });
+
+        setSuccessMessage(
+          `✅ Compte créé ! Un email d'activation a été envoyé à ${safeStr(email).toLowerCase()}.`
+        );
+
+        // Rafraîchir la liste mais garder le modal ouvert pour afficher le message
+        await fetchUsers();
+
+        // Fermer après 3 secondes
+        setTimeout(() => {
+          setOpenModal(false);
+          resetForm();
+        }, 3000);
       } else {
         const userId = selectedUser?._id || selectedUser?.id;
 
@@ -162,10 +177,9 @@ export default function GestionUtilisateursPage() {
         if (safeStr(role)) payload.role = normalizeRole(role);
 
         await updateUser(userId, payload);
+        setOpenModal(false);
+        await fetchUsers();
       }
-
-      setOpenModal(false);
-      await fetchUsers();
     } finally {
       setLoading(false);
     }
@@ -219,380 +233,311 @@ export default function GestionUtilisateursPage() {
         <div className="flex flex-col sm:flex-row gap-4 mb-8">
           <div className="relative flex-1">
             <Search className="absolute left-5 top-1/2 -translate-y-1/2 h-5 w-5 text-[#4E8F2F] dark:text-emerald-400" />
-
             <input
               value={q}
               onChange={(e) => setQ(e.target.value)}
-              placeholder="Rechercher (email, rôle)…"
-              className="
-                w-full rounded-full bg-white dark:bg-gray-800 shadow-sm 
-                border border-gray-100 dark:border-gray-700
-                pl-12 pr-5 py-3
-                text-sm text-gray-700 dark:text-gray-200 
+              placeholder="Rechercher par nom, email, rôle..."
+              className="w-full rounded-full border border-[#D7EBCF] dark:border-gray-700 
+                bg-white dark:bg-gray-800 py-3 pl-12 pr-5
+                text-sm text-gray-800 dark:text-gray-100
                 placeholder-gray-400 dark:placeholder-gray-500
-                outline-none
-                focus:border-[#6CB33F] dark:focus:border-emerald-500
+                outline-none focus:border-[#6CB33F] dark:focus:border-emerald-500
                 focus:ring-1 focus:ring-[#6CB33F] dark:focus:ring-emerald-500
-                transition-colors
-              "
+                shadow-sm transition-colors"
             />
           </div>
 
           <button
             onClick={openAddModal}
-            className="rounded-full bg-[#6CB33F] hover:bg-[#4E8F2F] dark:bg-emerald-600 dark:hover:bg-emerald-500 px-6 py-3 text-sm font-semibold text-white transition-colors"
+            className="flex items-center gap-2 rounded-full bg-[#6CB33F] dark:bg-emerald-600 
+              px-6 py-3 text-sm font-semibold text-white 
+              hover:bg-[#4E8F2F] dark:hover:bg-emerald-500 
+              shadow-md transition-colors whitespace-nowrap"
           >
-            + Ajouter un responsable
+            <User className="h-4 w-4" />
+            Ajouter un responsable
           </button>
         </div>
 
-        {/* ================= DESKTOP TABLE ================= */}
-        <div className="hidden lg:block bg-white dark:bg-gray-800 rounded-3xl shadow-lg overflow-hidden transition-colors duration-300">
-          <table className="w-full text-sm">
-            <thead className="bg-[#E9F5E3] dark:bg-gray-700 text-[#4E8F2F] dark:text-emerald-400">
-              <tr>
-                <th className="px-8 py-5 text-xs font-extrabold uppercase">
-                  Prénom
-                </th>
-                <th className="px-8 py-5 text-xs font-extrabold uppercase">
-                  Nom
-                </th>
-                <th className="px-8 py-5 text-xs font-extrabold uppercase">
-                  Email
-                </th>
-                <th className="px-8 py-5 text-xs font-extrabold uppercase">
-                  Rôle
-                </th>
-                <th className="px-8 py-5 text-xs font-extrabold uppercase">
-                  Date
-                </th>
-                <th className="px-8 py-5 text-xs font-extrabold uppercase text-right">
-                  Actions
-                </th>
-              </tr>
-            </thead>
-
-            <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
-              {paginatedUsers.map((u) => (
-                <tr key={u._id} className="hover:bg-green-50/40 dark:hover:bg-gray-700/40 transition-colors">
-                  {/* PRENOM */}
-                  <td className="px-8 py-5 font-semibold text-gray-900 dark:text-white">
-                    <div className="flex items-center gap-3">
-                      <div
-                        className="h-10 w-10 rounded-full bg-[#E9F5E3] dark:bg-gray-700 text-[#4E8F2F] dark:text-emerald-400
-                        flex items-center justify-center font-extrabold flex-shrink-0"
-                      >
-                        {(
-                          safeStr(u?.prenom)[0] || safeStr(u?.email)[0]
-                        ).toUpperCase()}
-                      </div>
-                      <span>{safeStr(u?.prenom) || "-"}</span>
-                    </div>
-                  </td>
-
-                  {/* NOM */}
-                  <td className="px-8 py-5 font-semibold text-gray-900 dark:text-white">
-                    {safeStr(u?.nom) || "-"}
-                  </td>
-
-                  {/* UTILISATEUR (email) */}
-                  <td className="px-8 py-5">
-                    <div className="flex items-center gap-3">
-                      <div>
-                        <div className="text-xs text-gray-500 dark:text-gray-400">
-                          {safeStr(u?.email)}
-                        </div>
-                      </div>
-                    </div>
-                  </td>
-
-                  {/* ROLE */}
-                  <td className="px-8 py-5">
-                    <span
-                      className={`px-3 py-1 rounded-full text-xs font-semibold ${getRoleBadgeStyle(
-                        u?.role,
-                      )}`}
-                    >
-                      {normalizeRole(u?.role)}
-                    </span>
-                  </td>
-
-                  {/* DATE */}
-                  <td className="px-8 py-5 text-gray-600 dark:text-gray-400">
-                    {new Date(u.createdAt).toLocaleDateString("fr-FR")}
-                  </td>
-
-                  {/* ACTIONS */}
-                  <td className="px-8 py-5 text-right">
-                    <button
-                      onClick={() => openEditModal(u)}
-                      className="text-[#4E8F2F] dark:text-emerald-400 font-semibold hover:underline mr-4 transition-colors"
-                    >
-                      <Edit2 className="w-5 h-5 inline-block" />
-                    </button>
-                    <button
-                      onClick={() => {
-                        setUserToDelete(u);
-                        setOpenDeleteModal(true);
-                      }}
-                      className="text-red-500 dark:text-red-400 hover:underline transition-colors"
-                    >
-                      <Trash2 className="w-5 h-5 inline-block" />
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-
-          <div className="px-8 py-5 flex items-center justify-between text-sm text-gray-500 dark:text-gray-400 border-t border-gray-100 dark:border-gray-700">
-            <p>Total : {sortedUsers.length}</p>
-            <Pagination
-              currentPage={currentPage}
-              totalPages={totalPages}
-              onPageChange={setCurrentPage}
-            />
-          </div>
-        </div>
-
-        {/* ================= MOBILE CARDS ================= */}
-        <div className="lg:hidden space-y-6">
-          {paginatedUsers.map((u) => (
-            <div key={u._id} className="bg-white dark:bg-gray-800 rounded-3xl shadow-lg p-6 transition-colors duration-300">
-              <div className="flex justify-between items-start gap-4">
-                <div>
-                  <h3 className="text-lg font-extrabold text-gray-900 dark:text-white">
-                    {safeStr(u.email).split("@")[0]}
-                  </h3>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">{safeStr(u.email)}</p>
-
-                  <p className="text-sm text-gray-600 dark:text-gray-400">—</p>
-
-                  <p className="text-sm text-[#4E8F2F] dark:text-emerald-400 font-semibold underline">
-                    Profil utilisateur
-                  </p>
-                </div>
-
-                <span className="px-4 py-2 rounded-full text-xs font-bold bg-[#E9F5E3] dark:bg-gray-700 text-[#4E8F2F] dark:text-emerald-400">
-                  {normalizeRole(u.role)}
-                </span>
-              </div>
-
-              <div className="mt-6 flex items-center justify-between">
-                <span className="text-sm text-gray-500 dark:text-gray-400">
-                  {new Date(u.createdAt).toLocaleDateString("fr-FR")}
-                </span>
-
-                <div className="flex items-center gap-2">
-                  <button
-                    onClick={() => openEditModal(u)}
-                    className="rounded-full px-3 py-2 text-sm font-semibold text-[#4E8F2F] dark:text-emerald-400 hover:bg-green-50 dark:hover:bg-gray-700 transition-colors"
-                  >
-                    <Edit2 className="w-5 h-5" />
-                  </button>
-
-                  <button
-                    onClick={() => {
-                      setUserToDelete(u);
-                      setOpenDeleteModal(true);
-                    }}
-                    className="rounded-full px-3 py-2 text-sm font-semibold text-red-500 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
-                  >
-                    <Trash2 className="w-5 h-5" />
-                  </button>
-                </div>
-              </div>
+        {/* TABLE */}
+        <div className="rounded-2xl bg-white dark:bg-gray-800 shadow-lg overflow-hidden transition-colors duration-300">
+          {loading ? (
+            <div className="flex items-center justify-center py-20">
+              <div className="h-8 w-8 animate-spin rounded-full border-4 border-[#6CB33F] border-t-transparent" />
             </div>
-          ))}
+          ) : (
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="bg-[#F0FAF0] dark:bg-gray-700 text-left">
+                  <th className="px-6 py-4 font-semibold text-gray-600 dark:text-gray-300">Utilisateur</th>
+                  <th className="px-6 py-4 font-semibold text-gray-600 dark:text-gray-300">Email</th>
+                  <th className="px-6 py-4 font-semibold text-gray-600 dark:text-gray-300">Rôle</th>
+                  <th className="px-6 py-4 font-semibold text-gray-600 dark:text-gray-300">Statut</th>
+                  <th className="px-6 py-4 font-semibold text-gray-600 dark:text-gray-300 text-right">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
+                {paginatedUsers.length === 0 ? (
+                  <tr>
+                    <td colSpan={5} className="py-12 text-center text-gray-400 dark:text-gray-500">
+                      Aucun utilisateur trouvé.
+                    </td>
+                  </tr>
+                ) : (
+                  paginatedUsers.map((u) => (
+                    <tr
+                      key={u._id || u.id}
+                      className="hover:bg-[#F9FFF6] dark:hover:bg-gray-750 transition-colors"
+                    >
+                      <td className="px-6 py-4">
+                        <div className="flex items-center gap-3">
+                          <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[#E9F5E3] dark:bg-gray-700 text-[#4E8F2F] dark:text-emerald-400 font-bold text-sm">
+                            {safeStr(u?.prenom).charAt(0).toUpperCase() ||
+                              safeStr(u?.email).charAt(0).toUpperCase()}
+                          </div>
+                          <div>
+                            <p className="font-semibold text-gray-900 dark:text-white">
+                              {[safeStr(u?.prenom), safeStr(u?.nom)].filter(Boolean).join(" ") || "—"}
+                            </p>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 text-gray-600 dark:text-gray-300">{safeStr(u?.email)}</td>
+                      <td className="px-6 py-4">
+                        <span className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${getRoleBadgeStyle()}`}>
+                          {safeStr(u?.role)}
+                        </span>
+                      </td>
+                      {/* ✅ Colonne statut d'activation */}
+                      <td className="px-6 py-4">
+                        {u?.passwordSet ? (
+                          <span className="inline-flex items-center gap-1 rounded-full bg-green-100 dark:bg-green-900/30 px-3 py-1 text-xs font-semibold text-green-700 dark:text-green-400">
+                            ✓ Actif
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 dark:bg-amber-900/30 px-3 py-1 text-xs font-semibold text-amber-700 dark:text-amber-400">
+                            ⏳ En attente
+                          </span>
+                        )}
+                      </td>
+                      <td className="px-6 py-4 text-right">
+                        <div className="flex items-center justify-end gap-2">
+                          <button
+                            onClick={() => openEditModal(u)}
+                            className="flex h-8 w-8 items-center justify-center rounded-full hover:bg-[#E9F5E3] dark:hover:bg-gray-700 transition-colors"
+                          >
+                            <Edit2 className="h-4 w-4 text-[#4E8F2F] dark:text-emerald-400" />
+                          </button>
+                          <button
+                            onClick={() => {
+                              setUserToDelete(u);
+                              setOpenDeleteModal(true);
+                            }}
+                            className="flex h-8 w-8 items-center justify-center rounded-full hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+                          >
+                            <Trash2 className="h-4 w-4 text-red-500 dark:text-red-400" />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          )}
+        </div>
 
-          <div className="flex justify-center pt-4">
+        {/* PAGINATION */}
+        {totalPages > 1 && (
+          <div className="mt-6">
             <Pagination
               currentPage={currentPage}
               totalPages={totalPages}
               onPageChange={setCurrentPage}
             />
           </div>
-        </div>
+        )}
       </div>
 
-      {/* ================= MODAL ADD/EDIT ================= */}
+      {/* ================= MODAL ADD / EDIT ================= */}
       {openModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          {/* OVERLAY */}
           <div
             className="absolute inset-0 bg-black/50 dark:bg-black/70"
-            onClick={() => setOpenModal(false)}
+            onClick={() => { setOpenModal(false); resetForm(); }}
           />
 
-          <div className="relative z-10 w-full max-w-xl rounded-3xl bg-white dark:bg-gray-800 p-8 shadow-2xl transition-colors duration-300">
-            {/* ICON */}
-            <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-[#E9F5E3] dark:bg-gray-700">
-              <User className="h-7 w-7 text-[#4E8F2F] dark:text-emerald-400" />
-            </div>
-
-            {/* TITLE */}
-            <h2 className="text-center text-2xl font-extrabold text-gray-900 dark:text-white">
-              {modalMode === "add"
-                ? "Ajouter un responsable métier"
-                : "Modifier un responsable métier"}
-            </h2>
-            <p className="mt-2 text-center text-sm text-gray-500 dark:text-gray-400">
-              Remplissez les informations ci-dessous pour créer un nouvel accès
-              à la plateforme.
-            </p>
-
-            {/* FORM */}
-            <form onSubmit={handleSubmit} className="mt-6 space-y-4">
-              {/* PRENOM */}
+          {/* MODAL */}
+          <div className="relative z-10 w-full max-w-lg rounded-3xl bg-white dark:bg-gray-800 p-8 shadow-2xl transition-colors duration-300">
+            {/* HEADER */}
+            <div className="flex items-start justify-between">
               <div>
-                <label className="mb-1 block text-sm font-semibold text-gray-900 dark:text-white">
-                  Prénom
-                </label>
-                <input
-                  type="text"
-                  value={prenom}
-                  onChange={(e) => setPrenom(e.target.value)}
-                  placeholder="Ex : Ahmed"
-                  required
-                  className="w-full rounded-xl border border-[#D7EBCF] dark:border-gray-600 
-                    bg-white dark:bg-gray-700 py-3 px-4
-                    text-sm text-gray-800 dark:text-gray-100 
-                    placeholder-gray-400 dark:placeholder-gray-500
-                    outline-none focus:border-[#6CB33F] dark:focus:border-emerald-500
-                    focus:ring-1 focus:ring-[#6CB33F] dark:focus:ring-emerald-500
-                    transition-colors"
-                />
-              </div>
-
-              {/* NOM */}
-              <div>
-                <label className="mb-1 block text-sm font-semibold text-gray-900 dark:text-white">
-                  Nom
-                </label>
-                <input
-                  type="text"
-                  value={nom}
-                  onChange={(e) => setNom(e.target.value)}
-                  placeholder="Ex : Ben Ali"
-                  required
-                  className="w-full rounded-xl border border-[#D7EBCF] dark:border-gray-600 
-                    bg-white dark:bg-gray-700 py-3 px-4
-                    text-sm text-gray-800 dark:text-gray-100 
-                    placeholder-gray-400 dark:placeholder-gray-500
-                    outline-none focus:border-[#6CB33F] dark:focus:border-emerald-500
-                    focus:ring-1 focus:ring-[#6CB33F] dark:focus:ring-emerald-500
-                    transition-colors"
-                />
-              </div>
-
-              {/* EMAIL */}
-              <div>
-                <label className="mb-1 block text-sm font-semibold text-gray-900 dark:text-white">
-                  Email professionnel
-                </label>
-
-                <div className="relative">
-                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-[#6CB33F] dark:text-emerald-400" />
-
-                  <input
-                    type="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    placeholder="exemple@entreprise.com"
-                    required
-                    className="w-full rounded-xl border border-[#D7EBCF] dark:border-gray-600 
-                      bg-white dark:bg-gray-700 py-3 pl-10 pr-4
-                      text-sm text-gray-800 dark:text-gray-100 
-                      placeholder-gray-400 dark:placeholder-gray-500
-                      outline-none focus:border-[#6CB33F] dark:focus:border-emerald-500
-                      focus:ring-1 focus:ring-[#6CB33F] dark:focus:ring-emerald-500
-                      transition-colors"
-                  />
-                </div>
-              </div>
-
-              {/* PASSWORD */}
-              <div>
-                <label className="mb-1 block text-sm font-semibold text-gray-900 dark:text-white">
-                  Mot de passe
-                </label>
-
-                <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-[#6CB33F] dark:text-emerald-400" />
-
-                  <input
-                    type="password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    placeholder="••••••••"
-                    required={modalMode === "add"}
-                    className="w-full rounded-xl border border-[#D7EBCF] dark:border-gray-600 
-                      bg-white dark:bg-gray-700 py-3 pl-10 pr-4
-                      text-sm text-gray-800 dark:text-gray-100 
-                      placeholder-gray-400 dark:placeholder-gray-500
-                      outline-none focus:border-[#6CB33F] dark:focus:border-emerald-500
-                      focus:ring-1 focus:ring-[#6CB33F] dark:focus:ring-emerald-500
-                      transition-colors"
-                  />
-                </div>
-
+                <h2 className="text-xl font-extrabold text-gray-900 dark:text-white">
+                  {modalMode === "add" ? "Ajouter un responsable métier" : "Modifier l'utilisateur"}
+                </h2>
                 {modalMode === "add" && (
-                  <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                    L&apos;utilisateur devra changer son mot de passe à la
-                    première connexion.
+                  <p className="mt-1 flex items-center gap-1 text-sm text-[#4E8F2F] dark:text-emerald-400 font-medium">
+                    <Send className="h-3.5 w-3.5" />
+                    Un email d&apos;activation sera envoyé automatiquement
                   </p>
                 )}
               </div>
+              <button onClick={() => { setOpenModal(false); resetForm(); }}>
+                <X className="h-5 w-5 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 transition-colors" />
+              </button>
+            </div>
 
-              {/* ROLE */}
-              <div>
-                <label className="mb-1 block text-sm font-semibold text-gray-900 dark:text-white">
-                  Rôle de l&apos;utilisateur
-                </label>
+            {/* ✅ Message de succès */}
+            {successMessage && (
+              <div className="mt-4 rounded-xl bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 p-4 text-sm text-green-700 dark:text-green-400">
+                {successMessage}
+              </div>
+            )}
 
-                <div className="relative">
-                  <Users className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-[#6CB33F] dark:text-emerald-400" />
-                  <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400 dark:text-gray-500" />
-
-                  <select
-                    value={role}
-                    onChange={(e) => setRole(e.target.value)}
+            {/* FORM */}
+            {!successMessage && (
+              <form onSubmit={handleSubmit} className="mt-6 space-y-4">
+                {/* PRENOM */}
+                <div>
+                  <label className="mb-1 block text-sm font-semibold text-gray-900 dark:text-white">
+                    Prénom
+                  </label>
+                  <input
+                    type="text"
+                    value={prenom}
+                    onChange={(e) => setPrenom(e.target.value)}
+                    placeholder="Ex : Ahmed"
                     required
-                    className="w-full appearance-none rounded-xl border border-[#D7EBCF] dark:border-gray-600
-                      bg-white dark:bg-gray-700 py-3 pl-10 pr-10 
-                      text-sm text-gray-800 dark:text-gray-100
-                      outline-none focus:border-[#6CB33F] dark:focus:border-emerald-500 
+                    className="w-full rounded-xl border border-[#D7EBCF] dark:border-gray-600 
+                      bg-white dark:bg-gray-700 py-3 px-4
+                      text-sm text-gray-800 dark:text-gray-100 
+                      placeholder-gray-400 dark:placeholder-gray-500
+                      outline-none focus:border-[#6CB33F] dark:focus:border-emerald-500
                       focus:ring-1 focus:ring-[#6CB33F] dark:focus:ring-emerald-500
                       transition-colors"
-                  >
-                    <option value="">Choisir un rôle</option>
-                    {roles.map((r) => (
-                      <option key={r.name} value={r.name}>
-                        {r.name}
-                      </option>
-                    ))}
-                  </select>
+                  />
                 </div>
-              </div>
 
-              {/* BUTTONS */}
-              <div className="mt-6 flex gap-4">
-                <button
-                  type="button"
-                  onClick={() => setOpenModal(false)}
-                  className="flex-1 rounded-xl bg-gray-100 dark:bg-gray-700 py-3 text-sm font-semibold text-gray-700 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
-                >
-                  Annuler
-                </button>
-                <button
-                  type="submit"
-                  disabled={loading}
-                  className="flex-1 rounded-xl bg-[#6CB33F] dark:bg-emerald-600 py-3 text-sm font-semibold text-white
-                    hover:bg-[#4E8F2F] dark:hover:bg-emerald-500 disabled:opacity-50 transition-colors"
-                >
-                  Enregistrer
-                </button>
-              </div>
-            </form>
+                {/* NOM */}
+                <div>
+                  <label className="mb-1 block text-sm font-semibold text-gray-900 dark:text-white">
+                    Nom
+                  </label>
+                  <input
+                    type="text"
+                    value={nom}
+                    onChange={(e) => setNom(e.target.value)}
+                    placeholder="Ex : Ben Ali"
+                    required
+                    className="w-full rounded-xl border border-[#D7EBCF] dark:border-gray-600 
+                      bg-white dark:bg-gray-700 py-3 px-4
+                      text-sm text-gray-800 dark:text-gray-100 
+                      placeholder-gray-400 dark:placeholder-gray-500
+                      outline-none focus:border-[#6CB33F] dark:focus:border-emerald-500
+                      focus:ring-1 focus:ring-[#6CB33F] dark:focus:ring-emerald-500
+                      transition-colors"
+                  />
+                </div>
+
+                {/* EMAIL */}
+                <div>
+                  <label className="mb-1 block text-sm font-semibold text-gray-900 dark:text-white">
+                    Email professionnel
+                  </label>
+                  <div className="relative">
+                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-[#6CB33F] dark:text-emerald-400" />
+                    <input
+                      type="email"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      placeholder="exemple@entreprise.com"
+                      required
+                      className="w-full rounded-xl border border-[#D7EBCF] dark:border-gray-600 
+                        bg-white dark:bg-gray-700 py-3 pl-10 pr-4
+                        text-sm text-gray-800 dark:text-gray-100 
+                        placeholder-gray-400 dark:placeholder-gray-500
+                        outline-none focus:border-[#6CB33F] dark:focus:border-emerald-500
+                        focus:ring-1 focus:ring-[#6CB33F] dark:focus:ring-emerald-500
+                        transition-colors"
+                    />
+                  </div>
+                  {modalMode === "add" && (
+                    <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                      Le lien d&apos;activation sera envoyé à cette adresse.
+                    </p>
+                  )}
+                </div>
+
+                {/* ROLE */}
+                <div>
+                  <label className="mb-1 block text-sm font-semibold text-gray-900 dark:text-white">
+                    Rôle de l&apos;utilisateur
+                  </label>
+                  <div className="relative">
+                    <Users className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-[#6CB33F] dark:text-emerald-400" />
+                    <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400 dark:text-gray-500" />
+                    <select
+                      value={role}
+                      onChange={(e) => setRole(e.target.value)}
+                      required
+                      className="w-full appearance-none rounded-xl border border-[#D7EBCF] dark:border-gray-600
+                        bg-white dark:bg-gray-700 py-3 pl-10 pr-10 
+                        text-sm text-gray-800 dark:text-gray-100
+                        outline-none focus:border-[#6CB33F] dark:focus:border-emerald-500 
+                        focus:ring-1 focus:ring-[#6CB33F] dark:focus:ring-emerald-500
+                        transition-colors"
+                    >
+                      <option value="">Choisir un rôle</option>
+                      {roles.map((r) => (
+                        <option key={r.name} value={r.name}>
+                          {r.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+
+                {/* INFO BANNER en mode ajout */}
+                {modalMode === "add" && (
+                  <div className="flex items-start gap-3 rounded-xl bg-[#F0FAF0] dark:bg-gray-700/50 border border-[#D7EBCF] dark:border-gray-600 p-4">
+                    <Send className="h-5 w-5 text-[#6CB33F] dark:text-emerald-400 mt-0.5 shrink-0" />
+                    <p className="text-xs text-gray-600 dark:text-gray-300 leading-relaxed">
+                      L&apos;utilisateur recevra un email contenant un lien pour définir son mot de passe.
+                      Le lien sera valide pendant <strong>48 heures</strong>.
+                    </p>
+                  </div>
+                )}
+
+                {/* BUTTONS */}
+                <div className="mt-6 flex gap-4">
+                  <button
+                    type="button"
+                    onClick={() => { setOpenModal(false); resetForm(); }}
+                    className="flex-1 rounded-xl bg-gray-100 dark:bg-gray-700 py-3 text-sm font-semibold text-gray-700 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+                  >
+                    Annuler
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={loading}
+                    className="flex-1 flex items-center justify-center gap-2 rounded-xl bg-[#6CB33F] dark:bg-emerald-600 py-3 text-sm font-semibold text-white
+                      hover:bg-[#4E8F2F] dark:hover:bg-emerald-500 disabled:opacity-50 transition-colors"
+                  >
+                    {loading ? (
+                      <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                    ) : modalMode === "add" ? (
+                      <>
+                        <Send className="h-4 w-4" />
+                        Créer et envoyer l&apos;invitation
+                      </>
+                    ) : (
+                      "Enregistrer"
+                    )}
+                  </button>
+                </div>
+              </form>
+            )}
           </div>
         </div>
       )}
@@ -600,15 +545,12 @@ export default function GestionUtilisateursPage() {
       {/* ================= MODAL DELETE ================= */}
       {openDeleteModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          {/* OVERLAY */}
           <div
             className="absolute inset-0 bg-black/50 dark:bg-black/70"
             onClick={() => setOpenDeleteModal(false)}
           />
 
-          {/* MODAL */}
           <div className="relative z-10 w-full max-w-xl rounded-3xl bg-white dark:bg-gray-800 p-8 shadow-2xl transition-colors duration-300">
-            {/* HEADER */}
             <div className="flex items-start justify-between">
               <h2 className="text-xl font-extrabold text-gray-900 dark:text-white">
                 Supprimer le responsable métier
@@ -622,12 +564,10 @@ export default function GestionUtilisateursPage() {
               Cette action est irréversible
             </p>
 
-            {/* CONTENT */}
             <div className="mt-6 flex items-center gap-4">
               <div className="flex h-12 w-12 items-center justify-center rounded-full bg-red-100 dark:bg-red-900/30">
                 <AlertTriangle className="h-6 w-6 text-red-600 dark:text-red-400" />
               </div>
-
               <div>
                 <p className="text-gray-700 dark:text-gray-300">
                   Êtes-vous sûr de vouloir supprimer ce responsable ?
@@ -638,7 +578,6 @@ export default function GestionUtilisateursPage() {
               </div>
             </div>
 
-            {/* ACTIONS */}
             <div className="mt-8 flex justify-end gap-4">
               <button
                 onClick={() => setOpenDeleteModal(false)}

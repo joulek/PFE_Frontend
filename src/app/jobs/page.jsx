@@ -117,7 +117,15 @@ export default function PublicJobsPage() {
                   </div>
                 </div>
 
-                {/* ===== DIVIDER ===== */}
+                {/* ===== LIEU ===== */}
+                {job.lieu && (
+                  <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400 mt-2 mb-1">
+                    <span>📍</span>
+                    <span className="font-medium text-gray-600 dark:text-gray-300">{job.lieu}</span>
+                  </div>
+                )}
+
+          {/* ===== DIVIDER ===== */}
                 <div className="border-t border-gray-100 dark:border-gray-700 my-4" />
 
                 {/* ===== BOTTOM BAR ===== */}
