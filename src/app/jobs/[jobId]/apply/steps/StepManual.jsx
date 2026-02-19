@@ -83,14 +83,7 @@ export default function StepManual({ parsedCV, cvFileUrl, onBack, onSubmit }) {
 
         date_naissance: safeStr(p?.personal_info?.date_naissance),
         lieu_naissance: safeStr(p?.personal_info?.lieu_naissance),
-        numero_cin: safeStr(p?.personal_info?.numero_cin),
-        cin_delivree_le: safeStr(p?.personal_info?.cin_delivree_le),
-        cin_delivree_a: safeStr(p?.personal_info?.cin_delivree_a),
-        code_postal: safeStr(p?.personal_info?.code_postal),
-        permis_conduire: safeStr(p?.personal_info?.permis_conduire),
-        date_obtention_permis: safeStr(p?.personal_info?.date_obtention_permis),
-        situation_familiale: safeStr(p?.personal_info?.situation_familiale),
-        nombre_enfants: safeStr(p?.personal_info?.nombre_enfants),
+
       },
 
       personal_info_extra: safeArr(p.personal_info_extra),
@@ -316,14 +309,6 @@ export default function StepManual({ parsedCV, cvFileUrl, onBack, onSubmit }) {
       personal_info: {
         date_naissance: safeStr(form.personal_info.date_naissance),
         lieu_naissance: safeStr(form.personal_info.lieu_naissance),
-        numero_cin: safeStr(form.personal_info.numero_cin),
-        cin_delivree_le: safeStr(form.personal_info.cin_delivree_le),
-        cin_delivree_a: safeStr(form.personal_info.cin_delivree_a),
-        code_postal: safeStr(form.personal_info.code_postal),
-        permis_conduire: safeStr(form.personal_info.permis_conduire),
-        date_obtention_permis: safeStr(form.personal_info.date_obtention_permis),
-        situation_familiale: safeStr(form.personal_info.situation_familiale),
-        nombre_enfants: safeStr(form.personal_info.nombre_enfants),
       },
 
       reseaux_sociaux: {
@@ -444,7 +429,7 @@ export default function StepManual({ parsedCV, cvFileUrl, onBack, onSubmit }) {
           </div>
 
           <InputField
-            label="Adresse de résidence"
+            label="Adresse actuelle"
             placeholder="123 Rue de la République, 75001 Paris"
             value={form.personal_info.address}
             dataCy="address"
@@ -484,186 +469,10 @@ export default function StepManual({ parsedCV, cvFileUrl, onBack, onSubmit }) {
             />
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <InputField
-              label="Numéro CIN"
-              placeholder="Ex : 12345678"
-              value={form.personal_info.numero_cin}
-              dataCy="numero-cin"
-              onChange={(v) =>
-                setForm((prev) => ({
-                  ...prev,
-                  personal_info: { ...prev.personal_info, numero_cin: v },
-                }))
-              }
-            />
 
-            <InputField
-              label="Délivrée le"
-              placeholder="JJ/MM/AAAA"
-              value={form.personal_info.cin_delivree_le}
-              dataCy="cin-delivree-le"
-              onChange={(v) =>
-                setForm((prev) => ({
-                  ...prev,
-                  personal_info: { ...prev.personal_info, cin_delivree_le: v },
-                }))
-              }
-            />
-          </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <InputField
-              label="Délivrée à"
-              placeholder="Ex : Sfax"
-              value={form.personal_info.cin_delivree_a}
-              dataCy="cin-delivree-a"
-              onChange={(v) =>
-                setForm((prev) => ({
-                  ...prev,
-                  personal_info: { ...prev.personal_info, cin_delivree_a: v },
-                }))
-              }
-            />
 
-            <InputField
-              label="Code postal"
-              placeholder="Ex : 3000"
-              value={form.personal_info.code_postal}
-              dataCy="code-postal"
-              onChange={(v) =>
-                setForm((prev) => ({
-                  ...prev,
-                  personal_info: { ...prev.personal_info, code_postal: v },
-                }))
-              }
-            />
-          </div>
 
-          {/* PERMIS */}
-          <div className="space-y-2">
-            <p className="text-sm font-semibold text-gray-700 dark:text-gray-300">
-              Permis de conduire
-            </p>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <button
-                data-cy="permis-oui"
-                type="button"
-                onClick={() =>
-                  setForm((prev) => ({
-                    ...prev,
-                    personal_info: {
-                      ...prev.personal_info,
-                      permis_conduire: "Oui",
-                    },
-                  }))
-                }
-                className={`w-full px-6 py-3 rounded-full border font-semibold transition
-                ${
-                  safeStr(form.personal_info.permis_conduire).toLowerCase() ===
-                  "oui"
-                    ? "bg-green-600 dark:bg-emerald-600 text-white border-green-600 dark:border-emerald-600"
-                    : "bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700"
-                }`}
-              >
-                Oui
-              </button>
-
-              <button
-                data-cy="permis-non"
-                type="button"
-                onClick={() =>
-                  setForm((prev) => ({
-                    ...prev,
-                    personal_info: {
-                      ...prev.personal_info,
-                      permis_conduire: "Non",
-                      date_obtention_permis: "",
-                    },
-                  }))
-                }
-                className={`w-full px-6 py-3 rounded-full border font-semibold transition
-                ${
-                  safeStr(form.personal_info.permis_conduire).toLowerCase() ===
-                  "non"
-                    ? "bg-green-600 dark:bg-emerald-600 text-white border-green-600 dark:border-emerald-600"
-                    : "bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700"
-                }`}
-              >
-                Non
-              </button>
-            </div>
-          </div>
-
-          {safeStr(form.personal_info.permis_conduire).toLowerCase() === "oui" && (
-            <InputField
-              label="Date d’obtention du permis"
-              placeholder="JJ/MM/AAAA"
-              value={form.personal_info.date_obtention_permis}
-              dataCy="date-obtention-permis"
-              onChange={(v) =>
-                setForm((prev) => ({
-                  ...prev,
-                  personal_info: {
-                    ...prev.personal_info,
-                    date_obtention_permis: v,
-                  },
-                }))
-              }
-            />
-          )}
-
-          {/* Situation familiale */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <p className="text-sm font-semibold text-gray-700 dark:text-gray-300">
-                Situation familiale
-              </p>
-
-              <select
-                data-cy="situation-familiale"
-                className="
-                  w-full px-5 py-3 sm:px-6 sm:py-4
-                  border border-gray-200 dark:border-gray-600 rounded-full bg-white dark:bg-gray-800
-                  focus:ring-2 focus:ring-green-500 dark:focus:ring-emerald-500 focus:border-green-500 dark:focus:border-emerald-500 outline-none transition
-                  text-gray-900 dark:text-gray-100
-                "
-                value={form.personal_info.situation_familiale}
-                onChange={(e) =>
-                  setForm((prev) => ({
-                    ...prev,
-                    personal_info: {
-                      ...prev.personal_info,
-                      situation_familiale: e.target.value,
-                    },
-                  }))
-                }
-              >
-                <option value="">-- Choisir --</option>
-                <option value="Célibataire">Célibataire</option>
-                <option value="Marié(e)">Marié(e)</option>
-                <option value="Divorcé(e)">Divorcé(e)</option>
-                <option value="Veuf(ve)">Veuf(ve)</option>
-              </select>
-            </div>
-
-            {safeStr(form.personal_info.situation_familiale).toLowerCase() ===
-              "marié(e)".toLowerCase() && (
-              <InputField
-                label="Nombre d’enfants"
-                placeholder="Ex : 2"
-                value={form.personal_info.nombre_enfants}
-                dataCy="nombre-enfants"
-                onChange={(v) =>
-                  setForm((prev) => ({
-                    ...prev,
-                    personal_info: { ...prev.personal_info, nombre_enfants: v },
-                  }))
-                }
-              />
-            )}
-          </div>
 
           <InputField
             label="Poste actuel"
@@ -1245,6 +1054,13 @@ export default function StepManual({ parsedCV, cvFileUrl, onBack, onSubmit }) {
   const percent = Math.round((current / total) * 100);
   const isLast = sectionIndex === sections.length - 1;
   const currentSection = sections[sectionIndex];
+  const goToTop = () => {
+    window.scrollTo({
+      top: 0,
+      behavior: "smooth", // animation fluide
+    });
+  };
+
 
   return (
     <div className="min-h-screen bg-green-50 dark:bg-gray-950 py-8 sm:py-14">
@@ -1294,7 +1110,10 @@ export default function StepManual({ parsedCV, cvFileUrl, onBack, onSubmit }) {
             <button
               onClick={() => {
                 if (sectionIndex === 0) onBack?.();
-                else setSectionIndex((p) => Math.max(0, p - 1));
+                else {
+                  setSectionIndex((p) => Math.max(0, p - 1));
+                  goToTop();
+                }
               }}
               className="
                 w-full sm:w-auto
@@ -1308,21 +1127,23 @@ export default function StepManual({ parsedCV, cvFileUrl, onBack, onSubmit }) {
 
             {!isLast ? (
               <button
-                onClick={() =>
-                  setSectionIndex((p) => Math.min(sections.length - 1, p + 1))
-                }
+                onClick={() => {
+                  setSectionIndex((p) => Math.min(sections.length - 1, p + 1));
+                  goToTop();
+                }}
                 className="
-                  w-full sm:w-auto
-                  px-6 sm:px-10 py-3 sm:py-4
-                  rounded-full bg-green-600 dark:bg-emerald-600 text-white font-semibold
-                  hover:bg-green-700 dark:hover:bg-emerald-500 transition shadow-lg
-                "
+    w-full sm:w-auto
+    px-6 sm:px-10 py-3 sm:py-4
+    rounded-full bg-green-600 dark:bg-emerald-600 text-white font-semibold
+    hover:bg-green-700 dark:hover:bg-emerald-500 transition shadow-lg
+  "
               >
                 Continuer →
               </button>
+
             ) : (
               <button
-              data-cy="submit-application"
+                data-cy="submit-application"
                 onClick={handleSubmitFinal}
                 disabled={loadingSubmit}
                 className="

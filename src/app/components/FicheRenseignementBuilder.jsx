@@ -38,7 +38,15 @@ const createQuestion = () => ({
   scale: null,
 });
 
-const createOption = () => ({ id: uid(), label: "", hasText: false });
+// ✅ otherLabel et otherType ajoutés
+const createOption = () => ({
+  id: uid(),
+  label: "",
+  hasText: false,
+  otherLabel: "",
+  otherType: "text",
+});
+
 const createItem = () => ({ id: uid(), label: "" });
 
 function ensureIds(questions = []) {
@@ -131,11 +139,11 @@ export default function FicheRenseignementBuilder() {
       p.map((q) =>
         q.id === qid
           ? {
-            ...q,
-            options: q.options.map((o) =>
-              o.id === oid ? { ...o, ...patch } : o
-            ),
-          }
+              ...q,
+              options: q.options.map((o) =>
+                o.id === oid ? { ...o, ...patch } : o
+              ),
+            }
           : q
       )
     );
@@ -162,11 +170,11 @@ export default function FicheRenseignementBuilder() {
       p.map((q) =>
         q.id === qid
           ? {
-            ...q,
-            items: q.items.map((it) =>
-              it.id === iid ? { ...it, ...patch } : it
-            ),
-          }
+              ...q,
+              items: q.items.map((it) =>
+                it.id === iid ? { ...it, ...patch } : it
+              ),
+            }
           : q
       )
     );
@@ -326,7 +334,7 @@ export default function FicheRenseignementBuilder() {
               key={q.id}
               className="bg-white dark:bg-gray-800 rounded-xl sm:rounded-2xl p-4 sm:p-6 shadow space-y-3 sm:space-y-4 border border-green-100 dark:border-gray-700 transition-colors duration-300"
             >
-              {/* Header avec QUESTION et Supprimer */}
+              {/* Header */}
               <div className="flex justify-between items-center">
                 <span className="text-green-600 dark:text-emerald-400 font-semibold text-sm sm:text-base">
                   QUESTION {i + 1}
@@ -340,7 +348,7 @@ export default function FicheRenseignementBuilder() {
                 </button>
               </div>
 
-              {/* Champ de question */}
+              {/* Libellé */}
               <input
                 className="w-full border border-green-200 dark:border-gray-600 
                            bg-white dark:bg-gray-700 
@@ -352,12 +360,10 @@ export default function FicheRenseignementBuilder() {
                            outline-none transition-colors"
                 placeholder="Libellé de la question"
                 value={q.label}
-                onChange={(e) =>
-                  updateQuestion(q.id, { label: e.target.value })
-                }
+                onChange={(e) => updateQuestion(q.id, { label: e.target.value })}
               />
 
-              {/* Type de réponse + Obligatoire + Minuteur */}
+              {/* Type + Obligatoire + Timer */}
               <div className="flex flex-col sm:flex-row sm:items-end gap-3 sm:gap-4">
                 <div className="flex-1">
                   <label className="block text-xs sm:text-sm mb-1 font-medium text-gray-700 dark:text-gray-300">
@@ -367,12 +373,12 @@ export default function FicheRenseignementBuilder() {
                     value={q.type}
                     onChange={(e) => onTypeChange(q.id, e.target.value)}
                     className="border rounded-xl px-3 py-2 
-                 border-green-200 dark:border-gray-600 
-                 bg-white dark:bg-gray-700 
-                 text-gray-800 dark:text-white 
-                 text-sm sm:text-base
-                 focus:border-green-500 dark:focus:border-emerald-500 
-                 outline-none transition-colors"
+                               border-green-200 dark:border-gray-600 
+                               bg-white dark:bg-gray-700 
+                               text-gray-800 dark:text-white 
+                               text-sm sm:text-base
+                               focus:border-green-500 dark:focus:border-emerald-500 
+                               outline-none transition-colors"
                   >
                     <option value="text">Texte</option>
                     <option value="textarea">Paragraphe</option>
@@ -389,7 +395,6 @@ export default function FicheRenseignementBuilder() {
                       </span>
                     </div>
                   )}
-
                 </div>
 
                 <div className="flex items-center sm:items-end gap-3 sm:gap-4">
@@ -416,29 +421,31 @@ export default function FicheRenseignementBuilder() {
                       type="number"
                       min={0}
                       className="w-full sm:w-32 border rounded-xl px-3 py-2 
-                   border-green-200 dark:border-gray-600 
-                   bg-white dark:bg-gray-700 
-                   text-gray-800 dark:text-white 
-                   text-sm sm:text-base
-                   focus:border-green-500 dark:focus:border-emerald-500 
-                   outline-none transition-colors"
+                                 border-green-200 dark:border-gray-600 
+                                 bg-white dark:bg-gray-700 
+                                 text-gray-800 dark:text-white 
+                                 text-sm sm:text-base
+                                 focus:border-green-500 dark:focus:border-emerald-500 
+                                 outline-none transition-colors"
                       value={q.timeLimit}
                       onChange={(e) =>
-                        updateQuestion(q.id, {
-                          timeLimit: Number(e.target.value || 0),
-                        })
+                        updateQuestion(q.id, { timeLimit: Number(e.target.value || 0) })
                       }
                     />
                   </div>
                 </div>
               </div>
 
-              {/* Options pour radio/checkbox */}
+              {/* ===== OPTIONS RADIO / CHECKBOX ===== */}
               {(q.type === "radio" || q.type === "checkbox") && (
-                <div className="space-y-2 sm:space-y-3">
+                <div className="space-y-3 sm:space-y-4">
                   {q.options.map((o) => (
-                    <div key={o.id} className="space-y-2">
-                      <div className="flex gap-2 sm:gap-3 items-start">
+                    <div
+                      key={o.id}
+                      className="border border-gray-100 dark:border-gray-700 rounded-xl p-3 space-y-2 bg-gray-50 dark:bg-gray-700/30"
+                    >
+                      {/* Ligne option + supprimer */}
+                      <div className="flex gap-2 sm:gap-3 items-center">
                         <input
                           className="flex-1 border rounded-xl px-3 py-2 
                                      border-green-200 dark:border-gray-600 
@@ -463,14 +470,19 @@ export default function FicheRenseignementBuilder() {
                         </button>
                       </div>
 
-                      {/* Checkbox pour activer le champ texte "Autre" */}
-                      <div className="ml-3 flex items-center gap-2">
+                      {/* ✅ Checkbox "Ajouter un champ pour cette option" */}
+                      <div className="flex items-center gap-2 ml-1">
                         <input
                           type="checkbox"
                           id={`hasText-${o.id}`}
                           checked={o.hasText || false}
                           onChange={(e) =>
-                            updateOption(q.id, o.id, { hasText: e.target.checked })
+                            updateOption(q.id, o.id, {
+                              hasText: e.target.checked,
+                              // reset si décoché
+                              otherLabel: e.target.checked ? o.otherLabel : "",
+                              otherType: e.target.checked ? o.otherType : "text",
+                            })
                           }
                           className="w-4 h-4 text-green-600 dark:text-emerald-500 bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 rounded"
                         />
@@ -478,11 +490,59 @@ export default function FicheRenseignementBuilder() {
                           htmlFor={`hasText-${o.id}`}
                           className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 cursor-pointer"
                         >
-                          Ajouter un champ texte "Autre" pour cette option
+                          Ajouter un champ pour cette option
                         </label>
                       </div>
+
+                      {/* ✅ Champ conditionnel : label + type — visible uniquement si hasText coché */}
+                      {o.hasText && (
+                        <div className="ml-6 mt-1 flex flex-col sm:flex-row gap-2 sm:gap-3 p-3 bg-white dark:bg-gray-700 border border-green-200 dark:border-emerald-700 rounded-xl">
+                          {/* Icône indicateur */}
+                          <div className="flex items-center gap-1 text-green-600 dark:text-emerald-400 text-xs font-semibold shrink-0">
+                            <span>↳</span>
+                            <span>Champ lié</span>
+                          </div>
+
+                          {/* Label du champ */}
+                          <input
+                            className="flex-1 border rounded-lg px-3 py-1.5 
+                                       border-green-200 dark:border-gray-600 
+                                       bg-white dark:bg-gray-600 
+                                       text-gray-800 dark:text-white 
+                                       placeholder-gray-400 dark:placeholder-gray-400
+                                       text-xs sm:text-sm
+                                       focus:border-green-500 dark:focus:border-emerald-500 
+                                       outline-none transition-colors"
+                            placeholder='Ex: "Date d obtention", "Nombre d enfants"...'
+                            value={o.otherLabel || ""}
+                            onChange={(e) =>
+                              updateOption(q.id, o.id, { otherLabel: e.target.value })
+                            }
+                          />
+
+                          {/* Type du champ */}
+                          <select
+                            value={o.otherType || "text"}
+                            onChange={(e) =>
+                              updateOption(q.id, o.id, { otherType: e.target.value })
+                            }
+                            className="border rounded-lg px-3 py-1.5 
+                                       border-green-200 dark:border-gray-600 
+                                       bg-white dark:bg-gray-600 
+                                       text-gray-800 dark:text-white 
+                                       text-xs sm:text-sm
+                                       focus:border-green-500 dark:focus:border-emerald-500 
+                                       outline-none transition-colors shrink-0"
+                          >
+                            <option value="text">Texte</option>
+                            <option value="number">Nombre</option>
+                            <option value="date">Date</option>
+                          </select>
+                        </div>
+                      )}
                     </div>
                   ))}
+
                   <button
                     onClick={() => addOption(q.id)}
                     className="text-green-600 dark:text-emerald-400 text-xs sm:text-sm hover:text-green-700 dark:hover:text-emerald-300 transition-colors"
@@ -492,7 +552,7 @@ export default function FicheRenseignementBuilder() {
                 </div>
               )}
 
-              {/* Items pour scale_group */}
+              {/* ===== ITEMS SCALE GROUP ===== */}
               {q.type === "scale_group" && (
                 <div className="space-y-2 sm:space-y-3">
                   {q.items.map((it) => (
@@ -532,7 +592,7 @@ export default function FicheRenseignementBuilder() {
             </div>
           ))}
 
-        {/* AJOUTER QUESTION */}
+        {/* ===== AJOUTER QUESTION ===== */}
         <button
           onClick={addQuestion}
           className="w-full border-2 border-dashed border-gray-300 dark:border-gray-600 
@@ -547,7 +607,7 @@ export default function FicheRenseignementBuilder() {
           Ajouter une question
         </button>
 
-        {/* ACTIONS */}
+        {/* ===== ACTIONS ===== */}
         <div className="flex flex-col sm:flex-row justify-end gap-3">
           <button
             onClick={() => router.push("/recruiter/fiche-renseignement")}
