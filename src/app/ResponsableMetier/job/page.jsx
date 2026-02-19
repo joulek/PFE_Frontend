@@ -81,18 +81,18 @@ function StatusBadge({ status }) {
 
 /* ================= TABS ================= */
 const TABS = [
-  { key: "all",        label: "Toutes" },
+  { key: "all", label: "Toutes" },
   { key: "EN_ATTENTE", label: "En attente" },
-  { key: "CONFIRMEE",  label: "Confirmées" },
-  { key: "REJETEE",    label: "Rejetées" },
+  { key: "CONFIRMEE", label: "Confirmées" },
+  { key: "REJETEE", label: "Rejetées" },
 ];
 
 /* ================= SCORE ITEMS ================= */
 const SCORE_ITEMS = [
-  { key: "skillsFit",        label: "Skills Fit" },
-  { key: "experienceFit",    label: "Professional Experience Fit" },
-  { key: "projectsFit",      label: "Projects Fit & Impact" },
-  { key: "educationFit",     label: "Education / Certifications" },
+  { key: "skillsFit", label: "Skills Fit" },
+  { key: "experienceFit", label: "Professional Experience Fit" },
+  { key: "projectsFit", label: "Projects Fit & Impact" },
+  { key: "educationFit", label: "Education / Certifications" },
   { key: "communicationFit", label: "Communication / Clarity signals" },
 ];
 
@@ -100,14 +100,14 @@ const SCORE_ITEMS = [
    PAGE — ResponsableMetier / Recruteur / job / page.jsx
 ================================================================= */
 export default function UserJobsPage() {
-  const [jobs, setJobs]               = useState([]);
-  const [loading, setLoading]         = useState(true);
-  const [modalOpen, setModalOpen]     = useState(false);
-  const [editingJob, setEditingJob]   = useState(null);
-  const [user, setUser]               = useState(null);
-  const [activeTab, setActiveTab]     = useState("all");
+  const [jobs, setJobs] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [editingJob, setEditingJob] = useState(null);
+  const [user, setUser] = useState(null);
+  const [activeTab, setActiveTab] = useState("all");
   const [expandedJobs, setExpandedJobs] = useState({});
-  const [page, setPage]               = useState(1);
+  const [page, setPage] = useState(1);
   const pageSize = 6;
 
   async function loadMyOffers() {
@@ -221,10 +221,10 @@ export default function UserJobsPage() {
         {/* ===== STATS ===== */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
           {[
-            { label: "Total",       value: counts.all,        color: "text-gray-800 dark:text-white",          bg: "bg-white dark:bg-gray-800" },
-            { label: "En attente",  value: counts.EN_ATTENTE,  color: "text-amber-700 dark:text-amber-400",     bg: "bg-amber-50 dark:bg-amber-900/20" },
-            { label: "Confirmées",  value: counts.CONFIRMEE,   color: "text-green-700 dark:text-emerald-400",   bg: "bg-green-50 dark:bg-emerald-900/20" },
-            { label: "Rejetées",    value: counts.REJETEE,     color: "text-red-700 dark:text-red-400",         bg: "bg-red-50 dark:bg-red-900/20" },
+            { label: "Total", value: counts.all, color: "text-gray-800 dark:text-white", bg: "bg-white dark:bg-gray-800" },
+            { label: "En attente", value: counts.EN_ATTENTE, color: "text-amber-700 dark:text-amber-400", bg: "bg-amber-50 dark:bg-amber-900/20" },
+            { label: "Confirmées", value: counts.CONFIRMEE, color: "text-green-700 dark:text-emerald-400", bg: "bg-green-50 dark:bg-emerald-900/20" },
+            { label: "Rejetées", value: counts.REJETEE, color: "text-red-700 dark:text-red-400", bg: "bg-red-50 dark:bg-red-900/20" },
           ].map((s) => (
             <div key={s.label} className={`${s.bg} rounded-2xl p-5 border border-gray-200 dark:border-gray-700`}>
               <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">{s.label}</p>
@@ -241,11 +241,10 @@ export default function UserJobsPage() {
               <button
                 key={tab.key}
                 onClick={() => setActiveTab(tab.key)}
-                className={`px-5 py-2.5 rounded-full text-sm font-semibold transition-all duration-200 ${
-                  isActive
+                className={`px-5 py-2.5 rounded-full text-sm font-semibold transition-all duration-200 ${isActive
                     ? "bg-[#6CB33F] dark:bg-emerald-600 text-white shadow-md shadow-green-500/20"
                     : "bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 border border-gray-200 dark:border-gray-700 hover:border-[#6CB33F] dark:hover:border-emerald-500"
-                }`}
+                  }`}
               >
                 {tab.label}
                 <span className={`ml-2 text-xs px-2 py-0.5 rounded-full ${isActive ? "bg-white/20 text-white" : "bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400"}`}>
@@ -259,10 +258,10 @@ export default function UserJobsPage() {
         {/* ===== JOBS GRID ===== */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {paginatedJobs.map((job) => {
-            const isExpanded   = !!expandedJobs[job._id];
-            const hasLongDesc  = (job.description || "").length > 160;
-            const status       = job._status;
-            const isPending    = status === "EN_ATTENTE";
+            const isExpanded = !!expandedJobs[job._id];
+            const hasLongDesc = (job.description || "").length > 160;
+            const status = job._status;
+            const isPending = status === "EN_ATTENTE";
             const statusConfig = STATUS_CONFIG[status] || STATUS_CONFIG.EN_ATTENTE;
 
             const hardSkills = Array.isArray(job.hardSkills) ? job.hardSkills : [];
@@ -447,7 +446,7 @@ function JobOfferModal({ open, onClose, onSubmit, initialData }) {
     },
   };
 
-  const [form, setForm]           = useState(emptyForm);
+  const [form, setForm] = useState(emptyForm);
   const [formError, setFormError] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
@@ -461,7 +460,7 @@ function JobOfferModal({ open, onClose, onSubmit, initialData }) {
     if (!open) return;
     if (initialData) {
       setForm({
-        titre:       initialData.titre || "",
+        titre: initialData.titre || "",
         description: initialData.description || "",
         hardSkills: Array.isArray(initialData.hardSkills)
           ? initialData.hardSkills.join(", ")
@@ -474,10 +473,10 @@ function JobOfferModal({ open, onClose, onSubmit, initialData }) {
           : "",
         lieu: initialData.lieu || "",
         scores: {
-          skillsFit:        initialData?.scores?.skillsFit        ?? 30,
-          experienceFit:    initialData?.scores?.experienceFit    ?? 30,
-          projectsFit:      initialData?.scores?.projectsFit      ?? 20,
-          educationFit:     initialData?.scores?.educationFit     ?? 10,
+          skillsFit: initialData?.scores?.skillsFit ?? 30,
+          experienceFit: initialData?.scores?.experienceFit ?? 30,
+          projectsFit: initialData?.scores?.projectsFit ?? 20,
+          educationFit: initialData?.scores?.educationFit ?? 10,
           communicationFit: initialData?.scores?.communicationFit ?? 10,
         },
       });
@@ -507,7 +506,6 @@ function JobOfferModal({ open, onClose, onSubmit, initialData }) {
     e.preventDefault();
     setFormError("");
 
-    // ✅ Validation complète des champs obligatoires
     if (!form.titre.trim()) {
       setFormError("❌ Le titre du poste est obligatoire."); return;
     }
@@ -520,12 +518,6 @@ function JobOfferModal({ open, onClose, onSubmit, initialData }) {
     if (!form.dateCloture) {
       setFormError("❌ La date de clôture est obligatoire."); return;
     }
-    if (!form.hardSkills.trim()) {
-      setFormError("❌ Veuillez renseigner au moins un hard skill."); return;
-    }
-    if (!form.softSkills.trim()) {
-      setFormError("❌ Veuillez renseigner au moins un soft skill."); return;
-    }
     if (!isValidTotal) {
       setFormError("❌ La somme des pondérations doit être égale à 100%."); return;
     }
@@ -533,14 +525,13 @@ function JobOfferModal({ open, onClose, onSubmit, initialData }) {
     setSubmitting(true);
     try {
       await onSubmit({
-        titre:       form.titre.trim(),
+        titre: form.titre.trim(),
         description: form.description.trim(),
         dateCloture: form.dateCloture,
-        hardSkills:  parseSkills(form.hardSkills),
-        softSkills:  parseSkills(form.softSkills),
-        lieu:        form.lieu.trim(),
-        scores:      form.scores,
-        // ✅ Quiz metadata — stocké en base, utilisé à la confirmation admin
+        hardSkills: parseSkills(form.hardSkills),
+        softSkills: parseSkills(form.softSkills),
+        lieu: form.lieu.trim(),
+        scores: form.scores,
         ...(!isEditing && {
           generateQuiz,
           numQuestions: generateQuiz ? numQuestions : 0,
@@ -611,7 +602,6 @@ function JobOfferModal({ open, onClose, onSubmit, initialData }) {
               {/* BANDEAU EN ATTENTE */}
               {!isEditing && (
                 <div className="rounded-xl border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-900/20 p-4 flex items-start gap-3">
-                  <span className="text-amber-600 dark:text-amber-400 text-lg mt-0.5">⏳</span>
                   <p className="text-sm text-amber-700 dark:text-amber-300">
                     Votre offre sera en <strong>attente de confirmation</strong> par l&apos;administrateur avant d&apos;être publiée.
                   </p>
@@ -681,7 +671,7 @@ function JobOfferModal({ open, onClose, onSubmit, initialData }) {
                 {/* HARD SKILLS * */}
                 <div>
                   <label className={labelBase}>
-                    Hard Skills <span className="text-red-500">*</span>
+                    Hard Skills
                   </label>
                   <input
                     value={form.hardSkills}
@@ -697,7 +687,7 @@ function JobOfferModal({ open, onClose, onSubmit, initialData }) {
                 {/* SOFT SKILLS * */}
                 <div>
                   <label className={labelBase}>
-                    Soft Skills <span className="text-red-500">*</span>
+                    Soft Skills
                   </label>
                   <input
                     value={form.softSkills}
@@ -822,11 +812,10 @@ function JobOfferModal({ open, onClose, onSubmit, initialData }) {
               <button
                 type="submit"
                 disabled={!isValidTotal || submitting}
-                className={`sm:flex-1 h-11 sm:h-12 rounded-xl sm:rounded-full font-semibold transition-colors shadow-sm ${
-                  isValidTotal && !submitting
+                className={`sm:flex-1 h-11 sm:h-12 rounded-xl sm:rounded-full font-semibold transition-colors shadow-sm ${isValidTotal && !submitting
                     ? "bg-[#6CB33F] hover:bg-[#5AA332] dark:bg-emerald-600 dark:hover:bg-emerald-500 text-white"
                     : "bg-gray-300 dark:bg-gray-600 text-gray-500 dark:text-gray-400 cursor-not-allowed"
-                }`}
+                  }`}
               >
                 {submitting
                   ? "Envoi en cours..."
