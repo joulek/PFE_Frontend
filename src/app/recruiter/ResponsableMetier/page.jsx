@@ -63,6 +63,8 @@ export default function GestionUtilisateursPage() {
 
   // ✅ Feedback après création
   const [successMessage, setSuccessMessage] = useState("");
+  const [errorMessage, setErrorMessage] = useState("");
+
 
   function resetForm(nextRoles = roles) {
     setEmail("");
@@ -71,6 +73,7 @@ export default function GestionUtilisateursPage() {
     setRole(nextRoles?.[0]?.name || "");
     setSelectedUser(null);
     setSuccessMessage("");
+    setErrorMessage("");
   }
 
   /* ================= FETCH ROLES ================= */
@@ -102,6 +105,27 @@ export default function GestionUtilisateursPage() {
       console.log("fetchRoles error:", e?.message);
       return [];
     }
+  }
+  function getFriendlyError(err) {
+    const apiMsg =
+      err?.response?.data?.message ||
+      err?.response?.data?.error ||
+      err?.message ||
+      "";
+
+    const msg = String(apiMsg);
+
+    // Mongo duplicate key
+    if (msg.includes("E11000") || msg.toLowerCase().includes("duplicate")) {
+      return "Cet email est déjà utilisé. Essayez un autre email.";
+    }
+
+    // HTTP 409 (si tu l'ajoutes côté backend)
+    if (err?.response?.status === 409) {
+      return "Cet email est déjà utilisé. Essayez un autre email.";
+    }
+
+    return "Une erreur est survenue. Veuillez réessayer.";
   }
 
   /* ================= FETCH USERS ================= */
@@ -144,10 +168,10 @@ export default function GestionUtilisateursPage() {
     e.preventDefault();
     setLoading(true);
     setSuccessMessage("");
+    setErrorMessage("");
 
     try {
       if (modalMode === "add") {
-        // ✅ Pas de mot de passe — le backend enverra l'email d'activation
         await createUser({
           nom: safeStr(nom),
           prenom: safeStr(prenom),
@@ -159,10 +183,8 @@ export default function GestionUtilisateursPage() {
           `✅ Compte créé ! Un email d'activation a été envoyé à ${safeStr(email).toLowerCase()}.`
         );
 
-        // Rafraîchir la liste mais garder le modal ouvert pour afficher le message
         await fetchUsers();
 
-        // Fermer après 3 secondes
         setTimeout(() => {
           setOpenModal(false);
           resetForm();
@@ -180,10 +202,13 @@ export default function GestionUtilisateursPage() {
         setOpenModal(false);
         await fetchUsers();
       }
+    } catch (err) {
+      setErrorMessage(getFriendlyError(err));
     } finally {
       setLoading(false);
     }
   }
+
 
   async function handleDeleteUserConfirmed() {
     if (!userToDelete) return;
@@ -394,6 +419,13 @@ export default function GestionUtilisateursPage() {
                 {successMessage}
               </div>
             )}
+            {errorMessage && (
+              <div className="mt-4 rounded-xl bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 p-4 text-sm text-red-700 dark:text-red-400 flex items-start gap-2">
+                <AlertTriangle className="h-4 w-4 mt-0.5" />
+                <span>{errorMessage}</span>
+              </div>
+            )}
+
 
             {/* FORM */}
             {!successMessage && (

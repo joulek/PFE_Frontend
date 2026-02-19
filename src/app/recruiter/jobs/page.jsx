@@ -34,9 +34,11 @@ function formatDate(date) {
 }
 
 function getJobStatus(job) {
-  if (job.status === "CONFIRMEE" || job.status === "REJETEE") return job.status;
+  const s = (job.status || "").toString().toUpperCase().trim();
+  if (s === "CONFIRMEE" || s === "REJETEE" || s === "EN_ATTENTE") return s;
   return "EN_ATTENTE";
 }
+
 
 /* ================= STATUS CONFIG ================= */
 const STATUS_CONFIG = {
@@ -83,6 +85,7 @@ const TABS = [
   { key: "EN_ATTENTE", label: "En attente" },
   { key: "CONFIRMEE", label: "Confirmées" },
   { key: "REJETEE", label: "Rejetées" },
+  { key: "INACTIVE", label: "Inactives" },
 ];
 
 /* ================= PAGE ================= */
@@ -107,6 +110,10 @@ export default function JobsPage() {
     if (!job.dateCloture) return false;
     return new Date(job.dateCloture) < new Date();
   }
+  function isInactive(job) {
+    return isExpired(job);
+  }
+
 
   async function handleReactivate() {
     if (!jobToReactivate || !newClosingDate) return;
@@ -229,8 +236,14 @@ export default function JobsPage() {
 
   const filteredJobs = useMemo(() => {
     if (activeTab === "all") return normalizedJobs;
+
+    if (activeTab === "INACTIVE") {
+      return normalizedJobs.filter((j) => isInactive(j));
+    }
+
     return normalizedJobs.filter((j) => j._normalizedStatus === activeTab);
   }, [normalizedJobs, activeTab]);
+
 
   const totalPages = Math.max(1, Math.ceil(filteredJobs.length / pageSize));
 
@@ -240,12 +253,22 @@ export default function JobsPage() {
   }, [filteredJobs, page]);
 
   const counts = useMemo(() => {
-    const c = { all: normalizedJobs.length, EN_ATTENTE: 0, CONFIRMEE: 0, REJETEE: 0 };
+    const c = {
+      all: normalizedJobs.length,
+      EN_ATTENTE: 0,
+      CONFIRMEE: 0,
+      REJETEE: 0,
+      INACTIVE: 0, // ✅ NEW
+    };
+
     normalizedJobs.forEach((j) => {
       if (c[j._normalizedStatus] !== undefined) c[j._normalizedStatus]++;
+      if (isInactive(j)) c.INACTIVE++;
     });
+
     return c;
   }, [normalizedJobs]);
+
 
   useEffect(() => {
     if (page > totalPages) setPage(totalPages || 1);
@@ -312,8 +335,8 @@ export default function JobsPage() {
                 {tab.label}
                 <span
                   className={`ml-2 text-xs px-2 py-0.5 rounded-full ${isActive
-                      ? "bg-white/20 text-white"
-                      : "bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400"
+                    ? "bg-white/20 text-white"
+                    : "bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400"
                     }`}
                 >
                   {count}
@@ -617,7 +640,7 @@ export default function JobsPage() {
           <div className="bg-white dark:bg-gray-800 w-full max-w-2xl rounded-[32px] shadow-2xl overflow-hidden transition-colors duration-300">
 
             {/* ================= HEADER ================= */}
-<div className="px-8 pt-8 pb-6">
+            <div className="px-8 pt-8 pb-6">
               <div className="flex items-start justify-between">
                 <div>
                   <h2 className="text-3xl font-extrabold text-gray-900 dark:text-white">
