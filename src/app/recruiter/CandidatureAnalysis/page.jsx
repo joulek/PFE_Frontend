@@ -190,6 +190,10 @@ function normalizeJobMatch(jobMatch) {
       : [],
 
     yearsOfRelevantExperience: experienceAnalysis?.yearsOfRelevantExperience,
+    totalYears: experienceAnalysis?.totalYears,
+    relevantYears: experienceAnalysis?.relevantYears,
+    seniorityLevel: experienceAnalysis?.seniorityLevel,
+    expBreakdown: Array.isArray(experienceAnalysis?.breakdown) ? experienceAnalysis.breakdown : [],
 
     riskLevel: riskMitigation?.riskLevel,
     probabilityOfSuccess: riskMitigation?.probabilityOfSuccess,
@@ -349,16 +353,56 @@ function CandidatureCard({ c, onScheduleInterview }) {
 
           {/* EXPERIENCE */}
           <div className="rounded-2xl border border-gray-100 dark:border-gray-700 p-4 bg-white dark:bg-gray-800/50 transition-colors">
-            <p className="text-xs font-semibold text-gray-500 dark:text-gray-400">EXPERIENCE</p>
-            <p className="text-3xl font-extrabold text-gray-900 dark:text-white mt-2">
-              {expYears}
-            </p>
-            <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
-              Seniority:{" "}
-              <span className="font-semibold capitalize">
-                {match?.seniorityFit || "unknown"}
-              </span>
-            </p>
+            <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-2">EXPERIENCE</p>
+
+            {/* Total + Seniority */}
+            <div className="flex items-center gap-3 mb-3">
+              <p className="text-3xl font-extrabold text-gray-900 dark:text-white">
+                {typeof match?.totalYears === "number" ? `${match.totalYears} ans` : expYears}
+              </p>
+              {match?.seniorityLevel && (
+                <span className={`text-xs font-bold px-2 py-1 rounded-full capitalize
+                  ${match.seniorityLevel === "senior" || match.seniorityLevel === "lead"
+                    ? "bg-green-100 text-green-700 dark:bg-emerald-900/30 dark:text-emerald-400"
+                    : match.seniorityLevel === "mid"
+                      ? "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400"
+                      : "bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300"
+                  }`}>
+                  {match.seniorityLevel}
+                </span>
+              )}
+            </div>
+
+            {/* Relevant years */}
+            {typeof match?.relevantYears === "number" && (
+              <p className="text-xs text-gray-500 dark:text-gray-400 mb-3">
+                <span className="font-semibold text-gray-700 dark:text-gray-300">{match.relevantYears} ans</span> pertinents pour ce poste
+              </p>
+            )}
+
+            {/* Breakdown */}
+            {match?.expBreakdown?.length > 0 && (
+              <div className="space-y-2 mt-2 border-t border-gray-100 dark:border-gray-700 pt-3">
+                {match.expBreakdown.map((exp, i) => (
+                  <div key={i} className="flex items-start gap-2">
+                    {/* Badge type */}
+                    <span className={`shrink-0 text-[10px] font-bold px-1.5 py-0.5 rounded-full mt-0.5
+                      ${exp.type === "cdi" ? "bg-green-100 text-green-700 dark:bg-emerald-900/30 dark:text-emerald-400"
+                        : exp.type === "freelance" ? "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400"
+                        : exp.type === "stage" ? "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400"
+                        : exp.type === "cdd" ? "bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400"
+                        : "bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-400"
+                      }`}>
+                      {exp.type?.toUpperCase() || "—"}
+                    </span>
+                    <div className="min-w-0">
+                      <p className="text-xs font-semibold text-gray-800 dark:text-gray-200 truncate">{exp.role}</p>
+                      <p className="text-[10px] text-gray-500 dark:text-gray-400">{exp.company} · {exp.duration}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
 
           {/* AI DETECTION */}

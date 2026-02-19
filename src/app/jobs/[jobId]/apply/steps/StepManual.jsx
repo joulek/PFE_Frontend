@@ -366,9 +366,19 @@ export default function StepManual({ parsedCV, cvFileUrl, onBack, onSubmit }) {
 
       setSuccessMsg("Votre candidature a été envoyée avec succès !");
     } catch (e) {
-      setErrorMsg(
-        "❌ " + (e?.message || "Erreur lors de l’envoi. Essayez à nouveau.")
-      );
+      // ✅ Gestion spéciale : email déjà utilisé pour cette offre
+      const status = e?.response?.status || e?.status;
+      const code = e?.response?.data?.code || e?.data?.code;
+
+      if (status === 409 || code === "EMAIL_ALREADY_APPLIED") {
+        setErrorMsg(
+          "❌ Cette adresse email a déjà soumis une candidature pour cette offre. Chaque candidat ne peut postuler qu'une seule fois."
+        );
+      } else {
+        setErrorMsg(
+          "❌ " + (e?.response?.data?.message || e?.message || "Erreur lors de l'envoi. Essayez à nouveau.")
+        );
+      }
     } finally {
       setLoadingSubmit(false);
     }
