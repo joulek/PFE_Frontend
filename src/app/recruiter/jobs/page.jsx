@@ -368,16 +368,43 @@ export default function JobsPage() {
                   </button>
                 )}
 
-                <div className="flex flex-wrap gap-2 mt-4 mb-4">
-                  {job.technologies?.map((tech, i) => (
-                    <span
-                      key={i}
-                      className="bg-[#E9F5E3] dark:bg-gray-700 text-[#4E8F2F] dark:text-emerald-400 text-xs font-medium px-3 py-1 rounded-full border border-[#d7ebcf] dark:border-gray-600"
-                    >
-                      {tech}
-                    </span>
-                  ))}
-                </div>
+                {/* HARD SKILLS */}
+                {Array.isArray(job.hardSkills) && job.hardSkills.length > 0 && (
+                  <div className="mt-4">
+                    <p className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1">
+                      Hard Skills
+                    </p>
+                    <div className="flex flex-wrap gap-2">
+                      {job.hardSkills.map((skill, i) => (
+                        <span
+                          key={i}
+                          className="bg-[#E9F5E3] dark:bg-gray-700 text-[#4E8F2F] dark:text-emerald-400 text-xs font-medium px-3 py-1 rounded-full border border-[#d7ebcf] dark:border-gray-600"
+                        >
+                          {skill}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* SOFT SKILLS */}
+                {Array.isArray(job.softSkills) && job.softSkills.length > 0 && (
+                  <div className="mt-3 mb-4">
+                    <p className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1">
+                      Soft Skills
+                    </p>
+                    <div className="flex flex-wrap gap-2">
+                      {job.softSkills.map((skill, i) => (
+                        <span
+                          key={i}
+                          className="bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-300 text-xs font-medium px-3 py-1 rounded-full border border-blue-100 dark:border-blue-900"
+                        >
+                          {skill}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
 
                 <div className="border-t border-gray-100 dark:border-gray-700 my-4" />
 

@@ -34,7 +34,7 @@ export default function PublicJobsPage() {
   const activeJobs = useMemo(() => {
     const now = new Date();
     return jobs.filter((job) => {
-      if (!job.dateCloture) return true; // si pas de date, on affiche
+      if (!job.dateCloture) return true;
       return new Date(job.dateCloture) >= now;
     });
   }, [jobs]);
@@ -44,7 +44,7 @@ export default function PublicJobsPage() {
   const paginatedJobs = useMemo(() => {
     const start = (page - 1) * pageSize;
     return activeJobs.slice(start, start + pageSize);
-  }, [jobs, page]);
+  }, [activeJobs, page]);
 
   useEffect(() => {
     if (page > totalPages) setPage(totalPages);
@@ -53,14 +53,14 @@ export default function PublicJobsPage() {
   return (
     <div className="min-h-screen bg-green-50 dark:bg-gray-950">
       <div className="max-w-6xl mx-auto px-6 py-12">
+
         {/* ================= HEADER ================= */}
         <div className="mb-12">
           <h1 className="text-4xl font-extrabold text-gray-900 dark:text-white">
-            Offres d’emploi
+            Offres d&apos;emploi
           </h1>
-
           <p className="text-gray-600 dark:text-gray-400 max-w-2xl mb-6">
-            Rejoignez une équipe dynamique et participez à l’aventure de demain.
+            Rejoignez une équipe dynamique et participez à l&apos;aventure de demain.
             Découvrez nos opportunités actuelles.
           </p>
         </div>
@@ -73,6 +73,9 @@ export default function PublicJobsPage() {
 
             const isExpanded = !!expandedJobs[job._id];
             const hasLongDescription = (job.description || "").length > 160;
+
+            const hardSkills = Array.isArray(job.hardSkills) ? job.hardSkills : [];
+            const softSkills = Array.isArray(job.softSkills) ? job.softSkills : [];
 
             return (
               <div
@@ -87,13 +90,13 @@ export default function PublicJobsPage() {
 
                   {/* DESCRIPTION */}
                   <p
-                    className={`text-gray-600 dark:text-gray-300 text-sm mb-2 whitespace-pre-line ${!isExpanded ? "line-clamp-3" : ""
-                      }`}
+                    className={`text-gray-600 dark:text-gray-300 text-sm mb-2 whitespace-pre-line ${
+                      !isExpanded ? "line-clamp-3" : ""
+                    }`}
                   >
                     {job.description}
                   </p>
 
-                  {/* Lire la suite / Réduire */}
                   {hasLongDescription && (
                     <button
                       type="button"
@@ -104,28 +107,54 @@ export default function PublicJobsPage() {
                     </button>
                   )}
 
-                  {/* TECHNOLOGIES */}
-                  <div className="flex flex-wrap gap-2 mt-4 mb-4">
-                    {job.technologies?.map((tech, i) => (
-                      <span
-                        key={i}
-                        className="bg-[#E9F5E3] dark:bg-emerald-950/40 text-[#4E8F2F] dark:text-emerald-300 text-xs font-medium px-3 py-1 rounded-full"
-                      >
-                        {tech}
-                      </span>
-                    ))}
-                  </div>
+                  {/* HARD SKILLS */}
+                  {hardSkills.length > 0 && (
+                    <div className="mt-4">
+                      <p className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1">
+                        Hard Skills
+                      </p>
+                      <div className="flex flex-wrap gap-2">
+                        {hardSkills.map((skill, i) => (
+                          <span
+                            key={i}
+                            className="bg-[#E9F5E3] dark:bg-emerald-950/40 text-[#4E8F2F] dark:text-emerald-300 text-xs font-medium px-3 py-1 rounded-full"
+                          >
+                            {skill}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* SOFT SKILLS */}
+                  {softSkills.length > 0 && (
+                    <div className="mt-3">
+                      <p className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1">
+                        Soft Skills
+                      </p>
+                      <div className="flex flex-wrap gap-2">
+                        {softSkills.map((skill, i) => (
+                          <span
+                            key={i}
+                            className="bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-300 text-xs font-medium px-3 py-1 rounded-full"
+                          >
+                            {skill}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 {/* ===== LIEU ===== */}
                 {job.lieu && (
-                  <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400 mt-2 mb-1">
+                  <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400 mt-4 mb-1">
                     <span>📍</span>
                     <span className="font-medium text-gray-600 dark:text-gray-300">{job.lieu}</span>
                   </div>
                 )}
 
-          {/* ===== DIVIDER ===== */}
+                {/* ===== DIVIDER ===== */}
                 <div className="border-t border-gray-100 dark:border-gray-700 my-4" />
 
                 {/* ===== BOTTOM BAR ===== */}
@@ -146,7 +175,6 @@ export default function PublicJobsPage() {
                         d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
                       />
                     </svg>
-
                     <span>Clôture : {formatDate(job.dateCloture)}</span>
                   </div>
 
@@ -160,9 +188,7 @@ export default function PublicJobsPage() {
                     </button>
                   ) : (
                     <Link href={`/jobs/${job._id}/apply`}>
-                      <button
-                        className="px-5 py-2 rounded-full text-sm font-medium transition bg-[#6CB33F] dark:bg-emerald-600 text-white hover:bg-[#4E8F2F] dark:hover:bg-emerald-500 shadow"
-                      >
+                      <button className="px-5 py-2 rounded-full text-sm font-medium transition bg-[#6CB33F] dark:bg-emerald-600 text-white hover:bg-[#4E8F2F] dark:hover:bg-emerald-500 shadow">
                         Postuler
                       </button>
                     </Link>
@@ -179,13 +205,11 @@ export default function PublicJobsPage() {
         </div>
 
         {/* ✅ PAGINATION FOOTER */}
-        {jobs.length > 0 && (
+        {activeJobs.length > 0 && (
           <div className="mt-10 flex items-center justify-between text-sm text-gray-500 dark:text-gray-400">
             <p>
-              Total: {activeJobs.length} offre(s)
-              — Page {page} / {totalPages}
+              Total : {activeJobs.length} offre(s) — Page {page} / {totalPages}
             </p>
-
             <Pagination
               currentPage={page}
               totalPages={totalPages}

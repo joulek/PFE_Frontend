@@ -13,7 +13,8 @@ export default function JobModal({
   const emptyForm = {
     titre: "",
     description: "",
-    technologies: "",
+    softSkills: "",
+    hardSkills: "",
     dateCloture: "",
     lieu: "",
     scores: {
@@ -54,9 +55,12 @@ export default function JobModal({
         setForm({
           titre: initialData.titre || "",
           description: initialData.description || "",
-          technologies: Array.isArray(initialData.technologies)
-            ? initialData.technologies.join(", ")
-            : initialData.technologies || "",
+          softSkills: Array.isArray(initialData.softSkills)
+            ? initialData.softSkills.join(", ")
+            : initialData.softSkills || "",
+          hardSkills: Array.isArray(initialData.hardSkills)
+            ? initialData.hardSkills.join(", ")
+            : initialData.hardSkills || "",
           dateCloture: initialData.dateCloture
             ? String(initialData.dateCloture).slice(0, 10)
             : "",
@@ -112,9 +116,34 @@ export default function JobModal({
     setNumQuestions(n);
   }
 
+  function parseSkills(str) {
+    return String(str || "")
+      .split(",")
+      .map((t) => t.trim())
+      .filter(Boolean);
+  }
+
   function handleSubmit(e) {
     e.preventDefault();
     setFormError("");
+
+    // ✅ Validation champs obligatoires
+    if (!form.titre.trim()) {
+      setFormError("❌ Le titre du poste est obligatoire.");
+      return;
+    }
+    if (!form.description.trim()) {
+      setFormError("❌ La description est obligatoire.");
+      return;
+    }
+    if (!form.lieu.trim()) {
+      setFormError("❌ Le lieu du poste est obligatoire.");
+      return;
+    }
+    if (!form.dateCloture) {
+      setFormError("❌ La date de clôture est obligatoire.");
+      return;
+    }
 
     if (!isValidTotal) {
       setFormError("❌ La somme des pondérations doit être égale à 100%");
@@ -122,14 +151,12 @@ export default function JobModal({
     }
 
     onSubmit({
-      titre: form.titre,
-      description: form.description,
-      dateCloture: form.dateCloture || null,
-      technologies: String(form.technologies || "")
-        .split(",")
-        .map((t) => t.trim())
-        .filter(Boolean),
-      lieu: form.lieu || "",
+      titre: form.titre.trim(),
+      description: form.description.trim(),
+      dateCloture: form.dateCloture,
+      softSkills: parseSkills(form.softSkills),
+      hardSkills: parseSkills(form.hardSkills),
+      lieu: form.lieu.trim(),
       scores: form.scores,
       assignedUserIds: assignedUserId ? [assignedUserId] : [],
       // ✅ Transmis uniquement en mode création
@@ -139,6 +166,19 @@ export default function JobModal({
       }),
     });
   }
+
+  const inputBase =
+    "w-full h-11 sm:h-12 px-4 sm:px-5 rounded-xl sm:rounded-full " +
+    "border border-gray-200 dark:border-gray-600 " +
+    "bg-white dark:bg-gray-700 " +
+    "text-gray-800 dark:text-gray-100 " +
+    "placeholder-gray-400 dark:placeholder-gray-500 " +
+    "focus:border-[#6CB33F] dark:focus:border-emerald-500 " +
+    "focus:ring-4 focus:ring-[#6CB33F]/15 dark:focus:ring-emerald-500/20 " +
+    "outline-none transition-colors";
+
+  const labelBase =
+    "block text-xs sm:text-sm font-semibold tracking-wide text-gray-700 dark:text-gray-300 mb-2 uppercase";
 
   return (
     <div
@@ -155,7 +195,7 @@ export default function JobModal({
                 {isEditMode ? "Modifier l'offre" : "Ajouter une offre"}
               </h2>
               <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                Mettez à jour les informations de l&apos;annonce pour les candidats.
+                Tous les champs marqués <span className="text-red-500">*</span> sont obligatoires.
               </p>
             </div>
             <button
@@ -175,7 +215,7 @@ export default function JobModal({
 
         {/* ===== BODY ===== */}
         <div className="overflow-y-auto">
-          <form onSubmit={handleSubmit} className="px-5 sm:px-8 py-5 sm:py-7">
+          <form onSubmit={handleSubmit} noValidate className="px-5 sm:px-8 py-5 sm:py-7">
             <div className="space-y-5 sm:space-y-6">
 
               {/* ERROR */}
@@ -185,37 +225,28 @@ export default function JobModal({
                 </div>
               )}
 
-              {/* TITRE */}
+              {/* TITRE * */}
               <div>
-                <label className="block text-xs sm:text-sm font-semibold tracking-wide text-gray-700 dark:text-gray-300 mb-2 uppercase">
-                  Titre du poste
+                <label className={labelBase}>
+                  Titre du poste <span className="text-red-500">*</span>
                 </label>
                 <input
                   value={form.titre}
                   onChange={(e) => setForm({ ...form, titre: e.target.value })}
-                  required
-                  className="w-full h-11 sm:h-12 px-4 sm:px-5 rounded-xl sm:rounded-full 
-                             border border-gray-200 dark:border-gray-600 
-                             bg-white dark:bg-gray-700 
-                             text-gray-800 dark:text-gray-100
-                             placeholder-gray-400 dark:placeholder-gray-500
-                             focus:border-[#6CB33F] dark:focus:border-emerald-500 
-                             focus:ring-4 focus:ring-[#6CB33F]/15 dark:focus:ring-emerald-500/20 
-                             outline-none transition-colors"
+                  className={inputBase}
                   placeholder="Ex: Fullstack Developer (React/Node)"
                 />
               </div>
 
-              {/* DESCRIPTION */}
+              {/* DESCRIPTION * */}
               <div>
-                <label className="block text-xs sm:text-sm font-semibold tracking-wide text-gray-700 dark:text-gray-300 mb-2 uppercase">
-                  Description
+                <label className={labelBase}>
+                  Description <span className="text-red-500">*</span>
                 </label>
                 <textarea
                   rows={5}
                   value={form.description}
                   onChange={(e) => setForm({ ...form, description: e.target.value })}
-                  required
                   className="w-full px-4 sm:px-5 py-3 sm:py-4 rounded-2xl sm:rounded-3xl 
                              border border-gray-200 dark:border-gray-600 
                              bg-white dark:bg-gray-700 
@@ -229,53 +260,10 @@ export default function JobModal({
                 />
               </div>
 
-              {/* GRID (TECH + DATE + LIEU) */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-5 sm:gap-6">
-                <div>
-                  <label className="block text-xs sm:text-sm font-semibold tracking-wide text-gray-700 dark:text-gray-300 mb-2 uppercase">
-                    Technologies
-                  </label>
-                  <input
-                    value={form.technologies}
-                    onChange={(e) => setForm({ ...form, technologies: e.target.value })}
-                    placeholder="React, Node.js, Tailwind"
-                    className="w-full h-11 sm:h-12 px-4 sm:px-5 rounded-xl sm:rounded-full 
-                               border border-gray-200 dark:border-gray-600 
-                               bg-white dark:bg-gray-700 
-                               text-gray-800 dark:text-gray-100
-                               placeholder-gray-400 dark:placeholder-gray-500
-                               focus:border-[#6CB33F] dark:focus:border-emerald-500 
-                               focus:ring-4 focus:ring-[#6CB33F]/15 dark:focus:ring-emerald-500/20 
-                               outline-none transition-colors"
-                  />
-                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
-                    Sépare avec une virgule.
-                  </p>
-                </div>
-
-                <div>
-                  <label className="block text-xs sm:text-sm font-semibold tracking-wide text-gray-700 dark:text-gray-300 mb-2 uppercase">
-                    Date de clôture
-                  </label>
-                  <input
-                    type="date"
-                    value={form.dateCloture}
-                    onChange={(e) => setForm({ ...form, dateCloture: e.target.value })}
-                    className="w-full h-11 sm:h-12 px-4 sm:px-5 rounded-xl sm:rounded-full 
-                               border border-gray-200 dark:border-gray-600 
-                               bg-white dark:bg-gray-700 
-                               text-gray-800 dark:text-gray-100
-                               focus:border-[#6CB33F] dark:focus:border-emerald-500 
-                               focus:ring-4 focus:ring-[#6CB33F]/15 dark:focus:ring-emerald-500/20 
-                               outline-none transition-colors"
-                  />
-                </div>
-              </div>
-
-              {/* LIEU DE POSTE */}
+              {/* LIEU * */}
               <div>
-                <label className="block text-xs sm:text-sm font-semibold tracking-wide text-gray-700 dark:text-gray-300 mb-2 uppercase">
-                  Lieu du poste
+                <label className={labelBase}>
+                  Lieu du poste <span className="text-red-500">*</span>
                 </label>
                 <div className="relative">
                   <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500 pointer-events-none select-none">
@@ -297,9 +285,59 @@ export default function JobModal({
                 </div>
               </div>
 
+              {/* DATE DE CLÔTURE * */}
+              <div>
+                <label className={labelBase}>
+                  Date de clôture <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="date"
+                  value={form.dateCloture}
+                  onChange={(e) => setForm({ ...form, dateCloture: e.target.value })}
+                  min={new Date().toISOString().slice(0, 10)}
+                  className={inputBase}
+                />
+              </div>
+
+              {/* SKILLS GRID */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-5 sm:gap-6">
+
+                {/* HARD SKILLS * */}
+                <div>
+                  <label className={labelBase}>
+                    Hard Skills
+                  </label>
+                  <input
+                    value={form.hardSkills}
+                    onChange={(e) => setForm({ ...form, hardSkills: e.target.value })}
+                    placeholder="React, Node.js, SQL, Docker..."
+                    className={inputBase}
+                  />
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
+                    Compétences techniques — séparées par une virgule.
+                  </p>
+                </div>
+
+                {/* SOFT SKILLS * */}
+                <div>
+                  <label className={labelBase}>
+                    Soft Skills
+                  </label>
+                  <input
+                    value={form.softSkills}
+                    onChange={(e) => setForm({ ...form, softSkills: e.target.value })}
+                    placeholder="Communication, Leadership, Esprit d'équipe..."
+                    className={inputBase}
+                  />
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
+                    Compétences comportementales — séparées par une virgule.
+                  </p>
+                </div>
+              </div>
+
               {/* SELECT USERS */}
               <div>
-                <label className="block text-xs sm:text-sm font-semibold tracking-wide text-gray-700 dark:text-gray-300 mb-2 uppercase">
+                <label className={labelBase}>
                   Affectation utilisateurs
                 </label>
                 <select
@@ -367,7 +405,6 @@ export default function JobModal({
                         Nombre de questions
                       </label>
                       <div className="flex items-center gap-2">
-                        {/* Bouton − */}
                         <button
                           type="button"
                           onClick={() => handleNumQuestions(numQuestions - 1)}
@@ -378,8 +415,6 @@ export default function JobModal({
                         >
                           −
                         </button>
-
-                        {/* Input */}
                         <input
                           type="number"
                           min={1}
@@ -394,8 +429,6 @@ export default function JobModal({
                                      focus:ring-2 focus:ring-[#6CB33F]/20 dark:focus:ring-emerald-500/20
                                      outline-none transition-colors"
                         />
-
-                        {/* Bouton + */}
                         <button
                           type="button"
                           onClick={() => handleNumQuestions(numQuestions + 1)}
@@ -406,13 +439,11 @@ export default function JobModal({
                         >
                           +
                         </button>
-
                         <span className="text-xs text-gray-500 dark:text-gray-400">(max 30)</span>
                       </div>
                     </div>
                   )}
 
-                  {/* Info si désactivé */}
                   {!generateQuiz && (
                     <p className="pl-14 text-xs text-gray-400 dark:text-gray-500 italic">
                       Aucun quiz ne sera généré. Vous pourrez en créer un manuellement plus tard.
@@ -425,7 +456,7 @@ export default function JobModal({
               <div className="border-t border-gray-200 dark:border-gray-700 pt-6">
                 <div className="flex items-center justify-between mb-4">
                   <h3 className="text-sm font-extrabold text-gray-900 dark:text-white uppercase tracking-wide">
-                    Pondérations (0 - 100)
+                    Pondérations (0 – 100)
                   </h3>
                   <span
                     className={`text-sm font-extrabold ${
@@ -434,7 +465,7 @@ export default function JobModal({
                         : "text-red-600 dark:text-red-400"
                     }`}
                   >
-                    Total: {totalWeights}%
+                    Total : {totalWeights}%
                   </span>
                 </div>
 
