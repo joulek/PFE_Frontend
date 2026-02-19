@@ -487,7 +487,7 @@ export default function Navbar() {
                         Mes candidatures
                       </Link>
                       <Link href="/ResponsableMetier/job" className={`${linkBase} ${isActive("/ResponsableMetier/job") ? activeLink : inactiveLink}`}>
-                        Offres d&apos;emploi
+                        Mes offres d&apos;emploi
                       </Link>
                     </>
                   )}
