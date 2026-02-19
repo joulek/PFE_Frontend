@@ -93,7 +93,6 @@ export default function SetPasswordPage() {
 
       if (data.message && data.message.includes("succès")) {
         setStatus("success");
-        // Rediriger vers login après 3 secondes
         setTimeout(() => router.push("/login"), 3000);
       } else {
         setErrorMsg(data.message || "Une erreur est survenue.");
@@ -106,17 +105,15 @@ export default function SetPasswordPage() {
   }
 
   const strength = getPasswordStrength(password);
-  const fullName = userInfo
-    ? [userInfo.prenom, userInfo.nom].filter(Boolean).join(" ")
-    : "";
+  const fullName = userInfo ? [userInfo.prenom, userInfo.nom].filter(Boolean).join(" ") : "";
 
   /* ── États d'affichage ── */
   if (status === "verifying") {
     return (
-      <div className="min-h-screen bg-[#F0FAF0] flex items-center justify-center">
+      <div className="min-h-screen bg-[#F0FAF0] dark:bg-gray-950 transition-colors duration-300 flex items-center justify-center">
         <div className="flex flex-col items-center gap-4">
-          <Loader2 className="h-10 w-10 animate-spin text-[#6CB33F]" />
-          <p className="text-gray-600 text-sm">Vérification du lien...</p>
+          <Loader2 className="h-10 w-10 animate-spin text-[#6CB33F] dark:text-emerald-400" />
+          <p className="text-gray-600 dark:text-gray-300 text-sm">Vérification du lien...</p>
         </div>
       </div>
     );
@@ -124,13 +121,15 @@ export default function SetPasswordPage() {
 
   if (status === "invalid") {
     return (
-      <div className="min-h-screen bg-[#F0FAF0] flex items-center justify-center p-4">
-        <div className="w-full max-w-md rounded-3xl bg-white shadow-xl p-8 text-center">
+      <div className="min-h-screen bg-[#F0FAF0] dark:bg-gray-950 transition-colors duration-300 flex items-center justify-center p-4">
+        <div className="w-full max-w-md rounded-3xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 shadow-xl p-8 text-center transition-colors">
           <div className="flex justify-center mb-4">
             <XCircle className="h-16 w-16 text-red-400" />
           </div>
-          <h1 className="text-2xl font-extrabold text-gray-900 mb-2">Lien invalide</h1>
-          <p className="text-gray-500 text-sm leading-relaxed">
+          <h1 className="text-2xl font-extrabold text-gray-900 dark:text-white mb-2">
+            Lien invalide
+          </h1>
+          <p className="text-gray-500 dark:text-gray-300 text-sm leading-relaxed">
             Ce lien d&apos;activation est expiré ou invalide. Contactez votre administrateur pour obtenir un nouveau lien.
           </p>
         </div>
@@ -140,19 +139,19 @@ export default function SetPasswordPage() {
 
   if (status === "success") {
     return (
-      <div className="min-h-screen bg-[#F0FAF0] flex items-center justify-center p-4">
-        <div className="w-full max-w-md rounded-3xl bg-white shadow-xl p-8 text-center">
+      <div className="min-h-screen bg-[#F0FAF0] dark:bg-gray-950 transition-colors duration-300 flex items-center justify-center p-4">
+        <div className="w-full max-w-md rounded-3xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 shadow-xl p-8 text-center transition-colors">
           <div className="flex justify-center mb-4">
-            <CheckCircle className="h-16 w-16 text-[#6CB33F]" />
+            <CheckCircle className="h-16 w-16 text-[#6CB33F] dark:text-emerald-400" />
           </div>
-          <h1 className="text-2xl font-extrabold text-gray-900 mb-2">
+          <h1 className="text-2xl font-extrabold text-gray-900 dark:text-white mb-2">
             Mot de passe défini !
           </h1>
-          <p className="text-gray-500 text-sm leading-relaxed">
+          <p className="text-gray-500 dark:text-gray-300 text-sm leading-relaxed">
             Votre compte est maintenant actif. Vous allez être redirigé vers la page de connexion...
           </p>
           <div className="mt-4 flex justify-center">
-            <Loader2 className="h-5 w-5 animate-spin text-[#6CB33F]" />
+            <Loader2 className="h-5 w-5 animate-spin text-[#6CB33F] dark:text-emerald-400" />
           </div>
         </div>
       </div>
@@ -161,37 +160,40 @@ export default function SetPasswordPage() {
 
   /* ── Formulaire principal ── */
   return (
-    <div className="min-h-screen bg-[#F0FAF0] flex items-center justify-center p-4">
+    <div className="min-h-screen bg-[#F0FAF0] dark:bg-gray-950 transition-colors duration-300 flex items-center justify-center p-4">
       <div className="w-full max-w-md">
         {/* HEADER */}
         <div className="text-center mb-8">
           <div className="inline-flex items-center justify-center h-16 w-16 rounded-2xl bg-[#6CB33F] shadow-lg mb-4">
             <Lock className="h-8 w-8 text-white" />
           </div>
-          <h1 className="text-3xl font-extrabold text-gray-900">
+
+          <h1 className="text-3xl font-extrabold text-gray-900 dark:text-white">
             Activer votre compte
           </h1>
+
           {fullName && (
-            <p className="mt-2 text-gray-600 text-sm">
-              Bienvenue, <strong>{fullName}</strong> !
+            <p className="mt-2 text-gray-600 dark:text-gray-300 text-sm">
+              Bienvenue, <strong className="text-gray-900 dark:text-white">{fullName}</strong> !
             </p>
           )}
-          <p className="mt-1 text-gray-500 text-sm">
+
+          <p className="mt-1 text-gray-500 dark:text-gray-400 text-sm">
             Définissez votre mot de passe pour accéder à la plateforme.
           </p>
         </div>
 
         {/* CARD */}
-        <div className="rounded-3xl bg-white shadow-xl p-8">
+        <div className="rounded-3xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 shadow-xl p-8 transition-colors">
           <form onSubmit={handleSubmit} className="space-y-5">
-
             {/* MOT DE PASSE */}
             <div>
-              <label className="mb-1 block text-sm font-semibold text-gray-900">
+              <label className="mb-1 block text-sm font-semibold text-gray-900 dark:text-white">
                 Nouveau mot de passe
               </label>
+
               <div className="relative">
-                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-[#6CB33F]" />
+                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-[#6CB33F] dark:text-emerald-400" />
                 <input
                   type={showPassword ? "text" : "password"}
                   value={password}
@@ -199,16 +201,18 @@ export default function SetPasswordPage() {
                   placeholder="••••••••"
                   required
                   minLength={8}
-                  className="w-full rounded-xl border border-gray-200 
-                    bg-gray-50 py-3 pl-10 pr-12
-                    text-sm text-gray-800
-                    outline-none focus:border-[#6CB33F] focus:ring-1 focus:ring-[#6CB33F]
+                  className="w-full rounded-xl border border-gray-200 dark:border-gray-700
+                    bg-gray-50 dark:bg-gray-800 py-3 pl-10 pr-12
+                    text-sm text-gray-800 dark:text-gray-100
+                    placeholder-gray-400 dark:placeholder-gray-500
+                    outline-none focus:border-[#6CB33F] dark:focus:border-emerald-500
+                    focus:ring-1 focus:ring-[#6CB33F] dark:focus:ring-emerald-500
                     transition-colors"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword((v) => !v)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
                 >
                   {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
                 </button>
@@ -222,12 +226,12 @@ export default function SetPasswordPage() {
                       <div
                         key={i}
                         className={`h-1.5 flex-1 rounded-full transition-all ${
-                          i <= strength.score ? strength.color : "bg-gray-200"
+                          i <= strength.score ? strength.color : "bg-gray-200 dark:bg-gray-700"
                         }`}
                       />
                     ))}
                   </div>
-                  <p className="text-xs text-gray-500">
+                  <p className="text-xs text-gray-500 dark:text-gray-400">
                     Force : <span className="font-semibold">{strength.label}</span>
                   </p>
                 </div>
@@ -236,11 +240,12 @@ export default function SetPasswordPage() {
 
             {/* CONFIRMER MOT DE PASSE */}
             <div>
-              <label className="mb-1 block text-sm font-semibold text-gray-900">
+              <label className="mb-1 block text-sm font-semibold text-gray-900 dark:text-white">
                 Confirmer le mot de passe
               </label>
+
               <div className="relative">
-                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-[#6CB33F]" />
+                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-[#6CB33F] dark:text-emerald-400" />
                 <input
                   type={showConfirm ? "text" : "password"}
                   value={confirmPassword}
@@ -249,48 +254,57 @@ export default function SetPasswordPage() {
                   required
                   minLength={8}
                   className={`w-full rounded-xl border py-3 pl-10 pr-12
-                    bg-gray-50 text-sm text-gray-800
+                    bg-gray-50 dark:bg-gray-800 text-sm text-gray-800 dark:text-gray-100
+                    placeholder-gray-400 dark:placeholder-gray-500
                     outline-none transition-colors
-                    ${confirmPassword && confirmPassword !== password
-                      ? "border-red-300 focus:border-red-400 focus:ring-1 focus:ring-red-300"
-                      : "border-gray-200 focus:border-[#6CB33F] focus:ring-1 focus:ring-[#6CB33F]"
+                    ${
+                      confirmPassword && confirmPassword !== password
+                        ? "border-red-300 dark:border-red-500/60 focus:border-red-400 focus:ring-1 focus:ring-red-300 dark:focus:ring-red-500/40"
+                        : "border-gray-200 dark:border-gray-700 focus:border-[#6CB33F] dark:focus:border-emerald-500 focus:ring-1 focus:ring-[#6CB33F] dark:focus:ring-emerald-500"
                     }`}
                 />
                 <button
                   type="button"
                   onClick={() => setShowConfirm((v) => !v)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
                 >
                   {showConfirm ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
                 </button>
               </div>
+
               {confirmPassword && confirmPassword !== password && (
                 <p className="mt-1 text-xs text-red-500">Les mots de passe ne correspondent pas.</p>
               )}
               {confirmPassword && confirmPassword === password && (
-                <p className="mt-1 text-xs text-[#4E8F2F]">✓ Les mots de passe correspondent.</p>
+                <p className="mt-1 text-xs text-[#4E8F2F] dark:text-emerald-400">
+                  ✓ Les mots de passe correspondent.
+                </p>
               )}
             </div>
 
             {/* RÈGLES */}
-            <div className="rounded-xl bg-[#F0FAF0] border border-[#D7EBCF] p-4 text-xs text-gray-600 space-y-1">
-              <p className={password.length >= 8 ? "text-[#4E8F2F]" : ""}>
+            <div className="rounded-xl bg-[#F0FAF0] dark:bg-gray-800/60 border border-[#D7EBCF] dark:border-gray-700 p-4 text-xs text-gray-600 dark:text-gray-300 space-y-1 transition-colors">
+              <p className={password.length >= 8 ? "text-[#4E8F2F] dark:text-emerald-400" : ""}>
                 {password.length >= 8 ? "✓" : "○"} Au moins 8 caractères
               </p>
-              <p className={/[A-Z]/.test(password) ? "text-[#4E8F2F]" : ""}>
+              <p className={/[A-Z]/.test(password) ? "text-[#4E8F2F] dark:text-emerald-400" : ""}>
                 {/[A-Z]/.test(password) ? "✓" : "○"} Une lettre majuscule
               </p>
-              <p className={/[0-9]/.test(password) ? "text-[#4E8F2F]" : ""}>
+              <p className={/[0-9]/.test(password) ? "text-[#4E8F2F] dark:text-emerald-400" : ""}>
                 {/[0-9]/.test(password) ? "✓" : "○"} Un chiffre
               </p>
-              <p className={/[^A-Za-z0-9]/.test(password) ? "text-[#4E8F2F]" : ""}>
+              <p
+                className={
+                  /[^A-Za-z0-9]/.test(password) ? "text-[#4E8F2F] dark:text-emerald-400" : ""
+                }
+              >
                 {/[^A-Za-z0-9]/.test(password) ? "✓" : "○"} Un caractère spécial (!@#$...)
               </p>
             </div>
 
             {/* ERREUR */}
             {errorMsg && (
-              <div className="rounded-xl bg-red-50 border border-red-200 p-3 text-sm text-red-600">
+              <div className="rounded-xl bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 p-3 text-sm text-red-600 dark:text-red-300 transition-colors">
                 {errorMsg}
               </div>
             )}
@@ -299,9 +313,10 @@ export default function SetPasswordPage() {
             <button
               type="submit"
               disabled={loading || password !== confirmPassword || password.length < 8}
-              className="w-full flex items-center justify-center gap-2 rounded-xl bg-[#6CB33F] 
+              className="w-full flex items-center justify-center gap-2 rounded-xl bg-[#6CB33F] dark:bg-emerald-600
                 py-3.5 text-sm font-semibold text-white
-                hover:bg-[#4E8F2F] disabled:opacity-50 disabled:cursor-not-allowed
+                hover:bg-[#4E8F2F] dark:hover:bg-emerald-500
+                disabled:opacity-50 disabled:cursor-not-allowed
                 transition-colors shadow-md"
             >
               {loading ? (
@@ -316,10 +331,7 @@ export default function SetPasswordPage() {
           </form>
         </div>
 
-        {/* Footer */}
-        <p className="mt-6 text-center text-xs text-gray-400">
-          © {new Date().getFullYear()} Optylab — Plateforme RH Intelligente
-        </p>
+       
       </div>
     </div>
   );

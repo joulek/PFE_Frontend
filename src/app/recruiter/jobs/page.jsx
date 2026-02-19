@@ -434,13 +434,15 @@ export default function JobsPage() {
                 <div className="flex items-center justify-between mt-auto">
                   <div className="text-sm text-gray-500 dark:text-gray-400 space-y-1">
                     <div className="flex items-center gap-2">
-                      <Calendar size={16} className="text-gray-400 dark:text-gray-500" />
                       {job.lieu && (
                         <span className="flex items-center gap-1">
                           <span>📍</span>
                           <span>{job.lieu}</span>
                         </span>
                       )}
+                      </div>
+                      <div className="flex items-center gap-2">
+                      <Calendar size={16} className="text-gray-400 dark:text-gray-500" />
                       <span>Créée : {formatDate(job.createdAt)}</span>
                     </div>
                     <div className="flex items-center gap-2">
