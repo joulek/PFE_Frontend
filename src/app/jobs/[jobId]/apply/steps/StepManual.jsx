@@ -370,9 +370,9 @@ export default function StepManual({ parsedCV, cvFileUrl, onBack, onSubmit }) {
       const status = e?.response?.status || e?.status;
       const code = e?.response?.data?.code || e?.data?.code;
 
-      if (status === 409 || code === "EMAIL_ALREADY_APPLIED") {
+      if (status === 409 || code === "ALREADY_SUBMITTED" || code === "EMAIL_ALREADY_APPLIED") {
         setErrorMsg(
-          "❌ Cette adresse email a déjà soumis une candidature pour cette offre. Chaque candidat ne peut postuler qu'une seule fois."
+          "❌ Vous avez déjà soumis une candidature pour cette offre. Il n'est pas possible de postuler deux fois à la même offre."
         );
       } else {
         setErrorMsg(
