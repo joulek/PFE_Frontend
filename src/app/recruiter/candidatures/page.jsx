@@ -94,7 +94,7 @@ export default function CandidaturesTablePage() {
   const [loading, setLoading] = useState(true);
   const [q, setQ] = useState("");
   const [page, setPage] = useState(1);
-  const pageSize = 10;
+  const pageSize = 5;
 
   useEffect(() => {
     async function load() {
