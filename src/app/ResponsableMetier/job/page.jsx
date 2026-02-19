@@ -17,6 +17,7 @@ import {
   Calendar,
   CalendarClock,
   CalendarCheck,
+  BrainCircuit,
 } from "lucide-react";
 
 /* ================= UTILS ================= */
@@ -275,6 +276,12 @@ export default function UserJobsPage() {
                 {/* BOTTOM: DATES + EDIT BUTTON */}
                 <div className="flex items-center justify-between mt-auto">
                   <div className="text-sm text-gray-500 dark:text-gray-400 space-y-1">
+                    {job.lieu && (
+                      <div className="flex items-center gap-2">
+                        <span>📍</span>
+                        <span className="text-sm font-medium text-gray-600 dark:text-gray-300">{job.lieu}</span>
+                      </div>
+                    )}
                     <div className="flex items-center gap-2">
                       <Calendar size={16} className="text-gray-400 dark:text-gray-500" />
                       <span>Créée : {formatDate(job.createdAt)}</span>
@@ -352,13 +359,17 @@ export default function UserJobsPage() {
 ================================================================= */
 function JobOfferModal({ open, onClose, onSubmit, initialData }) {
   const emptyForm = {
-    titre: "", description: "", technologies: "", dateCloture: "",
+    titre: "", description: "", technologies: "", dateCloture: "", lieu: "",
     scores: { skillsFit: 30, experienceFit: 30, projectsFit: 20, educationFit: 10, communicationFit: 10 },
   };
 
   const [form, setForm] = useState(emptyForm);
   const [formError, setFormError] = useState("");
   const [submitting, setSubmitting] = useState(false);
+
+  // ✅ Quiz options
+  const [generateQuiz, setGenerateQuiz] = useState(true);
+  const [numQuestions, setNumQuestions] = useState(25);
 
   useEffect(() => {
     if (!open) return;
@@ -368,6 +379,7 @@ function JobOfferModal({ open, onClose, onSubmit, initialData }) {
         description: initialData.description || "",
         technologies: Array.isArray(initialData.technologies) ? initialData.technologies.join(", ") : initialData.technologies || "",
         dateCloture: initialData.dateCloture ? String(initialData.dateCloture).slice(0, 10) : "",
+        lieu: initialData.lieu || "",
         scores: {
           skillsFit: initialData?.scores?.skillsFit ?? 30,
           experienceFit: initialData?.scores?.experienceFit ?? 30,
@@ -378,6 +390,8 @@ function JobOfferModal({ open, onClose, onSubmit, initialData }) {
       });
     } else {
       setForm(emptyForm);
+      setGenerateQuiz(true);
+      setNumQuestions(25);
     }
     setFormError("");
   }, [open, initialData]);
@@ -408,7 +422,13 @@ function JobOfferModal({ open, onClose, onSubmit, initialData }) {
         description: form.description,
         dateCloture: form.dateCloture || null,
         technologies: String(form.technologies || "").split(",").map((t) => t.trim()).filter(Boolean),
+        lieu: form.lieu || "",
         scores: form.scores,
+        // ✅ Quiz metadata — stocké en base, utilisé à la confirmation admin
+        ...(!isEditing && {
+          generateQuiz,
+          numQuestions: generateQuiz ? numQuestions : 0,
+        }),
       });
     } catch { setFormError("Erreur lors de la soumission"); }
     setSubmitting(false);
@@ -476,6 +496,64 @@ function JobOfferModal({ open, onClose, onSubmit, initialData }) {
                 </div>
               </div>
 
+              {/* LIEU DU POSTE */}
+              <div>
+                <label className="block text-xs sm:text-sm font-semibold tracking-wide text-gray-700 dark:text-gray-300 mb-2 uppercase">Lieu du poste</label>
+                <div className="relative">
+                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500 pointer-events-none select-none">📍</span>
+                  <input
+                    value={form.lieu}
+                    onChange={(e) => setForm({ ...form, lieu: e.target.value })}
+                    placeholder="Ex: Alger, Oran, Télétravail, Hybride..."
+                    className="w-full h-11 sm:h-12 pl-10 pr-4 rounded-xl sm:rounded-full border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:border-[#6CB33F] dark:focus:border-emerald-500 focus:ring-4 focus:ring-[#6CB33F]/15 dark:focus:ring-emerald-500/20 outline-none transition-colors"
+                  />
+                </div>
+              </div>
+
+              {/* ✅ QUIZ — uniquement en mode création */}
+              {!isEditing && (
+                <div className="border border-gray-200 dark:border-gray-700 rounded-2xl p-5 space-y-4">
+                  {/* Toggle */}
+                  <label className="flex items-center gap-3 cursor-pointer select-none">
+                    <div className="relative">
+                      <input type="checkbox" checked={generateQuiz} onChange={(e) => setGenerateQuiz(e.target.checked)} className="sr-only" />
+                      <div className={`w-11 h-6 rounded-full transition-colors duration-200 ${generateQuiz ? "bg-[#6CB33F] dark:bg-emerald-500" : "bg-gray-300 dark:bg-gray-600"}`} />
+                      <div className={`absolute top-1 w-4 h-4 bg-white rounded-full shadow transition-transform duration-200 ${generateQuiz ? "translate-x-6" : "translate-x-1"}`} />
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <BrainCircuit className="h-4 w-4 text-[#6CB33F] dark:text-emerald-400" />
+                        <span className="text-sm font-extrabold text-gray-900 dark:text-white">Générer un quiz technique</span>
+                      </div>
+                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                        Le quiz sera généré automatiquement lors de la <strong>validation par l&apos;admin</strong>.
+                      </p>
+                    </div>
+                  </label>
+
+                  {/* Nombre de questions */}
+                  {generateQuiz && (
+                    <div className="flex items-center gap-4 pl-14">
+                      <label className="text-sm font-semibold text-gray-700 dark:text-gray-300 whitespace-nowrap">Nombre de questions</label>
+                      <div className="flex items-center gap-2">
+                        <button type="button" onClick={() => setNumQuestions(n => Math.max(1, n - 1))}
+                          className="w-8 h-8 rounded-full border border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-300 font-bold hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors flex items-center justify-center">−</button>
+                        <input type="number" min={1} max={30} value={numQuestions}
+                          onChange={(e) => { let n = parseInt(e.target.value, 10); if (isNaN(n) || n < 1) n = 1; if (n > 30) n = 30; setNumQuestions(n); }}
+                          className="w-16 h-9 text-center rounded-xl border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 font-bold focus:border-[#6CB33F] dark:focus:border-emerald-500 focus:ring-2 focus:ring-[#6CB33F]/20 outline-none transition-colors" />
+                        <button type="button" onClick={() => setNumQuestions(n => Math.min(30, n + 1))}
+                          className="w-8 h-8 rounded-full border border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-300 font-bold hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors flex items-center justify-center">+</button>
+                        <span className="text-xs text-gray-500 dark:text-gray-400">(max 30)</span>
+                      </div>
+                    </div>
+                  )}
+
+                  {!generateQuiz && (
+                    <p className="pl-14 text-xs text-gray-400 dark:text-gray-500 italic">Aucun quiz ne sera généré. Vous pourrez en demander un plus tard.</p>
+                  )}
+                </div>
+              )}
+
               {/* WEIGHTS */}
               <div className="border-t border-gray-200 dark:border-gray-700 pt-6">
                 <div className="flex items-center justify-between mb-4">
@@ -502,7 +580,7 @@ function JobOfferModal({ open, onClose, onSubmit, initialData }) {
             <div className="mt-7 sm:mt-8 pt-5 sm:pt-6 border-t border-gray-200 dark:border-gray-700 flex flex-col sm:flex-row gap-3 sm:gap-4">
               <button type="submit" disabled={!isValidTotal || submitting}
                 className={`sm:flex-1 h-11 sm:h-12 rounded-xl sm:rounded-full font-semibold transition-colors shadow-sm ${isValidTotal && !submitting ? "bg-[#6CB33F] hover:bg-[#5AA332] dark:bg-emerald-600 dark:hover:bg-emerald-500 text-white" : "bg-gray-300 dark:bg-gray-600 text-gray-500 dark:text-gray-400 cursor-not-allowed"}`}>
-                {submitting ? "Envoi..." : isEditing ? "Enregistrer" : "Soumettre l'offre"}
+                {submitting ? "Envoi..." : isEditing ? "Enregistrer" : generateQuiz ? `Soumettre (quiz: ${numQuestions} questions)` : "Soumettre l'offre"}
               </button>
               <button type="button" onClick={onClose}
                 className="sm:flex-1 h-11 sm:h-12 rounded-xl sm:rounded-full font-semibold border border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
