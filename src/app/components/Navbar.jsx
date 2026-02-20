@@ -478,9 +478,6 @@ export default function Navbar() {
             <div className="hidden md:flex items-center bg-[#F4F7F5] dark:bg-gray-800/60 rounded-full p-1 gap-1 transition-colors duration-200">
               {!isAdmin && (
                 <>
-                  <Link href="/jobs" className={`${linkBase} ${isActive("/jobs") ? activeLink : inactiveLink}`}>
-                    Offres d&apos;emploi
-                  </Link>
                   {user && (
                     <>
                       <Link href="/ResponsableMetier/candidatures" className={`${linkBase} ${isActive("/ResponsableMetier/candidatures") ? activeLink : inactiveLink}`}>
@@ -488,6 +485,12 @@ export default function Navbar() {
                       </Link>
                       <Link href="/ResponsableMetier/job" className={`${linkBase} ${isActive("/ResponsableMetier/job") ? activeLink : inactiveLink}`}>
                         Mes offres d&apos;emploi
+                      </Link>
+                       <Link href="/ResponsableMetier/quiz" className={`${linkBase} ${isActive("/ResponsableMetier/quiz") ? activeLink : inactiveLink}`}>
+                        Mes quizs 
+                      </Link>
+                      <Link href="/ResponsableMetier/calendar" className={`${linkBase} ${isActive("/ResponsableMetier/calendar") ? activeLink : inactiveLink}`}>
+                        Mon calendrier
                       </Link>
                     </>
                   )}
@@ -620,16 +623,20 @@ export default function Navbar() {
               <div className="rounded-2xl bg-white/95 dark:bg-gray-900/85 shadow-xl border border-gray-200/70 dark:border-gray-700/60 p-4 space-y-2 backdrop-blur-sm transition-colors duration-200">
                 {!isAdmin && (
                   <>
-                    <Link href="/jobs" className={`block px-5 py-3.5 rounded-xl font-medium transition ${isActive("/jobs") ? "bg-[#6CB33F] text-white" : "text-gray-700 dark:text-gray-200 hover:bg-gray-100/70 dark:hover:bg-gray-800/60"}`}>
-                      Offres d&apos;emploi
-                    </Link>
+                
                     {user && (
                       <>
                         <Link href="/ResponsableMetier/candidatures" className={`block px-5 py-3.5 rounded-xl font-medium transition ${isActive("/ResponsableMetier/candidatures") ? "bg-[#6CB33F] text-white" : "text-gray-700 dark:text-gray-200 hover:bg-gray-100/70 dark:hover:bg-gray-800/60"}`}>
                           Mes candidatures
                         </Link>
                         <Link href="/ResponsableMetier/job" className={`block px-5 py-3.5 rounded-xl font-medium transition ${isActive("/ResponsableMetier/job") ? "bg-[#6CB33F] text-white" : "text-gray-700 dark:text-gray-200 hover:bg-gray-100/70 dark:hover:bg-gray-800/60"}`}>
-                          Offres d&apos;emploi
+                          Mes offres d&apos;emploi
+                        </Link>
+                         <Link href="/ResponsableMetier/quiz" className={`block px-5 py-3.5 rounded-xl font-medium transition ${isActive("/ResponsableMetier/quiz") ? "bg-[#6CB33F] text-white" : "text-gray-700 dark:text-gray-200 hover:bg-gray-100/70 dark:hover:bg-gray-800/60"}`}>
+                          Mes quizs
+                        </Link>
+                          <Link href="/ResponsableMetier/calendar" className={`block px-5 py-3.5 rounded-xl font-medium transition ${isActive("/ResponsableMetier/calendar") ? "bg-[#6CB33F] text-white" : "text-gray-700 dark:text-gray-200 hover:bg-gray-100/70 dark:hover:bg-gray-800/60"}`}>
+                          Mon calendrier
                         </Link>
                       </>
                     )}

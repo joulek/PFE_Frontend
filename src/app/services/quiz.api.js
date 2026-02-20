@@ -37,3 +37,5 @@ export const addQuestion = (quizId, data) =>
 
 /** Supprimer un quiz complet */
 export const deleteQuiz = (id) => api.delete(`/quizzes/${id}`);
+
+export const getMyQuizzes = () => api.get("/quizzes/mine");
