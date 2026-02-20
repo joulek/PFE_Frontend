@@ -312,7 +312,7 @@ export default function GestionUtilisateursPage() {
                   paginatedUsers.map((u) => (
                     <tr
                       key={u._id || u.id}
-                      className="hover:bg-[#F9FFF6] dark:hover:bg-gray-750 transition-colors"
+                      className="hover:bg-[#F9FFF6] dark:hover:bg-transparent transition-colors"
                     >
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-3">

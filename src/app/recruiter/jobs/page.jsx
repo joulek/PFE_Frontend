@@ -39,7 +39,6 @@ function getJobStatus(job) {
   return "EN_ATTENTE";
 }
 
-
 /* ================= STATUS CONFIG ================= */
 const STATUS_CONFIG = {
   CONFIRMEE: {
@@ -93,27 +92,36 @@ export default function JobsPage() {
   const [jobs, setJobs] = useState([]);
   const [modalOpen, setModalOpen] = useState(false);
   const [editingJob, setEditingJob] = useState(null);
+
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [jobToDelete, setJobToDelete] = useState(null);
+
   const [users, setUsers] = useState([]);
   const [activeTab, setActiveTab] = useState("all");
+
   const [expandedJobs, setExpandedJobs] = useState({});
   const [actionLoading, setActionLoading] = useState(null);
+
   const [rejectModalOpen, setRejectModalOpen] = useState(false);
   const [jobToReject, setJobToReject] = useState(null);
   const [rejectReason, setRejectReason] = useState("");
+
   const [reactivateModalOpen, setReactivateModalOpen] = useState(false);
   const [jobToReactivate, setJobToReactivate] = useState(null);
   const [newClosingDate, setNewClosingDate] = useState("");
+
+  // Pagination
+  const [page, setPage] = useState(1);
+  const pageSize = 6;
 
   function isExpired(job) {
     if (!job.dateCloture) return false;
     return new Date(job.dateCloture) < new Date();
   }
+
   function isInactive(job) {
     return isExpired(job);
   }
-
 
   async function handleReactivate() {
     if (!jobToReactivate || !newClosingDate) return;
@@ -125,7 +133,6 @@ export default function JobsPage() {
       await loadJobs();
     } catch (err) {
       console.error("Erreur réactivation:", err);
-      // ← ici vous pouvez ajouter un toast d'erreur si vous en avez un
     } finally {
       setActionLoading(null);
       setReactivateModalOpen(false);
@@ -133,10 +140,6 @@ export default function JobsPage() {
       setNewClosingDate("");
     }
   }
-
-  // Pagination
-  const [page, setPage] = useState(1);
-  const pageSize = 6;
 
   /* ---- loaders ---- */
   async function loadJobs() {
@@ -159,12 +162,12 @@ export default function JobsPage() {
       const list = Array.isArray(res?.data)
         ? res.data
         : Array.isArray(res?.data?.users)
-          ? res.data.users
-          : Array.isArray(res?.data?.data)
-            ? res.data.data
-            : Array.isArray(res?.data?.data?.users)
-              ? res.data.data.users
-              : [];
+        ? res.data.users
+        : Array.isArray(res?.data?.data)
+        ? res.data.data
+        : Array.isArray(res?.data?.data?.users)
+        ? res.data.data.users
+        : [];
       setUsers(list);
     } catch {
       setUsers([]);
@@ -244,7 +247,6 @@ export default function JobsPage() {
     return normalizedJobs.filter((j) => j._normalizedStatus === activeTab);
   }, [normalizedJobs, activeTab]);
 
-
   const totalPages = Math.max(1, Math.ceil(filteredJobs.length / pageSize));
 
   const paginatedJobs = useMemo(() => {
@@ -258,7 +260,7 @@ export default function JobsPage() {
       EN_ATTENTE: 0,
       CONFIRMEE: 0,
       REJETEE: 0,
-      INACTIVE: 0, // ✅ NEW
+      INACTIVE: 0,
     };
 
     normalizedJobs.forEach((j) => {
@@ -268,7 +270,6 @@ export default function JobsPage() {
 
     return c;
   }, [normalizedJobs]);
-
 
   useEffect(() => {
     if (page > totalPages) setPage(totalPages || 1);
@@ -284,6 +285,7 @@ export default function JobsPage() {
       typeof job.createdBy === "string"
         ? job.createdBy
         : job.createdBy?._id || job.createdBy?.toString();
+
     const u = users.find(
       (user) => user._id === creatorId || user._id?.toString() === creatorId
     );
@@ -327,17 +329,19 @@ export default function JobsPage() {
                 key={tab.key}
                 onClick={() => setActiveTab(tab.key)}
                 className={`px-5 py-2.5 rounded-full text-sm font-semibold transition-all duration-200
-                  ${isActive
-                    ? "bg-[#6CB33F] dark:bg-emerald-600 text-white shadow-md shadow-green-500/20"
-                    : "bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 border border-gray-200 dark:border-gray-700 hover:border-[#6CB33F] dark:hover:border-emerald-500"
+                  ${
+                    isActive
+                      ? "bg-[#6CB33F] dark:bg-emerald-600 text-white shadow-md shadow-green-500/20"
+                      : "bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 border border-gray-200 dark:border-gray-700 hover:border-[#6CB33F] dark:hover:border-emerald-500"
                   }`}
               >
                 {tab.label}
                 <span
-                  className={`ml-2 text-xs px-2 py-0.5 rounded-full ${isActive
-                    ? "bg-white/20 text-white"
-                    : "bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400"
-                    }`}
+                  className={`ml-2 text-xs px-2 py-0.5 rounded-full ${
+                    isActive
+                      ? "bg-white/20 text-white"
+                      : "bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400"
+                  }`}
                 >
                   {count}
                 </span>
@@ -371,13 +375,15 @@ export default function JobsPage() {
 
                 {creatorName && (
                   <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">
-                    Créée par : <span className="font-semibold">{creatorName}</span>
+                    Créée par :{" "}
+                    <span className="font-semibold">{creatorName}</span>
                   </p>
                 )}
 
                 <p
-                  className={`text-gray-600 dark:text-gray-300 text-sm mb-2 whitespace-pre-line ${!isExpanded ? "line-clamp-3" : ""
-                    }`}
+                  className={`text-gray-600 dark:text-gray-300 text-sm mb-2 whitespace-pre-line ${
+                    !isExpanded ? "line-clamp-3" : ""
+                  }`}
                 >
                   {job.description}
                 </p>
@@ -431,7 +437,7 @@ export default function JobsPage() {
 
                 <div className="border-t border-gray-100 dark:border-gray-700 my-4" />
 
-                <div className="flex items-center justify-between mt-auto">
+                <div className="flex items-center justify-between mt-auto gap-4">
                   <div className="text-sm text-gray-500 dark:text-gray-400 space-y-1">
                     <div className="flex items-center gap-2">
                       {job.lieu && (
@@ -440,18 +446,21 @@ export default function JobsPage() {
                           <span>{job.lieu}</span>
                         </span>
                       )}
-                      </div>
-                      <div className="flex items-center gap-2">
+                    </div>
+
+                    <div className="flex items-center gap-2">
                       <Calendar size={16} className="text-gray-400 dark:text-gray-500" />
                       <span>Créée : {formatDate(job.createdAt)}</span>
                     </div>
+
                     <div className="flex items-center gap-2">
                       <CalendarClock size={16} className="text-gray-400 dark:text-gray-500" />
                       <span>Clôture : {formatDate(job.dateCloture)}</span>
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-2">
+                  {/* ✅ FIX MOBILE ACTIONS */}
+                  <div className="flex flex-wrap items-center justify-end gap-2 w-full sm:w-auto">
                     {isPending && (
                       <>
                         <button
@@ -462,6 +471,7 @@ export default function JobsPage() {
                         >
                           <CheckCircle2 size={20} />
                         </button>
+
                         <button
                           onClick={() => {
                             setJobToReject(job);
@@ -499,6 +509,7 @@ export default function JobsPage() {
                       <Trash2 size={17} />
                     </button>
 
+                    {/* ✅ Bouton réactiver devient full width en mobile */}
                     {expired && (
                       <button
                         onClick={() => {
@@ -507,7 +518,10 @@ export default function JobsPage() {
                           setReactivateModalOpen(true);
                         }}
                         title="Réactiver cette offre"
-                        className="h-9 px-4 rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 hover:bg-blue-200 dark:hover:bg-blue-800/50 transition-colors text-sm font-semibold"
+                        className="h-9 px-4 rounded-full bg-blue-100 dark:bg-blue-900/30
+                                   text-blue-700 dark:text-blue-400 hover:bg-blue-200 dark:hover:bg-blue-800/50
+                                   transition-colors text-sm font-semibold
+                                   w-full sm:w-auto"
                       >
                         Réactiver
                       </button>
@@ -577,6 +591,7 @@ export default function JobsPage() {
                     {jobToReject?.titre}
                   </p>
                 </div>
+
                 <button
                   onClick={() => {
                     setRejectModalOpen(false);
@@ -595,6 +610,7 @@ export default function JobsPage() {
               <label className="block text-xs font-semibold tracking-wide text-gray-700 dark:text-gray-300 mb-2 uppercase">
                 Motif du rejet (optionnel)
               </label>
+
               <textarea
                 rows={3}
                 value={rejectReason}
@@ -627,7 +643,7 @@ export default function JobsPage() {
         </div>
       )}
 
-      {/* ================= REACTIVATE MODAL — SAME DESIGN AS JobModal ================= */}
+      {/* REACTIVATE MODAL */}
       {reactivateModalOpen && (
         <div
           className="fixed inset-0 z-50 bg-black/40 dark:bg-black/60 flex items-center justify-center px-4"
@@ -640,8 +656,6 @@ export default function JobsPage() {
           }}
         >
           <div className="bg-white dark:bg-gray-800 w-full max-w-2xl rounded-[32px] shadow-2xl overflow-hidden transition-colors duration-300">
-
-            {/* ================= HEADER ================= */}
             <div className="px-8 pt-8 pb-6">
               <div className="flex items-start justify-between">
                 <div>
@@ -661,10 +675,10 @@ export default function JobsPage() {
                     setNewClosingDate("");
                   }}
                   className="h-10 w-10 rounded-full grid place-items-center
-                       text-gray-500 dark:text-gray-400
-                       hover:text-gray-800 dark:hover:text-white
-                       hover:bg-gray-100 dark:hover:bg-gray-700
-                       transition-colors"
+                             text-gray-500 dark:text-gray-400
+                             hover:text-gray-800 dark:hover:text-white
+                             hover:bg-gray-100 dark:hover:bg-gray-700
+                             transition-colors"
                 >
                   ✕
                 </button>
@@ -673,24 +687,22 @@ export default function JobsPage() {
 
             <div className="border-t border-gray-200 dark:border-gray-700" />
 
-            {/* ================= BODY ================= */}
             <div className="px-8 py-8 space-y-6">
-
-              {/* TITRE DE L'OFFRE */}
               <div>
                 <label className="block text-xs font-semibold tracking-wide text-gray-700 dark:text-gray-300 mb-2 uppercase">
                   Offre concernée
                 </label>
 
-                <div className="px-5 py-4 rounded-2xl
-                          border border-gray-200 dark:border-gray-600
-                          bg-gray-50 dark:bg-gray-700
-                          text-gray-800 dark:text-gray-100">
+                <div
+                  className="px-5 py-4 rounded-2xl
+                             border border-gray-200 dark:border-gray-600
+                             bg-gray-50 dark:bg-gray-700
+                             text-gray-800 dark:text-gray-100"
+                >
                   {jobToReactivate?.titre}
                 </div>
               </div>
 
-              {/* DATE */}
               <div>
                 <label className="block text-xs font-semibold tracking-wide text-gray-700 dark:text-gray-300 mb-2 uppercase">
                   Nouvelle date de clôture
@@ -702,12 +714,12 @@ export default function JobsPage() {
                   min={new Date().toISOString().split("T")[0]}
                   onChange={(e) => setNewClosingDate(e.target.value)}
                   className="w-full px-5 py-4 rounded-2xl
-                       border border-gray-200 dark:border-gray-600
-                       bg-white dark:bg-gray-700
-                       text-gray-800 dark:text-gray-100
-                       focus:border-[#6CB33F] dark:focus:border-emerald-500
-                       focus:ring-4 focus:ring-[#6CB33F]/10
-                       outline-none transition-colors"
+                             border border-gray-200 dark:border-gray-600
+                             bg-white dark:bg-gray-700
+                             text-gray-800 dark:text-gray-100
+                             focus:border-[#6CB33F] dark:focus:border-emerald-500
+                             focus:ring-4 focus:ring-[#6CB33F]/10
+                             outline-none transition-colors"
                 />
 
                 <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
@@ -718,7 +730,6 @@ export default function JobsPage() {
 
             <div className="border-t border-gray-200 dark:border-gray-700" />
 
-            {/* ================= FOOTER ================= */}
             <div className="px-8 py-6 flex justify-end gap-4">
               <button
                 type="button"
@@ -728,10 +739,10 @@ export default function JobsPage() {
                   setNewClosingDate("");
                 }}
                 className="h-12 px-8 rounded-full
-                     border border-gray-200 dark:border-gray-600
-                     text-gray-800 dark:text-gray-200 font-semibold
-                     hover:bg-gray-50 dark:hover:bg-gray-700
-                     transition-colors"
+                           border border-gray-200 dark:border-gray-600
+                           text-gray-800 dark:text-gray-200 font-semibold
+                           hover:bg-gray-50 dark:hover:bg-gray-700
+                           transition-colors"
               >
                 Annuler
               </button>
@@ -741,11 +752,11 @@ export default function JobsPage() {
                 onClick={handleReactivate}
                 disabled={!newClosingDate || actionLoading === jobToReactivate?._id}
                 className="h-12 px-8 rounded-full
-                     bg-[#6CB33F] hover:bg-[#4E8F2F]
-                     dark:bg-emerald-600 dark:hover:bg-emerald-500
-                     text-white font-semibold
-                     shadow-md shadow-green-500/20
-                     transition-colors disabled:opacity-50"
+                           bg-[#6CB33F] hover:bg-[#4E8F2F]
+                           dark:bg-emerald-600 dark:hover:bg-emerald-500
+                           text-white font-semibold
+                           shadow-md shadow-green-500/20
+                           transition-colors disabled:opacity-50"
               >
                 {actionLoading === jobToReactivate?._id ? "Enregistrement..." : "Enregistrer"}
               </button>
@@ -753,7 +764,6 @@ export default function JobsPage() {
           </div>
         </div>
       )}
-
     </div>
   );
 }

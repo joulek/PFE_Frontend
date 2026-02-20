@@ -20,7 +20,6 @@ import {
   Plus,
   Trash2,
   Clock,
-  ChevronDown,
   ChevronUp,
   Sparkles,
   X,
@@ -29,11 +28,7 @@ import {
 } from "lucide-react";
 
 /* ── Timer par difficulté (en secondes) ── */
-const TIMER_BY_DIFFICULTY = {
-  easy: 20,
-  medium: 40,
-  hard: 60,
-};
+const TIMER_BY_DIFFICULTY = { easy: 20, medium: 40, hard: 60 };
 
 const DIFFICULTY_LABELS = {
   easy: { label: "Facile", color: "bg-green-100 text-green-700 dark:bg-green-500/10 dark:text-green-400" },
@@ -69,9 +64,11 @@ export default function QuizTechniqueDetailsPage() {
 
   const [quiz, setQuiz] = useState(null);
   const [loading, setLoading] = useState(true);
+
   const [generating, setGenerating] = useState(false);
   const [generatingMore, setGeneratingMore] = useState(false);
   const [addingManual, setAddingManual] = useState(false);
+
   const [error, setError] = useState(null);
   const [successMsg, setSuccessMsg] = useState(null);
 
@@ -87,11 +84,14 @@ export default function QuizTechniqueDetailsPage() {
   const [editForm, setEditForm] = useState(null);
   const [savingEdit, setSavingEdit] = useState(false);
 
+  // ✅ Modal suppression (au lieu de confirm)
+  const [openDeleteModal, setOpenDeleteModal] = useState(false);
+  const [questionToDelete, setQuestionToDelete] = useState(null);
+
   useEffect(() => {
-    if (successMsg) {
-      const t = setTimeout(() => setSuccessMsg(null), 4000);
-      return () => clearTimeout(t);
-    }
+    if (!successMsg) return;
+    const t = setTimeout(() => setSuccessMsg(null), 4000);
+    return () => clearTimeout(t);
   }, [successMsg]);
 
   const load = useCallback(async () => {
@@ -150,9 +150,16 @@ export default function QuizTechniqueDetailsPage() {
 
   const handleAddManual = async () => {
     if (!quiz?._id) return;
-    if (!form.question.trim()) { setError("La question est requise"); return; }
+
+    if (!form.question.trim()) {
+      setError("La question est requise");
+      return;
+    }
     const emptyOpts = form.options.filter((o) => !o.text.trim());
-    if (emptyOpts.length > 0) { setError("Toutes les 4 options sont requises"); return; }
+    if (emptyOpts.length > 0) {
+      setError("Toutes les 4 options sont requises");
+      return;
+    }
 
     setAddingManual(true);
     setError(null);
@@ -165,6 +172,7 @@ export default function QuizTechniqueDetailsPage() {
         correctAnswer: form.correctAnswer,
         explanation: form.explanation.trim(),
       });
+
       await load();
       setForm({ ...EMPTY_FORM });
       setShowForm(false);
@@ -176,18 +184,41 @@ export default function QuizTechniqueDetailsPage() {
     }
   };
 
-  const handleDeleteQuestion = async (order) => {
-    if (!quiz?._id || !confirm("Supprimer cette question ?")) return;
-    setDeletingOrder(order);
+  // ✅ Open modal suppression
+  const confirmDeleteQuestion = (order) => {
+    if (!quiz?._id) return;
+    // si tu es en édition, on ferme l'édition pour éviter conflit UX
+    setEditingOrder(null);
+    setEditForm(null);
+
+    setQuestionToDelete(order);
+    setOpenDeleteModal(true);
+  };
+
+  // ✅ Confirm modal suppression
+  const handleDeleteQuestionConfirmed = async () => {
+    if (!quiz?._id || questionToDelete === null) return;
+
+    setDeletingOrder(questionToDelete);
+    setError(null);
+
     try {
-      await deleteQuestion(quiz._id, order);
+      await deleteQuestion(quiz._id, questionToDelete);
       await load();
       setSuccessMsg("Question supprimée");
     } catch (err) {
       setError(err?.response?.data?.message || "Erreur suppression");
     } finally {
       setDeletingOrder(null);
+      setQuestionToDelete(null);
+      setOpenDeleteModal(false);
     }
+  };
+
+  const closeDeleteModal = () => {
+    if (deletingOrder !== null) return; // pendant suppression: on bloque fermeture
+    setOpenDeleteModal(false);
+    setQuestionToDelete(null);
   };
 
   const updateOption = (idx, text) => {
@@ -209,17 +240,33 @@ export default function QuizTechniqueDetailsPage() {
       correctAnswer: q.correctAnswer || "A",
       explanation: q.explanation || "",
     });
+
+    // fermer les autres panneaux
     setShowForm(false);
     setShowGenerateMore(false);
+
+    // si modal delete ouvert, on le ferme
+    setOpenDeleteModal(false);
+    setQuestionToDelete(null);
   };
 
-  const cancelEditing = () => { setEditingOrder(null); setEditForm(null); };
+  const cancelEditing = () => {
+    setEditingOrder(null);
+    setEditForm(null);
+  };
 
   const handleSaveEdit = async () => {
     if (!quiz?._id || !editForm || editingOrder === null) return;
-    if (!editForm.question.trim()) { setError("La question est requise"); return; }
+
+    if (!editForm.question.trim()) {
+      setError("La question est requise");
+      return;
+    }
     const emptyOpts = editForm.options.filter((o) => !o.text.trim());
-    if (emptyOpts.length > 0) { setError("Toutes les 4 options sont requises"); return; }
+    if (emptyOpts.length > 0) {
+      setError("Toutes les 4 options sont requises");
+      return;
+    }
 
     setSavingEdit(true);
     setError(null);
@@ -232,6 +279,7 @@ export default function QuizTechniqueDetailsPage() {
         correctAnswer: editForm.correctAnswer,
         explanation: editForm.explanation.trim(),
       });
+
       await load();
       cancelEditing();
       setSuccessMsg("Question modifiée avec succès");
@@ -290,9 +338,15 @@ export default function QuizTechniqueDetailsPage() {
                        hover:bg-[#5fa035] disabled:opacity-60 transition-colors shadow-lg shadow-[#6CB33F]/20"
           >
             {generating ? (
-              <><Loader2 className="w-5 h-5 animate-spin" />Génération en cours…</>
+              <>
+                <Loader2 className="w-5 h-5 animate-spin" />
+                Génération en cours…
+              </>
             ) : (
-              <><Sparkles className="w-5 h-5" />Générer le quiz</>
+              <>
+                <Sparkles className="w-5 h-5" />
+                Générer le quiz
+              </>
             )}
           </button>
         </div>
@@ -314,6 +368,7 @@ export default function QuizTechniqueDetailsPage() {
           </button>
         </div>
       )}
+
       {error && (
         <div className="flex items-center gap-3 p-4 rounded-xl bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800">
           <AlertCircle className="w-5 h-5 text-red-500 shrink-0" />
@@ -348,7 +403,6 @@ export default function QuizTechniqueDetailsPage() {
             </div>
           </div>
 
-          {/* ✅ Bouton "Tout regénérer" — border verte */}
           <button
             onClick={() => handleGenerate(true)}
             disabled={generating}
@@ -358,35 +412,49 @@ export default function QuizTechniqueDetailsPage() {
                        disabled:opacity-60 transition-colors"
           >
             {generating ? (
-              <><Loader2 className="w-4 h-4 animate-spin" />Regénération…</>
+              <>
+                <Loader2 className="w-4 h-4 animate-spin" />
+                Regénération…
+              </>
             ) : (
-              <><RefreshCw className="w-4 h-4" />Tout regénérer</>
+              <>
+                <RefreshCw className="w-4 h-4" />
+                Tout regénérer
+              </>
             )}
           </button>
         </div>
 
         {/* Action bar */}
         <div className="flex flex-wrap gap-3">
-          {/* ✅ Bouton "Ajouter manuellement" — border verte */}
           <button
-            onClick={() => { setShowForm((v) => !v); setShowGenerateMore(false); }}
+            onClick={() => {
+              setShowForm((v) => !v);
+              setShowGenerateMore(false);
+              cancelEditing();
+            }}
             className={`inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium transition-colors
-              ${showForm
-                ? "bg-[#6CB33F] text-white"
-                : "border border-[#6CB33F] text-[#6CB33F] hover:bg-[#6CB33F]/5 dark:hover:bg-[#6CB33F]/10"
+              ${
+                showForm
+                  ? "bg-[#6CB33F] text-white"
+                  : "border border-[#6CB33F] text-[#6CB33F] hover:bg-[#6CB33F]/5 dark:hover:bg-[#6CB33F]/10"
               }`}
           >
             {showForm ? <ChevronUp className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
             Ajouter manuellement
           </button>
 
-          {/* ✅ Bouton "Générer plus de questions" — border verte */}
           <button
-            onClick={() => { setShowGenerateMore((v) => !v); setShowForm(false); }}
+            onClick={() => {
+              setShowGenerateMore((v) => !v);
+              setShowForm(false);
+              cancelEditing();
+            }}
             className={`inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium transition-colors
-              ${showGenerateMore
-                ? "bg-[#6CB33F] text-white"
-                : "border border-[#6CB33F] text-[#6CB33F] hover:bg-[#6CB33F]/5 dark:hover:bg-[#6CB33F]/10"
+              ${
+                showGenerateMore
+                  ? "bg-[#6CB33F] text-white"
+                  : "border border-[#6CB33F] text-[#6CB33F] hover:bg-[#6CB33F]/5 dark:hover:bg-[#6CB33F]/10"
               }`}
           >
             {showGenerateMore ? <ChevronUp className="w-4 h-4" /> : <Sparkles className="w-4 h-4" />}
@@ -404,36 +472,60 @@ export default function QuizTechniqueDetailsPage() {
           <p className="text-xs text-gray-500 dark:text-gray-400">
             Les nouvelles questions seront ajoutées à la suite du quiz existant.
           </p>
+
           <div className="flex flex-wrap items-end gap-4">
             <div className="space-y-1.5">
               <label className="text-xs font-medium text-gray-600 dark:text-gray-400">Nombre de questions</label>
               <div className="flex items-center gap-2">
                 {[3, 5, 10, 15].map((n) => (
-                  <button key={n} onClick={() => setNumMoreQuestions(n)}
+                  <button
+                    key={n}
+                    onClick={() => setNumMoreQuestions(n)}
                     className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors
-                      ${numMoreQuestions === n
-                        ? "bg-[#6CB33F] text-white"
-                        : "bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
+                      ${
+                        numMoreQuestions === n
+                          ? "bg-[#6CB33F] text-white"
+                          : "bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
                       }`}
-                  >{n}</button>
+                  >
+                    {n}
+                  </button>
                 ))}
+
                 <span className="text-xs text-gray-400 ml-1">ou</span>
-                <input type="number" min={1} max={30} value={numMoreQuestions}
-                  onChange={(e) => { const v = parseInt(e.target.value); if (!isNaN(v) && v >= 1 && v <= 30) setNumMoreQuestions(v); }}
+
+                <input
+                  type="number"
+                  min={1}
+                  max={30}
+                  value={numMoreQuestions}
+                  onChange={(e) => {
+                    const v = parseInt(e.target.value);
+                    if (!isNaN(v) && v >= 1 && v <= 30) setNumMoreQuestions(v);
+                  }}
                   className="w-16 px-2.5 py-1.5 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800
                              text-sm text-center font-medium text-gray-700 dark:text-gray-300
                              focus:outline-none focus:ring-2 focus:ring-[#6CB33F]/30 focus:border-[#6CB33F]"
                 />
               </div>
             </div>
-            <button onClick={handleGenerateMore} disabled={generatingMore}
+
+            <button
+              onClick={handleGenerateMore}
+              disabled={generatingMore}
               className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#6CB33F] text-white font-medium
                          hover:bg-[#5fa035] disabled:opacity-60 transition-colors"
             >
               {generatingMore ? (
-                <><Loader2 className="w-4 h-4 animate-spin" />Génération…</>
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  Génération…
+                </>
               ) : (
-                <><Sparkles className="w-4 h-4" />Générer {numMoreQuestions} questions</>
+                <>
+                  <Sparkles className="w-4 h-4" />
+                  Générer {numMoreQuestions} questions
+                </>
               )}
             </button>
           </div>
@@ -447,8 +539,11 @@ export default function QuizTechniqueDetailsPage() {
 
           <div className="space-y-1.5">
             <label className="text-xs font-medium text-gray-600 dark:text-gray-400">Question *</label>
-            <textarea value={form.question} onChange={(e) => setForm((p) => ({ ...p, question: e.target.value }))}
-              placeholder="Quelle est la commande pour…" rows={3}
+            <textarea
+              value={form.question}
+              onChange={(e) => setForm((p) => ({ ...p, question: e.target.value }))}
+              placeholder="Quelle est la commande pour…"
+              rows={3}
               className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800
                          text-sm focus:outline-none focus:ring-2 focus:ring-[#6CB33F]/30 focus:border-[#6CB33F] transition-shadow placeholder:text-gray-400 resize-none"
             />
@@ -457,18 +552,28 @@ export default function QuizTechniqueDetailsPage() {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-1.5">
               <label className="text-xs font-medium text-gray-600 dark:text-gray-400">Catégorie</label>
-              <select value={form.category} onChange={(e) => setForm((p) => ({ ...p, category: e.target.value }))}
+              <select
+                value={form.category}
+                onChange={(e) => setForm((p) => ({ ...p, category: e.target.value }))}
                 className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800
                            text-sm focus:outline-none focus:ring-2 focus:ring-[#6CB33F]/30 focus:border-[#6CB33F]"
               >
-                {Object.entries(CATEGORY_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
+                {Object.entries(CATEGORY_LABELS).map(([k, v]) => (
+                  <option key={k} value={k}>
+                    {v}
+                  </option>
+                ))}
               </select>
             </div>
+
             <div className="space-y-1.5">
               <label className="text-xs font-medium text-gray-600 dark:text-gray-400">
-                Difficulté <span className="ml-2 text-gray-400">(Timer: {TIMER_BY_DIFFICULTY[form.difficulty]}s)</span>
+                Difficulté{" "}
+                <span className="ml-2 text-gray-400">(Timer: {TIMER_BY_DIFFICULTY[form.difficulty]}s)</span>
               </label>
-              <select value={form.difficulty} onChange={(e) => setForm((p) => ({ ...p, difficulty: e.target.value }))}
+              <select
+                value={form.difficulty}
+                onChange={(e) => setForm((p) => ({ ...p, difficulty: e.target.value }))}
                 className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800
                            text-sm focus:outline-none focus:ring-2 focus:ring-[#6CB33F]/30 focus:border-[#6CB33F]"
               >
@@ -480,20 +585,32 @@ export default function QuizTechniqueDetailsPage() {
           </div>
 
           <div className="space-y-3">
-            <label className="text-xs font-medium text-gray-600 dark:text-gray-400">Options * (cliquez sur le cercle pour la bonne réponse)</label>
+            <label className="text-xs font-medium text-gray-600 dark:text-gray-400">
+              Options * (cliquez sur le cercle pour la bonne réponse)
+            </label>
             {form.options.map((opt, i) => (
               <div key={opt.key} className="flex items-center gap-3">
-                <button type="button" onClick={() => setForm((p) => ({ ...p, correctAnswer: opt.key }))}
+                <button
+                  type="button"
+                  onClick={() => setForm((p) => ({ ...p, correctAnswer: opt.key }))}
                   className={`shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold transition-colors
-                    ${form.correctAnswer === opt.key
-                      ? "bg-[#6CB33F] text-white ring-2 ring-[#6CB33F]/30"
-                      : "bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-400 hover:bg-gray-300 dark:hover:bg-gray-600"
+                    ${
+                      form.correctAnswer === opt.key
+                        ? "bg-[#6CB33F] text-white ring-2 ring-[#6CB33F]/30"
+                        : "bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-400 hover:bg-gray-300 dark:hover:bg-gray-600"
                     }`}
-                >{opt.key}</button>
-                <input value={opt.text} onChange={(e) => updateOption(i, e.target.value)} placeholder={`Option ${opt.key}`}
+                >
+                  {opt.key}
+                </button>
+
+                <input
+                  value={opt.text}
+                  onChange={(e) => updateOption(i, e.target.value)}
+                  placeholder={`Option ${opt.key}`}
                   className="flex-1 px-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800
                              text-sm focus:outline-none focus:ring-2 focus:ring-[#6CB33F]/30 focus:border-[#6CB33F] transition-shadow placeholder:text-gray-400"
                 />
+
                 {form.correctAnswer === opt.key && <CheckCircle2 className="w-5 h-5 text-[#6CB33F] shrink-0" />}
               </div>
             ))}
@@ -501,7 +618,9 @@ export default function QuizTechniqueDetailsPage() {
 
           <div className="space-y-1.5">
             <label className="text-xs font-medium text-gray-600 dark:text-gray-400">Explication (optionnel)</label>
-            <input value={form.explanation} onChange={(e) => setForm((p) => ({ ...p, explanation: e.target.value }))}
+            <input
+              value={form.explanation}
+              onChange={(e) => setForm((p) => ({ ...p, explanation: e.target.value }))}
               placeholder="Pourquoi cette réponse est correcte…"
               className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800
                          text-sm focus:outline-none focus:ring-2 focus:ring-[#6CB33F]/30 focus:border-[#6CB33F] transition-shadow placeholder:text-gray-400"
@@ -509,14 +628,33 @@ export default function QuizTechniqueDetailsPage() {
           </div>
 
           <div className="flex justify-end gap-3 pt-2">
-            <button onClick={() => { setShowForm(false); setForm({ ...EMPTY_FORM }); }}
+            <button
+              onClick={() => {
+                setShowForm(false);
+                setForm({ ...EMPTY_FORM });
+              }}
               className="px-4 py-2 rounded-xl text-sm font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
-            >Annuler</button>
-            <button onClick={handleAddManual} disabled={addingManual}
+            >
+              Annuler
+            </button>
+
+            <button
+              onClick={handleAddManual}
+              disabled={addingManual}
               className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#6CB33F] text-white text-sm font-medium
                          hover:bg-[#5fa035] disabled:opacity-60 transition-colors"
             >
-              {addingManual ? <><Loader2 className="w-4 h-4 animate-spin" />Ajout…</> : <><Plus className="w-4 h-4" />Ajouter la question</>}
+              {addingManual ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  Ajout…
+                </>
+              ) : (
+                <>
+                  <Plus className="w-4 h-4" />
+                  Ajouter la question
+                </>
+              )}
             </button>
           </div>
         </div>
@@ -536,18 +674,24 @@ export default function QuizTechniqueDetailsPage() {
 
             if (isEditing && editForm) {
               return (
-                <div key={q._id || idx}
+                <div
+                  key={q._id || idx}
                   className="rounded-2xl border-2 border-[#6CB33F]/50 bg-white dark:bg-gray-900 shadow-lg shadow-[#6CB33F]/5"
                 >
                   <div className="p-6 space-y-5">
                     <div className="flex items-center gap-3">
-                      <div className="shrink-0 w-9 h-9 rounded-full bg-[#6CB33F] text-white flex items-center justify-center font-bold text-sm">{order}</div>
+                      <div className="shrink-0 w-9 h-9 rounded-full bg-[#6CB33F] text-white flex items-center justify-center font-bold text-sm">
+                        {order}
+                      </div>
                       <h3 className="text-sm font-semibold text-[#6CB33F]">Modification de la question</h3>
                     </div>
 
                     <div className="space-y-1.5">
                       <label className="text-xs font-medium text-gray-600 dark:text-gray-400">Question *</label>
-                      <textarea value={editForm.question} onChange={(e) => setEditForm((p) => ({ ...p, question: e.target.value }))} rows={3}
+                      <textarea
+                        value={editForm.question}
+                        onChange={(e) => setEditForm((p) => ({ ...p, question: e.target.value }))}
+                        rows={3}
                         className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-sm focus:outline-none focus:ring-2 focus:ring-[#6CB33F]/30 focus:border-[#6CB33F] transition-shadow resize-none"
                       />
                     </div>
@@ -555,17 +699,29 @@ export default function QuizTechniqueDetailsPage() {
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div className="space-y-1.5">
                         <label className="text-xs font-medium text-gray-600 dark:text-gray-400">Catégorie</label>
-                        <select value={editForm.category} onChange={(e) => setEditForm((p) => ({ ...p, category: e.target.value }))}
+                        <select
+                          value={editForm.category}
+                          onChange={(e) => setEditForm((p) => ({ ...p, category: e.target.value }))}
                           className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-sm focus:outline-none focus:ring-2 focus:ring-[#6CB33F]/30 focus:border-[#6CB33F]"
                         >
-                          {Object.entries(CATEGORY_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
+                          {Object.entries(CATEGORY_LABELS).map(([k, v]) => (
+                            <option key={k} value={k}>
+                              {v}
+                            </option>
+                          ))}
                         </select>
                       </div>
+
                       <div className="space-y-1.5">
                         <label className="text-xs font-medium text-gray-600 dark:text-gray-400">
-                          Difficulté <span className="ml-2 text-gray-400">(Timer: {TIMER_BY_DIFFICULTY[editForm.difficulty]}s)</span>
+                          Difficulté{" "}
+                          <span className="ml-2 text-gray-400">
+                            (Timer: {TIMER_BY_DIFFICULTY[editForm.difficulty]}s)
+                          </span>
                         </label>
-                        <select value={editForm.difficulty} onChange={(e) => setEditForm((p) => ({ ...p, difficulty: e.target.value }))}
+                        <select
+                          value={editForm.difficulty}
+                          onChange={(e) => setEditForm((p) => ({ ...p, difficulty: e.target.value }))}
                           className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-sm focus:outline-none focus:ring-2 focus:ring-[#6CB33F]/30 focus:border-[#6CB33F]"
                         >
                           <option value="easy">Facile ({TIMER_BY_DIFFICULTY.easy}s)</option>
@@ -576,40 +732,72 @@ export default function QuizTechniqueDetailsPage() {
                     </div>
 
                     <div className="space-y-3">
-                      <label className="text-xs font-medium text-gray-600 dark:text-gray-400">Options * (cliquez sur le cercle pour la bonne réponse)</label>
+                      <label className="text-xs font-medium text-gray-600 dark:text-gray-400">
+                        Options * (cliquez sur le cercle pour la bonne réponse)
+                      </label>
                       {editForm.options.map((opt, i) => (
                         <div key={opt.key} className="flex items-center gap-3">
-                          <button type="button" onClick={() => setEditForm((p) => ({ ...p, correctAnswer: opt.key }))}
+                          <button
+                            type="button"
+                            onClick={() => setEditForm((p) => ({ ...p, correctAnswer: opt.key }))}
                             className={`shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold transition-colors
-                              ${editForm.correctAnswer === opt.key
-                                ? "bg-[#6CB33F] text-white ring-2 ring-[#6CB33F]/30"
-                                : "bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-400 hover:bg-gray-300 dark:hover:bg-gray-600"
+                              ${
+                                editForm.correctAnswer === opt.key
+                                  ? "bg-[#6CB33F] text-white ring-2 ring-[#6CB33F]/30"
+                                  : "bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-400 hover:bg-gray-300 dark:hover:bg-gray-600"
                               }`}
-                          >{opt.key}</button>
-                          <input value={opt.text} onChange={(e) => updateEditOption(i, e.target.value)} placeholder={`Option ${opt.key}`}
+                          >
+                            {opt.key}
+                          </button>
+
+                          <input
+                            value={opt.text}
+                            onChange={(e) => updateEditOption(i, e.target.value)}
+                            placeholder={`Option ${opt.key}`}
                             className="flex-1 px-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-sm focus:outline-none focus:ring-2 focus:ring-[#6CB33F]/30 focus:border-[#6CB33F] transition-shadow placeholder:text-gray-400"
                           />
-                          {editForm.correctAnswer === opt.key && <CheckCircle2 className="w-5 h-5 text-[#6CB33F] shrink-0" />}
+
+                          {editForm.correctAnswer === opt.key && (
+                            <CheckCircle2 className="w-5 h-5 text-[#6CB33F] shrink-0" />
+                          )}
                         </div>
                       ))}
                     </div>
 
                     <div className="space-y-1.5">
                       <label className="text-xs font-medium text-gray-600 dark:text-gray-400">Explication (optionnel)</label>
-                      <input value={editForm.explanation} onChange={(e) => setEditForm((p) => ({ ...p, explanation: e.target.value }))}
+                      <input
+                        value={editForm.explanation}
+                        onChange={(e) => setEditForm((p) => ({ ...p, explanation: e.target.value }))}
                         placeholder="Pourquoi cette réponse est correcte…"
                         className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-sm focus:outline-none focus:ring-2 focus:ring-[#6CB33F]/30 focus:border-[#6CB33F] transition-shadow placeholder:text-gray-400"
                       />
                     </div>
 
                     <div className="flex justify-end gap-3 pt-2">
-                      <button onClick={cancelEditing}
+                      <button
+                        onClick={cancelEditing}
                         className="px-4 py-2 rounded-xl text-sm font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
-                      >Annuler</button>
-                      <button onClick={handleSaveEdit} disabled={savingEdit}
+                      >
+                        Annuler
+                      </button>
+
+                      <button
+                        onClick={handleSaveEdit}
+                        disabled={savingEdit}
                         className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#6CB33F] text-white text-sm font-medium hover:bg-[#5fa035] disabled:opacity-60 transition-colors"
                       >
-                        {savingEdit ? <><Loader2 className="w-4 h-4 animate-spin" />Sauvegarde…</> : <><Save className="w-4 h-4" />Sauvegarder</>}
+                        {savingEdit ? (
+                          <>
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                            Sauvegarde…
+                          </>
+                        ) : (
+                          <>
+                            <Save className="w-4 h-4" />
+                            Sauvegarder
+                          </>
+                        )}
                       </button>
                     </div>
                   </div>
@@ -622,13 +810,14 @@ export default function QuizTechniqueDetailsPage() {
             const catLabel = CATEGORY_LABELS[q.category] || q.category || "Général";
 
             return (
-              <div key={q._id || idx}
+              <div
+                key={q._id || idx}
                 className="rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 hover:shadow-md transition-shadow"
               >
                 <div className="p-6">
                   <div className="flex items-start gap-3 mb-4">
                     <div className="shrink-0 w-9 h-9 rounded-full bg-[#6CB33F] text-white flex items-center justify-center font-bold text-sm">
-                      {q.order || idx + 1}
+                      {order}
                     </div>
 
                     <div className="flex-1 min-w-0">
@@ -644,23 +833,32 @@ export default function QuizTechniqueDetailsPage() {
                           {timer}s
                         </span>
                       </div>
+
                       <h3 className="text-base font-semibold text-gray-800 dark:text-gray-100 leading-relaxed">
                         {q.question}
                       </h3>
                     </div>
 
                     <div className="flex items-center gap-1 shrink-0">
-                      <button onClick={() => startEditing(q, idx)}
+                      <button
+                        onClick={() => startEditing(q, idx)}
                         className="p-2 rounded-lg text-gray-400 hover:text-[#6CB33F] hover:bg-[#6CB33F]/10 transition-colors"
                         title="Modifier cette question"
                       >
                         <Pencil className="w-4 h-4" />
                       </button>
-                      <button onClick={() => handleDeleteQuestion(order)} disabled={deletingOrder === order}
-                        className="p-2 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 disabled:opacity-50 transition-colors"
+
+                      <button
+                        onClick={() => confirmDeleteQuestion(order)}
+                        className="p-2 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors"
                         title="Supprimer cette question"
+                        disabled={deletingOrder !== null}
                       >
-                        {deletingOrder === order ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
+                        {deletingOrder === order ? (
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                        ) : (
+                          <Trash2 className="w-4 h-4" />
+                        )}
                       </button>
                     </div>
                   </div>
@@ -669,18 +867,31 @@ export default function QuizTechniqueDetailsPage() {
                     {(q.options || []).map((option, optIdx) => {
                       const isCorrect = option.key === q.correctAnswer;
                       return (
-                        <div key={optIdx}
+                        <div
+                          key={optIdx}
                           className={`p-3 rounded-xl border transition-colors
-                            ${isCorrect
-                              ? "border-[#6CB33F]/40 bg-[#6CB33F]/5 dark:bg-[#6CB33F]/10"
-                              : "border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50"
+                            ${
+                              isCorrect
+                                ? "border-[#6CB33F]/40 bg-[#6CB33F]/5 dark:bg-[#6CB33F]/10"
+                                : "border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50"
                             }`}
                         >
                           <div className="flex items-center gap-3">
-                            <div className={`shrink-0 w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold
-                              ${isCorrect ? "bg-[#6CB33F] text-white" : "bg-gray-200 dark:bg-gray-600 text-gray-600 dark:text-gray-300"}`}
-                            >{option.key}</div>
-                            <p className={`flex-1 text-sm ${isCorrect ? "font-medium text-gray-900 dark:text-white" : "text-gray-700 dark:text-gray-300"}`}>
+                            <div
+                              className={`shrink-0 w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold
+                              ${
+                                isCorrect
+                                  ? "bg-[#6CB33F] text-white"
+                                  : "bg-gray-200 dark:bg-gray-600 text-gray-600 dark:text-gray-300"
+                              }`}
+                            >
+                              {option.key}
+                            </div>
+                            <p
+                              className={`flex-1 text-sm ${
+                                isCorrect ? "font-medium text-gray-900 dark:text-white" : "text-gray-700 dark:text-gray-300"
+                              }`}
+                            >
                               {option.text}
                             </p>
                             {isCorrect && <CheckCircle2 className="w-5 h-5 text-[#6CB33F] shrink-0" />}
@@ -700,6 +911,62 @@ export default function QuizTechniqueDetailsPage() {
               </div>
             );
           })}
+        </div>
+      )}
+
+      {/* ✅ Modal suppression */}
+      {openDeleteModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div
+            className="absolute inset-0 bg-black/50 dark:bg-black/70"
+            onClick={closeDeleteModal}
+          />
+
+          <div className="relative z-10 w-full max-w-md rounded-3xl bg-white dark:bg-gray-900 p-6 shadow-2xl">
+            <div className="flex items-start justify-between">
+              <h2 className="text-lg font-bold text-gray-900 dark:text-white">
+                Supprimer la question
+              </h2>
+              <button onClick={closeDeleteModal} disabled={deletingOrder !== null}>
+                <X className="w-5 h-5 text-gray-400 hover:text-gray-600" />
+              </button>
+            </div>
+
+            <p className="mt-2 text-sm text-red-500 font-semibold">
+              Cette action est irréversible
+            </p>
+
+            <div className="mt-6 flex items-center gap-4">
+              <div className="flex h-12 w-12 items-center justify-center rounded-full bg-red-100 dark:bg-red-900/30">
+                <AlertCircle className="w-6 h-6 text-red-600 dark:text-red-400" />
+              </div>
+              <p className="text-sm text-gray-700 dark:text-gray-300">
+                Êtes-vous sûr de vouloir supprimer cette question du quiz ?
+              </p>
+            </div>
+
+            <div className="mt-8 flex justify-end gap-4">
+              <button
+                onClick={closeDeleteModal}
+                disabled={deletingOrder !== null}
+                className="px-5 py-2 rounded-xl text-sm font-medium
+                           text-gray-600 dark:text-gray-300
+                           hover:bg-gray-100 dark:hover:bg-gray-800 disabled:opacity-60 transition"
+              >
+                Annuler
+              </button>
+
+              <button
+                onClick={handleDeleteQuestionConfirmed}
+                disabled={deletingOrder !== null || questionToDelete === null}
+                className="px-5 py-2 rounded-xl text-sm font-medium
+                           bg-red-500 text-white hover:bg-red-600
+                           disabled:opacity-60 transition"
+              >
+                {deletingOrder !== null ? "Suppression…" : "Supprimer"}
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>

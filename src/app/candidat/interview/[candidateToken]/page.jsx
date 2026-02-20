@@ -87,7 +87,7 @@ export default function CandidateInterviewPage() {
       if (data.success) {
         setDone(true);
         setSuccessMessage(
-          "Entretien confirmé avec succès ! Nous vous attendons avec impatience."
+          "Entretien confirmé avec succès !"
         );
       } else {
         setErrorMessage(data.message || "Une erreur est survenue");
@@ -229,7 +229,7 @@ export default function CandidateInterviewPage() {
               <div className="bg-emerald-50 dark:bg-emerald-900/20 rounded-xl p-4 border border-emerald-100 dark:border-emerald-800 transition-colors">
                 <p className="text-sm text-emerald-800 dark:text-emerald-300">
                   <strong>Rappel :</strong> Pensez à arriver 10 minutes en
-                  avance et à apporter une copie de votre CV.
+                  avance.
                 </p>
               </div>
             )}
@@ -436,7 +436,6 @@ export default function CandidateInterviewPage() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 {[
                   "Arrivez 10 minutes en avance",
-                  "Apportez une copie de votre CV",
                   "Préparez des questions sur le poste",
                   "Renseignez-vous sur l'entreprise",
                 ].map((tip, i) => (
