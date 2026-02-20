@@ -47,15 +47,17 @@ export default function ApplyPage() {
           cvFileUrl={cvFileUrl}
           onBack={() => setStep(1)}
           onSubmit={async (manualPayload) => {
-            const pi = manualPayload.personal_info || {};
+            // ✅ FIX: on propage l'erreur pour que StepManual puisse afficher le 409
+            const res = await confirmCandidature(candidatureId, parsedCV, manualPayload);
 
-            const personalInfoForm = {
-              dateNaissance: pi.date_naissance || null,
-              lieuNaissance: pi.lieu_naissance || null,
-              telephone: manualPayload.telephone || null,
-            };
-
-            await confirmCandidature(candidatureId, parsedCV, manualPayload);
+            // Si l'API retourne une erreur (409 doublon, etc.), on la throw
+            // pour que le catch dans StepManual l'attrape et affiche le bon message
+            if (res && (res.code === "ALREADY_SUBMITTED" || res.code === "EMAIL_ALREADY_APPLIED")) {
+              const err = new Error(res.message || "Déjà soumis");
+              err.status = 409;
+              err.data = res;
+              throw err;
+            }
           }}
         />
       )}

@@ -1,158 +1,220 @@
-// hooks/useOutlookCalendar.js
-import { useState, useEffect, useCallback } from 'react';
-import api from '../services/api';
+// hooks/Useoutlookcalendar.js
+"use client";
 
-export const useOutlookCalendar = () => {
-  const [events, setEvents] = useState([]);
-  const [outlookStatus, setOutlookStatus] = useState({
-    connected: false,
-    outlookEmail: null,
-    tokenExpired: false,
+import { useState, useEffect, useCallback, useRef } from "react";
+
+const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
+
+// ─── Helper fetch authentifié ─────────────────────────────────
+const apiFetch = async (path, options = {}) => {
+  const token = localStorage.getItem("token");
+  const res = await fetch(`${API}${path}`, {
+    ...options,
+    headers: {
+      "Content-Type": "application/json",
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      ...options.headers,
+    },
   });
-  const [loading, setLoading] = useState(false);
-  const [syncing, setSyncing] = useState(false);
-  const [error, setError] = useState(null);
 
-  // ✅ FIX : /api/auth/microsoft/status
-  const checkOutlookStatus = useCallback(async () => {
-    try {
-      const { data } = await api.get('/api/auth/microsoft/status');
-      setOutlookStatus(data);
-    } catch (err) {
-      console.error('Erreur vérification statut Outlook:', err);
+  let data = null;
+  try { data = await res.json(); } catch {}
+
+  return { ok: res.ok, status: res.status, data };
+};
+
+// ─────────────────────────────────────────────────────────────
+export const useOutlookCalendar = () => {
+  const [events,        setEvents]        = useState([]);
+  const [outlookStatus, setOutlookStatus] = useState({ connected: false, email: null });
+  const [loading,       setLoading]       = useState(true);
+  const [syncing,       setSyncing]       = useState(false);
+  const [error,         setError]         = useState(null);
+
+  // Évite les double-fetch en StrictMode React
+  const fetchedRef = useRef(false);
+
+  // ── Détecte OUTLOOK_NOT_CONNECTED dans n'importe quelle réponse ──────────
+  const handleOutlookDisconnect = useCallback((data) => {
+    if (data?.code === "OUTLOOK_NOT_CONNECTED") {
+      setOutlookStatus({ connected: false, email: null });
+      return true;
+    }
+    return false;
+  }, []);
+
+  // ── Statut connexion Outlook ─────────────────────────────────────────────
+  const fetchStatus = useCallback(async () => {
+    const { ok, data } = await apiFetch("/api/auth/microsoft/status");
+    if (ok && data?.connected) {
+      setOutlookStatus({ connected: true, email: data.outlookEmail });
+    } else {
+      setOutlookStatus({ connected: false, email: null });
     }
   }, []);
 
-  // ✅ FIX : /api/calendar/events
-  const fetchEvents = useCallback(async (startDate, endDate) => {
+  // ── Chargement des événements ────────────────────────────────────────────
+  const fetchEvents = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
-      const params = {};
-      if (startDate) params.startDate = startDate;
-      if (endDate) params.endDate = endDate;
+      const { ok, status, data } = await apiFetch("/api/calendar/events");
 
-      const { data } = await api.get('/api/calendar/events', { params });
-      setEvents(data.events);
-    } catch (err) {
-      if (err.response?.data?.code === 'OUTLOOK_NOT_CONNECTED') {
-        setOutlookStatus({ connected: false });
-      } else {
-        setError('Erreur lors du chargement des événements');
+      // 401 → JWT app expiré → rediriger vers login
+      if (status === 401) {
+        window.location.href = "/login";
+        return;
       }
+
+      // 403 OUTLOOK_NOT_CONNECTED → session Outlook expirée
+      if (handleOutlookDisconnect(data)) {
+        setError("Votre session Outlook a expiré. Veuillez reconnecter votre compte.");
+        setEvents([]);
+        return;
+      }
+
+      if (!ok) {
+        setError(data?.message || "Erreur lors du chargement des événements");
+        return;
+      }
+
+      setEvents(data?.events || []);
+    } catch (err) {
+      setError("Impossible de contacter le serveur");
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [handleOutlookDisconnect]);
 
-  // ✅ FIX : /api/auth/microsoft/connect
+  // ── Chargement initial ────────────────────────────────────────────────────
+  useEffect(() => {
+    if (fetchedRef.current) return;
+    fetchedRef.current = true;
+
+    (async () => {
+      await fetchStatus();
+      await fetchEvents();
+    })();
+  }, [fetchStatus, fetchEvents]);
+
+  // ── Connexion Outlook ─────────────────────────────────────────────────────
   const connectOutlook = useCallback(async () => {
+    setError(null);
     try {
-      const { data } = await api.get('/api/auth/microsoft/connect');
-      window.location.href = data.authUrl;
+      const { ok, data } = await apiFetch("/api/auth/microsoft/connect");
+      if (ok && data?.authUrl) {
+        window.location.href = data.authUrl;
+      } else {
+        setError("Impossible d'initier la connexion Outlook");
+      }
     } catch {
-      setError('Impossible de se connecter à Outlook');
+      setError("Erreur réseau");
     }
   }, []);
 
-  // ✅ FIX : /api/auth/microsoft/disconnect
+  // ── Déconnexion Outlook ───────────────────────────────────────────────────
   const disconnectOutlook = useCallback(async () => {
     try {
-      await api.delete('/api/auth/microsoft/disconnect');
-      setOutlookStatus({ connected: false, outlookEmail: null });
-      await fetchEvents();
+      await apiFetch("/api/auth/microsoft/disconnect", { method: "DELETE" });
+      setOutlookStatus({ connected: false, email: null });
+      // On conserve les événements locaux (source: "app"), retire les Outlook
+      setEvents((prev) => prev.filter((e) => e.source !== "outlook"));
     } catch {
-      setError('Erreur lors de la déconnexion');
-    }
-  }, [fetchEvents]);
-
-  // ✅ FIX : /api/calendar/events
-  const createEvent = useCallback(async (eventData) => {
-    setLoading(true);
-    try {
-      const { data } = await api.post('/api/calendar/events', eventData);
-      setEvents((prev) =>
-        [...prev, data.event].sort(
-          (a, b) => new Date(a.startDate) - new Date(b.startDate)
-        )
-      );
-      return { success: true, event: data.event };
-    } catch (err) {
-      const message = err.response?.data?.message || 'Erreur création événement';
-      setError(message);
-      return { success: false, error: message };
-    } finally {
-      setLoading(false);
+      setError("Erreur lors de la déconnexion");
     }
   }, []);
 
-  // ✅ FIX : /api/calendar/events/:id  (supporte _id MongoDB)
-  const updateEvent = useCallback(async (eventId, eventData) => {
-    setLoading(true);
+  // ── Créer un événement ────────────────────────────────────────────────────
+  const createEvent = useCallback(async (formData) => {
     try {
-      const { data } = await api.put(`/api/calendar/events/${eventId}`, eventData);
-      setEvents((prev) =>
-        prev.map((e) =>
-          (e._id === eventId || e.id === eventId) ? data.event : e
-        )
-      );
-      return { success: true, event: data.event };
-    } catch (err) {
-      const message = err.response?.data?.message || 'Erreur mise à jour';
-      setError(message);
-      return { success: false, error: message };
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+      const { ok, status, data } = await apiFetch("/api/calendar/events", {
+        method: "POST",
+        body: JSON.stringify(formData),
+      });
 
-  // ✅ FIX : /api/calendar/events/:id  (supporte _id MongoDB)
-  const deleteEvent = useCallback(async (eventId) => {
+      if (status === 401) { window.location.href = "/login"; return { success: false }; }
+      if (handleOutlookDisconnect(data)) {
+        setError("Session Outlook expirée. Veuillez reconnecter votre compte.");
+        return { success: false, code: "OUTLOOK_NOT_CONNECTED" };
+      }
+      if (!ok) return { success: false, message: data?.message };
+
+      setEvents((prev) => [...prev, data.event].sort(
+        (a, b) => new Date(a.startDate) - new Date(b.startDate)
+      ));
+      return { success: true };
+    } catch {
+      return { success: false, message: "Erreur réseau" };
+    }
+  }, [handleOutlookDisconnect]);
+
+  // ── Modifier un événement ─────────────────────────────────────────────────
+  const updateEvent = useCallback(async (id, formData) => {
     try {
-      await api.delete(`/api/calendar/events/${eventId}`);
+      const { ok, status, data } = await apiFetch(`/api/calendar/events/${id}`, {
+        method: "PUT",
+        body: JSON.stringify(formData),
+      });
+
+      if (status === 401) { window.location.href = "/login"; return { success: false }; }
+      if (handleOutlookDisconnect(data)) {
+        setError("Session Outlook expirée. Veuillez reconnecter votre compte.");
+        return { success: false, code: "OUTLOOK_NOT_CONNECTED" };
+      }
+      if (!ok) return { success: false, message: data?.message };
+
       setEvents((prev) =>
-        prev.filter((e) => e._id !== eventId && e.id !== eventId)
+        prev.map((e) => (e._id === id || e.outlookId === id ? data.event : e))
       );
       return { success: true };
-    } catch (err) {
-      const message = err.response?.data?.message || 'Erreur suppression';
-      setError(message);
-      return { success: false, error: message };
+    } catch {
+      return { success: false, message: "Erreur réseau" };
     }
-  }, []);
+  }, [handleOutlookDisconnect]);
 
-  // ✅ FIX : /api/calendar/sync
+  // ── Supprimer un événement ────────────────────────────────────────────────
+  const deleteEvent = useCallback(async (id) => {
+    try {
+      const { ok, status, data } = await apiFetch(`/api/calendar/events/${id}`, {
+        method: "DELETE",
+      });
+
+      if (status === 401) { window.location.href = "/login"; return { success: false }; }
+      if (handleOutlookDisconnect(data)) {
+        setError("Session Outlook expirée. Veuillez reconnecter votre compte.");
+        return { success: false, code: "OUTLOOK_NOT_CONNECTED" };
+      }
+      if (!ok) return { success: false, message: data?.message };
+
+      setEvents((prev) => prev.filter((e) => e._id !== id && e.outlookId !== id));
+      return { success: true };
+    } catch {
+      return { success: false, message: "Erreur réseau" };
+    }
+  }, [handleOutlookDisconnect]);
+
+  // ── Sync manuelle ─────────────────────────────────────────────────────────
   const syncNow = useCallback(async () => {
     setSyncing(true);
+    setError(null);
     try {
-      const { data } = await api.post('/api/calendar/sync');
+      const { ok, status, data } = await apiFetch("/api/calendar/sync", { method: "POST" });
+
+      if (status === 401) { window.location.href = "/login"; return; }
+      if (handleOutlookDisconnect(data)) {
+        setError("Session Outlook expirée. Veuillez reconnecter votre compte.");
+        return;
+      }
+      if (!ok) { setError(data?.message || "Erreur sync"); return; }
+
+      // Recharge les événements après sync
       await fetchEvents();
-      return { success: true, synced: data.synced };
-    } catch (err) {
-      setError('Erreur synchronisation');
-      return { success: false };
+    } catch {
+      setError("Erreur réseau lors de la synchronisation");
     } finally {
       setSyncing(false);
     }
-  }, [fetchEvents]);
-
-  useEffect(() => {
-    checkOutlookStatus();
-    const params = new URLSearchParams(window.location.search);
-    if (params.get('connected') === 'true') {
-      setOutlookStatus((prev) => ({ ...prev, connected: true }));
-      window.history.replaceState({}, '', window.location.pathname);
-      fetchEvents(); // recharge après connexion OAuth
-    }
-    if (params.get('error')) {
-      setError('Connexion Outlook annulée ou échouée');
-      window.history.replaceState({}, '', window.location.pathname);
-    }
-  }, [checkOutlookStatus, fetchEvents]);
-
-  useEffect(() => {
-    fetchEvents();
-  }, [fetchEvents]);
+  }, [handleOutlookDisconnect, fetchEvents]);
 
   return {
     events,
@@ -161,7 +223,6 @@ export const useOutlookCalendar = () => {
     syncing,
     error,
     setError,
-    fetchEvents,
     connectOutlook,
     disconnectOutlook,
     createEvent,

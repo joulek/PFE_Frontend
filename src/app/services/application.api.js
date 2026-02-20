@@ -37,16 +37,24 @@ export const confirmCandidature = async (
   );
 
   const data = await res.json();
-  if (!res.ok) throw new Error(data.message || "Submit failed");
+
+  if (!res.ok) {
+    // ✅ FIX: on attache status + data à l'erreur pour que StepManual
+    // puisse détecter le code ALREADY_SUBMITTED et afficher le bon message
+    const err = new Error(data.message || "Submit failed");
+    err.status = res.status;   // ← 409
+    err.data   = data;         // ← { code: "ALREADY_SUBMITTED", message: "..." }
+    throw err;
+  }
+
   return data;
 };
 
-
-// ✅ NEW: update infos personnelles du candidat
+// ✅ update infos personnelles du candidat
 export const updatePersonalInfo = async (candidatureId, personalInfoForm) => {
   const res = await fetch(
-    `http://localhost:5000/candidatures/${candidatureId}/personal-info`
-    , {
+    `http://localhost:5000/candidatures/${candidatureId}/personal-info`,
+    {
       method: "PATCH",
       headers: {
         "Content-Type": "application/json",
@@ -63,5 +71,3 @@ export const updatePersonalInfo = async (candidatureId, personalInfoForm) => {
 
   return data;
 };
-
-
