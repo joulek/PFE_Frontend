@@ -10,11 +10,13 @@ import {
   UserCheck, FileText, Search, Calendar, ArrowLeft,
   Mail, Phone, Clock, Briefcase, Send, X, CheckCircle2,
   Brain, ClipboardList, AlertCircle, Loader2, BarChart2,
+  PhoneCall, Users, UserCog, Star, ChevronRight, StickyNote,
 } from "lucide-react";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL;
 
 /* ================= HELPERS ================= */
+
 function safeStr(v) {
   if (v === null || v === undefined) return "";
   return typeof v === "string" ? v.trim() : String(v).trim();
@@ -286,9 +288,604 @@ function SendDocumentsModal({ candidature, onClose, onSuccess }) {
 /* ================================================================
    CARD CANDIDAT
 ================================================================ */
+/* ================================================================
+   MODAL — Planifier Entretien
+================================================================ */
+function EntretienModal({ candidate, onClose }) {
+  const [step, setStep] = useState("type"); // "type" | "note"
+  const [selectedType, setSelectedType] = useState(null);
+
+  const [noteText, setNoteText] = useState("");
+  const [stars, setStars] = useState(0);
+
+  const [loadingNote, setLoadingNote] = useState(false);
+  const [existingNoteId, setExistingNoteId] = useState(null);
+
+  const [saving, setSaving] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [saved, setSaved] = useState(false);
+
+  const name = getName(candidate);
+
+  const types = [
+    {
+      id: "telephonique",
+      label: "Entretien Téléphonique",
+      icon: PhoneCall,
+      color: "from-blue-500 to-cyan-500",
+      desc: "Premier contact rapide par téléphone",
+    },
+    {
+      id: "rh",
+      label: "Entretien RH",
+      icon: Users,
+      color: "from-violet-500 to-purple-600",
+      desc: "Évaluation RH et motivation",
+    },
+    {
+      id: "rh_technique",
+      label: "Entretien RH + Technique",
+      icon: UserCog,
+      color: "from-orange-500 to-red-500",
+      desc: "Entretien complet RH et technique",
+    },
+  ];
+
+  async function openType(tid) {
+    setSelectedType(tid);
+    setStep("note");
+
+    // reset UI
+    setSaved(false);
+    setSaving(false);
+    setDeleting(false);
+
+    // load existing note
+    setLoadingNote(true);
+    try {
+      const res = await api.get(
+        `/candidatures/${candidate._id}/entretien-note?type=${tid}`
+      );
+      const n = res?.data?.note || null;
+
+      if (n) {
+        setExistingNoteId(n.noteId || null);
+        setNoteText(n.note || "");
+        setStars(Number(n.stars || 0));
+      } else {
+        setExistingNoteId(null);
+        setNoteText("");
+        setStars(0);
+      }
+    } catch (e) {
+      console.error("Erreur chargement note:", e);
+      setExistingNoteId(null);
+      setNoteText("");
+      setStars(0);
+    } finally {
+      setLoadingNote(false);
+    }
+  }
+
+  async function handleCreate() {
+    if (!noteText.trim() || !selectedType) return;
+    setSaving(true);
+    setSaved(false);
+
+    try {
+      const res = await api.post(`/candidatures/${candidate._id}/entretien-note`, {
+        type: selectedType,
+        note: noteText.trim(),
+        stars,
+        date: new Date().toISOString(),
+      });
+
+      const created = res?.data?.note;
+      setExistingNoteId(created?.noteId || null);
+
+      setSaved(true);
+      setTimeout(() => setSaved(false), 1200);
+    } catch (e) {
+      console.error("Erreur création note:", e);
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function handleUpdate() {
+    if (!noteText.trim() || !existingNoteId || !selectedType) return;
+    setSaving(true);
+    setSaved(false);
+
+    try {
+      await api.patch(
+        `/candidatures/${candidate._id}/entretien-note/${existingNoteId}`,
+        { type: selectedType, note: noteText.trim(), stars }
+      );
+      setSaved(true);
+      setTimeout(() => setSaved(false), 1200);
+    } catch (e) {
+      console.error("Erreur update note:", e);
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function handleDelete() {
+    if (!existingNoteId) return;
+
+    const ok = confirm("Supprimer cette note ?");
+    if (!ok) return;
+
+    setDeleting(true);
+    try {
+      await api.delete(
+        `/candidatures/${candidate._id}/entretien-note/${existingNoteId}`
+      );
+      // reset
+      setExistingNoteId(null);
+      setNoteText("");
+      setStars(0);
+      setStep("type");
+    } catch (e) {
+      console.error("Erreur suppression note:", e);
+    } finally {
+      setDeleting(false);
+    }
+  }
+
+  const selectedTypeObj = types.find((t) => t.id === selectedType);
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose} />
+
+      <div className="relative bg-white dark:bg-gray-900 rounded-3xl shadow-2xl w-full max-w-md overflow-hidden">
+        {/* Header */}
+        <div className="bg-gradient-to-r from-blue-600 to-indigo-600 px-6 py-5">
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="text-white font-extrabold text-lg">
+                {step === "type" ? "Planifier un entretien" : "Note après entretien"}
+              </h2>
+              <p className="text-blue-200 text-sm mt-0.5">{name}</p>
+            </div>
+            <button
+              onClick={onClose}
+              className="w-8 h-8 rounded-full bg-white/20 hover:bg-white/30 flex items-center justify-center transition-colors"
+            >
+              <X className="w-4 h-4 text-white" />
+            </button>
+          </div>
+        </div>
+
+        {/* Step 1 */}
+        {step === "type" && (
+          <div className="p-5 space-y-3">
+            {types.map((t) => (
+              <button
+                key={t.id}
+                onClick={() => openType(t.id)}
+                className="w-full flex items-center gap-4 p-4 rounded-2xl border-2 border-gray-100 dark:border-gray-700 hover:border-blue-200 dark:hover:border-blue-700 hover:bg-blue-50/50 dark:hover:bg-blue-900/20 transition-all group text-left"
+              >
+                <div className={`w-11 h-11 rounded-xl bg-gradient-to-br ${t.color} flex items-center justify-center shadow-md flex-shrink-0`}>
+                  <t.icon className="w-5 h-5 text-white" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="font-bold text-gray-800 dark:text-white text-sm">{t.label}</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{t.desc}</p>
+                </div>
+                <ChevronRight className="w-4 h-4 text-gray-400 group-hover:text-blue-500 transition-colors flex-shrink-0" />
+              </button>
+            ))}
+          </div>
+        )}
+
+        {/* Step 2 */}
+        {step === "note" && (
+          <div className="p-5">
+            <div className="flex items-center justify-between mb-4">
+              <button
+                onClick={() => setStep("type")}
+                className="text-xs text-gray-400 hover:text-gray-600 flex items-center gap-1"
+              >
+                ← Retour
+              </button>
+
+              {existingNoteId && (
+                <span className="text-xs font-semibold text-blue-600 dark:text-blue-400">
+                  Mode édition
+                </span>
+              )}
+            </div>
+
+            {/* Type card */}
+            {selectedTypeObj && (
+              <div className="flex items-center gap-3 mb-4 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-xl">
+                <div className={`w-9 h-9 rounded-xl bg-gradient-to-br ${selectedTypeObj.color} flex items-center justify-center`}>
+                  <selectedTypeObj.icon className="w-4 h-4 text-white" />
+                </div>
+                <div>
+                  <p className="text-sm font-bold text-gray-800 dark:text-white">
+                    {selectedTypeObj.label}
+                  </p>
+                  <p className="text-xs text-gray-500">
+                    {new Date().toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" })}
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {loadingNote ? (
+              <div className="flex items-center justify-center gap-2 py-10 text-gray-400">
+                <Loader2 className="w-5 h-5 animate-spin" />
+                <span className="text-sm">Chargement de la note...</span>
+              </div>
+            ) : (
+              <>
+                {/* Note */}
+                <div className="mb-4">
+                  <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">
+                    Note du recruteur
+                  </label>
+                  <textarea
+                    value={noteText}
+                    onChange={(e) => setNoteText(e.target.value)}
+                    placeholder="Observations, impressions, points à retenir..."
+                    rows={5}
+                    className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-gray-800 dark:text-white text-sm resize-none focus:outline-none focus:ring-2 focus:ring-blue-400 transition-all"
+                  />
+                  <p className="text-xs text-gray-400 mt-1 text-right">
+                    {noteText.length} caractères
+                  </p>
+                </div>
+
+                <NoteStars stars={stars} onChange={setStars} />
+
+                {/* Actions */}
+                {!existingNoteId ? (
+                  <button
+                    onClick={handleCreate}
+                    disabled={!noteText.trim() || saving}
+                    className={`w-full py-3 rounded-xl font-bold text-sm transition-all flex items-center justify-center gap-2 ${
+                      saved
+                        ? "bg-green-500 text-white"
+                        : "bg-blue-600 hover:bg-blue-700 text-white disabled:opacity-40 disabled:cursor-not-allowed"
+                    }`}
+                  >
+                    {saved ? (
+                      <>
+                        <CheckCircle2 className="w-4 h-4" /> Note sauvegardée !
+                      </>
+                    ) : saving ? (
+                      <>
+                        <Loader2 className="w-4 h-4 animate-spin" /> Sauvegarde...
+                      </>
+                    ) : (
+                      <>
+                        <StickyNote className="w-4 h-4" /> Sauvegarder la note
+                      </>
+                    )}
+                  </button>
+                ) : (
+                  <div className="grid grid-cols-2 gap-3">
+                    <button
+                      onClick={handleUpdate}
+                      disabled={!noteText.trim() || saving}
+                      className={`py-3 rounded-xl font-bold text-sm transition-all flex items-center justify-center gap-2 ${
+                        saved
+                          ? "bg-green-500 text-white col-span-2"
+                          : "bg-blue-600 hover:bg-blue-700 text-white disabled:opacity-40 disabled:cursor-not-allowed"
+                      }`}
+                    >
+                      {saved ? (
+                        <>
+                          <CheckCircle2 className="w-4 h-4" /> Note mise à jour !
+                        </>
+                      ) : saving ? (
+                        <>
+                          <Loader2 className="w-4 h-4 animate-spin" /> Mise à jour...
+                        </>
+                      ) : (
+                        <>
+                          <StickyNote className="w-4 h-4" /> Mettre à jour
+                        </>
+                      )}
+                    </button>
+
+                    {!saved && (
+                      <button
+                        onClick={handleDelete}
+                        disabled={deleting}
+                        className="py-3 rounded-xl font-bold text-sm bg-red-50 hover:bg-red-100 text-red-700 dark:bg-red-900/20 dark:hover:bg-red-900/30 dark:text-red-300 transition-all flex items-center justify-center gap-2 disabled:opacity-50"
+                      >
+                        {deleting ? (
+                          <>
+                            <Loader2 className="w-4 h-4 animate-spin" /> Suppression...
+                          </>
+                        ) : (
+                          <>
+                            <X className="w-4 h-4" /> Supprimer
+                          </>
+                        )}
+                      </button>
+                    )}
+                  </div>
+                )}
+              </>
+            )}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function NoteStars({ stars, onChange }) {
+  return (
+    <div className="flex items-center gap-2 mb-4">
+      <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">
+        Appréciation :
+      </span>
+      <div className="flex gap-1">
+        {[1, 2, 3, 4, 5].map((s) => (
+          <button key={s} type="button" onClick={() => onChange?.(s)}>
+            <Star
+              className={`w-5 h-5 transition-colors ${
+                s <= stars ? "text-yellow-400 fill-yellow-400" : "text-gray-300"
+              }`}
+            />
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+function ScheduleInterviewForm({
+  candidate,
+  type,
+  onBack,
+  onClose,
+  onSaved,
+}) {
+  const [date, setDate] = useState("");
+  const [time, setTime] = useState("");
+  const [duration, setDuration] = useState(30);
+  const [mode, setMode] = useState("visio"); // "visio" | "presentiel"
+  const [location, setLocation] = useState("");
+  const [meetingLink, setMeetingLink] = useState("");
+  const [interviewers, setInterviewers] = useState(""); // "nom1, nom2"
+  const [message, setMessage] = useState("");
+  const [sendEmail, setSendEmail] = useState(true);
+
+  const [saving, setSaving] = useState(false);
+
+  const typeLabel =
+    type === "rh"
+      ? "Entretien RH"
+      : type === "rh_technique"
+        ? "Entretien RH + Technique"
+        : "Entretien";
+
+  function buildISO() {
+    // date: "2026-02-21" , time:"14:30"
+    if (!date || !time) return null;
+    return new Date(`${date}T${time}:00`).toISOString();
+  }
+
+  async function handleSubmit(e) {
+    e.preventDefault();
+    const startAt = buildISO();
+    if (!startAt) return;
+
+    setSaving(true);
+    try {
+      // ✅ هنا تحط API route متاعك كي تجهز backend
+      // مثال:
+      // await api.post(`/candidatures/${candidate._id}/interviews`, {
+      //   type,
+      //   startAt,
+      //   durationMinutes: Number(duration),
+      //   mode,
+      //   location: mode === "presentiel" ? location : null,
+      //   meetingLink: mode === "visio" ? meetingLink : null,
+      //   interviewers: interviewers.split(",").map(s => s.trim()).filter(Boolean),
+      //   message,
+      //   sendEmail,
+      // });
+
+      // مؤقت: نخليها fake success
+      await new Promise((r) => setTimeout(r, 500));
+
+      onSaved?.();
+      onClose?.();
+    } catch (err) {
+      console.error("Erreur planification:", err);
+      alert("Erreur lors de la planification");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <form onSubmit={handleSubmit} className="p-5">
+      <div className="flex items-center justify-between mb-4">
+        <button
+          type="button"
+          onClick={onBack}
+          className="text-xs text-gray-400 hover:text-gray-600 flex items-center gap-1"
+        >
+          ← Retour
+        </button>
+        <span className="text-xs font-semibold text-blue-600 dark:text-blue-400">
+          {typeLabel}
+        </span>
+      </div>
+
+      <div className="space-y-4">
+        {/* Date + Time */}
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1">
+              Date
+            </label>
+            <input
+              type="date"
+              value={date}
+              onChange={(e) => setDate(e.target.value)}
+              className="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-sm text-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-400"
+              required
+            />
+          </div>
+
+          <div>
+            <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1">
+              Heure
+            </label>
+            <input
+              type="time"
+              value={time}
+              onChange={(e) => setTime(e.target.value)}
+              className="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-sm text-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-400"
+              required
+            />
+          </div>
+        </div>
+
+        {/* Duration */}
+        <div>
+          <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1">
+            Durée (minutes)
+          </label>
+          <select
+            value={duration}
+            onChange={(e) => setDuration(e.target.value)}
+            className="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-sm text-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-400"
+          >
+            {[15, 30, 45, 60, 90].map((m) => (
+              <option key={m} value={m}>
+                {m} min
+              </option>
+            ))}
+          </select>
+        </div>
+
+        {/* Mode */}
+        <div>
+          <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1">
+            Mode
+          </label>
+          <div className="grid grid-cols-2 gap-3">
+            <button
+              type="button"
+              onClick={() => setMode("visio")}
+              className={`px-3 py-2 rounded-xl border text-sm font-semibold transition-all ${
+                mode === "visio"
+                  ? "border-blue-300 bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300"
+                  : "border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200"
+              }`}
+            >
+              Visio
+            </button>
+            <button
+              type="button"
+              onClick={() => setMode("presentiel")}
+              className={`px-3 py-2 rounded-xl border text-sm font-semibold transition-all ${
+                mode === "presentiel"
+                  ? "border-blue-300 bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300"
+                  : "border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200"
+              }`}
+            >
+              Présentiel
+            </button>
+          </div>
+        </div>
+
+        {/* Location / Link */}
+        {mode === "presentiel" ? (
+          <div>
+            <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1">
+              Lieu
+            </label>
+            <input
+              value={location}
+              onChange={(e) => setLocation(e.target.value)}
+              placeholder="Ex: Optylab - Bureau, étage..."
+              className="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-sm text-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-400"
+              required
+            />
+          </div>
+        ) : (
+          <div>
+            <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1">
+              Lien meeting
+            </label>
+            <input
+              value={meetingLink}
+              onChange={(e) => setMeetingLink(e.target.value)}
+              placeholder="https://meet... / teams..."
+              className="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-sm text-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-400"
+              required
+            />
+          </div>
+        )}
+
+        {/* Interviewers */}
+        <div>
+          <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1">
+            Interviewers
+          </label>
+          <input
+            value={interviewers}
+            onChange={(e) => setInterviewers(e.target.value)}
+            placeholder="Ex: Yosr, Nourhene"
+            className="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-sm text-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-400"
+          />
+          <p className="text-[11px] text-gray-400 mt-1">Sépare par virgule.</p>
+        </div>
+
+        {/* Message */}
+        <div>
+          <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1">
+            Message au candidat (optionnel)
+          </label>
+          <textarea
+            value={message}
+            onChange={(e) => setMessage(e.target.value)}
+            rows={3}
+            placeholder="Instructions, documents, etc..."
+            className="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-sm text-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-400 resize-none"
+          />
+        </div>
+
+        {/* Send email */}
+        <label className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-200">
+          <input
+            type="checkbox"
+            checked={sendEmail}
+            onChange={(e) => setSendEmail(e.target.checked)}
+            className="rounded"
+          />
+          Envoyer un email de confirmation
+        </label>
+
+        {/* Submit */}
+        <button
+          type="submit"
+          disabled={saving}
+          className="w-full py-3 rounded-xl font-bold text-sm bg-blue-600 hover:bg-blue-700 text-white transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          {saving ? "Planification..." : "Planifier l’entretien"}
+        </button>
+      </div>
+    </form>
+  );
+}
+
 function PreInterviewCard({ c, index }) {
   const [sent, setSent] = useState(() => wasSent(c?._id));
   const [showSendModal, setShowSendModal] = useState(false);
+  const [showEntretienModal, setShowEntretienModal] = useState(false);
 
   const name = getName(c);
   const cvUrl = getCvUrl(c);
@@ -395,7 +992,10 @@ function PreInterviewCard({ c, index }) {
                 )}
 
                 {/* 2. Planifier entretien */}
-                <button className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-blue-500 hover:bg-blue-600 text-white text-sm font-semibold transition-colors shadow-sm w-full">
+                <button
+                  onClick={() => setShowEntretienModal(true)}
+                  className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-blue-500 hover:bg-blue-600 text-white text-sm font-semibold transition-colors shadow-sm w-full"
+                >
                   <Calendar className="w-4 h-4" />
                   Planifier Entretien
                 </button>
@@ -420,6 +1020,13 @@ function PreInterviewCard({ c, index }) {
           candidature={c}
           onClose={() => setShowSendModal(false)}
           onSuccess={handleSuccess}
+        />
+      )}
+
+      {showEntretienModal && (
+        <EntretienModal
+          candidate={c}
+          onClose={() => setShowEntretienModal(false)}
         />
       )}
     </>

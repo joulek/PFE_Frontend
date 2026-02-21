@@ -24,6 +24,8 @@ import {
   TrendingUp,
 } from "lucide-react";
 
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || "";
+
 function formatDate(d) {
   if (!d) return "—";
   return new Date(d).toLocaleDateString("fr-FR", {
@@ -465,32 +467,89 @@ function QuizSection({ quiz, questions = [] }) {
 /* ================================================================
    SECTION FICHE
 ================================================================ */
-function FicheSection({ fiche }) {
-  return (
-    <div className="bg-white dark:bg-gray-800 rounded-2xl p-4 border border-gray-200 dark:border-gray-700">
-      <h3 className="text-sm font-semibold mb-3 text-gray-800 dark:text-gray-100">
-        Fiche de renseignement
-      </h3>
+function PdfDownloadButton({ submissionId }) {
+  const [loading, setLoading] = useState(false);
 
-      {fiche?._id ? (
-        <a
-          href={`${API_BASE}/fiche-submissions/${fiche._id}/pdf`}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="inline-flex px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-xl text-sm font-semibold"
-        >
-          📄 Télécharger Fiche PDF
-        </a>
+  async function handleDownload() {
+    if (loading) return;
+    setLoading(true);
+    try {
+      // ✅ api instance envoie automatiquement le JWT token
+      const response = await api.get(
+        `/fiche-submissions/${submissionId}/pdf`,
+        { responseType: "blob" }
+      );
+
+      const blob = new Blob([response.data], { type: "application/pdf" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `fiche_${submissionId}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error("Erreur téléchargement PDF:", err);
+      alert("Erreur lors du téléchargement du PDF");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  return (
+    <button
+      onClick={handleDownload}
+      disabled={loading}
+      className="inline-flex items-center gap-2 px-4 py-2 bg-white text-green-700 hover:bg-green-50 rounded-xl text-sm font-bold transition-colors shadow-sm disabled:opacity-60"
+    >
+      {loading ? (
+        <Loader2 className="w-4 h-4 animate-spin" />
       ) : (
-        <p className="text-sm text-gray-500 italic">Aucune fiche disponible</p>
+        <span>📄</span>
       )}
+      {loading ? "Génération..." : "Télécharger PDF"}
+    </button>
+  );
+}
+
+function FicheSection({ fiche }) {
+  if (!fiche) return null;
+  const isSubmitted = fiche.status === "SUBMITTED";
+  const pdfUrl = fiche._id ? `/api` : null; // handled by PdfDownloadButton
+
+  return (
+    <div className="bg-gradient-to-r from-green-500 to-emerald-600 rounded-3xl shadow-sm overflow-hidden">
+      <div className="px-6 py-5 flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center">
+            <ClipboardList className="w-5 h-5 text-white" />
+          </div>
+          <div>
+            <h2 className="text-lg font-extrabold text-white">
+              {fiche.ficheTitle || "Fiche de renseignement"}
+            </h2>
+            <p className="text-green-100 text-sm mt-0.5">
+              {isSubmitted
+                ? `Complétée le ${formatDate(fiche.finishedAt || fiche.updatedAt)}`
+                : "En cours de remplissage"}
+            </p>
+          </div>
+        </div>
+        <div className="flex items-center gap-2">
+          <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold bg-white/20 text-white">
+            {isSubmitted ? "✓ Complétée" : "⏳ En cours"}
+          </span>
+          {isSubmitted && fiche._id && (
+            <PdfDownloadButton submissionId={fiche._id} />
+          )}
+        </div>
+      </div>
     </div>
   );
 }
 
-/* ================================================================
-   PAGE PRINCIPALE
-================================================================ */
+
 export default function CandidateResultsPage() {
   const params = useParams();
   const router = useRouter();
@@ -541,21 +600,12 @@ export default function CandidateResultsPage() {
 
         // Fiche submissions
         try {
-          // step 1: get result / preInterview
-          if (candidatureId) {
-            const res = await api.get(
-              `/fiche-submissions/candidature/${candidatureId}`,
-            );
-
-            const list = Array.isArray(res.data) ? res.data : [];
-            setFicheResult(list.length ? list[list.length - 1] : null);
-            console.log("candidatureId utilisé =", candidatureId);
-          } else {
-            setFicheResult(null);
-          }
-          const list = Array.isArray(r?.data) ? r.data : [];
-          // ✅ خذ آخر submission (الأحدث)
-          setFicheResult(list.length ? list[list.length - 1] : null);
+          const ficheRes = await api.get(
+            `/fiche-submissions/candidature/${candidatureId}`,
+          );
+          const ficheList = Array.isArray(ficheRes?.data) ? ficheRes.data : [];
+          // Prendre la soumission la plus récente (dernier élément après sort desc)
+          setFicheResult(ficheList.length > 0 ? ficheList[0] : null);
         } catch {
           setFicheResult(null);
         }
@@ -701,7 +751,7 @@ export default function CandidateResultsPage() {
         )}
 
         {/* ── FICHE RESULTS ── */}
-        {ficheResult && <FicheSection ficheResult={ficheResult} />}
+        {ficheResult && <FicheSection fiche={ficheResult} />}
       </div>
     </div>
   );
