@@ -7,10 +7,30 @@ import api from "../../services/api";
 import Link from "next/link";
 
 import {
-  UserCheck, FileText, Search, Calendar, ArrowLeft,
-
+  UserCheck,
+  FileText,
+  Search,
+  Calendar,
+  ArrowLeft,
+  Mail,
+  Phone,
+  Clock,
+  Briefcase,
+  Send,
+  X,
+  CheckCircle2,
+  Brain,
+  ClipboardList,
+  AlertCircle,
+  BarChart2,
+  PhoneCall,
+  Users,
+  UserCog,
+  Star,
+  ChevronRight,
+  StickyNote,
+  Loader2, // 👈 هذا هو الحل
 } from "lucide-react";
-
 const API_BASE = process.env.NEXT_PUBLIC_API_URL;
 
 /* ================= OPTYLAB THEME (inline) ================= */
@@ -997,9 +1017,7 @@ function ScheduleInterviewForm({
   );
 }
 
-=======
-/* ================= CARD ================= */
->>>>>>> a2c229d38136507a9fd57b1b144c4ada5305149d
+
 function PreInterviewCard({ c, index }) {
   const [sent, setSent] = useState(() => wasSent(c?._id));
   const [showSendModal, setShowSendModal] = useState(false);
@@ -1119,7 +1137,7 @@ function PreInterviewCard({ c, index }) {
               )}
 
               {/* ── BOUTONS ── */}
-<<<<<<< HEAD
+
               <div className="flex flex-col gap-2 w-full min-w-[190px]">
 
                 {/* 1. Envoyer — disabled si déjà envoyé */}
@@ -1156,9 +1174,6 @@ function PreInterviewCard({ c, index }) {
                   Voir les résultats
                 </Link>
               </div>
-=======
-              
->>>>>>> a2c229d38136507a9fd57b1b144c4ada5305149d
             </div>
           </div>
         </div>
@@ -1195,17 +1210,6 @@ function PreInterviewCard({ c, index }) {
             )}
           </button>
 
-          <button
-            className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold transition-all border hover:shadow-sm"
-            style={{
-              borderColor: OPTY.mintBorder,
-              color: OPTY.mintText,
-              background: "white",
-            }}
-          >
-            <Calendar className="w-4 h-4" />
-            Planifier entretien
-          </button>
         </div>
       </div>
 
