@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { getJobs } from "../services/job.api";
 import Link from "next/link";
 import Pagination from "../components/Pagination";
+import { Calendar, MapPin } from "lucide-react";
 
 /* ================= UTILS ================= */
 function formatDate(date) {
@@ -11,24 +12,21 @@ function formatDate(date) {
   return new Date(date).toLocaleDateString("fr-FR");
 }
 
+function shortText(text, max = 180) {
+  const t = (text || "").trim();
+  if (t.length <= max) return t;
+  return t.slice(0, max).trim() + "…";
+}
+
 /* ================= PAGE ================= */
 export default function PublicJobsPage() {
   const [jobs, setJobs] = useState([]);
-  const [expandedJobs, setExpandedJobs] = useState({});
-
   const [page, setPage] = useState(1);
   const pageSize = 6;
 
   useEffect(() => {
     getJobs().then((res) => setJobs(res.data || []));
   }, []);
-
-  function toggleReadMore(jobId) {
-    setExpandedJobs((prev) => ({
-      ...prev,
-      [jobId]: !prev[jobId],
-    }));
-  }
 
   // ✅ Filtrer les offres NON expirées
   const activeJobs = useMemo(() => {
@@ -53,7 +51,6 @@ export default function PublicJobsPage() {
   return (
     <div className="min-h-screen bg-green-50 dark:bg-gray-950">
       <div className="max-w-6xl mx-auto px-6 py-12">
-
         {/* ================= HEADER ================= */}
         <div className="mb-12">
           <h1 className="text-4xl font-extrabold text-gray-900 dark:text-white">
@@ -67,144 +64,56 @@ export default function PublicJobsPage() {
 
         {/* ================= JOBS GRID ================= */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {paginatedJobs.map((job) => {
-            const isExpired =
-              job.dateCloture && new Date(job.dateCloture) < new Date();
+          {paginatedJobs.map((job) => (
+            <div
+              key={job._id}
+              className="bg-white dark:bg-gray-800 rounded-2xl shadow p-6 flex flex-col hover:shadow-lg transition"
+            >
+              {/* TITRE */}
+              <h3 className="text-xl font-semibold text-gray-800 dark:text-gray-100 mb-2">
+                {job.titre}
+              </h3>
 
-            const isExpanded = !!expandedJobs[job._id];
-            const hasLongDescription = (job.description || "").length > 160;
+              {/* DESCRIPTION courte */}
+              <p className="text-gray-600 dark:text-gray-300 text-sm whitespace-pre-line mb-4">
+                {shortText(job.description, 200)}
+              </p>
 
-            const hardSkills = Array.isArray(job.hardSkills) ? job.hardSkills : [];
-            const softSkills = Array.isArray(job.softSkills) ? job.softSkills : [];
-
-            return (
-              <div
-                key={job._id}
-                className="bg-white dark:bg-gray-800 rounded-2xl shadow p-6 flex flex-col hover:shadow-lg transition"
-              >
-                {/* ===== TOP CONTENT ===== */}
-                <div>
-                  <h3 className="text-xl font-semibold text-gray-800 dark:text-gray-100 mb-2">
-                    {job.titre}
-                  </h3>
-
-                  {/* DESCRIPTION */}
-                  <p
-                    className={`text-gray-600 dark:text-gray-300 text-sm mb-2 whitespace-pre-line ${
-                      !isExpanded ? "line-clamp-3" : ""
-                    }`}
-                  >
-                    {job.description}
-                  </p>
-
-                  {hasLongDescription && (
-                    <button
-                      type="button"
-                      onClick={() => toggleReadMore(job._id)}
-                      className="text-sm text-[#4E8F2F] dark:text-emerald-400 font-semibold hover:underline"
-                    >
-                      {isExpanded ? "Réduire ↑" : "Lire la suite →"}
-                    </button>
-                  )}
-
-                  {/* HARD SKILLS */}
-                  {hardSkills.length > 0 && (
-                    <div className="mt-4">
-                      <p className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1">
-                        Hard Skills
-                      </p>
-                      <div className="flex flex-wrap gap-2">
-                        {hardSkills.map((skill, i) => (
-                          <span
-                            key={i}
-                            className="bg-[#E9F5E3] dark:bg-emerald-950/40 text-[#4E8F2F] dark:text-emerald-300 text-xs font-medium px-3 py-1 rounded-full"
-                          >
-                            {skill}
-                          </span>
-                        ))}
-                      </div>
+              <div className="flex items-center justify-between">
+                {/* LIEU + DATE */}
+                <div className="flex flex-col gap-2 text-sm text-gray-500 dark:text-gray-400">
+                  {job.lieu && (
+                    <div className="flex items-center gap-2">
+                      <MapPin className="w-4 h-4" />
+                      <span>{job.lieu}</span>
                     </div>
                   )}
 
-                  {/* SOFT SKILLS */}
-                  {softSkills.length > 0 && (
-                    <div className="mt-3">
-                      <p className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1">
-                        Soft Skills
-                      </p>
-                      <div className="flex flex-wrap gap-2">
-                        {softSkills.map((skill, i) => (
-                          <span
-                            key={i}
-                            className="bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-300 text-xs font-medium px-3 py-1 rounded-full"
-                          >
-                            {skill}
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                </div>
-
-                {/* ===== LIEU ===== */}
-                {job.lieu && (
-                  <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400 mt-4 mb-1">
-                    <span>📍</span>
-                    <span className="font-medium text-gray-600 dark:text-gray-300">{job.lieu}</span>
-                  </div>
-                )}
-
-                {/* ===== DIVIDER ===== */}
-                <div className="border-t border-gray-100 dark:border-gray-700 my-4" />
-
-                {/* ===== BOTTOM BAR ===== */}
-                <div className="flex items-center justify-between">
-                  {/* DATE */}
-                  <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      className="h-4 w-4"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={1.5}
-                        d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
-                      />
-                    </svg>
+                  <div className="flex items-center gap-2">
+                    <Calendar className="w-4 h-4" />
                     <span>Clôture : {formatDate(job.dateCloture)}</span>
                   </div>
-
-                  {/* ACTION */}
-                  {isExpired ? (
-                    <button
-                      disabled
-                      className="px-5 py-2 rounded-full text-sm font-medium bg-gray-200 dark:bg-gray-700 text-gray-400 dark:text-gray-500 cursor-not-allowed"
-                    >
-                      Offre expirée
-                    </button>
-                  ) : (
-                    <Link href={`/jobs/${job._id}/apply`}>
-                      <button className="px-5 py-2 rounded-full text-sm font-medium transition bg-[#6CB33F] dark:bg-emerald-600 text-white hover:bg-[#4E8F2F] dark:hover:bg-emerald-500 shadow">
-                        Postuler
-                      </button>
-                    </Link>
-                  )}
                 </div>
-              </div>
-            );
-          })}
 
-          {/* ===== EMPTY STATE ===== */}
-          {activeJobs.length === 0 && (
-            <p className="text-gray-500 dark:text-gray-400 text-sm">Aucune offre disponible.</p>
-          )}
+                {/* BOUTON DETAILS */}
+                <Link href={`/jobs/${job._id}`}>
+                  <button className="px-5 py-2 rounded-full text-sm font-medium transition bg-[#6CB33F] dark:bg-emerald-600 text-white hover:bg-[#4E8F2F] dark:hover:bg-emerald-500 shadow">
+                    Voir détails
+                  </button>
+                </Link>
+              </div>
+            </div>
+          ))}
         </div>
 
-        {/* ✅ PAGINATION FOOTER */}
+        {/* EMPTY STATE */}
+        {activeJobs.length === 0 && (
+          <p className="text-gray-500 dark:text-gray-400 text-sm">
+            Aucune offre disponible.
+          </p>
+        )}
+
+        {/* PAGINATION */}
         {activeJobs.length > 0 && (
           <div className="mt-10 flex items-center justify-between text-sm text-gray-500 dark:text-gray-400">
             <p>
@@ -218,6 +127,6 @@ export default function PublicJobsPage() {
           </div>
         )}
       </div>
-    </div>
-  );
+      </div>
+      );
 }

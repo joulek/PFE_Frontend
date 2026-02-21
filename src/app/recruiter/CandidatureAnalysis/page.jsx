@@ -828,7 +828,7 @@ export default function CandidatureAnalysisPage() {
             {/* Lien vers la page pré-entretien */}
             <a
               href="/recruiter/PreInterviewList"
-              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-violet-600 hover:bg-violet-700 text-white text-sm font-semibold transition-all shadow-sm"
+              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-[#22C55E] hover:bg-[#16A34A] text-white text-sm font-semibold transition-all shadow-sm"
             >
               <UserCheck className="w-4 h-4" />
               Pré-sélectionnés

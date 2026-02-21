@@ -4,7 +4,11 @@
 
 import { useEffect, useState, useRef, useCallback, useMemo } from "react";
 import { useParams, useSearchParams, useRouter } from "next/navigation";
-import { getQuizById, submitQuiz,checkQuizAlreadySubmitted } from "../../../services/quiz.api.js";
+import {
+  getQuizById,
+  submitQuiz,
+  checkQuizAlreadySubmitted,
+} from "../../../services/quiz.api.js";
 
 import {
   CheckCircle2,
@@ -23,7 +27,7 @@ function ProgressBar({ current, total }) {
   return (
     <div className="w-full h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
       <div
-        className="h-full bg-gradient-to-r from-violet-500 to-purple-600 rounded-full transition-all duration-500"
+        className="h-full bg-gradient-to-r from-[#6CB33F] to-[#4E8F2F] rounded-full transition-all duration-500"
         style={{ width: `${pct}%` }}
       />
     </div>
@@ -40,8 +44,7 @@ function formatTime(seconds) {
 function normalizeText(v, fallback = "") {
   if (v === null || v === undefined) return fallback;
   if (typeof v === "string") return v;
-  if (typeof v === "object")
-    return v.text ?? v.label ?? v.value ?? v.key ?? fallback;
+  if (typeof v === "object") return v.text ?? v.label ?? v.value ?? v.key ?? fallback;
   return String(v);
 }
 
@@ -62,13 +65,7 @@ function normalizeOptions(raw) {
 /* ================================================================
    QUESTION CARD
 ================================================================ */
-function QuestionCard({
-  question,
-  selectedAnswer,
-  onSelect,
-  questionNumber,
-  total,
-}) {
+function QuestionCard({ question, selectedAnswer, onSelect, questionNumber, total }) {
   const letters = ["A", "B", "C", "D", "E", "F"];
 
   // ✅ FIX question text (backend peut envoyer question.question OU question.text sous forme objet)
@@ -81,30 +78,29 @@ function QuestionCard({
     <div>
       <div className="mb-6">
         <div className="flex items-center gap-2 mb-3 flex-wrap">
-          <span className="text-xs font-bold text-violet-500 dark:text-violet-400 uppercase tracking-wide">
+          <span className="text-xs font-bold text-[#6CB33F] dark:text-[#8BE25A] uppercase tracking-wide">
             Question {questionNumber} sur {total}
           </span>
 
           {question?.difficulty && (
             <span
-              className={`text-xs px-2 py-0.5 rounded-full font-semibold capitalize ${
-                question.difficulty === "easy"
+              className={`text-xs px-2 py-0.5 rounded-full font-semibold capitalize ${question.difficulty === "easy"
                   ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400"
                   : question.difficulty === "medium"
-                  ? "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400"
-                  : "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400"
-              }`}
+                    ? "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400"
+                    : "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400"
+                }`}
             >
               {question.difficulty === "easy"
                 ? "Facile"
                 : question.difficulty === "medium"
-                ? "Moyen"
-                : "Difficile"}
+                  ? "Moyen"
+                  : "Difficile"}
             </span>
           )}
 
           {question?.category && (
-            <span className="text-xs px-2 py-0.5 rounded-full bg-violet-100 dark:bg-violet-900/30 text-violet-700 dark:text-violet-400 font-semibold">
+            <span className="text-xs px-2 py-0.5 rounded-full bg-[#E9F5E3] dark:bg-emerald-900/25 text-[#2E6B1F] dark:text-emerald-300 font-semibold">
               {normalizeText(question.category)}
             </span>
           )}
@@ -123,35 +119,30 @@ function QuestionCard({
             <button
               key={opt.value ?? i}
               onClick={() => onSelect(opt.value)}
-              className={`w-full flex items-center gap-4 p-4 rounded-2xl border-2 text-left transition-all duration-200 group ${
-                isSelected
-                  ? "border-violet-500 bg-violet-50 dark:bg-violet-900/20 shadow-md"
-                  : "border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800/50 hover:border-violet-300 dark:hover:border-violet-600 hover:bg-violet-50/50 dark:hover:bg-violet-900/10"
-              }`}
+              className={`w-full flex items-center gap-4 p-4 rounded-2xl border-2 text-left transition-all duration-200 group ${isSelected
+                  ? "border-[#6CB33F] bg-[#E9F5E3] dark:bg-emerald-900/20 shadow-md"
+                  : "border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800/50 hover:border-[#6CB33F]/60 dark:hover:border-[#6CB33F]/70 hover:bg-[#E9F5E3]/40 dark:hover:bg-emerald-900/10"
+                }`}
             >
               <span
-                className={`w-9 h-9 rounded-xl flex items-center justify-center text-sm font-extrabold shrink-0 transition-all ${
-                  isSelected
-                    ? "bg-violet-500 text-white"
-                    : "bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400 group-hover:bg-violet-100 dark:group-hover:bg-violet-900/30 group-hover:text-violet-600"
-                }`}
+                className={`w-9 h-9 rounded-xl flex items-center justify-center text-sm font-extrabold shrink-0 transition-all ${isSelected
+                    ? "bg-[#6CB33F] text-white"
+                    : "bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400 group-hover:bg-[#E9F5E3] dark:group-hover:bg-emerald-900/25 group-hover:text-[#4E8F2F]"
+                  }`}
               >
                 {letters[i] || i + 1}
               </span>
 
               <span
-                className={`text-sm sm:text-base font-medium flex-1 leading-snug ${
-                  isSelected
-                    ? "text-violet-800 dark:text-violet-200"
+                className={`text-sm sm:text-base font-medium flex-1 leading-snug ${isSelected
+                    ? "text-[#2E6B1F] dark:text-emerald-200"
                     : "text-gray-700 dark:text-gray-300"
-                }`}
+                  }`}
               >
                 {opt.label}
               </span>
 
-              {isSelected && (
-                <CheckCircle2 className="w-5 h-5 text-violet-500 shrink-0" />
-              )}
+              {isSelected && <CheckCircle2 className="w-5 h-5 text-[#6CB33F] shrink-0" />}
             </button>
           );
         })}
@@ -181,7 +172,7 @@ export default function CandidatQuizClient() {
   const [flagged, setFlagged] = useState(new Set());
   const [confirming, setConfirming] = useState(false);
   const [submitting, setSubmitting] = useState(false);
-
+  const [showOverview, setShowOverview] = useState(false);
   // ── Timer par question (30 secondes par défaut) ──
   const TIME_PER_QUESTION = 30;
   const [timeLeft, setTimeLeft] = useState(TIME_PER_QUESTION);
@@ -189,56 +180,55 @@ export default function CandidatQuizClient() {
 
   /* ── Charger le quiz ── */
   useEffect(() => {
-  if (!quizId) {
-    setError("Quiz ID manquant");
-    setLoading(false);
-    return;
-  }
-
-  if (!candidatureId) {
-    setError("Lien invalide (candidature manquante)");
-    setLoading(false);
-    return;
-  }
-
-  async function load() {
-    try {
-      /* ===============================
-         1️⃣ CHECK DÉJÀ SOUMIS
-      =============================== */
-      const checkRes = await checkQuizAlreadySubmitted(quizId, candidatureId);
-      if (checkRes?.data?.alreadySubmitted) {
-        // 👉 نفس logique متاع fiche
-        router.replace(`/candidat/quiz/${quizId}/deja-soumis`);
-        return;
-      }
-
-      /* ===============================
-         2️⃣ LOAD QUIZ
-      =============================== */
-      const res = await getQuizById(quizId);
-      const data = res?.data;
-
-      if (!data) {
-        setError("Quiz introuvable");
-        return;
-      }
-
-      const sorted = [...(data.questions || [])].sort(
-        (a, b) => (a.order ?? 0) - (b.order ?? 0)
-      );
-
-      setQuiz({ ...data, questions: sorted });
-    } catch (err) {
-      console.error(err);
-      setError("Impossible de charger le quiz. Vérifiez le lien.");
-    } finally {
+    if (!quizId) {
+      setError("Quiz ID manquant");
       setLoading(false);
+      return;
     }
-  }
 
-  load();
-}, [quizId, candidatureId, router]);
+    if (!candidatureId) {
+      setError("Lien invalide (candidature manquante)");
+      setLoading(false);
+      return;
+    }
+
+    async function load() {
+      try {
+        /* ===============================
+           1️⃣ CHECK DÉJÀ SOUMIS
+        =============================== */
+        const checkRes = await checkQuizAlreadySubmitted(quizId, candidatureId);
+        if (checkRes?.data?.alreadySubmitted) {
+          router.replace(`/candidat/quiz/${quizId}/deja-soumis`);
+          return;
+        }
+
+        /* ===============================
+           2️⃣ LOAD QUIZ
+        =============================== */
+        const res = await getQuizById(quizId);
+        const data = res?.data;
+
+        if (!data) {
+          setError("Quiz introuvable");
+          return;
+        }
+
+        const sorted = [...(data.questions || [])].sort(
+          (a, b) => (a.order ?? 0) - (b.order ?? 0)
+        );
+
+        setQuiz({ ...data, questions: sorted });
+      } catch (err) {
+        console.error(err);
+        setError("Impossible de charger le quiz. Vérifiez le lien.");
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    load();
+  }, [quizId, candidatureId, router]);
 
   const totalQuestions = quiz?.questions?.length || 0;
   const currentQuestion = quiz?.questions?.[currentIndex];
@@ -304,12 +294,10 @@ export default function CandidatQuizClient() {
     setError("");
 
     try {
-      const formattedAnswers = Object.entries(answers).map(
-        ([order, selectedAnswer]) => ({
-          order: Number(order),
-          selectedAnswer, // ✅ toujours string/primitive (pas objet)
-        })
-      );
+      const formattedAnswers = Object.entries(answers).map(([order, selectedAnswer]) => ({
+        order: Number(order),
+        selectedAnswer, // ✅ toujours string/primitive (pas objet)
+      }));
 
       await submitQuiz({
         quizId,
@@ -321,9 +309,7 @@ export default function CandidatQuizClient() {
       router.replace(`/candidat/quiz/${quizId}/merci`);
       return;
     } catch (e) {
-      setError(
-        e?.response?.data?.message || "Erreur lors de la soumission. Réessayez."
-      );
+      setError(e?.response?.data?.message || "Erreur lors de la soumission. Réessayez.");
     } finally {
       setSubmitting(false);
     }
@@ -335,11 +321,12 @@ export default function CandidatQuizClient() {
       <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
         <div className="w-full max-w-md rounded-3xl bg-white dark:bg-gray-900 shadow-xl border border-gray-100 dark:border-gray-800 p-6">
           <div className="flex items-center gap-3 mb-3">
-            <AlertCircle className="w-6 h-6 text-violet-500" />
+            <AlertCircle className="w-6 h-6 text-[#6CB33F]" />
             <h3 className="text-lg font-extrabold text-gray-900 dark:text-white">
               Soumettre le quiz ?
             </h3>
           </div>
+
           <p className="text-sm text-gray-600 dark:text-gray-300 mb-5">
             Voulez-vous confirmer la soumission de vos réponses ?
           </p>
@@ -352,8 +339,9 @@ export default function CandidatQuizClient() {
             >
               Annuler
             </button>
+
             <button
-              className="flex-1 px-4 py-2.5 rounded-2xl bg-violet-600 hover:bg-violet-700 text-white font-semibold transition disabled:opacity-60"
+              className="flex-1 px-4 py-2.5 rounded-2xl bg-[#6CB33F] hover:bg-[#4E8F2F] text-white font-semibold transition disabled:opacity-60"
               onClick={handleSubmit}
               disabled={submitting}
             >
@@ -368,7 +356,7 @@ export default function CandidatQuizClient() {
   if (loading)
     return (
       <div className="min-h-[70vh] flex flex-col items-center justify-center gap-3 text-gray-600 dark:text-gray-300">
-        <Loader2 className="w-8 h-8 animate-spin text-violet-500" />
+        <Loader2 className="w-8 h-8 animate-spin text-[#6CB33F]" />
         <p className="font-semibold">Chargement du quiz...</p>
       </div>
     );
@@ -386,6 +374,76 @@ export default function CandidatQuizClient() {
       </div>
     );
 
+  /* ── Overview ── */
+  if (showOverview && quiz) {
+    const questions = quiz.questions || [];
+    return (
+      <div className="min-h-[70vh] p-4 sm:p-6">
+        <div className="max-w-4xl mx-auto">
+          <div className="flex items-center justify-between gap-3 mb-4">
+            <button
+              onClick={() => setShowOverview(false)}
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-700 dark:text-gray-200 font-semibold hover:bg-gray-50 dark:hover:bg-gray-800 transition"
+            >
+              <ChevronLeft className="w-4 h-4" />
+              Retour
+            </button>
+
+            <h2 className="text-lg sm:text-xl font-extrabold text-gray-900 dark:text-white">
+              Vue d&apos;ensemble
+            </h2>
+          </div>
+
+          <div className="rounded-3xl bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 shadow p-5">
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3">
+              {questions.map((q, idx) => {
+                const order = q.order;
+                const answered = answers[order] !== undefined;
+                const isFlagged = flagged.has(order);
+
+                return (
+                  <button
+                    key={order ?? idx}
+                    onClick={() => {
+                      setCurrentIndex(idx);
+                      setShowOverview(false);
+                    }}
+                    className={`relative px-3 py-3 rounded-2xl border-2 text-sm font-bold transition ${answered
+                        ? "border-[#6CB33F] bg-[#E9F5E3] dark:bg-emerald-900/20 text-[#2E6B1F] dark:text-emerald-200"
+                        : "border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200 hover:border-[#6CB33F]/60 dark:hover:border-[#6CB33F]/70"
+                      }`}
+                  >
+                    Q{idx + 1}
+                    {isFlagged && (
+                      <span className="absolute -top-2 -right-2 w-7 h-7 rounded-full bg-yellow-400 text-white flex items-center justify-center shadow">
+                        <Flag className="w-4 h-4" />
+                      </span>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+
+            <div className="flex items-center justify-between mt-6 gap-3 flex-wrap">
+              <div className="text-sm text-gray-600 dark:text-gray-300">
+                Répondu :{" "}
+                <span className="font-bold">
+                  {Object.keys(answers).length}/{questions.length}
+                </span>
+              </div>
+
+              <button
+                onClick={() => setConfirming(true)}
+                className="px-5 py-2.5 rounded-2xl bg-[#6CB33F] hover:bg-[#4E8F2F] text-white font-bold transition"
+              >
+                Soumettre
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   /* ── Main quiz UI ── */
   const title = normalizeText(quiz?.jobTitle ?? quiz?.title ?? quiz?.titre, "Quiz");
@@ -398,7 +456,7 @@ export default function CandidatQuizClient() {
         <div className="rounded-3xl bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 shadow p-5 mb-5">
           <div className="flex items-center justify-between gap-3 flex-wrap">
             <div>
-              <p className="text-xs font-bold text-violet-500 dark:text-violet-400 uppercase tracking-wide">
+              <p className="text-xs font-bold text-[#6CB33F] dark:text-[#8BE25A] uppercase tracking-wide">
                 Quiz technique
               </p>
               <h1 className="text-lg sm:text-xl font-extrabold text-gray-900 dark:text-white">
@@ -411,7 +469,7 @@ export default function CandidatQuizClient() {
                 {answeredCount}/{totalQuestions}
               </div>
 
-              <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-2xl bg-violet-100 dark:bg-violet-900/30 text-violet-700 dark:text-violet-200 font-bold text-sm">
+              <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-2xl bg-[#E9F5E3] dark:bg-emerald-900/25 text-[#2E6B1F] dark:text-emerald-200 font-bold text-sm">
                 <Clock className="w-4 h-4" />
                 {formatTime(timeLeft)}
               </div>
@@ -437,11 +495,10 @@ export default function CandidatQuizClient() {
           <div className="mt-8 flex items-center justify-between gap-3 flex-wrap">
             <button
               onClick={handleFlag}
-              className={`inline-flex items-center gap-2 px-4 py-2 rounded-2xl border font-bold transition ${
-                flagged.has(currentOrder)
+              className={`inline-flex items-center gap-2 px-4 py-2 rounded-2xl border font-bold transition ${flagged.has(currentOrder)
                   ? "border-yellow-400 bg-yellow-50 dark:bg-yellow-900/20 text-yellow-700 dark:text-yellow-300"
                   : "border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800"
-              }`}
+                }`}
             >
               <Flag className="w-4 h-4" />
               Marquer
@@ -452,7 +509,7 @@ export default function CandidatQuizClient() {
               {currentIndex < totalQuestions - 1 ? (
                 <button
                   onClick={goNext}
-                  className="inline-flex items-center gap-2 px-5 py-2.5 rounded-2xl bg-violet-600 hover:bg-violet-700 text-white font-extrabold transition"
+                  className="inline-flex items-center gap-2 px-5 py-2.5 rounded-2xl bg-[#6CB33F] hover:bg-[#4E8F2F] text-white font-extrabold transition"
                 >
                   Suivant
                   <ChevronRight className="w-4 h-4" />
@@ -460,7 +517,7 @@ export default function CandidatQuizClient() {
               ) : (
                 <button
                   onClick={() => setConfirming(true)}
-                  className="inline-flex items-center gap-2 px-5 py-2.5 rounded-2xl bg-violet-600 hover:bg-violet-700 text-white font-extrabold transition"
+                  className="inline-flex items-center gap-2 px-5 py-2.5 rounded-2xl bg-[#6CB33F] hover:bg-[#4E8F2F] text-white font-extrabold transition"
                 >
                   Terminer
                   <CheckCircle2 className="w-5 h-5" />
