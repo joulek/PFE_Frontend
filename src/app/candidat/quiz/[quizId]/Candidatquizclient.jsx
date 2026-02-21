@@ -8,12 +8,11 @@ import { getQuizById, submitQuiz,checkQuizAlreadySubmitted } from "../../../serv
 
 import {
   CheckCircle2,
-  ChevronRight,
-  ChevronLeft,
   AlertCircle,
   Loader2,
   Flag,
   Clock,
+  ChevronRight,
 } from "lucide-react";
 
 /* ================================================================
@@ -180,7 +179,6 @@ export default function CandidatQuizClient() {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [answers, setAnswers] = useState({});
   const [flagged, setFlagged] = useState(new Set());
-  const [showOverview, setShowOverview] = useState(false);
   const [confirming, setConfirming] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
@@ -388,77 +386,6 @@ export default function CandidatQuizClient() {
       </div>
     );
 
-  /* ── Overview ── */
-  if (showOverview && quiz) {
-    const questions = quiz.questions || [];
-    return (
-      <div className="min-h-[70vh] p-4 sm:p-6">
-        <div className="max-w-4xl mx-auto">
-          <div className="flex items-center justify-between gap-3 mb-4">
-            <button
-              onClick={() => setShowOverview(false)}
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-700 dark:text-gray-200 font-semibold hover:bg-gray-50 dark:hover:bg-gray-800 transition"
-            >
-              <ChevronLeft className="w-4 h-4" />
-              Retour
-            </button>
-
-            <h2 className="text-lg sm:text-xl font-extrabold text-gray-900 dark:text-white">
-              Vue d&apos;ensemble
-            </h2>
-          </div>
-
-          <div className="rounded-3xl bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 shadow p-5">
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3">
-              {questions.map((q, idx) => {
-                const order = q.order;
-                const answered = answers[order] !== undefined;
-                const isFlagged = flagged.has(order);
-
-                return (
-                  <button
-                    key={order ?? idx}
-                    onClick={() => {
-                      setCurrentIndex(idx);
-                      setShowOverview(false);
-                    }}
-                    className={`relative px-3 py-3 rounded-2xl border-2 text-sm font-bold transition ${
-                      answered
-                        ? "border-violet-500 bg-violet-50 dark:bg-violet-900/20 text-violet-700 dark:text-violet-200"
-                        : "border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200 hover:border-violet-300 dark:hover:border-violet-600"
-                    }`}
-                  >
-                    Q{idx + 1}
-                    {isFlagged && (
-                      <span className="absolute -top-2 -right-2 w-7 h-7 rounded-full bg-yellow-400 text-white flex items-center justify-center shadow">
-                        <Flag className="w-4 h-4" />
-                      </span>
-                    )}
-                  </button>
-                );
-              })}
-            </div>
-
-            <div className="flex items-center justify-between mt-6 gap-3 flex-wrap">
-              <div className="text-sm text-gray-600 dark:text-gray-300">
-                Répondu :{" "}
-                <span className="font-bold">
-                  {Object.keys(answers).length}/{questions.length}
-                </span>
-              </div>
-
-              <button
-                onClick={() => setConfirming(true)}
-                className="px-5 py-2.5 rounded-2xl bg-violet-600 hover:bg-violet-700 text-white font-bold transition"
-              >
-                Soumettre
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
 
   /* ── Main quiz UI ── */
   const title = normalizeText(quiz?.jobTitle ?? quiz?.title ?? quiz?.titre, "Quiz");
@@ -488,13 +415,6 @@ export default function CandidatQuizClient() {
                 <Clock className="w-4 h-4" />
                 {formatTime(timeLeft)}
               </div>
-
-              <button
-                onClick={() => setShowOverview(true)}
-                className="px-4 py-2 rounded-2xl bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-200 font-bold hover:bg-gray-200 dark:hover:bg-gray-700 transition"
-              >
-                Vue d&apos;ensemble
-              </button>
             </div>
           </div>
 
@@ -528,14 +448,6 @@ export default function CandidatQuizClient() {
             </button>
 
             <div className="flex items-center gap-3">
-              <button
-                onClick={goPrev}
-                disabled={currentIndex === 0}
-                className="inline-flex items-center gap-2 px-4 py-2 rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-700 dark:text-gray-200 font-bold hover:bg-gray-50 dark:hover:bg-gray-800 transition disabled:opacity-50"
-              >
-                <ChevronLeft className="w-4 h-4" />
-                Précédent
-              </button>
 
               {currentIndex < totalQuestions - 1 ? (
                 <button

@@ -18,3 +18,4 @@ export const getPreInterviewList = () =>
 // ── 🆕 Envoyer fiche + quiz ───────────────────────────────────
 export const sendDocuments = (candidatureId, payload) =>
   api.post(`/candidatures/${candidatureId}/send-documents`, payload);
+export const getCandidatureById = (id) => api.get(`/candidatures/${id}`);
