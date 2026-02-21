@@ -1,3 +1,4 @@
+// quiz.api.js — ajouter ces 2 fonctions au fichier existant
 import api from "./api";
 
 /** ✅ Récupérer tous les quiz */
@@ -15,13 +16,12 @@ export const generateQuiz = (jobId) => api.post(`/quizzes/generate/${jobId}`);
 /** Regénérer le quiz d'une offre */
 export const regenerateQuiz = (jobId) => api.post(`/quizzes/regenerate/${jobId}`);
 
-/** ✅ Générer des questions supplémentaires (append au quiz existant) */
+/** ✅ Générer des questions supplémentaires */
 export const generateMoreQuestions = (quizId, numQuestions) =>
   api.post(`/quizzes/${quizId}/generate-more`, { numQuestions });
 
 /** Modifier tout le quiz */
-export const updateQuiz = (id, questions) =>
-  api.put(`/quizzes/${id}`, { questions });
+export const updateQuiz = (id, questions) => api.put(`/quizzes/${id}`, { questions });
 
 /** Modifier une question */
 export const updateQuestion = (quizId, order, data) =>
@@ -37,5 +37,25 @@ export const addQuestion = (quizId, data) =>
 
 /** Supprimer un quiz complet */
 export const deleteQuiz = (id) => api.delete(`/quizzes/${id}`);
+export function checkQuizAlreadySubmitted(quizId, candidatureId) {
+  return api.get(
+    `/quiz-submissions/check?quizId=${quizId}&candidatureId=${candidatureId}`
+  );
+}
 
 export const getMyQuizzes = () => api.get("/quizzes/mine");
+
+// ── 🆕 QUIZ SUBMISSIONS (candidat) ────────────────────────────
+
+/**
+ * Soumettre les réponses d'un quiz
+ * POST /quiz-submissions
+ * @param {{ quizId: string, candidatureId?: string, answers: Array<{order: number, selectedAnswer: string}> }} payload
+ */
+export const submitQuiz = (payload) => api.post("/quiz-submissions", payload);
+
+/**
+ * Récupérer le résultat d'une soumission
+ * GET /quiz-submissions/:id
+ */
+export const getQuizSubmission = (id) => api.get(`/quiz-submissions/${id}`);

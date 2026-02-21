@@ -1,10 +1,9 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useCallback } from "react";
 import Pagination from "../../components/Pagination";
-import ScheduleInterviewModal from "../../components/ScheduleInterviewModal";
 
-import { getCandidaturesAnalysis } from "../../services/candidature.api";
+import { getCandidaturesAnalysis, togglePreInterview } from "../../services/candidature.api";
 
 import {
   Search,
@@ -19,6 +18,7 @@ import {
   Mail,
   Check,
   Calendar,
+  UserCheck,
 } from "lucide-react";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL;
@@ -213,7 +213,21 @@ function normalizeJobMatch(jobMatch) {
 }
 
 /* ================= CARD ================= */
-function CandidatureCard({ c, onScheduleInterview }) {
+function CandidatureCard({ c, onTogglePreselect }) {
+  const [toggling, setToggling] = useState(false);
+
+  // Lire le statut depuis la BDD (retourné par l'API)
+  const isPreselected = c?.preInterview?.status === "SELECTED";
+
+  const handleToggle = async () => {
+    if (toggling) return;
+    setToggling(true);
+    try {
+      await onTogglePreselect(c._id);
+    } finally {
+      setToggling(false);
+    }
+  };
   const analysis = c?.analysis || {};
   const ai = analysis?.aiDetection || {};
   const match = normalizeJobMatch(analysis?.jobMatch);
@@ -319,13 +333,24 @@ function CandidatureCard({ c, onScheduleInterview }) {
           {/* BUTTONS */}
           <div className="flex items-center gap-3">
 
-            {/* Schedule Interview */}
+            {/* Bouton Pré-entretien */}
             <button
-              onClick={() => onScheduleInterview(c)}
-              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-blue-500 dark:bg-blue-600 text-white text-sm font-semibold hover:bg-blue-600 dark:hover:bg-blue-500 transition-colors shadow-sm"
+              onClick={handleToggle}
+              disabled={toggling}
+              className={`inline-flex items-center gap-2 px-5 py-2.5 rounded-full text-sm font-semibold transition-all shadow-sm disabled:opacity-60 disabled:cursor-not-allowed ${
+                isPreselected
+                  ? "bg-green-500 dark:bg-green-600 text-white hover:bg-green-600 ring-2 ring-green-300 dark:ring-green-700"
+                  : "bg-violet-500 dark:bg-violet-600 text-white hover:bg-violet-600"
+              }`}
             >
-              <Calendar className="w-4 h-4" />
-              Planifier Entretien
+              {toggling ? (
+                <span className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />
+              ) : isPreselected ? (
+                <Check className="w-4 h-4" />
+              ) : (
+                <UserCheck className="w-4 h-4" />
+              )}
+              {isPreselected ? "Déjà choisi" : "Pré-entretien"}
             </button>
           </div>
         </div>
@@ -689,9 +714,11 @@ export default function CandidatureAnalysisPage() {
   const [page, setPage] = useState(1);
   const ITEMS_PER_PAGE = 5;
 
-  // ✅ Interview Modal State
-  const [showScheduleModal, setShowScheduleModal] = useState(false);
-  const [selectedCandidature, setSelectedCandidature] = useState(null);
+  // Compter les pré-sélectionnés (lecture depuis les données)
+  const preselectedCount = useMemo(
+    () => items.filter((c) => c?.preInterview?.status === "SELECTED").length,
+    [items]
+  );
 
   useEffect(() => {
     async function load() {
@@ -761,16 +788,31 @@ export default function CandidatureAnalysisPage() {
     return filtered.slice(start, start + ITEMS_PER_PAGE);
   }, [filtered, page]);
 
-  // ✅ Handle Schedule Interview
-  const handleScheduleInterview = (candidature) => {
-    setSelectedCandidature(candidature);
-    setShowScheduleModal(true);
-  };
+  // ✅ Toggle pré-entretien → appel backend + mise à jour locale
+  const handleTogglePreselect = useCallback(async (candidatureId) => {
+    try {
+      const res = await togglePreInterview(candidatureId);
+      const { preInterviewStatus } = res.data;
 
-  const handleScheduleSuccess = () => {
-    // Ne pas fermer le modal ici — le modal se ferme lui-même après 2.5s
-    // On peut recharger les données si besoin
-  };
+      // Mise à jour optimiste dans le state local
+      setItems((prev) =>
+        prev.map((c) =>
+          c._id === candidatureId
+            ? {
+                ...c,
+                preInterview: {
+                  ...c.preInterview,
+                  status: preInterviewStatus,
+                  selectedAt: preInterviewStatus === "SELECTED" ? new Date().toISOString() : undefined,
+                },
+              }
+            : c
+        )
+      );
+    } catch (err) {
+      console.error("Erreur toggle pré-entretien:", err?.message);
+    }
+  }, []);
 
 
   return (
@@ -778,9 +820,25 @@ export default function CandidatureAnalysisPage() {
       {/* Zone sticky pour les filtres */}
       <div className="sticky top-0 z-30 bg-[#F0FAF0]/90 dark:bg-gray-950/90 backdrop-blur-md">
         <div className="max-w-6xl mx-auto px-6 pt-5 pb-4">
-          <h1 className="text-3xl font-extrabold text-gray-900 dark:text-white mb-4">
-            Analyse Candidatures
-          </h1>
+          <div className="flex items-center justify-between mb-4">
+            <h1 className="text-3xl font-extrabold text-gray-900 dark:text-white">
+              Analyse Candidatures
+            </h1>
+
+            {/* Lien vers la page pré-entretien */}
+            <a
+              href="/recruiter/PreInterviewList"
+              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-violet-600 hover:bg-violet-700 text-white text-sm font-semibold transition-all shadow-sm"
+            >
+              <UserCheck className="w-4 h-4" />
+              Pré-sélectionnés
+              {preselectedCount > 0 && (
+                <span className="ml-1 bg-white/20 text-white text-xs font-bold px-2 py-0.5 rounded-full">
+                  {preselectedCount}
+                </span>
+              )}
+            </a>
+          </div>
 
           <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700 shadow-sm p-4">
             <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
@@ -857,7 +915,7 @@ export default function CandidatureAnalysisPage() {
                 <CandidatureCard
                   key={c._id}
                   c={c}
-                  onScheduleInterview={handleScheduleInterview}
+                  onTogglePreselect={handleTogglePreselect}
                 />
               ))}
             </div>
@@ -875,18 +933,6 @@ export default function CandidatureAnalysisPage() {
         )}
       </div>
 
-      {/* Modal */}
-      {showScheduleModal && selectedCandidature && (
-        <ScheduleInterviewModal
-          isOpen={showScheduleModal}
-          onClose={() => {
-            setShowScheduleModal(false);
-            setSelectedCandidature(null);
-          }}
-          candidature={selectedCandidature}
-          onSuccess={() => { }}
-        />
-      )}
     </div>
   );
 }
