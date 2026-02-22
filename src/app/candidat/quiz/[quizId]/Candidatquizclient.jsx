@@ -84,19 +84,18 @@ function QuestionCard({ question, selectedAnswer, onSelect, questionNumber, tota
 
           {question?.difficulty && (
             <span
-              className={`text-xs px-2 py-0.5 rounded-full font-semibold capitalize ${
-                question.difficulty === "easy"
+              className={`text-xs px-2 py-0.5 rounded-full font-semibold capitalize ${question.difficulty === "easy"
                   ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400"
                   : question.difficulty === "medium"
-                  ? "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400"
-                  : "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400"
-              }`}
+                    ? "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400"
+                    : "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400"
+                }`}
             >
               {question.difficulty === "easy"
                 ? "Facile"
                 : question.difficulty === "medium"
-                ? "Moyen"
-                : "Difficile"}
+                  ? "Moyen"
+                  : "Difficile"}
             </span>
           )}
 
@@ -120,28 +119,25 @@ function QuestionCard({ question, selectedAnswer, onSelect, questionNumber, tota
             <button
               key={opt.value ?? i}
               onClick={() => onSelect(opt.value)}
-              className={`w-full flex items-center gap-4 p-4 rounded-2xl border-2 text-left transition-all duration-200 group ${
-                isSelected
+              className={`w-full flex items-center gap-4 p-4 rounded-2xl border-2 text-left transition-all duration-200 group ${isSelected
                   ? "border-[#6CB33F] bg-[#E9F5E3] dark:bg-emerald-900/20 shadow-md"
                   : "border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800/50 hover:border-[#6CB33F]/60 dark:hover:border-[#6CB33F]/70 hover:bg-[#E9F5E3]/40 dark:hover:bg-emerald-900/10"
-              }`}
+                }`}
             >
               <span
-                className={`w-9 h-9 rounded-xl flex items-center justify-center text-sm font-extrabold shrink-0 transition-all ${
-                  isSelected
+                className={`w-9 h-9 rounded-xl flex items-center justify-center text-sm font-extrabold shrink-0 transition-all ${isSelected
                     ? "bg-[#6CB33F] text-white"
                     : "bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400 group-hover:bg-[#E9F5E3] dark:group-hover:bg-emerald-900/25 group-hover:text-[#4E8F2F]"
-                }`}
+                  }`}
               >
                 {letters[i] || i + 1}
               </span>
 
               <span
-                className={`text-sm sm:text-base font-medium flex-1 leading-snug ${
-                  isSelected
+                className={`text-sm sm:text-base font-medium flex-1 leading-snug ${isSelected
                     ? "text-[#2E6B1F] dark:text-emerald-200"
                     : "text-gray-700 dark:text-gray-300"
-                }`}
+                  }`}
               >
                 {opt.label}
               </span>
@@ -176,7 +172,7 @@ export default function CandidatQuizClient() {
   const [flagged, setFlagged] = useState(new Set());
   const [confirming, setConfirming] = useState(false);
   const [submitting, setSubmitting] = useState(false);
-
+  const [showOverview, setShowOverview] = useState(false);
   // ── Timer par question (30 secondes par défaut) ──
   const TIME_PER_QUESTION = 30;
   const [timeLeft, setTimeLeft] = useState(TIME_PER_QUESTION);
@@ -412,11 +408,10 @@ export default function CandidatQuizClient() {
                       setCurrentIndex(idx);
                       setShowOverview(false);
                     }}
-                    className={`relative px-3 py-3 rounded-2xl border-2 text-sm font-bold transition ${
-                      answered
+                    className={`relative px-3 py-3 rounded-2xl border-2 text-sm font-bold transition ${answered
                         ? "border-[#6CB33F] bg-[#E9F5E3] dark:bg-emerald-900/20 text-[#2E6B1F] dark:text-emerald-200"
                         : "border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200 hover:border-[#6CB33F]/60 dark:hover:border-[#6CB33F]/70"
-                    }`}
+                      }`}
                   >
                     Q{idx + 1}
                     {isFlagged && (
@@ -500,11 +495,10 @@ export default function CandidatQuizClient() {
           <div className="mt-8 flex items-center justify-between gap-3 flex-wrap">
             <button
               onClick={handleFlag}
-              className={`inline-flex items-center gap-2 px-4 py-2 rounded-2xl border font-bold transition ${
-                flagged.has(currentOrder)
+              className={`inline-flex items-center gap-2 px-4 py-2 rounded-2xl border font-bold transition ${flagged.has(currentOrder)
                   ? "border-yellow-400 bg-yellow-50 dark:bg-yellow-900/20 text-yellow-700 dark:text-yellow-300"
                   : "border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800"
-              }`}
+                }`}
             >
               <Flag className="w-4 h-4" />
               Marquer

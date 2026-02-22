@@ -67,7 +67,7 @@ function formatDate(d) {
 }
 
 // ── localStorage pour persister "envoyé" entre refreshes ──
-function markSent(id) { try { localStorage.setItem(`docs_sent_${id}`, "1"); } catch {} }
+function markSent(id) { try { localStorage.setItem(`docs_sent_${id}`, "1"); } catch { } }
 function wasSent(id) { try { return localStorage.getItem(`docs_sent_${id}`) === "1"; } catch { return false; } }
 
 /* ================================================================
@@ -247,11 +247,10 @@ function SendDocumentsModal({ candidature, onClose, onSuccess }) {
                   Quiz technique
                 </p>
                 {quiz ? (
-                  <label className={`flex items-start gap-3 p-4 rounded-xl border-2 cursor-pointer transition-all ${
-                    includeQuiz
-                      ? "border-violet-500 bg-violet-50 dark:bg-violet-900/20"
-                      : "border-gray-200 dark:border-gray-600 hover:border-violet-300"
-                  }`}>
+                  <label className={`flex items-start gap-3 p-4 rounded-xl border-2 cursor-pointer transition-all ${includeQuiz
+                    ? "border-violet-500 bg-violet-50 dark:bg-violet-900/20"
+                    : "border-gray-200 dark:border-gray-600 hover:border-violet-300"
+                    }`}>
                     <input
                       type="checkbox"
                       checked={includeQuiz}
@@ -300,11 +299,10 @@ function SendDocumentsModal({ candidature, onClose, onSuccess }) {
                 ) : (
                   <div className="space-y-2 max-h-52 overflow-y-auto pr-1">
                     {/* Option : aucune */}
-                    <label className={`flex items-center gap-3 p-3 rounded-xl border-2 cursor-pointer transition-all ${
-                      !selectedFicheId
-                        ? "border-gray-400 bg-gray-50 dark:bg-gray-700"
-                        : "border-gray-200 dark:border-gray-600 hover:border-gray-300"
-                    }`}>
+                    <label className={`flex items-center gap-3 p-3 rounded-xl border-2 cursor-pointer transition-all ${!selectedFicheId
+                      ? "border-gray-400 bg-gray-50 dark:bg-gray-700"
+                      : "border-gray-200 dark:border-gray-600 hover:border-gray-300"
+                      }`}>
                       <input
                         type="radio" name="fiche" value=""
                         checked={!selectedFicheId}
@@ -317,11 +315,10 @@ function SendDocumentsModal({ candidature, onClose, onSuccess }) {
                     {fiches.map((fiche) => (
                       <label
                         key={fiche._id}
-                        className={`flex items-start gap-3 p-3 rounded-xl border-2 cursor-pointer transition-all ${
-                          selectedFicheId === fiche._id
-                            ? "border-green-500 bg-green-50 dark:bg-green-900/20"
-                            : "border-gray-200 dark:border-gray-600 hover:border-green-300"
-                        }`}
+                        className={`flex items-start gap-3 p-3 rounded-xl border-2 cursor-pointer transition-all ${selectedFicheId === fiche._id
+                          ? "border-green-500 bg-green-50 dark:bg-green-900/20"
+                          : "border-gray-200 dark:border-gray-600 hover:border-green-300"
+                          }`}
                       >
                         <input
                           type="radio" name="fiche" value={fiche._id}
@@ -391,7 +388,7 @@ function SendDocumentsModal({ candidature, onClose, onSuccess }) {
             <button
               onClick={handleSend}
               disabled={!canSend}
-              className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl bg-violet-600 hover:bg-violet-700 disabled:opacity-40 disabled:cursor-not-allowed text-white text-sm font-semibold transition-all shadow-sm"
+              className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl bg-green-600 hover:bg-green-700 disabled:opacity-40 disabled:cursor-not-allowed text-white text-sm font-semibold transition-all shadow-sm"
             >
               {sending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
               {sending ? "Envoi en cours..." : "Envoyer"}
@@ -420,7 +417,7 @@ function PreInterviewCard({ c, index }) {
     c?.analysis?.jobMatch?.score?.recommendation ??
     c?.analysis?.jobMatch?.recommendation ??
     null;
-
+  const linkedin = safeStr(c?.linkedin || c?.linkedinUrl || c?.linkedIn);
   function handleSuccess() {
     markSent(c._id);
     setSent(true);
@@ -481,8 +478,12 @@ function PreInterviewCard({ c, index }) {
                     </div>
                   )}
                   {linkedin && (
-                    <a href={linkedin.startsWith("http") ? linkedin : `https://${linkedin}`} target="_blank" rel="noreferrer"
-                      className="inline-flex items-center gap-1 text-xs text-blue-500 hover:underline">
+                    <a
+                      href={linkedin.startsWith("http") ? linkedin : `https://${linkedin}`}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="inline-flex items-center gap-1 text-xs text-blue-500 hover:underline"
+                    >
                       <LinkedinIcon className="w-3.5 h-3.5" />LinkedIn
                     </a>
                   )}
@@ -518,28 +519,7 @@ function PreInterviewCard({ c, index }) {
               )}
 
               {/* ── BOUTONS ── */}
-              <div className="flex flex-col gap-2 w-full min-w-[180px]">
-                {/* 🆕 Envoyer fiche + quiz */}
-                <button
-                  onClick={() => setShowSendModal(true)}
-                  className={`inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold transition-all shadow-sm w-full ${
-                    sent
-                      ? "bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 border border-green-200"
-                      : "bg-violet-500 hover:bg-violet-600 text-white"
-                  }`}
-                >
-                  {sent
-                    ? <><CheckCircle2 className="w-4 h-4" />Documents envoyés</>
-                    : <><Send className="w-4 h-4" />Envoyer (fiche / quiz)</>
-                  }
-                </button>
-
-                {/* Planifier entretien */}
-                <button className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-blue-500 hover:bg-blue-600 text-white text-sm font-semibold transition-colors shadow-sm w-full">
-                  <Calendar className="w-4 h-4" />
-                  Planifier Entretien
-                </button>
-              </div>
+              
             </div>
           </div>
         </div>
@@ -658,8 +638,8 @@ export default function PreInterviewListPage() {
 
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-violet-100 dark:bg-violet-900/30 flex items-center justify-center">
-                <UserCheck className="w-5 h-5 text-violet-600 dark:text-violet-400" />
+              <div className="w-10 h-10 rounded-xl bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
+                <UserCheck className="w-5 h-5 text-green-600 dark:text-green-400" />
               </div>
               <div>
                 <h1 className="text-2xl font-extrabold text-gray-900 dark:text-white">Candidats Pré-sélectionnés</h1>
@@ -671,7 +651,7 @@ export default function PreInterviewListPage() {
               </div>
             </div>
             {!loading && candidates.length > 0 && (
-              <div className="hidden md:flex items-center gap-2 bg-violet-600 text-white px-4 py-2 rounded-full text-sm font-semibold">
+              <div className="hidden md:flex items-center gap-2 bg-green-500 text-white px-4 py-2 rounded-full text-sm font-semibold">
                 <UserCheck className="w-4 h-4" />
                 {candidates.length} pré-sélectionné{candidates.length > 1 ? "s" : ""}
               </div>
@@ -723,14 +703,7 @@ export default function PreInterviewListPage() {
           </div>
         ) : (
           <div className="space-y-4 mt-2">
-            <div className="flex items-center gap-2 text-sm text-violet-700 dark:text-violet-300 bg-violet-50 dark:bg-violet-900/20 px-4 py-3 rounded-xl border border-violet-100 dark:border-violet-800">
-              <UserCheck className="w-4 h-4 shrink-0" />
-              <span className="font-semibold">{filtered.length} candidat{filtered.length > 1 ? "s" : ""}</span>
-              <span className="text-violet-500">{search ? "trouvé" : "sélectionné"}{filtered.length > 1 ? "s" : ""} pour pré-entretien</span>
-              <ChevronRight className="w-4 h-4 ml-auto" />
-              <span className="text-xs font-medium">Envoyez les documents ou planifiez leurs entretiens</span>
-            </div>
-
+        
             {filtered.map((c, i) => (
               <PreInterviewCard key={c._id} c={c} index={i} />
             ))}
