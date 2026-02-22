@@ -6,13 +6,36 @@ import { getQuizByJob } from "../../services/quiz.api";
 import api from "../../services/api";
 
 import {
-  UserCheck, FileText, Search, Calendar, ArrowLeft,
-  ChevronRight, Mail, Phone, Linkedin as LinkedinIcon,
-  Clock, Briefcase, Send, X, CheckCircle2, Brain,
-  ClipboardList, AlertCircle, Loader2,
+  UserCheck,
+  FileText,
+  Search,
+  Calendar,
+  ArrowLeft,
+  Mail,
+  Phone,
+  Linkedin as LinkedinIcon,
+  Clock,
+  Briefcase,
+  Send,
+  X,
+  CheckCircle2,
+  Brain,
+  ClipboardList,
+  AlertCircle,
+  Loader2,
 } from "lucide-react";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL;
+
+/* ================= OPTYLAB THEME (inline) ================= */
+const OPTY = {
+  primary: "#6DB33F",
+  primaryHover: "#5EA735",
+  mintBg: "#F0FAF0",
+  mintSoft: "#EAF7EF",
+  mintBorder: "#D6EEDD",
+  mintText: "#2E6B3A",
+};
 
 /* ================= HELPERS ================= */
 function safeStr(v) {
@@ -54,10 +77,10 @@ function getMatchScore(c) {
 }
 
 function scoreBg(s) {
-  if (s === null) return "bg-gray-100 text-gray-500";
-  if (s >= 0.75) return "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400";
-  if (s >= 0.45) return "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400";
-  return "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400";
+  if (s === null) return "bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-300";
+  if (s >= 0.75) return "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/25 dark:text-emerald-300";
+  if (s >= 0.45) return "bg-amber-100 text-amber-800 dark:bg-amber-900/25 dark:text-amber-300";
+  return "bg-rose-100 text-rose-800 dark:bg-rose-900/25 dark:text-rose-300";
 }
 
 function formatDate(d) {
@@ -87,18 +110,16 @@ function SendDocumentsModal({ candidature, onClose, onSuccess }) {
     async function load() {
       setLoadingData(true);
       try {
-        // Charger toutes les fiches
         const fichesRes = await api.get("/fiches");
         setFiches(Array.isArray(fichesRes?.data) ? fichesRes.data : []);
 
-        // Charger quiz lié au job du candidat
         const jobOfferId = candidature?.jobOfferId;
         if (jobOfferId) {
           try {
             const quizRes = await getQuizByJob(jobOfferId.toString());
             const q = quizRes?.data || null;
             setQuiz(q);
-            if (q) setIncludeQuiz(true); // cocher par défaut si quiz existe
+            if (q) setIncludeQuiz(true);
           } catch {
             setQuiz(null);
           }
@@ -139,64 +160,83 @@ function SendDocumentsModal({ candidature, onClose, onSuccess }) {
       <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={onClose} />
 
       {/* Panel */}
-      <div className="relative bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden">
-
-        {/* Header modal */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 dark:border-gray-700">
+      <div className="relative w-full max-w-lg overflow-hidden rounded-2xl shadow-2xl bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800">
+        {/* Header */}
+        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 dark:border-slate-800">
           <div>
-            <h2 className="text-lg font-extrabold text-gray-900 dark:text-white flex items-center gap-2">
-              <Send className="w-5 h-5 text-violet-500" />
+            <h2 className="text-lg font-extrabold text-slate-900 dark:text-white flex items-center gap-2">
+              <span
+                className="w-9 h-9 rounded-xl flex items-center justify-center"
+                style={{ background: OPTY.mintSoft, color: OPTY.mintText }}
+              >
+                <Send className="w-4 h-4" />
+              </span>
               Envoyer des documents
             </h2>
-            <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
-              à <span className="font-semibold text-gray-700 dark:text-gray-300">{name}</span>
+            <p className="text-sm text-slate-500 dark:text-slate-400 mt-0.5">
+              à <span className="font-semibold text-slate-700 dark:text-slate-200">{name}</span>
             </p>
           </div>
-          <button onClick={onClose} className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
-            <X className="w-5 h-5 text-gray-500" />
+
+          <button
+            onClick={onClose}
+            className="p-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+          >
+            <X className="w-5 h-5 text-slate-500" />
           </button>
         </div>
 
         {/* Body */}
         <div className="px-6 py-5 space-y-5 max-h-[70vh] overflow-y-auto">
-
-          {/* ✅ État succès */}
           {success ? (
             <div className="flex flex-col items-center gap-3 py-6 text-center">
-              <div className="w-16 h-16 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
-                <CheckCircle2 className="w-9 h-9 text-green-500" />
+              <div className="w-16 h-16 rounded-full bg-emerald-100 dark:bg-emerald-900/25 flex items-center justify-center">
+                <CheckCircle2 className="w-9 h-9 text-emerald-600" />
               </div>
-              <h3 className="text-lg font-extrabold text-gray-900 dark:text-white">Envoyé avec succès !</h3>
+
+              <h3 className="text-lg font-extrabold text-slate-900 dark:text-white">Envoyé avec succès !</h3>
+
               <div className="flex gap-2 flex-wrap justify-center">
                 {success.sentFiche && (
-                  <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 rounded-full text-sm font-medium">
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 dark:bg-emerald-900/15 text-emerald-800 dark:text-emerald-300 rounded-full text-sm font-medium">
                     <ClipboardList className="w-4 h-4" /> Fiche envoyée
                   </span>
                 )}
                 {success.sentQuiz && (
-                  <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-violet-50 dark:bg-violet-900/20 text-violet-700 dark:text-violet-400 rounded-full text-sm font-medium">
+                  <span
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium
+                    bg-[#EAF7EF] dark:bg-emerald-900/15 text-[#2E6B3A] dark:text-emerald-300"
+                  >
                     <Brain className="w-4 h-4" /> Quiz envoyé
                   </span>
                 )}
               </div>
-              <p className="text-sm text-gray-400">Email envoyé à <strong>{email}</strong></p>
-              <button onClick={onClose} className="mt-2 px-6 py-2.5 bg-violet-600 hover:bg-violet-700 text-white rounded-full font-semibold text-sm transition-colors">
+
+              <p className="text-sm text-slate-400">
+                Email envoyé à <strong className="text-slate-600 dark:text-slate-200">{email}</strong>
+              </p>
+
+              <button
+                onClick={onClose}
+                className="mt-2 px-6 py-2.5 rounded-full font-semibold text-sm text-white transition-colors"
+                style={{ background: OPTY.primary }}
+                onMouseEnter={(e) => (e.currentTarget.style.background = OPTY.primaryHover)}
+                onMouseLeave={(e) => (e.currentTarget.style.background = OPTY.primary)}
+              >
                 Fermer
               </button>
             </div>
-
           ) : loadingData ? (
-            <div className="flex items-center justify-center gap-2 py-10 text-gray-400">
+            <div className="flex items-center justify-center gap-2 py-10 text-slate-400">
               <Loader2 className="w-5 h-5 animate-spin" />
               <span className="text-sm">Chargement des données...</span>
             </div>
-
           ) : (
             <>
               {/* Email */}
               <div>
-                <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1.5">
-                  <Mail className="w-4 h-4 inline mr-1.5 text-gray-400" />
+                <label className="block text-sm font-semibold text-slate-700 dark:text-slate-200 mb-1.5">
+                  <Mail className="w-4 h-4 inline mr-1.5 text-slate-400" />
                   Email du candidat
                 </label>
                 <input
@@ -204,103 +244,127 @@ function SendDocumentsModal({ candidature, onClose, onSuccess }) {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="candidat@email.com"
-                  className="w-full border border-gray-200 dark:border-gray-600 rounded-xl px-4 py-2.5 text-sm bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 outline-none focus:ring-2 focus:ring-violet-400"
+                  className="w-full rounded-xl px-4 py-2.5 text-sm outline-none transition
+                    bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100
+                    border border-slate-200 dark:border-slate-700
+                    focus:ring-2"
+                  style={{ boxShadow: "none" }}
                 />
               </div>
 
-              {/* ── QUIZ TECHNIQUE ── */}
+              {/* Quiz */}
               <div>
-                <p className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
-                  <Brain className="w-4 h-4 inline mr-1.5 text-violet-500" />
+                <p className="text-sm font-semibold text-slate-700 dark:text-slate-200 mb-2 flex items-center gap-2">
+                  <span
+                    className="w-7 h-7 rounded-lg flex items-center justify-center"
+                    style={{ background: OPTY.mintSoft, color: OPTY.mintText }}
+                  >
+                    <Brain className="w-4 h-4" />
+                  </span>
                   Quiz technique
                 </p>
 
                 {quiz ? (
-                  <label className={`flex items-start gap-3 p-4 rounded-xl border-2 cursor-pointer transition-all ${
-                    includeQuiz
-                      ? "border-violet-500 bg-violet-50 dark:bg-violet-900/20"
-                      : "border-gray-200 dark:border-gray-600 hover:border-violet-300"
-                  }`}>
+                  <label
+                    className={`flex items-start gap-3 p-4 rounded-xl border-2 cursor-pointer transition-all ${includeQuiz
+                      ? "bg-[#EAF7EF] dark:bg-emerald-900/15"
+                      : "border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600"
+                      }`}
+                    style={includeQuiz ? { borderColor: OPTY.mintBorder } : undefined}
+                  >
                     <input
                       type="checkbox"
                       checked={includeQuiz}
                       onChange={(e) => setIncludeQuiz(e.target.checked)}
-                      className="mt-0.5 accent-violet-600 w-4 h-4 shrink-0"
+                      className="mt-0.5 w-4 h-4 shrink-0"
+                      style={{ accentColor: OPTY.primary }}
                     />
-                    <div>
-                      <p className="font-semibold text-sm text-gray-800 dark:text-gray-200">
+                    <div className="min-w-0">
+                      <p className="font-semibold text-sm text-slate-800 dark:text-slate-100 truncate">
                         {quiz.jobTitle || "Quiz technique"}
                       </p>
-                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                      <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
                         {quiz.totalQuestions || 0} questions · ~{Math.ceil((quiz.totalQuestions || 0) * 2)} min
                       </p>
                       {includeQuiz && (
-                        <span className="inline-block mt-1.5 text-xs font-medium text-violet-600 dark:text-violet-400">
+                        <span className="inline-block mt-1.5 text-xs font-medium" style={{ color: OPTY.mintText }}>
                           ✓ Sera inclus dans l'email
                         </span>
                       )}
                     </div>
                   </label>
                 ) : (
-                  <div className="flex items-center gap-2 p-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700 rounded-xl text-sm text-amber-700 dark:text-amber-400">
+                  <div className="flex items-center gap-2 p-3 bg-amber-50 dark:bg-amber-900/15 border border-amber-200 dark:border-amber-700 rounded-xl text-sm text-amber-800 dark:text-amber-300">
                     <AlertCircle className="w-4 h-4 shrink-0" />
                     Aucun quiz disponible pour ce poste ({safeStr(candidature?.jobTitle) || "—"})
                   </div>
                 )}
               </div>
 
-              {/* ── FICHE DE RENSEIGNEMENT ── */}
+              {/* Fiche */}
               <div>
-                <p className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
-                  <ClipboardList className="w-4 h-4 inline mr-1.5 text-green-600" />
+                <p className="text-sm font-semibold text-slate-700 dark:text-slate-200 mb-2 flex items-center gap-2">
+                  <span
+                    className="w-7 h-7 rounded-lg flex items-center justify-center"
+                    style={{ background: OPTY.mintSoft, color: OPTY.mintText }}
+                  >
+                    <ClipboardList className="w-4 h-4" />
+                  </span>
                   Fiche de renseignement
                 </p>
 
                 {fiches.length === 0 ? (
-                  <div className="flex items-center gap-2 p-3 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-xl text-sm text-gray-500">
+                  <div className="flex items-center gap-2 p-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm text-slate-500">
                     <AlertCircle className="w-4 h-4 shrink-0" />
                     Aucune fiche disponible
                   </div>
                 ) : (
                   <div className="space-y-2 max-h-52 overflow-y-auto pr-1">
-                    {/* Option : aucune */}
-                    <label className={`flex items-center gap-3 p-3 rounded-xl border-2 cursor-pointer transition-all ${
-                      !selectedFicheId
-                        ? "border-gray-400 bg-gray-50 dark:bg-gray-700"
-                        : "border-gray-200 dark:border-gray-600 hover:border-gray-300"
-                    }`}>
+                    <label
+                      className={`flex items-center gap-3 p-3 rounded-xl border-2 cursor-pointer transition-all ${!selectedFicheId
+                        ? "border-slate-300 bg-slate-50 dark:bg-slate-800 dark:border-slate-700"
+                        : "border-slate-200 dark:border-slate-700 hover:border-slate-300"
+                        }`}
+                    >
                       <input
-                        type="radio" name="fiche" value=""
+                        type="radio"
+                        name="fiche"
+                        value=""
                         checked={!selectedFicheId}
                         onChange={() => setSelectedFicheId("")}
-                        className="accent-gray-500 w-4 h-4 shrink-0"
+                        className="w-4 h-4 shrink-0"
                       />
-                      <span className="text-sm text-gray-400 italic">Ne pas envoyer de fiche</span>
+                      <span className="text-sm text-slate-400 italic">Ne pas envoyer de fiche</span>
                     </label>
 
                     {fiches.map((fiche) => (
                       <label
                         key={fiche._id}
-                        className={`flex items-start gap-3 p-3 rounded-xl border-2 cursor-pointer transition-all ${
-                          selectedFicheId === fiche._id
-                            ? "border-green-500 bg-green-50 dark:bg-green-900/20"
-                            : "border-gray-200 dark:border-gray-600 hover:border-green-300"
-                        }`}
+                        className={`flex items-start gap-3 p-3 rounded-xl border-2 cursor-pointer transition-all ${selectedFicheId === fiche._id
+                          ? "bg-[#EAF7EF] dark:bg-emerald-900/15"
+                          : "border-slate-200 dark:border-slate-700 hover:border-[#D6EEDD]"
+                          }`}
+                        style={selectedFicheId === fiche._id ? { borderColor: OPTY.mintBorder } : undefined}
                       >
                         <input
-                          type="radio" name="fiche" value={fiche._id}
+                          type="radio"
+                          name="fiche"
+                          value={fiche._id}
                           checked={selectedFicheId === fiche._id}
                           onChange={() => setSelectedFicheId(fiche._id)}
-                          className="mt-0.5 accent-green-600 w-4 h-4 shrink-0"
+                          className="mt-0.5 w-4 h-4 shrink-0"
+                          style={{ accentColor: OPTY.primary }}
                         />
                         <div className="min-w-0">
-                          <p className="font-semibold text-sm text-gray-800 dark:text-gray-200 truncate">{fiche.title}</p>
+                          <p className="font-semibold text-sm text-slate-800 dark:text-slate-100 truncate">{fiche.title}</p>
                           {fiche.description && (
-                            <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5 truncate">{fiche.description}</p>
+                            <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 truncate">{fiche.description}</p>
                           )}
-                          <p className="text-xs text-gray-400 mt-0.5">{fiche.questions?.length || 0} question(s)</p>
+                          <p className="text-xs text-slate-400 mt-0.5">{fiche.questions?.length || 0} question(s)</p>
                           {selectedFicheId === fiche._id && (
-                            <span className="inline-block mt-1 text-xs font-medium text-green-600 dark:text-green-400">✓ Sélectionnée</span>
+                            <span className="inline-block mt-1 text-xs font-medium" style={{ color: OPTY.mintText }}>
+                              ✓ Sélectionnée
+                            </span>
                           )}
                         </div>
                       </label>
@@ -309,21 +373,27 @@ function SendDocumentsModal({ candidature, onClose, onSuccess }) {
                 )}
               </div>
 
-              {/* Résumé envoi */}
+              {/* Résumé */}
               {(selectedFicheId || (includeQuiz && quiz)) && (
-                <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-800 rounded-xl px-4 py-3">
-                  <p className="text-xs font-semibold text-blue-700 dark:text-blue-300 mb-2">
+                <div className="rounded-xl px-4 py-3 border" style={{ background: OPTY.mintSoft, borderColor: OPTY.mintBorder }}>
+                  <p className="text-xs font-semibold mb-2" style={{ color: OPTY.mintText }}>
                     Ce qui sera envoyé à {email || "..."}
                   </p>
                   <div className="flex flex-wrap gap-2">
                     {selectedFicheId && (
-                      <span className="inline-flex items-center gap-1 text-xs bg-white dark:bg-gray-700 border border-blue-200 dark:border-blue-700 text-blue-700 dark:text-blue-300 px-2.5 py-1 rounded-full font-medium">
+                      <span
+                        className="inline-flex items-center gap-1 text-xs bg-white dark:bg-slate-800 border px-2.5 py-1 rounded-full font-medium"
+                        style={{ borderColor: OPTY.mintBorder, color: OPTY.mintText }}
+                      >
                         <ClipboardList className="w-3.5 h-3.5" />
-                        {fiches.find(f => f._id === selectedFicheId)?.title || "Fiche"}
+                        {fiches.find((f) => f._id === selectedFicheId)?.title || "Fiche"}
                       </span>
                     )}
                     {includeQuiz && quiz && (
-                      <span className="inline-flex items-center gap-1 text-xs bg-white dark:bg-gray-700 border border-blue-200 dark:border-blue-700 text-blue-700 dark:text-blue-300 px-2.5 py-1 rounded-full font-medium">
+                      <span
+                        className="inline-flex items-center gap-1 text-xs bg-white dark:bg-slate-800 border px-2.5 py-1 rounded-full font-medium"
+                        style={{ borderColor: OPTY.mintBorder, color: OPTY.mintText }}
+                      >
                         <Brain className="w-3.5 h-3.5" />
                         Quiz : {quiz.jobTitle}
                       </span>
@@ -334,7 +404,7 @@ function SendDocumentsModal({ candidature, onClose, onSuccess }) {
 
               {/* Erreur */}
               {error && (
-                <div className="flex items-center gap-2 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-700 rounded-xl text-sm text-red-600 dark:text-red-400">
+                <div className="flex items-center gap-2 p-3 bg-rose-50 dark:bg-rose-900/15 border border-rose-200 dark:border-rose-700 rounded-xl text-sm text-rose-700 dark:text-rose-300">
                   <AlertCircle className="w-4 h-4 shrink-0" />
                   {error}
                 </div>
@@ -343,19 +413,26 @@ function SendDocumentsModal({ candidature, onClose, onSuccess }) {
           )}
         </div>
 
-        {/* Footer modal */}
+        {/* Footer */}
         {!success && !loadingData && (
-          <div className="px-6 py-4 border-t border-gray-100 dark:border-gray-700 flex items-center justify-end gap-3">
+          <div className="px-6 py-4 border-t border-slate-100 dark:border-slate-800 flex items-center justify-end gap-3">
             <button
               onClick={onClose}
-              className="px-5 py-2.5 rounded-xl border border-gray-200 dark:border-gray-600 text-sm font-semibold text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+              className="px-5 py-2.5 rounded-xl border text-sm font-semibold transition-colors
+              border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-200
+              hover:bg-slate-50 dark:hover:bg-slate-800"
             >
               Annuler
             </button>
+
             <button
               onClick={handleSend}
               disabled={!canSend}
-              className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl bg-violet-600 hover:bg-violet-700 disabled:opacity-40 disabled:cursor-not-allowed text-white text-sm font-semibold transition-all shadow-sm"
+              className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl text-white text-sm font-semibold transition-all shadow-sm
+              disabled:opacity-40 disabled:cursor-not-allowed"
+              style={{ background: OPTY.primary }}
+              onMouseEnter={(e) => (e.currentTarget.style.background = OPTY.primaryHover)}
+              onMouseLeave={(e) => (e.currentTarget.style.background = OPTY.primary)}
             >
               {sending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
               {sending ? "Envoi en cours..." : "Envoyer"}
@@ -367,7 +444,7 @@ function SendDocumentsModal({ candidature, onClose, onSuccess }) {
   );
 }
 
-/* ================= CARD ================= */
+/* ================= CARD (ORGANISÉE, PAS DE BARRE VERTE EN HAUT) ================= */
 function PreInterviewCard({ c, index }) {
   const [showSendModal, setShowSendModal] = useState(false);
   const [sent, setSent] = useState(false);
@@ -384,111 +461,174 @@ function PreInterviewCard({ c, index }) {
 
   const recommendation =
     c?.analysis?.jobMatch?.score?.recommendation ??
-    c?.analysis?.jobMatch?.recommendation ?? null;
+    c?.analysis?.jobMatch?.recommendation ??
+    null;
 
   return (
     <>
-      <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700 shadow-sm hover:shadow-md transition-all overflow-hidden">
-        <div className="h-1 bg-gradient-to-r from-violet-500 to-purple-600" />
-
+      <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-sm hover:shadow-md transition-all overflow-hidden">
+        {/* BODY */}
         <div className="p-5">
-          <div className="flex items-start justify-between gap-4">
-
-            {/* Avatar + Infos */}
-            <div className="flex items-start gap-4">
+          <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
+            {/* LEFT: Infos candidat */}
+            <div className="flex items-start gap-4 min-w-0 flex-1">
               <div className="relative shrink-0">
-                <div className="w-14 h-14 rounded-full bg-violet-100 dark:bg-violet-900/30 flex items-center justify-center text-violet-700 dark:text-violet-300 font-extrabold text-xl">
+                <div
+                  className="w-14 h-14 rounded-full flex items-center justify-center font-extrabold text-xl"
+                  style={{ background: OPTY.mintSoft, color: OPTY.mintText }}
+                >
                   {name?.[0]?.toUpperCase() || "C"}
                 </div>
-                <span className="absolute -top-1 -left-1 w-5 h-5 rounded-full bg-violet-600 text-white text-[10px] font-bold flex items-center justify-center">
+                <span
+                  className="absolute -top-1 -left-1 w-5 h-5 rounded-full text-white text-[10px] font-bold flex items-center justify-center shadow"
+                  style={{ background: OPTY.primary }}
+                >
                   {index + 1}
                 </span>
               </div>
 
-              <div>
-                <h2 className="text-lg font-extrabold text-gray-900 dark:text-white">{name}</h2>
+              <div className="min-w-0">
+                <h2 className="text-lg font-extrabold text-slate-900 dark:text-white truncate">{name}</h2>
+
                 <div className="flex items-center gap-1.5 mt-1">
-                  <Briefcase className="w-3.5 h-3.5 text-gray-400" />
-                  <p className="text-sm text-gray-500 dark:text-gray-400">{jobTitle}</p>
+                  <Briefcase className="w-3.5 h-3.5 text-slate-400" />
+                  <p className="text-sm text-slate-500 dark:text-slate-400 truncate">{jobTitle}</p>
                 </div>
 
-                <div className="flex flex-wrap gap-3 mt-2">
+                {/* Contacts + CV en mini-cards */}
+                <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-2">
                   {email && (
-                    <a href={`mailto:${email}`} className="inline-flex items-center gap-1 text-xs text-blue-600 dark:text-blue-400 hover:underline">
-                      <Mail className="w-3.5 h-3.5" />{email}
+                    <a
+                      href={`mailto:${email}`}
+                      className="inline-flex items-center gap-2 text-xs rounded-lg px-2.5 py-2 border bg-white dark:bg-slate-800"
+                      style={{ borderColor: OPTY.mintBorder, color: OPTY.mintText }}
+                      title={email}
+                    >
+                      <Mail className="w-4 h-4" />
+                      <span className="truncate">{email}</span>
                     </a>
                   )}
+
                   {telephone && (
-                    <span className="inline-flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400">
-                      <Phone className="w-3.5 h-3.5" />{telephone}
-                    </span>
+                    <div
+                      className="inline-flex items-center gap-2 text-xs rounded-lg px-2.5 py-2 border bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300"
+                      style={{ borderColor: OPTY.mintBorder }}
+                      title={telephone}
+                    >
+                      <Phone className="w-4 h-4 text-slate-400" />
+                      <span className="truncate">{telephone}</span>
+                    </div>
                   )}
+
                   {linkedin && (
-                    <a href={linkedin.startsWith("http") ? linkedin : `https://${linkedin}`} target="_blank" rel="noreferrer"
-                      className="inline-flex items-center gap-1 text-xs text-blue-500 hover:underline">
-                      <LinkedinIcon className="w-3.5 h-3.5" />LinkedIn
+                    <a
+                      href={linkedin.startsWith("http") ? linkedin : `https://${linkedin}`}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="inline-flex items-center gap-2 text-xs rounded-lg px-2.5 py-2 border bg-white dark:bg-slate-800 hover:opacity-90"
+                      style={{ borderColor: OPTY.mintBorder, color: OPTY.mintText }}
+                    >
+                      <LinkedinIcon className="w-4 h-4" />
+                      LinkedIn
+                    </a>
+                  )}
+
+                  {cvUrl && (
+                    <a
+                      href={cvUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="inline-flex items-center gap-2 text-xs rounded-lg px-2.5 py-2 border bg-white dark:bg-slate-800 hover:opacity-90"
+                      style={{ borderColor: OPTY.mintBorder, color: OPTY.mintText }}
+                      title={cvName}
+                    >
+                      <FileText className="w-4 h-4" />
+                      <span className="truncate">Voir CV</span>
+                      <span className="text-slate-400">({cvName})</span>
                     </a>
                   )}
                 </div>
-
-                {cvUrl && (
-                  <a href={cvUrl} target="_blank" rel="noreferrer"
-                    className="inline-flex items-center gap-1.5 mt-2 text-sm font-medium text-green-700 dark:text-emerald-400 hover:text-green-800">
-                    <FileText className="w-4 h-4" />Voir CV
-                    <span className="text-gray-400 text-xs">({cvName})</span>
-                  </a>
-                )}
               </div>
             </div>
 
-            {/* Score + Boutons */}
-            <div className="flex flex-col items-end gap-3 shrink-0">
-              <div className="text-right">
-                <p className="text-[10px] font-semibold text-gray-400 uppercase mb-1">Match Score</p>
-                <div className={`text-2xl font-extrabold px-3 py-1 rounded-xl ${scoreBg(score)}`}>
-                  {pct(score)}
+            {/* RIGHT: Score + Statut */}
+            <div className="shrink-0 w-full md:w-[220px]">
+              <div className="rounded-2xl border bg-white dark:bg-slate-800 p-4" style={{ borderColor: OPTY.mintBorder }}>
+                <p className="text-[10px] font-semibold text-slate-400 uppercase mb-1">Match score</p>
+
+                <div className="flex items-end justify-between gap-3">
+                  <div className={`text-2xl font-extrabold px-3 py-1 rounded-xl ${scoreBg(score)}`}>
+                    {pct(score)}
+                  </div>
+                  <span className="text-xs text-slate-400 text-right">
+                    {recommendation ? recommendation.replaceAll("_", " ") : ""}
+                  </span>
                 </div>
-                {recommendation && (
-                  <p className="text-xs text-gray-400 mt-1 capitalize">{recommendation.replace("_", " ")}</p>
+
+                {selectedAt && (
+                  <div
+                    className="mt-3 inline-flex items-center gap-2 text-xs px-3 py-2 rounded-xl border w-full"
+                    style={{
+                      background: OPTY.mintSoft,
+                      borderColor: OPTY.mintBorder,
+                      color: OPTY.mintText,
+                    }}
+                  >
+                    <Clock className="w-4 h-4" />
+                    Sélectionné le {formatDate(selectedAt)}
+                  </div>
                 )}
-              </div>
-
-              {selectedAt && (
-                <div className="inline-flex items-center gap-1 text-xs text-violet-600 dark:text-violet-400 bg-violet-50 dark:bg-violet-900/20 px-2.5 py-1 rounded-full">
-                  <Clock className="w-3 h-3" />
-                  Sélectionné le {formatDate(selectedAt)}
-                </div>
-              )}
-
-              {/* ── BOUTONS ── */}
-              <div className="flex flex-col gap-2 w-full min-w-[180px]">
-                {/* 🆕 Envoyer fiche + quiz */}
-                <button
-                  onClick={() => setShowSendModal(true)}
-                  className={`inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold transition-all shadow-sm w-full ${
-                    sent
-                      ? "bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 border border-green-200"
-                      : "bg-violet-500 hover:bg-violet-600 text-white"
-                  }`}
-                >
-                  {sent
-                    ? <><CheckCircle2 className="w-4 h-4" />Documents envoyés</>
-                    : <><Send className="w-4 h-4" />Envoyer (fiche / quiz)</>
-                  }
-                </button>
-
-                {/* Planifier entretien */}
-                <button className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-blue-500 hover:bg-blue-600 text-white text-sm font-semibold transition-colors shadow-sm w-full">
-                  <Calendar className="w-4 h-4" />
-                  Planifier Entretien
-                </button>
               </div>
             </div>
           </div>
         </div>
+
+        {/* FOOTER ACTIONS */}
+        <div
+          className="px-5 py-4 border-t flex flex-col sm:flex-row gap-2 sm:items-center sm:justify-end bg-white dark:bg-slate-900"
+          style={{ borderColor: OPTY.mintBorder }}
+        >
+          <button
+            onClick={() => setShowSendModal(true)}
+            className={`inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold transition-all shadow-sm border ${sent
+              ? "bg-emerald-100 dark:bg-emerald-900/25 text-emerald-800 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800"
+              : "text-white border-transparent"
+              }`}
+            style={sent ? undefined : { background: OPTY.primary }}
+            onMouseEnter={(e) => {
+              if (!sent) e.currentTarget.style.background = OPTY.primaryHover;
+            }}
+            onMouseLeave={(e) => {
+              if (!sent) e.currentTarget.style.background = OPTY.primary;
+            }}
+          >
+            {sent ? (
+              <>
+                <CheckCircle2 className="w-4 h-4" />
+                Documents envoyés
+              </>
+            ) : (
+              <>
+                <Send className="w-4 h-4" />
+                Envoyer (fiche / quiz)
+              </>
+            )}
+          </button>
+
+          <button
+            className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold transition-all border hover:shadow-sm"
+            style={{
+              borderColor: OPTY.mintBorder,
+              color: OPTY.mintText,
+              background: "white",
+            }}
+          >
+            <Calendar className="w-4 h-4" />
+            Planifier entretien
+          </button>
+        </div>
       </div>
 
-      {/* Modal */}
       {showSendModal && (
         <SendDocumentsModal
           candidature={c}
@@ -534,93 +674,98 @@ export default function PreInterviewListPage() {
   }, [candidates, search]);
 
   return (
-    <div className="min-h-screen bg-[#F0FAF0] dark:bg-gray-950 transition-colors duration-300">
-      {/* Header sticky */}
-      <div className="sticky top-0 z-30 bg-[#F0FAF0]/90 dark:bg-gray-950/90 backdrop-blur-md">
-        <div className="max-w-5xl mx-auto px-6 pt-5 pb-4">
-          <a
-            href="/recruiter/CandidatureAnalysis"
-            className="inline-flex items-center gap-1.5 text-sm text-gray-500 dark:text-gray-400 hover:text-gray-700 mb-3 transition-colors"
-          >
-            <ArrowLeft className="w-4 h-4" />
-            Retour à l'analyse candidatures
-          </a>
+    <div className="min-h-screen transition-colors duration-300 bg-[#F0FAF0] dark:bg-[#0B1220]">      {/* Header sticky */}
+      <div className="sticky top-0 z-30 backdrop-blur-md bg-[#F0FAF0]/90 dark:bg-[#0B1220]/90">        <div className="max-w-5xl mx-auto px-6 pt-5 pb-4">
+        <a
+          href="/recruiter/CandidatureAnalysis"
+          className="inline-flex items-center gap-1.5 text-sm text-slate-500 hover:text-slate-700 mb-3 transition-colors"
+        >
+          <ArrowLeft className="w-4 h-4" />
+          Retour à l'analyse candidatures
+        </a>
 
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-violet-100 dark:bg-violet-900/30 flex items-center justify-center">
-                <UserCheck className="w-5 h-5 text-violet-600 dark:text-violet-400" />
-              </div>
-              <div>
-                <h1 className="text-2xl font-extrabold text-gray-900 dark:text-white">Candidats Pré-sélectionnés</h1>
-                <p className="text-sm text-gray-500 dark:text-gray-400">
-                  {loading
-                    ? "Chargement..."
-                    : `${candidates.length} candidat${candidates.length > 1 ? "s" : ""} prêt${candidates.length > 1 ? "s" : ""} pour entretien`}
-                </p>
-              </div>
+        <div className="flex items-center justify-between mb-4 gap-4">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: OPTY.mintSoft }}>
+              <UserCheck className="w-5 h-5" style={{ color: OPTY.mintText }} />
             </div>
-            {!loading && candidates.length > 0 && (
-              <div className="hidden md:flex items-center gap-2 bg-violet-600 text-white px-4 py-2 rounded-full text-sm font-semibold">
-                <UserCheck className="w-4 h-4" />
-                {candidates.length} pré-sélectionné{candidates.length > 1 ? "s" : ""}
-              </div>
-            )}
+            <div>
+              <h1 className="text-2xl font-extrabold text-slate-900 dark:text-white">
+                Candidats Pré-sélectionnés
+              </h1>              <p className="text-sm text-slate-500">
+                {loading
+                  ? "Chargement..."
+                  : `${candidates.length} candidat${candidates.length > 1 ? "s" : ""} prêt${candidates.length > 1 ? "s" : ""} pour entretien`}
+              </p>
+            </div>
           </div>
 
           {!loading && candidates.length > 0 && (
-            <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700 shadow-sm p-3">
-              <div className="flex items-center gap-2 border border-gray-200 dark:border-gray-600 rounded-xl px-3 py-2 bg-white dark:bg-gray-700">
-                <Search className="w-4 h-4 text-gray-400" />
-                <input
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                  placeholder="Rechercher un candidat (nom, email, job)..."
-                  className="w-full outline-none text-sm bg-transparent text-gray-800 dark:text-gray-100 placeholder-gray-400"
-                />
-              </div>
+            <div
+              className="hidden md:flex items-center gap-2 px-4 py-2 rounded-full text-sm font-semibold text-white shadow-sm"
+              style={{ background: OPTY.primary }}
+            >
+              <UserCheck className="w-4 h-4" />
+              {candidates.length} pré-sélectionné{candidates.length > 1 ? "s" : ""}
             </div>
           )}
         </div>
+
+        {!loading && candidates.length > 0 && (
+          <div className="bg-white dark:bg-[#0F1A2F] rounded-2xl border shadow-sm p-3 border-[#D6EEDD] dark:border-slate-800">
+            <div className="flex items-center gap-2 border rounded-xl px-3 py-2 bg-white dark:bg-[#0B1220] border-[#D6EEDD] dark:border-slate-700">            <Search className="w-4 h-4 text-slate-400" />
+              <input
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Rechercher un candidat (nom, email, job)..."
+                className="w-full outline-none text-sm bg-transparent text-slate-800 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500" />
+            </div>
+          </div>
+        )}
+      </div>
       </div>
 
-      {/* Contenu */}
+      {/* Content */}
       <div className="max-w-5xl mx-auto px-6 pb-10 pt-4">
         {loading ? (
-          <div className="bg-white dark:bg-gray-800 rounded-2xl p-10 text-center">
-            <div className="w-10 h-10 border-4 border-violet-200 border-t-violet-600 rounded-full animate-spin mx-auto mb-4" />
-            <p className="text-gray-500 dark:text-gray-400">Chargement des candidats pré-sélectionnés...</p>
+          <div className="bg-white rounded-2xl p-10 text-center border" style={{ borderColor: OPTY.mintBorder }}>
+            <div
+              className="w-10 h-10 border-4 rounded-full animate-spin mx-auto mb-4"
+              style={{ borderColor: `${OPTY.mintBorder}`, borderTopColor: OPTY.primary }}
+            />
+            <p className="text-slate-500">Chargement des candidats pré-sélectionnés...</p>
           </div>
         ) : candidates.length === 0 ? (
-          <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700 shadow-sm p-16 text-center">
-            <div className="w-16 h-16 rounded-full bg-violet-50 dark:bg-violet-900/20 flex items-center justify-center mx-auto mb-4">
-              <UserCheck className="w-8 h-8 text-violet-300 dark:text-violet-600" />
+          <div className="bg-white rounded-2xl border shadow-sm p-16 text-center" style={{ borderColor: OPTY.mintBorder }}>
+            <div
+              className="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4"
+              style={{ background: OPTY.mintSoft }}
+            >
+              <UserCheck className="w-8 h-8" style={{ color: OPTY.mintText }} />
             </div>
-            <h2 className="text-xl font-extrabold text-gray-800 dark:text-white mb-2">Aucun candidat pré-sélectionné</h2>
-            <p className="text-gray-400 text-sm mb-6 max-w-sm mx-auto">
+            <h2 className="text-xl font-extrabold text-slate-900 mb-2">Aucun candidat pré-sélectionné</h2>
+            <p className="text-slate-500 text-sm mb-6 max-w-sm mx-auto">
               Retournez sur la page d'analyse et cliquez sur{" "}
-              <span className="font-semibold text-violet-500">Pré-entretien</span>{" "}
+              <span className="font-semibold" style={{ color: OPTY.mintText }}>
+                Pré-entretien
+              </span>{" "}
               sur les candidats que vous souhaitez retenir.
             </p>
-            <a href="/recruiter/CandidatureAnalysis"
-              className="inline-flex items-center gap-2 px-6 py-3 bg-violet-600 hover:bg-violet-700 text-white rounded-full font-semibold text-sm transition-colors">
-              <ArrowLeft className="w-4 h-4" />Aller à l'analyse
+            <a
+              href="/recruiter/CandidatureAnalysis"
+              className="inline-flex items-center gap-2 px-6 py-3 text-white rounded-full font-semibold text-sm transition-colors"
+              style={{ background: OPTY.primary }}
+            >
+              <ArrowLeft className="w-4 h-4" />
+              Aller à l'analyse
             </a>
           </div>
         ) : filtered.length === 0 ? (
-          <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700 p-10 text-center">
-            <p className="text-gray-500">Aucun résultat pour "{search}"</p>
+          <div className="bg-white rounded-2xl border p-10 text-center" style={{ borderColor: OPTY.mintBorder }}>
+            <p className="text-slate-500">Aucun résultat pour "{search}"</p>
           </div>
         ) : (
           <div className="space-y-4 mt-2">
-            <div className="flex items-center gap-2 text-sm text-violet-700 dark:text-violet-300 bg-violet-50 dark:bg-violet-900/20 px-4 py-3 rounded-xl border border-violet-100 dark:border-violet-800">
-              <UserCheck className="w-4 h-4 shrink-0" />
-              <span className="font-semibold">{filtered.length} candidat{filtered.length > 1 ? "s" : ""}</span>
-              <span className="text-violet-500">{search ? "trouvé" : "sélectionné"}{filtered.length > 1 ? "s" : ""} pour pré-entretien</span>
-              <ChevronRight className="w-4 h-4 ml-auto" />
-              <span className="text-xs font-medium">Envoyez les documents ou planifiez leurs entretiens</span>
-            </div>
-
             {filtered.map((c, i) => (
               <PreInterviewCard key={c._id} c={c} index={i} />
             ))}

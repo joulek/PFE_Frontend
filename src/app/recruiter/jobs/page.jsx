@@ -25,6 +25,8 @@ import {
   Briefcase,
   Calendar,
   CalendarClock,
+    MapPin,
+
 } from "lucide-react";
 
 /* ================= UTILS ================= */
@@ -162,12 +164,12 @@ export default function JobsPage() {
       const list = Array.isArray(res?.data)
         ? res.data
         : Array.isArray(res?.data?.users)
-        ? res.data.users
-        : Array.isArray(res?.data?.data)
-        ? res.data.data
-        : Array.isArray(res?.data?.data?.users)
-        ? res.data.data.users
-        : [];
+          ? res.data.users
+          : Array.isArray(res?.data?.data)
+            ? res.data.data
+            : Array.isArray(res?.data?.data?.users)
+              ? res.data.data.users
+              : [];
       setUsers(list);
     } catch {
       setUsers([]);
@@ -329,19 +331,17 @@ export default function JobsPage() {
                 key={tab.key}
                 onClick={() => setActiveTab(tab.key)}
                 className={`px-5 py-2.5 rounded-full text-sm font-semibold transition-all duration-200
-                  ${
-                    isActive
-                      ? "bg-[#6CB33F] dark:bg-emerald-600 text-white shadow-md shadow-green-500/20"
-                      : "bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 border border-gray-200 dark:border-gray-700 hover:border-[#6CB33F] dark:hover:border-emerald-500"
+                  ${isActive
+                    ? "bg-[#6CB33F] dark:bg-emerald-600 text-white shadow-md shadow-green-500/20"
+                    : "bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 border border-gray-200 dark:border-gray-700 hover:border-[#6CB33F] dark:hover:border-emerald-500"
                   }`}
               >
                 {tab.label}
                 <span
-                  className={`ml-2 text-xs px-2 py-0.5 rounded-full ${
-                    isActive
+                  className={`ml-2 text-xs px-2 py-0.5 rounded-full ${isActive
                       ? "bg-white/20 text-white"
                       : "bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400"
-                  }`}
+                    }`}
                 >
                   {count}
                 </span>
@@ -381,9 +381,8 @@ export default function JobsPage() {
                 )}
 
                 <p
-                  className={`text-gray-600 dark:text-gray-300 text-sm mb-2 whitespace-pre-line ${
-                    !isExpanded ? "line-clamp-3" : ""
-                  }`}
+                  className={`text-gray-600 dark:text-gray-300 text-sm mb-2 whitespace-pre-line ${!isExpanded ? "line-clamp-3" : ""
+                    }`}
                 >
                   {job.description}
                 </p>
@@ -442,7 +441,7 @@ export default function JobsPage() {
                     <div className="flex items-center gap-2">
                       {job.lieu && (
                         <span className="flex items-center gap-1">
-                          <span>📍</span>
+                          <MapPin className="w-4 h-4 text-gray-500 dark:text-gray-400" />
                           <span>{job.lieu}</span>
                         </span>
                       )}

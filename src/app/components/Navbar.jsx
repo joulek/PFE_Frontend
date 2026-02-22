@@ -153,7 +153,7 @@ function NotifDropdownDesktop({ notifications, loadingNotif, unreadCount, onNoti
   return (
     <div className="rounded-2xl shadow-2xl overflow-hidden z-[9999]
                     bg-white dark:bg-[#242526] border border-gray-200 dark:border-gray-700"
-         style={{ width: "540px", minWidth: "540px" }}>
+      style={{ width: "540px", minWidth: "540px" }}>
 
       {/* Header style Facebook */}
       <div className="px-5 pt-5 pb-3">
@@ -334,7 +334,7 @@ export default function Navbar() {
     try {
       const res = await getUnreadCount();
       setUnreadCount(res.data.count || 0);
-    } catch {}
+    } catch { }
   }, [user]);
 
   useEffect(() => {
@@ -372,7 +372,7 @@ export default function Navbar() {
           prev.map((n) => (n._id === notif._id ? { ...n, read: true } : n))
         );
         setUnreadCount((prev) => Math.max(0, prev - 1));
-      } catch {}
+      } catch { }
     }
     if (notif.link) router.push(notif.link);
   };
@@ -382,7 +382,7 @@ export default function Navbar() {
       await markAllAsRead();
       setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
       setUnreadCount(0);
-    } catch {}
+    } catch { }
   };
 
   // ✅ Fermer en cliquant en dehors
@@ -415,7 +415,7 @@ export default function Navbar() {
     pathname.startsWith("/recruiter/QuizTechnique");
 
   async function handleLogout() {
-    try { await logout(); } catch {}
+    try { await logout(); } catch { }
     finally {
       document.cookie = "token=; Path=/; Max-Age=0; SameSite=Lax";
       document.cookie = "role=; Path=/; Max-Age=0; SameSite=Lax";
@@ -478,6 +478,9 @@ export default function Navbar() {
             <div className="hidden md:flex items-center bg-[#F4F7F5] dark:bg-gray-800/60 rounded-full p-1 gap-1 transition-colors duration-200">
               {!isAdmin && (
                 <>
+                  <Link href="/jobs" className={`${linkBase} ${isActive("/jobs") ? activeLink : inactiveLink}`}>
+                    Offres d'emploi
+                  </Link>
                   {user && (
                     <>
                       <Link href="/ResponsableMetier/candidatures" className={`${linkBase} ${isActive("/ResponsableMetier/candidatures") ? activeLink : inactiveLink}`}>
@@ -486,8 +489,8 @@ export default function Navbar() {
                       <Link href="/ResponsableMetier/job" className={`${linkBase} ${isActive("/ResponsableMetier/job") ? activeLink : inactiveLink}`}>
                         Mes offres d&apos;emploi
                       </Link>
-                       <Link href="/ResponsableMetier/quiz" className={`${linkBase} ${isActive("/ResponsableMetier/quiz") ? activeLink : inactiveLink}`}>
-                        Mes quizs 
+                      <Link href="/ResponsableMetier/quiz" className={`${linkBase} ${isActive("/ResponsableMetier/quiz") ? activeLink : inactiveLink}`}>
+                        Mes quizs
                       </Link>
                       <Link href="/ResponsableMetier/calendar" className={`${linkBase} ${isActive("/ResponsableMetier/calendar") ? activeLink : inactiveLink}`}>
                         Mon calendrier
@@ -521,6 +524,9 @@ export default function Navbar() {
                         </Link>
                         <Link href="/recruiter/CandidatureAnalysis" className={`${dropdownItemBase} ${isActive("/recruiter/CandidatureAnalysis") ? dropdownActive : dropdownHover}`}>
                           Analyse des candidatures
+                        </Link>
+                        <Link href="/recruiter/PreInterviewList" className={`${dropdownItemBase} ${isActive("/recruiter/PreInterviewList") ? dropdownActive : dropdownHover}`}>
+                          Liste des pré-sélections
                         </Link>
                       </div>
                     )}
@@ -561,6 +567,9 @@ export default function Navbar() {
                         </Link>
                         <Link href="/recruiter/ResponsableMetier" className={`${dropdownItemBase} ${isActive("/recruiter/ResponsableMetier") ? dropdownActive : dropdownHover}`}>
                           Gestion des utilisateurs
+                        </Link>
+                        <Link href="/recruiter/calendar" className={`${dropdownItemBase} ${isActive("/recruiter/calendar") ? dropdownActive : dropdownHover}`}>
+                          Mon Calendirer
                         </Link>
                       </div>
                     )}
@@ -623,7 +632,9 @@ export default function Navbar() {
               <div className="rounded-2xl bg-white/95 dark:bg-gray-900/85 shadow-xl border border-gray-200/70 dark:border-gray-700/60 p-4 space-y-2 backdrop-blur-sm transition-colors duration-200">
                 {!isAdmin && (
                   <>
-                
+                    <Link href="/jobs" className={`block px-5 py-3.5 rounded-xl font-medium transition ${isActive("/jobs") ? "bg-[#6CB33F] text-white" : "text-gray-700 dark:text-gray-200 hover:bg-gray-100/70 dark:hover:bg-gray-800/60"}`}>
+                      Offres d'emploi
+                    </Link>
                     {user && (
                       <>
                         <Link href="/ResponsableMetier/candidatures" className={`block px-5 py-3.5 rounded-xl font-medium transition ${isActive("/ResponsableMetier/candidatures") ? "bg-[#6CB33F] text-white" : "text-gray-700 dark:text-gray-200 hover:bg-gray-100/70 dark:hover:bg-gray-800/60"}`}>
@@ -632,10 +643,10 @@ export default function Navbar() {
                         <Link href="/ResponsableMetier/job" className={`block px-5 py-3.5 rounded-xl font-medium transition ${isActive("/ResponsableMetier/job") ? "bg-[#6CB33F] text-white" : "text-gray-700 dark:text-gray-200 hover:bg-gray-100/70 dark:hover:bg-gray-800/60"}`}>
                           Mes offres d&apos;emploi
                         </Link>
-                         <Link href="/ResponsableMetier/quiz" className={`block px-5 py-3.5 rounded-xl font-medium transition ${isActive("/ResponsableMetier/quiz") ? "bg-[#6CB33F] text-white" : "text-gray-700 dark:text-gray-200 hover:bg-gray-100/70 dark:hover:bg-gray-800/60"}`}>
+                        <Link href="/ResponsableMetier/quiz" className={`block px-5 py-3.5 rounded-xl font-medium transition ${isActive("/ResponsableMetier/quiz") ? "bg-[#6CB33F] text-white" : "text-gray-700 dark:text-gray-200 hover:bg-gray-100/70 dark:hover:bg-gray-800/60"}`}>
                           Mes quizs
                         </Link>
-                          <Link href="/ResponsableMetier/calendar" className={`block px-5 py-3.5 rounded-xl font-medium transition ${isActive("/ResponsableMetier/calendar") ? "bg-[#6CB33F] text-white" : "text-gray-700 dark:text-gray-200 hover:bg-gray-100/70 dark:hover:bg-gray-800/60"}`}>
+                        <Link href="/ResponsableMetier/calendar" className={`block px-5 py-3.5 rounded-xl font-medium transition ${isActive("/ResponsableMetier/calendar") ? "bg-[#6CB33F] text-white" : "text-gray-700 dark:text-gray-200 hover:bg-gray-100/70 dark:hover:bg-gray-800/60"}`}>
                           Mon calendrier
                         </Link>
                       </>
@@ -649,6 +660,7 @@ export default function Navbar() {
                     <Link href="/recruiter/jobs" className="block px-5 py-3.5 rounded-xl text-gray-700 dark:text-gray-200 hover:bg-gray-100/70 dark:hover:bg-gray-800/60">Gestion offres</Link>
                     <Link href="/recruiter/candidatures" className="block px-5 py-3.5 rounded-xl text-gray-700 dark:text-gray-200 hover:bg-gray-100/70 dark:hover:bg-gray-800/60">Liste des candidatures</Link>
                     <Link href="/recruiter/CandidatureAnalysis" className="block px-5 py-3.5 rounded-xl text-gray-700 dark:text-gray-200 hover:bg-gray-100/70 dark:hover:bg-gray-800/60">Analyse des candidatures</Link>
+                    <Link href="/recruiter/PreInterviewList" className="block px-5 py-3.5 rounded-xl text-gray-700 dark:text-gray-200 hover:bg-gray-100/70 dark:hover:bg-gray-800/60">Liste des pré-sélections</Link>
 
                     <div className="px-5 py-1">
                       <p className="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-1">Formulaires</p>
@@ -661,6 +673,8 @@ export default function Navbar() {
                     </Link>
                     <Link href="/recruiter/roles" className="block px-5 py-3.5 rounded-xl text-gray-700 dark:text-gray-200 hover:bg-gray-100/70 dark:hover:bg-gray-800/60">Gestion des rôles</Link>
                     <Link href="/recruiter/ResponsableMetier" className="block px-5 py-3.5 rounded-xl text-gray-700 dark:text-gray-200 hover:bg-gray-100/70 dark:hover:bg-gray-800/60">Gestion des utilisateurs</Link>
+                    <Link href="/recruiter/calendar" className="block px-5 py-3.5 rounded-xl text-gray-700 dark:text-gray-200 hover:bg-gray-100/70 dark:hover:bg-gray-800/60">Mon Calendirer</Link>
+
                   </>
                 )}
 

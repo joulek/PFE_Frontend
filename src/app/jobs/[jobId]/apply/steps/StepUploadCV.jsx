@@ -113,7 +113,7 @@ export default function StepUploadCV({ jobId, onParsed }) {
                      font-semibold hover:bg-green-700 dark:hover:bg-emerald-500
                      disabled:opacity-50 transition"
         >
-          {loading ? "Analyse en cours..." : "Soumettre le CV"}
+          {loading ? "Votre CV est en cours de traitement..." : "Soumettre le CV"}
         </button>
       </div>
     </>
