@@ -12,12 +12,11 @@ import {
 
 import {
   CheckCircle2,
-  ChevronRight,
-  ChevronLeft,
   AlertCircle,
   Loader2,
   Flag,
   Clock,
+  ChevronRight,
 } from "lucide-react";
 
 /* ================================================================
@@ -175,7 +174,6 @@ export default function CandidatQuizClient() {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [answers, setAnswers] = useState({});
   const [flagged, setFlagged] = useState(new Set());
-  const [showOverview, setShowOverview] = useState(false);
   const [confirming, setConfirming] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
@@ -480,13 +478,6 @@ export default function CandidatQuizClient() {
                 <Clock className="w-4 h-4" />
                 {formatTime(timeLeft)}
               </div>
-
-              <button
-                onClick={() => setShowOverview(true)}
-                className="px-4 py-2 rounded-2xl bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-200 font-bold hover:bg-gray-200 dark:hover:bg-gray-700 transition"
-              >
-                Vue d&apos;ensemble
-              </button>
             </div>
           </div>
 
@@ -520,14 +511,6 @@ export default function CandidatQuizClient() {
             </button>
 
             <div className="flex items-center gap-3">
-              <button
-                onClick={goPrev}
-                disabled={currentIndex === 0}
-                className="inline-flex items-center gap-2 px-4 py-2 rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-700 dark:text-gray-200 font-bold hover:bg-gray-50 dark:hover:bg-gray-800 transition disabled:opacity-50"
-              >
-                <ChevronLeft className="w-4 h-4" />
-                Précédent
-              </button>
 
               {currentIndex < totalQuestions - 1 ? (
                 <button

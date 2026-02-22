@@ -4,25 +4,13 @@ import { useEffect, useState, useMemo } from "react";
 import { getPreInterviewList, sendDocuments } from "../../services/candidature.api";
 import { getQuizByJob } from "../../services/quiz.api";
 import api from "../../services/api";
+import Link from "next/link";
 
 import {
-  UserCheck,
-  FileText,
-  Search,
-  Calendar,
-  ArrowLeft,
-  Mail,
-  Phone,
-  Linkedin as LinkedinIcon,
-  Clock,
-  Briefcase,
-  Send,
-  X,
-  CheckCircle2,
-  Brain,
-  ClipboardList,
-  AlertCircle,
-  Loader2,
+  UserCheck, FileText, Search, Calendar, ArrowLeft,
+  ChevronRight, Mail, Phone, Linkedin as LinkedinIcon,
+  Clock, Briefcase, Send, X, CheckCircle2, Brain,
+  ClipboardList, AlertCircle, Loader2,
 } from "lucide-react";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL;
@@ -42,51 +30,45 @@ function safeStr(v) {
   if (v === null || v === undefined) return "";
   return typeof v === "string" ? v.trim() : String(v).trim();
 }
-
 function pct(score) {
   if (typeof score !== "number") return "—";
   const val = score > 1 ? score : score * 100;
   return `${Math.round(val)}%`;
 }
-
 function getName(c) {
-  const fullName = safeStr(c?.fullName);
-  if (fullName) return fullName;
-  const combined = `${safeStr(c?.prenom)} ${safeStr(c?.nom)}`.trim();
-  if (combined) return combined;
-  return safeStr(c?.email) || "Candidat";
+  const f = safeStr(c?.fullName);
+  if (f) return f;
+  const b = `${safeStr(c?.prenom)} ${safeStr(c?.nom)}`.trim();
+  return b || safeStr(c?.email) || "Candidat";
 }
-
 function getCvUrl(c) {
-  const fileUrl = safeStr(c?.cv?.fileUrl);
-  if (!fileUrl) return null;
-  if (fileUrl.startsWith("http://") || fileUrl.startsWith("https://")) return fileUrl;
-  return `${API_BASE}${fileUrl.startsWith("/") ? "" : "/"}${fileUrl}`;
+  const u = safeStr(c?.cv?.fileUrl);
+  if (!u) return null;
+  if (u.startsWith("http")) return u;
+  return `${API_BASE}${u.startsWith("/") ? "" : "/"}${u}`;
 }
-
-function getCvName(c) {
-  return safeStr(c?.cv?.originalName) || "CV.pdf";
-}
-
+function getCvName(c) { return safeStr(c?.cv?.originalName) || "CV.pdf"; }
 function getMatchScore(c) {
-  const jobMatch = c?.analysis?.jobMatch;
-  if (!jobMatch) return null;
-  const score = jobMatch?.score?.score ?? jobMatch?.score ?? null;
-  if (typeof score !== "number") return null;
-  return score > 1 ? score / 100 : score;
+  const j = c?.analysis?.jobMatch;
+  if (!j) return null;
+  const s = j?.score?.score ?? j?.score ?? null;
+  if (typeof s !== "number") return null;
+  return s > 1 ? s / 100 : s;
 }
-
 function scoreBg(s) {
   if (s === null) return "bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-300";
   if (s >= 0.75) return "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/25 dark:text-emerald-300";
   if (s >= 0.45) return "bg-amber-100 text-amber-800 dark:bg-amber-900/25 dark:text-amber-300";
   return "bg-rose-100 text-rose-800 dark:bg-rose-900/25 dark:text-rose-300";
 }
-
 function formatDate(d) {
   if (!d) return "—";
   return new Date(d).toLocaleDateString("fr-FR", { day: "2-digit", month: "short", year: "numeric" });
 }
+
+// ── localStorage pour persister "envoyé" entre refreshes ──
+function markSent(id) { try { localStorage.setItem(`docs_sent_${id}`, "1"); } catch {} }
+function wasSent(id) { try { return localStorage.getItem(`docs_sent_${id}`) === "1"; } catch { return false; } }
 
 /* ================================================================
    MODAL — Envoyer Fiche + Quiz
@@ -95,31 +77,30 @@ function SendDocumentsModal({ candidature, onClose, onSuccess }) {
   const [fiches, setFiches] = useState([]);
   const [quiz, setQuiz] = useState(null);
   const [loadingData, setLoadingData] = useState(true);
-
   const [selectedFicheId, setSelectedFicheId] = useState("");
   const [includeQuiz, setIncludeQuiz] = useState(false);
   const [email, setEmail] = useState(safeStr(candidature?.email));
-
   const [sending, setSending] = useState(false);
   const [success, setSuccess] = useState(null);
   const [error, setError] = useState("");
-
   const name = getName(candidature);
 
   useEffect(() => {
     async function load() {
       setLoadingData(true);
       try {
+        // Charger toutes les fiches
         const fichesRes = await api.get("/fiches");
         setFiches(Array.isArray(fichesRes?.data) ? fichesRes.data : []);
 
+        // Charger quiz lié au job du candidat
         const jobOfferId = candidature?.jobOfferId;
         if (jobOfferId) {
           try {
-            const quizRes = await getQuizByJob(jobOfferId.toString());
-            const q = quizRes?.data || null;
+            const qr = await getQuizByJob(jid.toString());
+            const q = qr?.data || null;
             setQuiz(q);
-            if (q) setIncludeQuiz(true);
+            if (q) setIncludeQuiz(true); // cocher par défaut si quiz existe
           } catch {
             setQuiz(null);
           }
@@ -156,13 +137,13 @@ function SendDocumentsModal({ candidature, onClose, onSuccess }) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      {/* Backdrop */}
       <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={onClose} />
 
       {/* Panel */}
-      <div className="relative w-full max-w-lg overflow-hidden rounded-2xl shadow-2xl bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800">
-        {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 dark:border-slate-800">
+      <div className="relative bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden">
+
+        {/* Header modal */}
+        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 dark:border-gray-700">
           <div>
             <h2 className="text-lg font-extrabold text-slate-900 dark:text-white flex items-center gap-2">
               <span
@@ -188,6 +169,8 @@ function SendDocumentsModal({ candidature, onClose, onSuccess }) {
 
         {/* Body */}
         <div className="px-6 py-5 space-y-5 max-h-[70vh] overflow-y-auto">
+
+          {/* ✅ État succès */}
           {success ? (
             <div className="flex flex-col items-center gap-3 py-6 text-center">
               <div className="w-16 h-16 rounded-full bg-emerald-100 dark:bg-emerald-900/25 flex items-center justify-center">
@@ -263,45 +246,41 @@ function SendDocumentsModal({ candidature, onClose, onSuccess }) {
                   </span>
                   Quiz technique
                 </p>
-
                 {quiz ? (
-                  <label
-                    className={`flex items-start gap-3 p-4 rounded-xl border-2 cursor-pointer transition-all ${includeQuiz
-                      ? "bg-[#EAF7EF] dark:bg-emerald-900/15"
-                      : "border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600"
-                      }`}
-                    style={includeQuiz ? { borderColor: OPTY.mintBorder } : undefined}
-                  >
+                  <label className={`flex items-start gap-3 p-4 rounded-xl border-2 cursor-pointer transition-all ${
+                    includeQuiz
+                      ? "border-violet-500 bg-violet-50 dark:bg-violet-900/20"
+                      : "border-gray-200 dark:border-gray-600 hover:border-violet-300"
+                  }`}>
                     <input
                       type="checkbox"
                       checked={includeQuiz}
                       onChange={(e) => setIncludeQuiz(e.target.checked)}
-                      className="mt-0.5 w-4 h-4 shrink-0"
-                      style={{ accentColor: OPTY.primary }}
+                      className="mt-0.5 accent-violet-600 w-4 h-4 shrink-0"
                     />
-                    <div className="min-w-0">
-                      <p className="font-semibold text-sm text-slate-800 dark:text-slate-100 truncate">
+                    <div>
+                      <p className="font-semibold text-sm text-gray-800 dark:text-gray-200">
                         {quiz.jobTitle || "Quiz technique"}
                       </p>
-                      <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
                         {quiz.totalQuestions || 0} questions · ~{Math.ceil((quiz.totalQuestions || 0) * 2)} min
                       </p>
                       {includeQuiz && (
-                        <span className="inline-block mt-1.5 text-xs font-medium" style={{ color: OPTY.mintText }}>
+                        <span className="inline-block mt-1.5 text-xs font-medium text-violet-600 dark:text-violet-400">
                           ✓ Sera inclus dans l'email
                         </span>
                       )}
                     </div>
                   </label>
                 ) : (
-                  <div className="flex items-center gap-2 p-3 bg-amber-50 dark:bg-amber-900/15 border border-amber-200 dark:border-amber-700 rounded-xl text-sm text-amber-800 dark:text-amber-300">
+                  <div className="flex items-center gap-2 p-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700 rounded-xl text-sm text-amber-700 dark:text-amber-400">
                     <AlertCircle className="w-4 h-4 shrink-0" />
-                    Aucun quiz disponible pour ce poste ({safeStr(candidature?.jobTitle) || "—"})
+                    Aucun quiz disponible pour ce poste
                   </div>
                 )}
               </div>
 
-              {/* Fiche */}
+              {/* ── FICHE DE RENSEIGNEMENT ── */}
               <div>
                 <p className="text-sm font-semibold text-slate-700 dark:text-slate-200 mb-2 flex items-center gap-2">
                   <span
@@ -314,57 +293,50 @@ function SendDocumentsModal({ candidature, onClose, onSuccess }) {
                 </p>
 
                 {fiches.length === 0 ? (
-                  <div className="flex items-center gap-2 p-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm text-slate-500">
+                  <div className="flex items-center gap-2 p-3 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-xl text-sm text-gray-500">
                     <AlertCircle className="w-4 h-4 shrink-0" />
                     Aucune fiche disponible
                   </div>
                 ) : (
                   <div className="space-y-2 max-h-52 overflow-y-auto pr-1">
-                    <label
-                      className={`flex items-center gap-3 p-3 rounded-xl border-2 cursor-pointer transition-all ${!selectedFicheId
-                        ? "border-slate-300 bg-slate-50 dark:bg-slate-800 dark:border-slate-700"
-                        : "border-slate-200 dark:border-slate-700 hover:border-slate-300"
-                        }`}
-                    >
+                    {/* Option : aucune */}
+                    <label className={`flex items-center gap-3 p-3 rounded-xl border-2 cursor-pointer transition-all ${
+                      !selectedFicheId
+                        ? "border-gray-400 bg-gray-50 dark:bg-gray-700"
+                        : "border-gray-200 dark:border-gray-600 hover:border-gray-300"
+                    }`}>
                       <input
-                        type="radio"
-                        name="fiche"
-                        value=""
+                        type="radio" name="fiche" value=""
                         checked={!selectedFicheId}
                         onChange={() => setSelectedFicheId("")}
-                        className="w-4 h-4 shrink-0"
+                        className="accent-gray-500 w-4 h-4 shrink-0"
                       />
-                      <span className="text-sm text-slate-400 italic">Ne pas envoyer de fiche</span>
+                      <span className="text-sm text-gray-400 italic">Ne pas envoyer de fiche</span>
                     </label>
 
                     {fiches.map((fiche) => (
                       <label
                         key={fiche._id}
-                        className={`flex items-start gap-3 p-3 rounded-xl border-2 cursor-pointer transition-all ${selectedFicheId === fiche._id
-                          ? "bg-[#EAF7EF] dark:bg-emerald-900/15"
-                          : "border-slate-200 dark:border-slate-700 hover:border-[#D6EEDD]"
-                          }`}
-                        style={selectedFicheId === fiche._id ? { borderColor: OPTY.mintBorder } : undefined}
+                        className={`flex items-start gap-3 p-3 rounded-xl border-2 cursor-pointer transition-all ${
+                          selectedFicheId === fiche._id
+                            ? "border-green-500 bg-green-50 dark:bg-green-900/20"
+                            : "border-gray-200 dark:border-gray-600 hover:border-green-300"
+                        }`}
                       >
                         <input
-                          type="radio"
-                          name="fiche"
-                          value={fiche._id}
+                          type="radio" name="fiche" value={fiche._id}
                           checked={selectedFicheId === fiche._id}
                           onChange={() => setSelectedFicheId(fiche._id)}
-                          className="mt-0.5 w-4 h-4 shrink-0"
-                          style={{ accentColor: OPTY.primary }}
+                          className="mt-0.5 accent-green-600 w-4 h-4 shrink-0"
                         />
                         <div className="min-w-0">
-                          <p className="font-semibold text-sm text-slate-800 dark:text-slate-100 truncate">{fiche.title}</p>
+                          <p className="font-semibold text-sm text-gray-800 dark:text-gray-200 truncate">{fiche.title}</p>
                           {fiche.description && (
-                            <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 truncate">{fiche.description}</p>
+                            <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5 truncate">{fiche.description}</p>
                           )}
-                          <p className="text-xs text-slate-400 mt-0.5">{fiche.questions?.length || 0} question(s)</p>
+                          <p className="text-xs text-gray-400 mt-0.5">{fiche.questions?.length || 0} question(s)</p>
                           {selectedFicheId === fiche._id && (
-                            <span className="inline-block mt-1 text-xs font-medium" style={{ color: OPTY.mintText }}>
-                              ✓ Sélectionnée
-                            </span>
+                            <span className="inline-block mt-1 text-xs font-medium text-green-600 dark:text-green-400">✓ Sélectionnée</span>
                           )}
                         </div>
                       </label>
@@ -373,27 +345,21 @@ function SendDocumentsModal({ candidature, onClose, onSuccess }) {
                 )}
               </div>
 
-              {/* Résumé */}
+              {/* Résumé envoi */}
               {(selectedFicheId || (includeQuiz && quiz)) && (
-                <div className="rounded-xl px-4 py-3 border" style={{ background: OPTY.mintSoft, borderColor: OPTY.mintBorder }}>
-                  <p className="text-xs font-semibold mb-2" style={{ color: OPTY.mintText }}>
+                <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-800 rounded-xl px-4 py-3">
+                  <p className="text-xs font-semibold text-blue-700 dark:text-blue-300 mb-2">
                     Ce qui sera envoyé à {email || "..."}
                   </p>
                   <div className="flex flex-wrap gap-2">
                     {selectedFicheId && (
-                      <span
-                        className="inline-flex items-center gap-1 text-xs bg-white dark:bg-slate-800 border px-2.5 py-1 rounded-full font-medium"
-                        style={{ borderColor: OPTY.mintBorder, color: OPTY.mintText }}
-                      >
+                      <span className="inline-flex items-center gap-1 text-xs bg-white dark:bg-gray-700 border border-blue-200 dark:border-blue-700 text-blue-700 dark:text-blue-300 px-2.5 py-1 rounded-full font-medium">
                         <ClipboardList className="w-3.5 h-3.5" />
-                        {fiches.find((f) => f._id === selectedFicheId)?.title || "Fiche"}
+                        {fiches.find(f => f._id === selectedFicheId)?.title || "Fiche"}
                       </span>
                     )}
                     {includeQuiz && quiz && (
-                      <span
-                        className="inline-flex items-center gap-1 text-xs bg-white dark:bg-slate-800 border px-2.5 py-1 rounded-full font-medium"
-                        style={{ borderColor: OPTY.mintBorder, color: OPTY.mintText }}
-                      >
+                      <span className="inline-flex items-center gap-1 text-xs bg-white dark:bg-gray-700 border border-blue-200 dark:border-blue-700 text-blue-700 dark:text-blue-300 px-2.5 py-1 rounded-full font-medium">
                         <Brain className="w-3.5 h-3.5" />
                         Quiz : {quiz.jobTitle}
                       </span>
@@ -404,7 +370,7 @@ function SendDocumentsModal({ candidature, onClose, onSuccess }) {
 
               {/* Erreur */}
               {error && (
-                <div className="flex items-center gap-2 p-3 bg-rose-50 dark:bg-rose-900/15 border border-rose-200 dark:border-rose-700 rounded-xl text-sm text-rose-700 dark:text-rose-300">
+                <div className="flex items-center gap-2 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-700 rounded-xl text-sm text-red-600 dark:text-red-400">
                   <AlertCircle className="w-4 h-4 shrink-0" />
                   {error}
                 </div>
@@ -413,26 +379,19 @@ function SendDocumentsModal({ candidature, onClose, onSuccess }) {
           )}
         </div>
 
-        {/* Footer */}
+        {/* Footer modal */}
         {!success && !loadingData && (
-          <div className="px-6 py-4 border-t border-slate-100 dark:border-slate-800 flex items-center justify-end gap-3">
+          <div className="px-6 py-4 border-t border-gray-100 dark:border-gray-700 flex items-center justify-end gap-3">
             <button
               onClick={onClose}
-              className="px-5 py-2.5 rounded-xl border text-sm font-semibold transition-colors
-              border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-200
-              hover:bg-slate-50 dark:hover:bg-slate-800"
+              className="px-5 py-2.5 rounded-xl border border-gray-200 dark:border-gray-600 text-sm font-semibold text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
             >
               Annuler
             </button>
-
             <button
               onClick={handleSend}
               disabled={!canSend}
-              className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl text-white text-sm font-semibold transition-all shadow-sm
-              disabled:opacity-40 disabled:cursor-not-allowed"
-              style={{ background: OPTY.primary }}
-              onMouseEnter={(e) => (e.currentTarget.style.background = OPTY.primaryHover)}
-              onMouseLeave={(e) => (e.currentTarget.style.background = OPTY.primary)}
+              className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl bg-violet-600 hover:bg-violet-700 disabled:opacity-40 disabled:cursor-not-allowed text-white text-sm font-semibold transition-all shadow-sm"
             >
               {sending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
               {sending ? "Envoi en cours..." : "Envoyer"}
@@ -444,10 +403,10 @@ function SendDocumentsModal({ candidature, onClose, onSuccess }) {
   );
 }
 
-/* ================= CARD (ORGANISÉE, PAS DE BARRE VERTE EN HAUT) ================= */
+/* ================= CARD ================= */
 function PreInterviewCard({ c, index }) {
+  const [sent, setSent] = useState(() => wasSent(c?._id));
   const [showSendModal, setShowSendModal] = useState(false);
-  const [sent, setSent] = useState(false);
 
   const name = getName(c);
   const cvUrl = getCvUrl(c);
@@ -456,13 +415,16 @@ function PreInterviewCard({ c, index }) {
   const jobTitle = safeStr(c?.jobTitle) || "—";
   const email = safeStr(c?.email);
   const telephone = safeStr(c?.telephone);
-  const linkedin = safeStr(c?.linkedin);
   const selectedAt = c?.preInterview?.selectedAt;
-
   const recommendation =
     c?.analysis?.jobMatch?.score?.recommendation ??
     c?.analysis?.jobMatch?.recommendation ??
     null;
+
+  function handleSuccess() {
+    markSent(c._id);
+    setSent(true);
+  }
 
   return (
     <>
@@ -495,8 +457,7 @@ function PreInterviewCard({ c, index }) {
                   <p className="text-sm text-slate-500 dark:text-slate-400 truncate">{jobTitle}</p>
                 </div>
 
-                {/* Contacts + CV en mini-cards */}
-                <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-2">
+                <div className="flex flex-wrap gap-3 mt-2">
                   {email && (
                     <a
                       href={`mailto:${email}`}
@@ -519,65 +480,65 @@ function PreInterviewCard({ c, index }) {
                       <span className="truncate">{telephone}</span>
                     </div>
                   )}
-
                   {linkedin && (
-                    <a
-                      href={linkedin.startsWith("http") ? linkedin : `https://${linkedin}`}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="inline-flex items-center gap-2 text-xs rounded-lg px-2.5 py-2 border bg-white dark:bg-slate-800 hover:opacity-90"
-                      style={{ borderColor: OPTY.mintBorder, color: OPTY.mintText }}
-                    >
-                      <LinkedinIcon className="w-4 h-4" />
-                      LinkedIn
-                    </a>
-                  )}
-
-                  {cvUrl && (
-                    <a
-                      href={cvUrl}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="inline-flex items-center gap-2 text-xs rounded-lg px-2.5 py-2 border bg-white dark:bg-slate-800 hover:opacity-90"
-                      style={{ borderColor: OPTY.mintBorder, color: OPTY.mintText }}
-                      title={cvName}
-                    >
-                      <FileText className="w-4 h-4" />
-                      <span className="truncate">Voir CV</span>
-                      <span className="text-slate-400">({cvName})</span>
+                    <a href={linkedin.startsWith("http") ? linkedin : `https://${linkedin}`} target="_blank" rel="noreferrer"
+                      className="inline-flex items-center gap-1 text-xs text-blue-500 hover:underline">
+                      <LinkedinIcon className="w-3.5 h-3.5" />LinkedIn
                     </a>
                   )}
                 </div>
+
+                {cvUrl && (
+                  <a href={cvUrl} target="_blank" rel="noreferrer"
+                    className="inline-flex items-center gap-1.5 mt-2 text-sm font-medium text-green-700 dark:text-emerald-400 hover:text-green-800">
+                    <FileText className="w-4 h-4" />Voir CV
+                    <span className="text-gray-400 text-xs">({cvName})</span>
+                  </a>
+                )}
               </div>
             </div>
 
-            {/* RIGHT: Score + Statut */}
-            <div className="shrink-0 w-full md:w-[220px]">
-              <div className="rounded-2xl border bg-white dark:bg-slate-800 p-4" style={{ borderColor: OPTY.mintBorder }}>
-                <p className="text-[10px] font-semibold text-slate-400 uppercase mb-1">Match score</p>
-
-                <div className="flex items-end justify-between gap-3">
-                  <div className={`text-2xl font-extrabold px-3 py-1 rounded-xl ${scoreBg(score)}`}>
-                    {pct(score)}
-                  </div>
-                  <span className="text-xs text-slate-400 text-right">
-                    {recommendation ? recommendation.replaceAll("_", " ") : ""}
-                  </span>
+            {/* Score + Boutons */}
+            <div className="flex flex-col items-end gap-3 shrink-0">
+              <div className="text-right">
+                <p className="text-[10px] font-semibold text-gray-400 uppercase mb-1">Match Score</p>
+                <div className={`text-2xl font-extrabold px-3 py-1 rounded-xl ${scoreBg(score)}`}>
+                  {pct(score)}
                 </div>
-
-                {selectedAt && (
-                  <div
-                    className="mt-3 inline-flex items-center gap-2 text-xs px-3 py-2 rounded-xl border w-full"
-                    style={{
-                      background: OPTY.mintSoft,
-                      borderColor: OPTY.mintBorder,
-                      color: OPTY.mintText,
-                    }}
-                  >
-                    <Clock className="w-4 h-4" />
-                    Sélectionné le {formatDate(selectedAt)}
-                  </div>
+                {recommendation && (
+                  <p className="text-xs text-gray-400 mt-1 capitalize">{recommendation.replace("_", " ")}</p>
                 )}
+              </div>
+
+              {selectedAt && (
+                <div className="inline-flex items-center gap-1 text-xs text-violet-600 dark:text-violet-400 bg-violet-50 dark:bg-violet-900/20 px-2.5 py-1 rounded-full">
+                  <Clock className="w-3 h-3" />
+                  Sélectionné le {formatDate(selectedAt)}
+                </div>
+              )}
+
+              {/* ── BOUTONS ── */}
+              <div className="flex flex-col gap-2 w-full min-w-[180px]">
+                {/* 🆕 Envoyer fiche + quiz */}
+                <button
+                  onClick={() => setShowSendModal(true)}
+                  className={`inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold transition-all shadow-sm w-full ${
+                    sent
+                      ? "bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 border border-green-200"
+                      : "bg-violet-500 hover:bg-violet-600 text-white"
+                  }`}
+                >
+                  {sent
+                    ? <><CheckCircle2 className="w-4 h-4" />Documents envoyés</>
+                    : <><Send className="w-4 h-4" />Envoyer (fiche / quiz)</>
+                  }
+                </button>
+
+                {/* Planifier entretien */}
+                <button className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-blue-500 hover:bg-blue-600 text-white text-sm font-semibold transition-colors shadow-sm w-full">
+                  <Calendar className="w-4 h-4" />
+                  Planifier Entretien
+                </button>
               </div>
             </div>
           </div>
@@ -629,18 +590,21 @@ function PreInterviewCard({ c, index }) {
         </div>
       </div>
 
+      {/* Modal */}
       {showSendModal && (
         <SendDocumentsModal
           candidature={c}
           onClose={() => setShowSendModal(false)}
-          onSuccess={() => setSent(true)}
+          onSuccess={handleSuccess}
         />
       )}
     </>
   );
 }
 
-/* ================= PAGE ================= */
+/* ================================================================
+   PAGE PRINCIPALE
+================================================================ */
 export default function PreInterviewListPage() {
   const [candidates, setCandidates] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -666,111 +630,113 @@ export default function PreInterviewListPage() {
     const q = search.trim().toLowerCase();
     if (!q) return candidates;
     return candidates.filter((c) => {
-      const name = getName(c).toLowerCase();
-      const email = safeStr(c?.email).toLowerCase();
-      const job = safeStr(c?.jobTitle).toLowerCase();
-      return name.includes(q) || email.includes(q) || job.includes(q);
+      const n = getName(c).toLowerCase();
+      const e = safeStr(c?.email).toLowerCase();
+      const j = safeStr(c?.jobTitle).toLowerCase();
+      return n.includes(q) || e.includes(q) || j.includes(q);
     });
   }, [candidates, search]);
 
-  return (
-    <div className="min-h-screen transition-colors duration-300 bg-[#F0FAF0] dark:bg-[#0B1220]">      {/* Header sticky */}
-      <div className="sticky top-0 z-30 backdrop-blur-md bg-[#F0FAF0]/90 dark:bg-[#0B1220]/90">        <div className="max-w-5xl mx-auto px-6 pt-5 pb-4">
-        <a
-          href="/recruiter/CandidatureAnalysis"
-          className="inline-flex items-center gap-1.5 text-sm text-slate-500 hover:text-slate-700 mb-3 transition-colors"
-        >
-          <ArrowLeft className="w-4 h-4" />
-          Retour à l'analyse candidatures
-        </a>
+  if (loading) return (
+    <div className="min-h-screen bg-[#F0FAF0] dark:bg-gray-950 flex items-center justify-center">
+      <Loader2 className="w-8 h-8 animate-spin text-violet-500" />
+    </div>
+  );
 
-        <div className="flex items-center justify-between mb-4 gap-4">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: OPTY.mintSoft }}>
-              <UserCheck className="w-5 h-5" style={{ color: OPTY.mintText }} />
+  return (
+    <div className="min-h-screen bg-[#F0FAF0] dark:bg-gray-950 transition-colors duration-300">
+      {/* Header sticky */}
+      <div className="sticky top-0 z-30 bg-[#F0FAF0]/90 dark:bg-gray-950/90 backdrop-blur-md">
+        <div className="max-w-5xl mx-auto px-6 pt-5 pb-4">
+          <a
+            href="/recruiter/CandidatureAnalysis"
+            className="inline-flex items-center gap-1.5 text-sm text-gray-500 dark:text-gray-400 hover:text-gray-700 mb-3 transition-colors"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            Retour à l'analyse candidatures
+          </a>
+
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-violet-100 dark:bg-violet-900/30 flex items-center justify-center">
+                <UserCheck className="w-5 h-5 text-violet-600 dark:text-violet-400" />
+              </div>
+              <div>
+                <h1 className="text-2xl font-extrabold text-gray-900 dark:text-white">Candidats Pré-sélectionnés</h1>
+                <p className="text-sm text-gray-500 dark:text-gray-400">
+                  {loading
+                    ? "Chargement..."
+                    : `${candidates.length} candidat${candidates.length > 1 ? "s" : ""} prêt${candidates.length > 1 ? "s" : ""} pour entretien`}
+                </p>
+              </div>
             </div>
-            <div>
-              <h1 className="text-2xl font-extrabold text-slate-900 dark:text-white">
-                Candidats Pré-sélectionnés
-              </h1>              <p className="text-sm text-slate-500">
-                {loading
-                  ? "Chargement..."
-                  : `${candidates.length} candidat${candidates.length > 1 ? "s" : ""} prêt${candidates.length > 1 ? "s" : ""} pour entretien`}
-              </p>
-            </div>
+            {!loading && candidates.length > 0 && (
+              <div className="hidden md:flex items-center gap-2 bg-violet-600 text-white px-4 py-2 rounded-full text-sm font-semibold">
+                <UserCheck className="w-4 h-4" />
+                {candidates.length} pré-sélectionné{candidates.length > 1 ? "s" : ""}
+              </div>
+            )}
           </div>
 
           {!loading && candidates.length > 0 && (
-            <div
-              className="hidden md:flex items-center gap-2 px-4 py-2 rounded-full text-sm font-semibold text-white shadow-sm"
-              style={{ background: OPTY.primary }}
-            >
-              <UserCheck className="w-4 h-4" />
-              {candidates.length} pré-sélectionné{candidates.length > 1 ? "s" : ""}
+            <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700 shadow-sm p-3">
+              <div className="flex items-center gap-2 border border-gray-200 dark:border-gray-600 rounded-xl px-3 py-2 bg-white dark:bg-gray-700">
+                <Search className="w-4 h-4 text-gray-400" />
+                <input
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  placeholder="Rechercher un candidat (nom, email, job)..."
+                  className="w-full outline-none text-sm bg-transparent text-gray-800 dark:text-gray-100 placeholder-gray-400"
+                />
+              </div>
             </div>
           )}
         </div>
-
-        {!loading && candidates.length > 0 && (
-          <div className="bg-white dark:bg-[#0F1A2F] rounded-2xl border shadow-sm p-3 border-[#D6EEDD] dark:border-slate-800">
-            <div className="flex items-center gap-2 border rounded-xl px-3 py-2 bg-white dark:bg-[#0B1220] border-[#D6EEDD] dark:border-slate-700">            <Search className="w-4 h-4 text-slate-400" />
-              <input
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                placeholder="Rechercher un candidat (nom, email, job)..."
-                className="w-full outline-none text-sm bg-transparent text-slate-800 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500" />
-            </div>
-          </div>
-        )}
-      </div>
       </div>
 
-      {/* Content */}
+      {/* Contenu */}
       <div className="max-w-5xl mx-auto px-6 pb-10 pt-4">
         {loading ? (
-          <div className="bg-white rounded-2xl p-10 text-center border" style={{ borderColor: OPTY.mintBorder }}>
-            <div
-              className="w-10 h-10 border-4 rounded-full animate-spin mx-auto mb-4"
-              style={{ borderColor: `${OPTY.mintBorder}`, borderTopColor: OPTY.primary }}
-            />
-            <p className="text-slate-500">Chargement des candidats pré-sélectionnés...</p>
+          <div className="bg-white dark:bg-gray-800 rounded-2xl p-10 text-center">
+            <div className="w-10 h-10 border-4 border-violet-200 border-t-violet-600 rounded-full animate-spin mx-auto mb-4" />
+            <p className="text-gray-500 dark:text-gray-400">Chargement des candidats pré-sélectionnés...</p>
           </div>
         ) : candidates.length === 0 ? (
-          <div className="bg-white rounded-2xl border shadow-sm p-16 text-center" style={{ borderColor: OPTY.mintBorder }}>
-            <div
-              className="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4"
-              style={{ background: OPTY.mintSoft }}
-            >
-              <UserCheck className="w-8 h-8" style={{ color: OPTY.mintText }} />
+          <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700 shadow-sm p-16 text-center">
+            <div className="w-16 h-16 rounded-full bg-violet-50 dark:bg-violet-900/20 flex items-center justify-center mx-auto mb-4">
+              <UserCheck className="w-8 h-8 text-violet-300 dark:text-violet-600" />
             </div>
-            <h2 className="text-xl font-extrabold text-slate-900 mb-2">Aucun candidat pré-sélectionné</h2>
-            <p className="text-slate-500 text-sm mb-6 max-w-sm mx-auto">
+            <h2 className="text-xl font-extrabold text-gray-800 dark:text-white mb-2">Aucun candidat pré-sélectionné</h2>
+            <p className="text-gray-400 text-sm mb-6 max-w-sm mx-auto">
               Retournez sur la page d'analyse et cliquez sur{" "}
-              <span className="font-semibold" style={{ color: OPTY.mintText }}>
-                Pré-entretien
-              </span>{" "}
+              <span className="font-semibold text-violet-500">Pré-entretien</span>{" "}
               sur les candidats que vous souhaitez retenir.
             </p>
-            <a
-              href="/recruiter/CandidatureAnalysis"
-              className="inline-flex items-center gap-2 px-6 py-3 text-white rounded-full font-semibold text-sm transition-colors"
-              style={{ background: OPTY.primary }}
-            >
-              <ArrowLeft className="w-4 h-4" />
-              Aller à l'analyse
+            <a href="/recruiter/CandidatureAnalysis"
+              className="inline-flex items-center gap-2 px-6 py-3 bg-violet-600 hover:bg-violet-700 text-white rounded-full font-semibold text-sm transition-colors">
+              <ArrowLeft className="w-4 h-4" />Aller à l'analyse
             </a>
           </div>
         ) : filtered.length === 0 ? (
-          <div className="bg-white rounded-2xl border p-10 text-center" style={{ borderColor: OPTY.mintBorder }}>
-            <p className="text-slate-500">Aucun résultat pour "{search}"</p>
+          <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700 p-10 text-center">
+            <p className="text-gray-500">Aucun résultat pour "{search}"</p>
           </div>
         ) : (
           <div className="space-y-4 mt-2">
+            <div className="flex items-center gap-2 text-sm text-violet-700 dark:text-violet-300 bg-violet-50 dark:bg-violet-900/20 px-4 py-3 rounded-xl border border-violet-100 dark:border-violet-800">
+              <UserCheck className="w-4 h-4 shrink-0" />
+              <span className="font-semibold">{filtered.length} candidat{filtered.length > 1 ? "s" : ""}</span>
+              <span className="text-violet-500">{search ? "trouvé" : "sélectionné"}{filtered.length > 1 ? "s" : ""} pour pré-entretien</span>
+              <ChevronRight className="w-4 h-4 ml-auto" />
+              <span className="text-xs font-medium">Envoyez les documents ou planifiez leurs entretiens</span>
+            </div>
+
             {filtered.map((c, i) => (
               <PreInterviewCard key={c._id} c={c} index={i} />
             ))}
           </div>
         )}
+
       </div>
     </div>
   );
