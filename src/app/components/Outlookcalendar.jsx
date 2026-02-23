@@ -1063,7 +1063,7 @@ const MiniMonth = ({ T, S, currentDate, selectedDate, onChangeMonth, onPickDay }
 };
 
 /* ================= MAIN COMPONENT ================= */
-const OutlookCalendar = () => {
+const OutlookCalendar = ({ onDateSelect } = {}) => {
   const {
     events,
     outlookStatus,
@@ -1157,6 +1157,11 @@ const OutlookCalendar = () => {
   };
 
   const openNewEventModal = (date, hour = 9) => {
+    // Si un handler externe est fourni (ex: InterviewEventModal), l'appeler à la place
+    if (onDateSelect) {
+      onDateSelect(date);
+      return;
+    }
     const y = date.getFullYear(),
       m = String(date.getMonth() + 1).padStart(2, "0"),
       d = String(date.getDate()).padStart(2, "0");

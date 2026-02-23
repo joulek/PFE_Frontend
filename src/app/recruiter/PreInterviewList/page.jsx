@@ -7,44 +7,15 @@ import api from "../../services/api";
 import Link from "next/link";
 
 import {
-  UserCheck,
-  FileText,
-  Search,
-  Calendar,
-  ArrowLeft,
-  Mail,
-  Phone,
-  Clock,
-  Briefcase,
-  Send,
-  X,
-  CheckCircle2,
-  Brain,
-  ClipboardList,
-  AlertCircle,
-  BarChart2,
-  PhoneCall,
-  Users,
-  UserCog,
-  Star,
-  ChevronRight,
-  StickyNote,
-  Loader2, // 👈 هذا هو الحل
+  UserCheck, FileText, Search, Calendar, ArrowLeft,
+  Mail, Phone, Clock, Briefcase, Send, X, CheckCircle2,
+  Brain, ClipboardList, AlertCircle, Loader2, BarChart2,
+  PhoneCall, Users, UserCog, Star, ChevronRight, StickyNote,
 } from "lucide-react";
+
 const API_BASE = process.env.NEXT_PUBLIC_API_URL;
 
-/* ================= OPTYLAB THEME (inline) ================= */
-const OPTY = {
-  primary: "#6DB33F",
-  primaryHover: "#5EA735",
-  mintBg: "#F0FAF0",
-  mintSoft: "#EAF7EF",
-  mintBorder: "#D6EEDD",
-  mintText: "#2E6B3A",
-};
-
 /* ================= HELPERS ================= */
-
 function safeStr(v) {
   if (v === null || v === undefined) return "";
   return typeof v === "string" ? v.trim() : String(v).trim();
@@ -75,10 +46,10 @@ function getMatchScore(c) {
   return s > 1 ? s / 100 : s;
 }
 function scoreBg(s) {
-  if (s === null) return "bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-300";
-  if (s >= 0.75) return "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/25 dark:text-emerald-300";
-  if (s >= 0.45) return "bg-amber-100 text-amber-800 dark:bg-amber-900/25 dark:text-amber-300";
-  return "bg-rose-100 text-rose-800 dark:bg-rose-900/25 dark:text-rose-300";
+  if (s === null) return "bg-gray-100 text-gray-500";
+  if (s >= 0.75) return "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400";
+  if (s >= 0.45) return "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400";
+  return "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400";
 }
 function formatDate(d) {
   if (!d) return "—";
@@ -86,7 +57,7 @@ function formatDate(d) {
 }
 
 // ── localStorage pour persister "envoyé" entre refreshes ──
-function markSent(id) { try { localStorage.setItem(`docs_sent_${id}`, "1"); } catch { } }
+function markSent(id) { try { localStorage.setItem(`docs_sent_${id}`, "1"); } catch {} }
 function wasSent(id) { try { return localStorage.getItem(`docs_sent_${id}`) === "1"; } catch { return false; } }
 
 /* ================================================================
@@ -108,21 +79,16 @@ function SendDocumentsModal({ candidature, onClose, onSuccess }) {
     async function load() {
       setLoadingData(true);
       try {
-        // Charger toutes les fiches
-        const fichesRes = await api.get("/fiches");
-        setFiches(Array.isArray(fichesRes?.data) ? fichesRes.data : []);
-
-        // Charger quiz lié au job du candidat
-        const jobOfferId = candidature?.jobOfferId;
-        if (jobOfferId) {
+        const fr = await api.get("/fiches");
+        setFiches(Array.isArray(fr?.data) ? fr.data : []);
+        const jid = candidature?.jobOfferId;
+        if (jid) {
           try {
             const qr = await getQuizByJob(jid.toString());
             const q = qr?.data || null;
             setQuiz(q);
-            if (q) setIncludeQuiz(true); // cocher par défaut si quiz existe
-          } catch {
-            setQuiz(null);
-          }
+            if (q) setIncludeQuiz(true);
+          } catch { setQuiz(null); }
         }
       } catch (e) {
         console.error("Erreur chargement modal:", e?.message);
@@ -157,88 +123,64 @@ function SendDocumentsModal({ candidature, onClose, onSuccess }) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={onClose} />
-
-      {/* Panel */}
       <div className="relative bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden">
 
-        {/* Header modal */}
+        {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 dark:border-gray-700">
           <div>
-            <h2 className="text-lg font-extrabold text-slate-900 dark:text-white flex items-center gap-2">
-              <span
-                className="w-9 h-9 rounded-xl flex items-center justify-center"
-                style={{ background: OPTY.mintSoft, color: OPTY.mintText }}
-              >
-                <Send className="w-4 h-4" />
-              </span>
+            <h2 className="text-lg font-extrabold text-gray-900 dark:text-white flex items-center gap-2">
+              <Send className="w-5 h-5 text-violet-500" />
               Envoyer des documents
             </h2>
-            <p className="text-sm text-slate-500 dark:text-slate-400 mt-0.5">
-              à <span className="font-semibold text-slate-700 dark:text-slate-200">{name}</span>
+            <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
+              à <span className="font-semibold text-gray-700 dark:text-gray-300">{name}</span>
             </p>
           </div>
-
-          <button
-            onClick={onClose}
-            className="p-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
-          >
-            <X className="w-5 h-5 text-slate-500" />
+          <button onClick={onClose} className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+            <X className="w-5 h-5 text-gray-500" />
           </button>
         </div>
 
         {/* Body */}
         <div className="px-6 py-5 space-y-5 max-h-[70vh] overflow-y-auto">
 
-          {/* ✅ État succès */}
+          {/* Succès */}
           {success ? (
             <div className="flex flex-col items-center gap-3 py-6 text-center">
-              <div className="w-16 h-16 rounded-full bg-emerald-100 dark:bg-emerald-900/25 flex items-center justify-center">
-                <CheckCircle2 className="w-9 h-9 text-emerald-600" />
+              <div className="w-16 h-16 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
+                <CheckCircle2 className="w-9 h-9 text-green-500" />
               </div>
-
-              <h3 className="text-lg font-extrabold text-slate-900 dark:text-white">Envoyé avec succès !</h3>
-
+              <h3 className="text-lg font-extrabold text-gray-900 dark:text-white">Envoyé avec succès !</h3>
               <div className="flex gap-2 flex-wrap justify-center">
                 {success.sentFiche && (
-                  <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 dark:bg-emerald-900/15 text-emerald-800 dark:text-emerald-300 rounded-full text-sm font-medium">
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 rounded-full text-sm font-medium">
                     <ClipboardList className="w-4 h-4" /> Fiche envoyée
                   </span>
                 )}
                 {success.sentQuiz && (
-                  <span
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium
-                    bg-[#EAF7EF] dark:bg-emerald-900/15 text-[#2E6B3A] dark:text-emerald-300"
-                  >
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-violet-50 dark:bg-violet-900/20 text-violet-700 dark:text-violet-400 rounded-full text-sm font-medium">
                     <Brain className="w-4 h-4" /> Quiz envoyé
                   </span>
                 )}
               </div>
-
-              <p className="text-sm text-slate-400">
-                Email envoyé à <strong className="text-slate-600 dark:text-slate-200">{email}</strong>
-              </p>
-
-              <button
-                onClick={onClose}
-                className="mt-2 px-6 py-2.5 rounded-full font-semibold text-sm text-white transition-colors"
-                style={{ background: OPTY.primary }}
-                onMouseEnter={(e) => (e.currentTarget.style.background = OPTY.primaryHover)}
-                onMouseLeave={(e) => (e.currentTarget.style.background = OPTY.primary)}
-              >
+              <p className="text-sm text-gray-400">Email envoyé à <strong>{email}</strong></p>
+              <button onClick={onClose} className="mt-2 px-6 py-2.5 bg-violet-600 hover:bg-violet-700 text-white rounded-full font-semibold text-sm transition-colors">
                 Fermer
               </button>
             </div>
+
           ) : loadingData ? (
-            <div className="flex items-center justify-center gap-2 py-10 text-slate-400">
+            <div className="flex items-center justify-center gap-2 py-10 text-gray-400">
               <Loader2 className="w-5 h-5 animate-spin" />
               <span className="text-sm">Chargement des données...</span>
             </div>
+
           ) : (
             <>
               {/* Email */}
               <div>
-                <label className="block text-sm font-semibold text-slate-700 dark:text-slate-200 mb-1.5">
-                  <Mail className="w-4 h-4 inline mr-1.5 text-slate-400" />
+                <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1.5">
+                  <Mail className="w-4 h-4 inline mr-1.5 text-gray-400" />
                   Email du candidat
                 </label>
                 <input
@@ -246,782 +188,527 @@ function SendDocumentsModal({ candidature, onClose, onSuccess }) {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="candidat@email.com"
-                  className="w-full rounded-xl px-4 py-2.5 text-sm outline-none transition
-                    bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100
-                    border border-slate-200 dark:border-slate-700
-                    focus:ring-2"
-                  style={{ boxShadow: "none" }}
+                  className="w-full border border-gray-200 dark:border-gray-600 rounded-xl px-4 py-2.5 text-sm bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 outline-none focus:ring-2 focus:ring-violet-400"
                 />
               </div>
 
               {/* Quiz */}
               <div>
-                <p className="text-sm font-semibold text-slate-700 dark:text-slate-200 mb-2 flex items-center gap-2">
-                  <span
-                    className="w-7 h-7 rounded-lg flex items-center justify-center"
-                    style={{ background: OPTY.mintSoft, color: OPTY.mintText }}
-                  >
-                    <Brain className="w-4 h-4" />
-                  </span>
+                <p className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+                  <Brain className="w-4 h-4 inline mr-1.5 text-violet-500" />
                   Quiz technique
                 </p>
                 {quiz ? (
-                  <label className={`flex items-start gap-3 p-4 rounded-xl border-2 cursor-pointer transition-all ${includeQuiz
-                    ? "border-violet-500 bg-violet-50 dark:bg-violet-900/20"
-                    : "border-gray-200 dark:border-gray-600 hover:border-violet-300"
-                    }`}>
-                    <input
-                      type="checkbox"
-                      checked={includeQuiz}
-                      onChange={(e) => setIncludeQuiz(e.target.checked)}
-                      className="mt-0.5 accent-violet-600 w-4 h-4 shrink-0"
-                    />
+                  <label className={`flex items-start gap-3 p-4 rounded-xl border-2 cursor-pointer transition-all ${
+                    includeQuiz
+                      ? "border-violet-500 bg-violet-50 dark:bg-violet-900/20"
+                      : "border-gray-200 dark:border-gray-600 hover:border-violet-300"
+                  }`}>
+                    <input type="checkbox" checked={includeQuiz} onChange={(e) => setIncludeQuiz(e.target.checked)}
+                      className="mt-0.5 accent-violet-600 w-4 h-4 shrink-0" />
                     <div>
-                      <p className="font-semibold text-sm text-gray-800 dark:text-gray-200">
-                        {quiz.jobTitle || "Quiz technique"}
-                      </p>
+                      <p className="font-semibold text-sm text-gray-800 dark:text-gray-200">{quiz.jobTitle || "Quiz technique"}</p>
                       <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
                         {quiz.totalQuestions || 0} questions · ~{Math.ceil((quiz.totalQuestions || 0) * 2)} min
                       </p>
-                      {includeQuiz && (
-                        <span className="inline-block mt-1.5 text-xs font-medium text-violet-600 dark:text-violet-400">
-                          ✓ Sera inclus dans l'email
-                        </span>
-                      )}
+                      {includeQuiz && <span className="text-xs font-medium text-violet-600 dark:text-violet-400 mt-1 inline-block">✓ Sera inclus</span>}
                     </div>
                   </label>
                 ) : (
-                  <div className="flex items-center gap-2 p-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700 rounded-xl text-sm text-amber-700 dark:text-amber-400">
+                  <div className="flex items-center gap-2 p-3 bg-amber-50 dark:bg-amber-900/20 rounded-xl text-sm text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-700">
                     <AlertCircle className="w-4 h-4 shrink-0" />
                     Aucun quiz disponible pour ce poste
                   </div>
                 )}
               </div>
 
-              {/* ── FICHE DE RENSEIGNEMENT ── */}
+              {/* Fiches */}
               <div>
-                <p className="text-sm font-semibold text-slate-700 dark:text-slate-200 mb-2 flex items-center gap-2">
-                  <span
-                    className="w-7 h-7 rounded-lg flex items-center justify-center"
-                    style={{ background: OPTY.mintSoft, color: OPTY.mintText }}
-                  >
-                    <ClipboardList className="w-4 h-4" />
-                  </span>
+                <p className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+                  <ClipboardList className="w-4 h-4 inline mr-1.5 text-green-600" />
                   Fiche de renseignement
                 </p>
-
-                {fiches.length === 0 ? (
-                  <div className="flex items-center gap-2 p-3 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-xl text-sm text-gray-500">
-                    <AlertCircle className="w-4 h-4 shrink-0" />
-                    Aucune fiche disponible
-                  </div>
-                ) : (
-                  <div className="space-y-2 max-h-52 overflow-y-auto pr-1">
-                    {/* Option : aucune */}
-                    <label className={`flex items-center gap-3 p-3 rounded-xl border-2 cursor-pointer transition-all ${!selectedFicheId
-                      ? "border-gray-400 bg-gray-50 dark:bg-gray-700"
-                      : "border-gray-200 dark:border-gray-600 hover:border-gray-300"
-                      }`}>
-                      <input
-                        type="radio" name="fiche" value=""
-                        checked={!selectedFicheId}
-                        onChange={() => setSelectedFicheId("")}
-                        className="accent-gray-500 w-4 h-4 shrink-0"
-                      />
-                      <span className="text-sm text-gray-400 italic">Ne pas envoyer de fiche</span>
+                <div className="space-y-2 max-h-48 overflow-y-auto">
+                  <label className={`flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition-all ${
+                    !selectedFicheId ? "border-gray-400 bg-gray-50 dark:bg-gray-700" : "border-gray-200 dark:border-gray-600 hover:border-gray-300"
+                  }`}>
+                    <input type="radio" name="fiche" value="" checked={!selectedFicheId}
+                      onChange={() => setSelectedFicheId("")} className="w-4 h-4" />
+                    <span className="text-sm text-gray-500 dark:text-gray-400">Ne pas envoyer de fiche</span>
+                  </label>
+                  {fiches.map((f) => (
+                    <label key={f._id} className={`flex items-start gap-3 p-3 rounded-xl border cursor-pointer transition-all ${
+                      selectedFicheId === f._id
+                        ? "border-green-500 bg-green-50 dark:bg-green-900/20"
+                        : "border-gray-200 dark:border-gray-600 hover:border-green-300"
+                    }`}>
+                      <input type="radio" name="fiche" value={f._id} checked={selectedFicheId === f._id}
+                        onChange={() => setSelectedFicheId(f._id)} className="mt-0.5 accent-green-600 w-4 h-4 shrink-0" />
+                      <div>
+                        <p className="font-semibold text-sm text-gray-800 dark:text-gray-200">{f.title}</p>
+                        {f.description && <p className="text-xs text-gray-500 mt-0.5">{f.description}</p>}
+                        <p className="text-xs text-gray-400 mt-0.5">{f.questions?.length || 0} questions</p>
+                      </div>
                     </label>
-
-                    {fiches.map((fiche) => (
-                      <label
-                        key={fiche._id}
-                        className={`flex items-start gap-3 p-3 rounded-xl border-2 cursor-pointer transition-all ${selectedFicheId === fiche._id
-                          ? "border-green-500 bg-green-50 dark:bg-green-900/20"
-                          : "border-gray-200 dark:border-gray-600 hover:border-green-300"
-                          }`}
-                      >
-                        <input
-                          type="radio" name="fiche" value={fiche._id}
-                          checked={selectedFicheId === fiche._id}
-                          onChange={() => setSelectedFicheId(fiche._id)}
-                          className="mt-0.5 accent-green-600 w-4 h-4 shrink-0"
-                        />
-                        <div className="min-w-0">
-                          <p className="font-semibold text-sm text-gray-800 dark:text-gray-200 truncate">{fiche.title}</p>
-                          {fiche.description && (
-                            <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5 truncate">{fiche.description}</p>
-                          )}
-                          <p className="text-xs text-gray-400 mt-0.5">{fiche.questions?.length || 0} question(s)</p>
-                          {selectedFicheId === fiche._id && (
-                            <span className="inline-block mt-1 text-xs font-medium text-green-600 dark:text-green-400">✓ Sélectionnée</span>
-                          )}
-                        </div>
-                      </label>
-                    ))}
-                  </div>
-                )}
-              </div>
-
-              {/* Résumé envoi */}
-              {(selectedFicheId || (includeQuiz && quiz)) && (
-                <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-800 rounded-xl px-4 py-3">
-                  <p className="text-xs font-semibold text-blue-700 dark:text-blue-300 mb-2">
-                    Ce qui sera envoyé à {email || "..."}
-                  </p>
-                  <div className="flex flex-wrap gap-2">
-                    {selectedFicheId && (
-                      <span className="inline-flex items-center gap-1 text-xs bg-white dark:bg-gray-700 border border-blue-200 dark:border-blue-700 text-blue-700 dark:text-blue-300 px-2.5 py-1 rounded-full font-medium">
-                        <ClipboardList className="w-3.5 h-3.5" />
-                        {fiches.find(f => f._id === selectedFicheId)?.title || "Fiche"}
-                      </span>
-                    )}
-                    {includeQuiz && quiz && (
-                      <span className="inline-flex items-center gap-1 text-xs bg-white dark:bg-gray-700 border border-blue-200 dark:border-blue-700 text-blue-700 dark:text-blue-300 px-2.5 py-1 rounded-full font-medium">
-                        <Brain className="w-3.5 h-3.5" />
-                        Quiz : {quiz.jobTitle}
-                      </span>
-                    )}
-                  </div>
+                  ))}
                 </div>
-              )}
+              </div>
 
               {/* Erreur */}
               {error && (
-                <div className="flex items-center gap-2 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-700 rounded-xl text-sm text-red-600 dark:text-red-400">
-                  <AlertCircle className="w-4 h-4 shrink-0" />
-                  {error}
+                <div className="flex items-center gap-2 p-3 bg-red-50 dark:bg-red-900/20 rounded-xl border border-red-200 dark:border-red-700 text-sm text-red-600 dark:text-red-400">
+                  <AlertCircle className="w-4 h-4 shrink-0" />{error}
                 </div>
               )}
+
+              {/* Résumé */}
+              {(selectedFicheId || includeQuiz) && (
+                <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-800 rounded-xl p-3 text-sm text-blue-700 dark:text-blue-300">
+                  Sera envoyé : {[includeQuiz && "Quiz technique", selectedFicheId && "Fiche de renseignement"].filter(Boolean).join(" + ")}
+                </div>
+              )}
+
+              <button
+                onClick={handleSend}
+                disabled={!canSend}
+                className="w-full py-3 rounded-xl bg-violet-600 hover:bg-violet-700 text-white font-extrabold text-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              >
+                {sending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+                {sending ? "Envoi en cours..." : "Envoyer"}
+              </button>
             </>
           )}
         </div>
-
-        {/* Footer modal */}
-        {!success && !loadingData && (
-          <div className="px-6 py-4 border-t border-gray-100 dark:border-gray-700 flex items-center justify-end gap-3">
-            <button
-              onClick={onClose}
-              className="px-5 py-2.5 rounded-xl border border-gray-200 dark:border-gray-600 text-sm font-semibold text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
-            >
-              Annuler
-            </button>
-            <button
-              onClick={handleSend}
-              disabled={!canSend}
-              className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl bg-green-600 hover:bg-green-700 disabled:opacity-40 disabled:cursor-not-allowed text-white text-sm font-semibold transition-all shadow-sm"
-            >
-              {sending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
-              {sending ? "Envoi en cours..." : "Envoyer"}
-            </button>
-          </div>
-        )}
       </div>
     </div>
   );
 }
-
 
 /* ================================================================
    CARD CANDIDAT
 ================================================================ */
 /* ================================================================
-   MODAL — Planifier Entretien
+   MODAL — Planifier Entretien (3 flows)
 ================================================================ */
-function EntretienModal({ candidate, onClose }) {
-  const [step, setStep] = useState("type"); // "type" | "note"
-  const [selectedType, setSelectedType] = useState(null);
 
+// ── Flow 1: Téléphonique — note CRUD ──────────────────────────
+function TelephoniqueFlow({ candidate, onBack, onClose }) {
+  const [notes, setNotes] = useState([]);
   const [noteText, setNoteText] = useState("");
-  const [stars, setStars] = useState(0);
-
-  const [loadingNote, setLoadingNote] = useState(false);
-  const [existingNoteId, setExistingNoteId] = useState(null);
-
+  const [editId, setEditId] = useState(null);
   const [saving, setSaving] = useState(false);
-  const [deleting, setDeleting] = useState(false);
-  const [saved, setSaved] = useState(false);
+  const [loading, setLoading] = useState(true);
 
+  useEffect(() => { fetchNotes(); }, []);
+
+  async function fetchNotes() {
+    setLoading(true);
+    try {
+      const r = await api.get(`/candidatures/${candidate._id}/entretien-notes`);
+      console.log("📋 notes raw:", JSON.stringify(r.data?.slice?.(0,1)));
+      // Normaliser _id — peut être string, ObjectId JSON, ou absent
+      const normalized = (r.data || []).map((n, idx) => {
+        const rawId = n._id ?? n.id;
+        const strId = rawId?.$oid
+          || (typeof rawId === "string" ? rawId : null)
+          || rawId?.toString?.()
+          || `note-idx-${idx}-${Date.now()}`;
+        return { ...n, _id: strId };
+      });
+      setNotes(normalized);
+    } catch(e) {
+      console.error("fetchNotes error:", e);
+      setNotes([]);
+    } finally { setLoading(false); }
+  }
+
+  async function saveNote() {
+    if (!noteText.trim()) return;
+    setSaving(true);
+    try {
+      if (editId) {
+        const safeEditId = editId?.$oid || String(editId || "");
+        await api.patch(`/candidatures/${candidate._id}/entretien-notes/${safeEditId}`, { note: noteText.trim() });
+      } else {
+        await api.post(`/candidatures/${candidate._id}/entretien-note`, { type: "telephonique", note: noteText.trim() });
+      }
+      setNoteText(""); setEditId(null);
+      await fetchNotes();
+    } catch(e) { console.error(e); }
+    setSaving(false);
+  }
+
+  async function deleteNote(noteId) {
+    console.log("🗑️ deleteNote called with:", noteId);
+    if (!noteId || noteId === "undefined" || noteId.startsWith("note-idx-")) {
+      console.error("noteId invalide — impossible de supprimer:", noteId);
+      return;
+    }
+    if (!confirm("Supprimer cette note ?")) return;
+    try {
+      await api.delete(`/candidatures/${candidate._id}/entretien-notes/${noteId}`);
+      await fetchNotes();
+    } catch(e) { console.error("deleteNote error:", e?.response?.status, e?.response?.data); }
+  }
+
+  function startEdit(n) {
+    const id = n._id?.$oid || n._id?.toString?.() || String(n._id || "");
+    setEditId(id);
+    setNoteText(n.note);
+  }
+
+  return (
+    <div className="p-5">
+      <button onClick={onBack} className="text-xs text-gray-400 hover:text-gray-600 flex items-center gap-1 mb-4">← Retour</button>
+      <div className="flex items-center gap-3 mb-5 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-xl">
+        <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center flex-shrink-0">
+          <PhoneCall className="w-4 h-4 text-white" />
+        </div>
+        <div>
+          <p className="text-sm font-bold text-gray-800 dark:text-white">Entretien Téléphonique</p>
+          <p className="text-xs text-gray-500">{new Date().toLocaleDateString("fr-FR", { day:"numeric", month:"long", year:"numeric" })}</p>
+        </div>
+      </div>
+      {/* Zone de saisie */}
+      <textarea value={noteText} onChange={e => setNoteText(e.target.value)}
+        placeholder={editId ? "Modifier la note..." : "Ajouter une note après l'entretien téléphonique..."}
+        rows={3}
+        className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-blue-400 mb-2" />
+      <div className="flex gap-2 mb-5">
+        <button onClick={saveNote} disabled={!noteText.trim() || saving}
+          className="flex-1 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold disabled:opacity-40 flex items-center justify-center gap-2">
+          {saving ? <Loader2 className="w-4 h-4 animate-spin"/> : <StickyNote className="w-4 h-4"/>}
+          {editId ? "Modifier" : "Sauvegarder"}
+        </button>
+        {editId && (
+          <button onClick={() => { setEditId(null); setNoteText(""); }}
+            className="px-4 py-2.5 rounded-xl border border-gray-200 text-sm text-gray-600 hover:bg-gray-50">Annuler</button>
+        )}
+      </div>
+      {/* Liste des notes */}
+      {loading ? (
+        <div className="flex justify-center py-4"><Loader2 className="w-5 h-5 animate-spin text-blue-400"/></div>
+      ) : notes.length === 0 ? (
+        <p className="text-center text-sm text-gray-400 py-3">Aucune note enregistrée</p>
+      ) : (
+        <div className="space-y-2 max-h-48 overflow-y-auto">
+          {notes.map((n, i) => (
+            <div key={n._id || i} className="p-3 bg-gray-50 dark:bg-gray-800/50 rounded-xl border border-gray-100 dark:border-gray-700">
+              <p className="text-sm text-gray-700 dark:text-gray-300 mb-2">{n.note}</p>
+              <div className="flex items-center justify-between">
+                <span className="text-xs text-gray-400">{new Date(n.createdAt).toLocaleDateString("fr-FR")}</span>
+                <div className="flex gap-2">
+                  <button onClick={() => startEdit(n)} className="text-xs text-blue-500 hover:text-blue-700 font-medium">Modifier</button>
+                  <button onClick={() => deleteNote(n._id)} className="text-xs text-red-400 hover:text-red-600 font-medium">Supprimer</button>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── Flow 2: Entretien RH — redirige vers la page calendrier ──────
+// Quand l'utilisateur clique "Entretien RH", on redirige directement
+// vers /recruiter/calendar avec les infos du candidat en query params.
+// Le calendrier détecte ces params et ouvre automatiquement le formulaire
+// "Nouvel événement" pré-rempli.
+function RHFlow({ candidate, onBack, onClose, onScheduled }) {
+  const name      = candidate?.fullName
+    || `${candidate?.prenom || ""} ${candidate?.nom || ""}`.trim()
+    || "Candidat";
+  const email     = candidate?.email || "";
+  const jobTitle  = candidate?.jobTitle || "";
+  const candidId  = candidate?._id || "";
+
+  function openCalendar() {
+    const params = new URLSearchParams({
+      newEvent:      "1",
+      type:          "entretien_rh",
+      candidateName: name,
+      candidateEmail: email,
+      jobTitle,
+      candidatureId: candidId,
+    });
+    // Fermer le modal et ouvrir le calendrier dans le même onglet
+    onClose();
+    window.location.href = `/recruiter/calendar?${params.toString()}`;
+  }
+
+  return (
+    <div className="p-5">
+      <button onClick={onBack} className="text-xs text-gray-400 hover:text-gray-600 flex items-center gap-1 mb-4">
+        ← Retour
+      </button>
+
+      {/* Header */}
+      <div className="flex items-center gap-3 mb-6 p-3 bg-violet-50 dark:bg-violet-900/20 rounded-xl">
+        <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center flex-shrink-0">
+          <Users className="w-4 h-4 text-white"/>
+        </div>
+        <div>
+          <p className="text-sm font-bold text-gray-800 dark:text-white">Entretien RH</p>
+          <p className="text-xs text-gray-500">Planifier depuis votre calendrier Outlook</p>
+        </div>
+      </div>
+
+      {/* Info candidat */}
+      <div className="mb-6 p-4 bg-gray-50 dark:bg-gray-800 rounded-xl space-y-2">
+        <div className="flex items-center gap-2">
+          <div className="w-8 h-8 rounded-full bg-violet-100 dark:bg-violet-900/30 flex items-center justify-center text-violet-700 dark:text-violet-300 font-bold text-sm flex-shrink-0">
+            {name?.[0]?.toUpperCase() || "C"}
+          </div>
+          <div>
+            <p className="text-sm font-bold text-gray-800 dark:text-white">{name}</p>
+            {email && <p className="text-xs text-gray-400">{email}</p>}
+          </div>
+        </div>
+        {jobTitle && (
+          <div className="flex items-center gap-1.5 text-xs text-gray-500 pl-10">
+            <Briefcase className="w-3 h-3"/>
+            {jobTitle}
+          </div>
+        )}
+      </div>
+
+      {/* Explication */}
+      <div className="mb-6 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-xl">
+        <p className="text-xs text-blue-700 dark:text-blue-300 leading-relaxed">
+          📅 Vous allez être redirigé vers votre <strong>calendrier Outlook</strong> pour créer l&apos;événement directement.<br/>
+          <span className="mt-1 block text-blue-600/70 dark:text-blue-400/70">
+            Le formulaire sera pré-rempli avec les informations du candidat.<br/>
+            Une fois l&apos;entretien créé, un email sera envoyé automatiquement au candidat.
+          </span>
+        </p>
+      </div>
+
+      <button onClick={openCalendar}
+        className="w-full py-3.5 rounded-xl bg-violet-600 hover:bg-violet-700 text-white font-bold text-sm flex items-center justify-center gap-2 transition-colors shadow-md hover:shadow-lg">
+        <Calendar className="w-4 h-4"/>
+        Ouvrir le calendrier &amp; Créer l&apos;entretien
+      </button>
+    </div>
+  );
+}
+
+// ── Flow 3: RH + Technique — créneaux libres communs ──────────
+function RHTechniqueFlow({ candidate, onBack, onClose }) {
+  const [slots, setSlots] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [selected, setSelected] = useState(null);
+  const [saving, setSaving] = useState(false);
+  const [done, setDone] = useState(false);
+  const [error, setError] = useState("");
+
+  useEffect(() => { fetchAvailability(); }, []);
+
+  async function fetchAvailability() {
+    setLoading(true);
+    try {
+      const r = await api.get("/interviews/availability", {
+        params: { candidatureId: candidate._id, jobOfferId: candidate.jobOfferId, days: 7 }
+      });
+      setSlots(r.data?.slots || []);
+    } catch(e) {
+      console.error(e);
+      setSlots([]);
+    }
+    setLoading(false);
+  }
+
+  async function handleSchedule() {
+    if (!selected) return;
+    setSaving(true); setError("");
+    try {
+      await api.post("/interviews/schedule", {
+        candidatureId: candidate._id,
+        jobOfferId:    candidate.jobOfferId,
+        interviewType: "rh_technique",
+        proposedDate:  selected.date,
+        proposedTime:  selected.time,
+        createCalendarEvent: true,
+        notifyResponsable: true,   // email au responsable pour confirmer
+      });
+      setDone(true);
+    } catch(e) {
+      setError(e?.response?.data?.message || "Erreur");
+    }
+    setSaving(false);
+  }
+
+  // Grouper par jour
+  const slotsByDay = slots.reduce((acc, s) => {
+    const day = s.date;
+    if (!acc[day]) acc[day] = [];
+    acc[day].push(s);
+    return acc;
+  }, {});
+
+  if (done) return (
+    <div className="p-5 text-center">
+      <div className="w-16 h-16 rounded-full bg-orange-100 flex items-center justify-center mx-auto mb-4">
+        <CheckCircle2 className="w-8 h-8 text-orange-600"/>
+      </div>
+      <h3 className="font-bold text-gray-800 dark:text-white text-lg mb-1">Demande envoyée !</h3>
+      <p className="text-sm text-gray-500 mb-1">Email envoyé au Responsable Métier pour confirmation.</p>
+      <p className="text-xs text-gray-400">S&apos;il accepte → email automatique au candidat avec les détails.</p>
+    </div>
+  );
+
+  return (
+    <div className="p-5">
+      <button onClick={onBack} className="text-xs text-gray-400 hover:text-gray-600 flex items-center gap-1 mb-4">← Retour</button>
+      <div className="flex items-center gap-3 mb-4 p-3 bg-orange-50 dark:bg-orange-900/20 rounded-xl">
+        <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-orange-500 to-red-500 flex items-center justify-center flex-shrink-0">
+          <UserCog className="w-4 h-4 text-white"/>
+        </div>
+        <div>
+          <p className="text-sm font-bold text-gray-800 dark:text-white">Entretien RH + Technique</p>
+          <p className="text-xs text-gray-500">Créneaux libres — Recruteur & Responsable (7 jours)</p>
+        </div>
+      </div>
+
+      {loading ? (
+        <div className="flex flex-col items-center py-8 gap-3">
+          <Loader2 className="w-7 h-7 animate-spin text-orange-400"/>
+          <p className="text-sm text-gray-400">Analyse des calendriers...</p>
+        </div>
+      ) : slots.length === 0 ? (
+        <div className="py-6 text-center">
+          <p className="text-sm text-gray-500 mb-3">Aucun créneau commun trouvé cette semaine.</p>
+          <button onClick={fetchAvailability} className="text-xs text-orange-500 hover:underline">Réessayer</button>
+        </div>
+      ) : (
+        <div className="max-h-72 overflow-y-auto space-y-3 mb-4 pr-1">
+          {Object.entries(slotsByDay).map(([day, daySlots]) => (
+            <div key={day}>
+              <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">
+                {new Date(day).toLocaleDateString("fr-FR", { weekday:"long", day:"numeric", month:"long" })}
+              </p>
+              <div className="flex flex-wrap gap-2">
+                {daySlots.map((s, i) => (
+                  <button key={i} onClick={() => setSelected(s)}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all border-2 ${
+                      selected?.date === s.date && selected?.time === s.time
+                        ? "bg-orange-500 text-white border-orange-500"
+                        : "bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:border-orange-400"
+                    }`}>
+                    {s.time}
+                  </button>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {selected && (
+        <div className="mb-3 p-3 bg-orange-50 dark:bg-orange-900/20 rounded-xl flex items-center justify-between">
+          <div>
+            <p className="text-xs text-gray-500">Créneau sélectionné</p>
+            <p className="text-sm font-bold text-gray-800 dark:text-white">
+              {new Date(selected.date).toLocaleDateString("fr-FR", { weekday:"long", day:"numeric", month:"long" })} à {selected.time}
+            </p>
+          </div>
+          <button onClick={() => setSelected(null)} className="text-gray-400 hover:text-gray-600"><X className="w-4 h-4"/></button>
+        </div>
+      )}
+
+      {error && <p className="text-xs text-red-500 mb-2">{error}</p>}
+      <button onClick={handleSchedule} disabled={!selected || saving}
+        className="w-full py-3 rounded-xl bg-orange-500 hover:bg-orange-600 text-white font-bold text-sm flex items-center justify-center gap-2 disabled:opacity-40">
+        {saving ? <Loader2 className="w-4 h-4 animate-spin"/> : <Send className="w-4 h-4"/>}
+        {saving ? "Envoi..." : "Envoyer au Responsable pour confirmation"}
+      </button>
+    </div>
+  );
+}
+
+// ── Wrapper Modal principal ─────────────────────────────────────
+function EntretienModal({ candidate, onClose, onRHScheduled }) {
+  const [step, setStep] = useState("type");  // "type" | "telephonique" | "rh" | "rh_technique"
   const name = getName(candidate);
 
   const types = [
-    {
-      id: "telephonique",
-      label: "Entretien Téléphonique",
-      icon: PhoneCall,
-      color: "from-blue-500 to-cyan-500",
-      desc: "Premier contact rapide par téléphone",
-    },
-    {
-      id: "rh",
-      label: "Entretien RH",
-      icon: Users,
-      color: "from-violet-500 to-purple-600",
-      desc: "Évaluation RH et motivation",
-    },
-    {
-      id: "rh_technique",
-      label: "Entretien RH + Technique",
-      icon: UserCog,
-      color: "from-orange-500 to-red-500",
-      desc: "Entretien complet RH et technique",
-    },
+    { id:"telephonique",  label:"Entretien Téléphonique", icon:PhoneCall, color:"from-blue-500 to-cyan-500",    desc:"Note et suivi après appel" },
+    { id:"rh",            label:"Entretien RH",           icon:Users,     color:"from-violet-500 to-purple-600", desc:"Planifier + email candidat" },
+    { id:"rh_technique",  label:"Entretien RH + Technique",icon:UserCog,  color:"from-orange-500 to-red-500",   desc:"Créneaux libres communs" },
   ];
 
-  async function openType(tid) {
-    setSelectedType(tid);
-    setStep("note");
-
-    // reset UI
-    setSaved(false);
-    setSaving(false);
-    setDeleting(false);
-
-    // load existing note
-    setLoadingNote(true);
-    try {
-      const res = await api.get(
-        `/candidatures/${candidate._id}/entretien-note?type=${tid}`
-      );
-      const n = res?.data?.note || null;
-
-      if (n) {
-        setExistingNoteId(n.noteId || null);
-        setNoteText(n.note || "");
-        setStars(Number(n.stars || 0));
-      } else {
-        setExistingNoteId(null);
-        setNoteText("");
-        setStars(0);
-      }
-    } catch (e) {
-      console.error("Erreur chargement note:", e);
-      setExistingNoteId(null);
-      setNoteText("");
-      setStars(0);
-    } finally {
-      setLoadingNote(false);
-    }
-  }
-
-  async function handleCreate() {
-    if (!noteText.trim() || !selectedType) return;
-    setSaving(true);
-    setSaved(false);
-
-    try {
-      const res = await api.post(`/candidatures/${candidate._id}/entretien-note`, {
-        type: selectedType,
-        note: noteText.trim(),
-        stars,
-        date: new Date().toISOString(),
-      });
-
-      const created = res?.data?.note;
-      setExistingNoteId(created?.noteId || null);
-
-      setSaved(true);
-      setTimeout(() => setSaved(false), 1200);
-    } catch (e) {
-      console.error("Erreur création note:", e);
-    } finally {
-      setSaving(false);
-    }
-  }
-
-  async function handleUpdate() {
-    if (!noteText.trim() || !existingNoteId || !selectedType) return;
-    setSaving(true);
-    setSaved(false);
-
-    try {
-      await api.patch(
-        `/candidatures/${candidate._id}/entretien-note/${existingNoteId}`,
-        { type: selectedType, note: noteText.trim(), stars }
-      );
-      setSaved(true);
-      setTimeout(() => setSaved(false), 1200);
-    } catch (e) {
-      console.error("Erreur update note:", e);
-    } finally {
-      setSaving(false);
-    }
-  }
-
-  async function handleDelete() {
-    if (!existingNoteId) return;
-
-    const ok = confirm("Supprimer cette note ?");
-    if (!ok) return;
-
-    setDeleting(true);
-    try {
-      await api.delete(
-        `/candidatures/${candidate._id}/entretien-note/${existingNoteId}`
-      );
-      // reset
-      setExistingNoteId(null);
-      setNoteText("");
-      setStars(0);
-      setStep("type");
-    } catch (e) {
-      console.error("Erreur suppression note:", e);
-    } finally {
-      setDeleting(false);
-    }
-  }
-
-  const selectedTypeObj = types.find((t) => t.id === selectedType);
+  const headerColors = {
+    type:          "from-blue-600 to-indigo-600",
+    telephonique:  "from-blue-500 to-cyan-500",
+    rh:            "from-violet-600 to-purple-600",
+    rh_technique:  "from-orange-500 to-red-500",
+  };
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose} />
-
+      <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose}/>
       <div className="relative bg-white dark:bg-gray-900 rounded-3xl shadow-2xl w-full max-w-md overflow-hidden">
         {/* Header */}
-        <div className="bg-gradient-to-r from-blue-600 to-indigo-600 px-6 py-5">
+        <div className={`bg-gradient-to-r ${headerColors[step] || headerColors.type} px-6 py-5`}>
           <div className="flex items-center justify-between">
             <div>
-              <h2 className="text-white font-extrabold text-lg">
-                {step === "type" ? "Planifier un entretien" : "Note après entretien"}
-              </h2>
-              <p className="text-blue-200 text-sm mt-0.5">{name}</p>
+              <h2 className="text-white font-extrabold text-lg">Planifier un entretien</h2>
+              <p className="text-white/70 text-sm mt-0.5">{name}</p>
             </div>
-            <button
-              onClick={onClose}
-              className="w-8 h-8 rounded-full bg-white/20 hover:bg-white/30 flex items-center justify-center transition-colors"
-            >
-              <X className="w-4 h-4 text-white" />
+            <button onClick={onClose} className="w-8 h-8 rounded-full bg-white/20 hover:bg-white/30 flex items-center justify-center transition-colors">
+              <X className="w-4 h-4 text-white"/>
             </button>
           </div>
         </div>
 
-        {/* Step 1 */}
+        {/* Steps */}
         {step === "type" && (
           <div className="p-5 space-y-3">
-            {types.map((t) => (
-              <button
-                key={t.id}
-                onClick={() => openType(t.id)}
-                className="w-full flex items-center gap-4 p-4 rounded-2xl border-2 border-gray-100 dark:border-gray-700 hover:border-blue-200 dark:hover:border-blue-700 hover:bg-blue-50/50 dark:hover:bg-blue-900/20 transition-all group text-left"
-              >
+            {types.map(t => (
+              <button key={t.id} onClick={() => setStep(t.id)}
+                className="w-full flex items-center gap-4 p-4 rounded-2xl border-2 border-gray-100 dark:border-gray-700 hover:border-blue-200 dark:hover:border-blue-700 hover:bg-blue-50/30 dark:hover:bg-blue-900/10 transition-all group text-left">
                 <div className={`w-11 h-11 rounded-xl bg-gradient-to-br ${t.color} flex items-center justify-center shadow-md flex-shrink-0`}>
-                  <t.icon className="w-5 h-5 text-white" />
+                  <t.icon className="w-5 h-5 text-white"/>
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="font-bold text-gray-800 dark:text-white text-sm">{t.label}</p>
                   <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{t.desc}</p>
                 </div>
-                <ChevronRight className="w-4 h-4 text-gray-400 group-hover:text-blue-500 transition-colors flex-shrink-0" />
+                <ChevronRight className="w-4 h-4 text-gray-400 group-hover:text-blue-500 transition-colors flex-shrink-0"/>
               </button>
             ))}
           </div>
         )}
-
-        {/* Step 2 */}
-        {step === "note" && (
-          <div className="p-5">
-            <div className="flex items-center justify-between mb-4">
-              <button
-                onClick={() => setStep("type")}
-                className="text-xs text-gray-400 hover:text-gray-600 flex items-center gap-1"
-              >
-                ← Retour
-              </button>
-
-              {existingNoteId && (
-                <span className="text-xs font-semibold text-blue-600 dark:text-blue-400">
-                  Mode édition
-                </span>
-              )}
-            </div>
-
-            {/* Type card */}
-            {selectedTypeObj && (
-              <div className="flex items-center gap-3 mb-4 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-xl">
-                <div className={`w-9 h-9 rounded-xl bg-gradient-to-br ${selectedTypeObj.color} flex items-center justify-center`}>
-                  <selectedTypeObj.icon className="w-4 h-4 text-white" />
-                </div>
-                <div>
-                  <p className="text-sm font-bold text-gray-800 dark:text-white">
-                    {selectedTypeObj.label}
-                  </p>
-                  <p className="text-xs text-gray-500">
-                    {new Date().toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" })}
-                  </p>
-                </div>
-              </div>
-            )}
-
-            {loadingNote ? (
-              <div className="flex items-center justify-center gap-2 py-10 text-gray-400">
-                <Loader2 className="w-5 h-5 animate-spin" />
-                <span className="text-sm">Chargement de la note...</span>
-              </div>
-            ) : (
-              <>
-                {/* Note */}
-                <div className="mb-4">
-                  <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">
-                    Note du recruteur
-                  </label>
-                  <textarea
-                    value={noteText}
-                    onChange={(e) => setNoteText(e.target.value)}
-                    placeholder="Observations, impressions, points à retenir..."
-                    rows={5}
-                    className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-gray-800 dark:text-white text-sm resize-none focus:outline-none focus:ring-2 focus:ring-blue-400 transition-all"
-                  />
-                  <p className="text-xs text-gray-400 mt-1 text-right">
-                    {noteText.length} caractères
-                  </p>
-                </div>
-
-                <NoteStars stars={stars} onChange={setStars} />
-
-                {/* Actions */}
-                {!existingNoteId ? (
-                  <button
-                    onClick={handleCreate}
-                    disabled={!noteText.trim() || saving}
-                    className={`w-full py-3 rounded-xl font-bold text-sm transition-all flex items-center justify-center gap-2 ${
-                      saved
-                        ? "bg-green-500 text-white"
-                        : "bg-blue-600 hover:bg-blue-700 text-white disabled:opacity-40 disabled:cursor-not-allowed"
-                    }`}
-                  >
-                    {saved ? (
-                      <>
-                        <CheckCircle2 className="w-4 h-4" /> Note sauvegardée !
-                      </>
-                    ) : saving ? (
-                      <>
-                        <Loader2 className="w-4 h-4 animate-spin" /> Sauvegarde...
-                      </>
-                    ) : (
-                      <>
-                        <StickyNote className="w-4 h-4" /> Sauvegarder la note
-                      </>
-                    )}
-                  </button>
-                ) : (
-                  <div className="grid grid-cols-2 gap-3">
-                    <button
-                      onClick={handleUpdate}
-                      disabled={!noteText.trim() || saving}
-                      className={`py-3 rounded-xl font-bold text-sm transition-all flex items-center justify-center gap-2 ${
-                        saved
-                          ? "bg-green-500 text-white col-span-2"
-                          : "bg-blue-600 hover:bg-blue-700 text-white disabled:opacity-40 disabled:cursor-not-allowed"
-                      }`}
-                    >
-                      {saved ? (
-                        <>
-                          <CheckCircle2 className="w-4 h-4" /> Note mise à jour !
-                        </>
-                      ) : saving ? (
-                        <>
-                          <Loader2 className="w-4 h-4 animate-spin" /> Mise à jour...
-                        </>
-                      ) : (
-                        <>
-                          <StickyNote className="w-4 h-4" /> Mettre à jour
-                        </>
-                      )}
-                    </button>
-
-                    {!saved && (
-                      <button
-                        onClick={handleDelete}
-                        disabled={deleting}
-                        className="py-3 rounded-xl font-bold text-sm bg-red-50 hover:bg-red-100 text-red-700 dark:bg-red-900/20 dark:hover:bg-red-900/30 dark:text-red-300 transition-all flex items-center justify-center gap-2 disabled:opacity-50"
-                      >
-                        {deleting ? (
-                          <>
-                            <Loader2 className="w-4 h-4 animate-spin" /> Suppression...
-                          </>
-                        ) : (
-                          <>
-                            <X className="w-4 h-4" /> Supprimer
-                          </>
-                        )}
-                      </button>
-                    )}
-                  </div>
-                )}
-              </>
-            )}
-          </div>
-        )}
+        {step === "telephonique" && <TelephoniqueFlow candidate={candidate} onBack={() => setStep("type")} onClose={onClose}/>}
+        {step === "rh"           && <RHFlow          candidate={candidate} onBack={() => setStep("type")} onClose={onClose} onScheduled={onRHScheduled}/>}
+        {step === "rh_technique" && <RHTechniqueFlow candidate={candidate} onBack={() => setStep("type")} onClose={onClose}/>}
       </div>
     </div>
   );
 }
 
-function NoteStars({ stars, onChange }) {
+function NoteStars({ note }) {
+  const [stars, setStars] = useState(0);
   return (
     <div className="flex items-center gap-2 mb-4">
-      <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">
-        Appréciation :
-      </span>
+      <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">Appréciation :</span>
       <div className="flex gap-1">
-        {[1, 2, 3, 4, 5].map((s) => (
-          <button key={s} type="button" onClick={() => onChange?.(s)}>
-            <Star
-              className={`w-5 h-5 transition-colors ${
-                s <= stars ? "text-yellow-400 fill-yellow-400" : "text-gray-300"
-              }`}
-            />
+        {[1, 2, 3, 4, 5].map(s => (
+          <button key={s} onClick={() => setStars(s)}>
+            <Star className={`w-5 h-5 transition-colors ${s <= stars ? "text-yellow-400 fill-yellow-400" : "text-gray-300"}`} />
           </button>
         ))}
       </div>
     </div>
   );
 }
-function ScheduleInterviewForm({
-  candidate,
-  type,
-  onBack,
-  onClose,
-  onSaved,
-}) {
-  const [date, setDate] = useState("");
-  const [time, setTime] = useState("");
-  const [duration, setDuration] = useState(30);
-  const [mode, setMode] = useState("visio"); // "visio" | "presentiel"
-  const [location, setLocation] = useState("");
-  const [meetingLink, setMeetingLink] = useState("");
-  const [interviewers, setInterviewers] = useState(""); // "nom1, nom2"
-  const [message, setMessage] = useState("");
-  const [sendEmail, setSendEmail] = useState(true);
-
-  const [saving, setSaving] = useState(false);
-
-  const typeLabel =
-    type === "rh"
-      ? "Entretien RH"
-      : type === "rh_technique"
-        ? "Entretien RH + Technique"
-        : "Entretien";
-
-  function buildISO() {
-    // date: "2026-02-21" , time:"14:30"
-    if (!date || !time) return null;
-    return new Date(`${date}T${time}:00`).toISOString();
-  }
-
-  async function handleSubmit(e) {
-    e.preventDefault();
-    const startAt = buildISO();
-    if (!startAt) return;
-
-    setSaving(true);
-    try {
-      // ✅ هنا تحط API route متاعك كي تجهز backend
-      // مثال:
-      // await api.post(`/candidatures/${candidate._id}/interviews`, {
-      //   type,
-      //   startAt,
-      //   durationMinutes: Number(duration),
-      //   mode,
-      //   location: mode === "presentiel" ? location : null,
-      //   meetingLink: mode === "visio" ? meetingLink : null,
-      //   interviewers: interviewers.split(",").map(s => s.trim()).filter(Boolean),
-      //   message,
-      //   sendEmail,
-      // });
-
-      // مؤقت: نخليها fake success
-      await new Promise((r) => setTimeout(r, 500));
-
-      onSaved?.();
-      onClose?.();
-    } catch (err) {
-      console.error("Erreur planification:", err);
-      alert("Erreur lors de la planification");
-    } finally {
-      setSaving(false);
-    }
-  }
-
-  return (
-    <form onSubmit={handleSubmit} className="p-5">
-      <div className="flex items-center justify-between mb-4">
-        <button
-          type="button"
-          onClick={onBack}
-          className="text-xs text-gray-400 hover:text-gray-600 flex items-center gap-1"
-        >
-          ← Retour
-        </button>
-        <span className="text-xs font-semibold text-blue-600 dark:text-blue-400">
-          {typeLabel}
-        </span>
-      </div>
-
-      <div className="space-y-4">
-        {/* Date + Time */}
-        <div className="grid grid-cols-2 gap-3">
-          <div>
-            <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1">
-              Date
-            </label>
-            <input
-              type="date"
-              value={date}
-              onChange={(e) => setDate(e.target.value)}
-              className="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-sm text-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-400"
-              required
-            />
-          </div>
-
-          <div>
-            <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1">
-              Heure
-            </label>
-            <input
-              type="time"
-              value={time}
-              onChange={(e) => setTime(e.target.value)}
-              className="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-sm text-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-400"
-              required
-            />
-          </div>
-        </div>
-
-        {/* Duration */}
-        <div>
-          <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1">
-            Durée (minutes)
-          </label>
-          <select
-            value={duration}
-            onChange={(e) => setDuration(e.target.value)}
-            className="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-sm text-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-400"
-          >
-            {[15, 30, 45, 60, 90].map((m) => (
-              <option key={m} value={m}>
-                {m} min
-              </option>
-            ))}
-          </select>
-        </div>
-
-        {/* Mode */}
-        <div>
-          <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1">
-            Mode
-          </label>
-          <div className="grid grid-cols-2 gap-3">
-            <button
-              type="button"
-              onClick={() => setMode("visio")}
-              className={`px-3 py-2 rounded-xl border text-sm font-semibold transition-all ${
-                mode === "visio"
-                  ? "border-blue-300 bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300"
-                  : "border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200"
-              }`}
-            >
-              Visio
-            </button>
-            <button
-              type="button"
-              onClick={() => setMode("presentiel")}
-              className={`px-3 py-2 rounded-xl border text-sm font-semibold transition-all ${
-                mode === "presentiel"
-                  ? "border-blue-300 bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300"
-                  : "border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200"
-              }`}
-            >
-              Présentiel
-            </button>
-          </div>
-        </div>
-
-        {/* Location / Link */}
-        {mode === "presentiel" ? (
-          <div>
-            <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1">
-              Lieu
-            </label>
-            <input
-              value={location}
-              onChange={(e) => setLocation(e.target.value)}
-              placeholder="Ex: Optylab - Bureau, étage..."
-              className="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-sm text-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-400"
-              required
-            />
-          </div>
-        ) : (
-          <div>
-            <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1">
-              Lien meeting
-            </label>
-            <input
-              value={meetingLink}
-              onChange={(e) => setMeetingLink(e.target.value)}
-              placeholder="https://meet... / teams..."
-              className="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-sm text-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-400"
-              required
-            />
-          </div>
-        )}
-
-        {/* Interviewers */}
-        <div>
-          <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1">
-            Interviewers
-          </label>
-          <input
-            value={interviewers}
-            onChange={(e) => setInterviewers(e.target.value)}
-            placeholder="Ex: Yosr, Nourhene"
-            className="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-sm text-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-400"
-          />
-          <p className="text-[11px] text-gray-400 mt-1">Sépare par virgule.</p>
-        </div>
-
-        {/* Message */}
-        <div>
-          <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1">
-            Message au candidat (optionnel)
-          </label>
-          <textarea
-            value={message}
-            onChange={(e) => setMessage(e.target.value)}
-            rows={3}
-            placeholder="Instructions, documents, etc..."
-            className="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-sm text-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-400 resize-none"
-          />
-        </div>
-
-        {/* Send email */}
-        <label className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-200">
-          <input
-            type="checkbox"
-            checked={sendEmail}
-            onChange={(e) => setSendEmail(e.target.checked)}
-            className="rounded"
-          />
-          Envoyer un email de confirmation
-        </label>
-
-        {/* Submit */}
-        <button
-          type="submit"
-          disabled={saving}
-          className="w-full py-3 rounded-xl font-bold text-sm bg-blue-600 hover:bg-blue-700 text-white transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          {saving ? "Planification..." : "Planifier l’entretien"}
-        </button>
-      </div>
-    </form>
-  );
-}
-
 
 function PreInterviewCard({ c, index }) {
   const [sent, setSent] = useState(() => wasSent(c?._id));
   const [showSendModal, setShowSendModal] = useState(false);
   const [showEntretienModal, setShowEntretienModal] = useState(false);
+  // Stocker l'entretien RH planifié pour remplacer le bouton par un lien
+  const [rhInterview, setRhInterview] = useState(c?.latestRhInterview || null);
 
   const name = getName(c);
   const cvUrl = getCvUrl(c);
@@ -1033,9 +720,8 @@ function PreInterviewCard({ c, index }) {
   const selectedAt = c?.preInterview?.selectedAt;
   const recommendation =
     c?.analysis?.jobMatch?.score?.recommendation ??
-    c?.analysis?.jobMatch?.recommendation ??
-    null;
-  const linkedin = safeStr(c?.linkedin || c?.linkedinUrl || c?.linkedIn);
+    c?.analysis?.jobMatch?.recommendation ?? null;
+
   function handleSuccess() {
     markSent(c._id);
     setSent(true);
@@ -1043,70 +729,41 @@ function PreInterviewCard({ c, index }) {
 
   return (
     <>
-      <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-sm hover:shadow-md transition-all overflow-hidden">
-        {/* BODY */}
+      <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700 shadow-sm hover:shadow-md transition-all overflow-hidden">
+        <div className="h-1 bg-gradient-to-r from-violet-500 to-purple-600" />
+
         <div className="p-5">
-          <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
-            {/* LEFT: Infos candidat */}
-            <div className="flex items-start gap-4 min-w-0 flex-1">
+          <div className="flex items-start justify-between gap-4">
+
+            {/* Avatar + Infos */}
+            <div className="flex items-start gap-4">
               <div className="relative shrink-0">
-                <div
-                  className="w-14 h-14 rounded-full flex items-center justify-center font-extrabold text-xl"
-                  style={{ background: OPTY.mintSoft, color: OPTY.mintText }}
-                >
+                <div className="w-14 h-14 rounded-full bg-violet-100 dark:bg-violet-900/30 flex items-center justify-center text-violet-700 dark:text-violet-300 font-extrabold text-xl">
                   {name?.[0]?.toUpperCase() || "C"}
                 </div>
-                <span
-                  className="absolute -top-1 -left-1 w-5 h-5 rounded-full text-white text-[10px] font-bold flex items-center justify-center shadow"
-                  style={{ background: OPTY.primary }}
-                >
+                <span className="absolute -top-1 -left-1 w-5 h-5 rounded-full bg-violet-600 text-white text-[10px] font-bold flex items-center justify-center">
                   {index + 1}
                 </span>
               </div>
 
-              <div className="min-w-0">
-                <h2 className="text-lg font-extrabold text-slate-900 dark:text-white truncate">{name}</h2>
-
+              <div>
+                <h2 className="text-lg font-extrabold text-gray-900 dark:text-white">{name}</h2>
                 <div className="flex items-center gap-1.5 mt-1">
-                  <Briefcase className="w-3.5 h-3.5 text-slate-400" />
-                  <p className="text-sm text-slate-500 dark:text-slate-400 truncate">{jobTitle}</p>
+                  <Briefcase className="w-3.5 h-3.5 text-gray-400" />
+                  <p className="text-sm text-gray-500 dark:text-gray-400">{jobTitle}</p>
                 </div>
-
                 <div className="flex flex-wrap gap-3 mt-2">
                   {email && (
-                    <a
-                      href={`mailto:${email}`}
-                      className="inline-flex items-center gap-2 text-xs rounded-lg px-2.5 py-2 border bg-white dark:bg-slate-800"
-                      style={{ borderColor: OPTY.mintBorder, color: OPTY.mintText }}
-                      title={email}
-                    >
-                      <Mail className="w-4 h-4" />
-                      <span className="truncate">{email}</span>
+                    <a href={`mailto:${email}`} className="inline-flex items-center gap-1 text-xs text-blue-600 dark:text-blue-400 hover:underline">
+                      <Mail className="w-3.5 h-3.5" />{email}
                     </a>
                   )}
-
                   {telephone && (
-                    <div
-                      className="inline-flex items-center gap-2 text-xs rounded-lg px-2.5 py-2 border bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300"
-                      style={{ borderColor: OPTY.mintBorder }}
-                      title={telephone}
-                    >
-                      <Phone className="w-4 h-4 text-slate-400" />
-                      <span className="truncate">{telephone}</span>
-                    </div>
-                  )}
-                  {linkedin && (
-                    <a
-                      href={linkedin.startsWith("http") ? linkedin : `https://${linkedin}`}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="inline-flex items-center gap-1 text-xs text-blue-500 hover:underline"
-                    >
-                      <LinkedinIcon className="w-3.5 h-3.5" />LinkedIn
-                    </a>
+                    <span className="inline-flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400">
+                      <Phone className="w-3.5 h-3.5" />{telephone}
+                    </span>
                   )}
                 </div>
-
                 {cvUrl && (
                   <a href={cvUrl} target="_blank" rel="noreferrer"
                     className="inline-flex items-center gap-1.5 mt-2 text-sm font-medium text-green-700 dark:text-emerald-400 hover:text-green-800">
@@ -1119,6 +776,7 @@ function PreInterviewCard({ c, index }) {
 
             {/* Score + Boutons */}
             <div className="flex flex-col items-end gap-3 shrink-0">
+              {/* Match Score */}
               <div className="text-right">
                 <p className="text-[10px] font-semibold text-gray-400 uppercase mb-1">Match Score</p>
                 <div className={`text-2xl font-extrabold px-3 py-1 rounded-xl ${scoreBg(score)}`}>
@@ -1129,6 +787,7 @@ function PreInterviewCard({ c, index }) {
                 )}
               </div>
 
+              {/* Date sélection */}
               {selectedAt && (
                 <div className="inline-flex items-center gap-1 text-xs text-violet-600 dark:text-violet-400 bg-violet-50 dark:bg-violet-900/20 px-2.5 py-1 rounded-full">
                   <Clock className="w-3 h-3" />
@@ -1137,7 +796,6 @@ function PreInterviewCard({ c, index }) {
               )}
 
               {/* ── BOUTONS ── */}
-
               <div className="flex flex-col gap-2 w-full min-w-[190px]">
 
                 {/* 1. Envoyer — disabled si déjà envoyé */}
@@ -1156,14 +814,37 @@ function PreInterviewCard({ c, index }) {
                   </button>
                 )}
 
-                {/* 2. Planifier entretien */}
-                <button
-                  onClick={() => setShowEntretienModal(true)}
-                  className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-blue-500 hover:bg-blue-600 text-white text-sm font-semibold transition-colors shadow-sm w-full"
-                >
-                  <Calendar className="w-4 h-4" />
-                  Planifier Entretien
-                </button>
+                {/* 2. Planifier entretien / lien si déjà planifié RH */}
+                {rhInterview ? (
+                  <div className="flex flex-col gap-1.5 w-full">
+                    {/* Entretien planifié → lien direct vers le calendrier */}
+                    <a
+                      href={`/recruiter/calendar`}
+                      className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-700 text-green-700 dark:text-green-400 text-sm font-semibold w-full hover:bg-green-100 transition-colors"
+                    >
+                      <CheckCircle2 className="w-4 h-4" />
+                      Voir dans le calendrier
+                    </a>
+                    <p className="text-[11px] text-gray-400 text-center">
+                      {rhInterview.date ? new Date(rhInterview.date).toLocaleDateString("fr-FR", { weekday:"short", day:"numeric", month:"short" }) + " · " + rhInterview.time : "Entretien RH planifié"}
+                    </p>
+                    <button
+                      onClick={() => setShowEntretienModal(true)}
+                      className="inline-flex items-center justify-center gap-1.5 text-[11px] text-gray-400 hover:text-violet-500 w-full py-1 transition-colors"
+                    >
+                      <Calendar className="w-3 h-3" />
+                      Planifier un autre
+                    </button>
+                  </div>
+                ) : (
+                  <button
+                    onClick={() => setShowEntretienModal(true)}
+                    className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-blue-500 hover:bg-blue-600 text-white text-sm font-semibold transition-colors shadow-sm w-full"
+                  >
+                    <Calendar className="w-4 h-4" />
+                    Planifier Entretien
+                  </button>
+                )}
 
                 {/* 3. Voir les résultats */}
                 <Link
@@ -1177,43 +858,9 @@ function PreInterviewCard({ c, index }) {
             </div>
           </div>
         </div>
-
-        {/* FOOTER ACTIONS */}
-        <div
-          className="px-5 py-4 border-t flex flex-col sm:flex-row gap-2 sm:items-center sm:justify-end bg-white dark:bg-slate-900"
-          style={{ borderColor: OPTY.mintBorder }}
-        >
-          <button
-            onClick={() => setShowSendModal(true)}
-            className={`inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold transition-all shadow-sm border ${sent
-              ? "bg-emerald-100 dark:bg-emerald-900/25 text-emerald-800 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800"
-              : "text-white border-transparent"
-              }`}
-            style={sent ? undefined : { background: OPTY.primary }}
-            onMouseEnter={(e) => {
-              if (!sent) e.currentTarget.style.background = OPTY.primaryHover;
-            }}
-            onMouseLeave={(e) => {
-              if (!sent) e.currentTarget.style.background = OPTY.primary;
-            }}
-          >
-            {sent ? (
-              <>
-                <CheckCircle2 className="w-4 h-4" />
-                Documents envoyés
-              </>
-            ) : (
-              <>
-                <Send className="w-4 h-4" />
-                Envoyer (fiche / quiz)
-              </>
-            )}
-          </button>
-
-        </div>
       </div>
 
-      {/* Modal */}
+      {/* Modal envoi */}
       {showSendModal && (
         <SendDocumentsModal
           candidature={c}
@@ -1226,6 +873,7 @@ function PreInterviewCard({ c, index }) {
         <EntretienModal
           candidate={c}
           onClose={() => setShowEntretienModal(false)}
+          onRHScheduled={(iv) => { setRhInterview(iv); setShowEntretienModal(false); }}
         />
       )}
     </>
@@ -1275,85 +923,65 @@ export default function PreInterviewListPage() {
 
   return (
     <div className="min-h-screen bg-[#F0FAF0] dark:bg-gray-950 transition-colors duration-300">
-      {/* Header sticky */}
-      <div className="sticky top-0 z-30 bg-[#F0FAF0]/90 dark:bg-gray-950/90 backdrop-blur-md">
-        <div className="max-w-5xl mx-auto px-6 pt-5 pb-4">
-          <a
-            href="/recruiter/CandidatureAnalysis"
-            className="inline-flex items-center gap-1.5 text-sm text-gray-500 dark:text-gray-400 hover:text-gray-700 mb-3 transition-colors"
-          >
-            <ArrowLeft className="w-4 h-4" />
-            Retour à l'analyse candidatures
-          </a>
+      <div className="max-w-4xl mx-auto px-4 py-8 space-y-6">
 
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
-                <UserCheck className="w-5 h-5 text-green-600 dark:text-green-400" />
-              </div>
-              <div>
-                <h1 className="text-2xl font-extrabold text-gray-900 dark:text-white">Candidats Pré-sélectionnés</h1>
-                <p className="text-sm text-gray-500 dark:text-gray-400">
-                  {loading
-                    ? "Chargement..."
-                    : `${candidates.length} candidat${candidates.length > 1 ? "s" : ""} prêt${candidates.length > 1 ? "s" : ""} pour entretien`}
-                </p>
-              </div>
-            </div>
-            {!loading && candidates.length > 0 && (
-              <div className="hidden md:flex items-center gap-2 bg-green-500 text-white px-4 py-2 rounded-full text-sm font-semibold">
-                <UserCheck className="w-4 h-4" />
-                {candidates.length} pré-sélectionné{candidates.length > 1 ? "s" : ""}
-              </div>
-            )}
-          </div>
-
-          {!loading && candidates.length > 0 && (
-            <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700 shadow-sm p-3">
-              <div className="flex items-center gap-2 border border-gray-200 dark:border-gray-600 rounded-xl px-3 py-2 bg-white dark:bg-gray-700">
-                <Search className="w-4 h-4 text-gray-400" />
-                <input
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                  placeholder="Rechercher un candidat (nom, email, job)..."
-                  className="w-full outline-none text-sm bg-transparent text-gray-800 dark:text-gray-100 placeholder-gray-400"
-                />
-              </div>
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* Contenu */}
-      <div className="max-w-5xl mx-auto px-6 pb-10 pt-4">
-        {loading ? (
-          <div className="bg-white dark:bg-gray-800 rounded-2xl p-10 text-center">
-            <div className="w-10 h-10 border-4 border-violet-200 border-t-violet-600 rounded-full animate-spin mx-auto mb-4" />
-            <p className="text-gray-500 dark:text-gray-400">Chargement des candidats pré-sélectionnés...</p>
-          </div>
-        ) : candidates.length === 0 ? (
-          <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700 shadow-sm p-16 text-center">
-            <div className="w-16 h-16 rounded-full bg-violet-50 dark:bg-violet-900/20 flex items-center justify-center mx-auto mb-4">
-              <UserCheck className="w-8 h-8 text-violet-300 dark:text-violet-600" />
-            </div>
-            <h2 className="text-xl font-extrabold text-gray-800 dark:text-white mb-2">Aucun candidat pré-sélectionné</h2>
-            <p className="text-gray-400 text-sm mb-6 max-w-sm mx-auto">
-              Retournez sur la page d'analyse et cliquez sur{" "}
-              <span className="font-semibold text-violet-500">Pré-entretien</span>{" "}
-              sur les candidats que vous souhaitez retenir.
+        {/* Header */}
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <Link
+              href="/recruiter/CandidatureAnalysis"
+              className="inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 font-medium mb-3 transition-colors"
+            >
+              <ArrowLeft className="w-4 h-4" /> Retour à l'analyse candidatures
+            </Link>
+            <h1 className="text-3xl font-extrabold text-gray-900 dark:text-white flex items-center gap-3">
+              <UserCheck className="w-8 h-8 text-violet-500" />
+              Candidats Pré-sélectionnés
+            </h1>
+            <p className="text-gray-500 dark:text-gray-400 mt-1">
+              {candidates.length} candidat{candidates.length > 1 ? "s" : ""} prêt{candidates.length > 1 ? "s" : ""} pour entretien
             </p>
-            <a href="/recruiter/CandidatureAnalysis"
-              className="inline-flex items-center gap-2 px-6 py-3 bg-violet-600 hover:bg-violet-700 text-white rounded-full font-semibold text-sm transition-colors">
-              <ArrowLeft className="w-4 h-4" />Aller à l'analyse
-            </a>
           </div>
-        ) : filtered.length === 0 ? (
-          <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700 p-10 text-center">
-            <p className="text-gray-500">Aucun résultat pour "{search}"</p>
+          <div className="inline-flex items-center gap-2 px-4 py-2 bg-violet-100 dark:bg-violet-900/30 text-violet-700 dark:text-violet-400 rounded-full font-semibold text-sm shrink-0">
+            <UserCheck className="w-4 h-4" />
+            {candidates.length} pré-sélectionné{candidates.length > 1 ? "s" : ""}
+          </div>
+        </div>
+
+        {/* Search */}
+        <div className="relative">
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+          <input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Rechercher un candidat (nom, email, job)..."
+            className="w-full pl-11 pr-4 py-3 rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-sm text-gray-800 dark:text-gray-100 outline-none focus:ring-2 focus:ring-violet-400 transition-colors"
+          />
+        </div>
+
+        {/* Banner info */}
+        {candidates.length > 0 && (
+          <div className="flex items-center justify-between px-4 py-3 bg-violet-50 dark:bg-violet-900/20 rounded-2xl border border-violet-100 dark:border-violet-800 text-sm">
+            <span className="flex items-center gap-2 text-violet-700 dark:text-violet-300 font-medium">
+              <UserCheck className="w-4 h-4" />
+              <strong>{candidates.length} candidats</strong> sélectionnés pour pré-entretien
+            </span>
+            <span className="text-violet-500 dark:text-violet-400 text-xs hidden sm:block">
+              Envoyez les documents ou planifiez leurs entretiens
+            </span>
+          </div>
+        )}
+
+        {/* Liste */}
+        {filtered.length === 0 ? (
+          <div className="text-center py-16 text-gray-400">
+            <UserCheck className="w-12 h-12 mx-auto mb-3 opacity-30" />
+            <p className="font-medium">
+              {search ? "Aucun candidat trouvé" : "Aucun candidat pré-sélectionné"}
+            </p>
           </div>
         ) : (
-          <div className="space-y-4 mt-2">
-        
+          <div className="space-y-4">
             {filtered.map((c, i) => (
               <PreInterviewCard key={c._id} c={c} index={i} />
             ))}
