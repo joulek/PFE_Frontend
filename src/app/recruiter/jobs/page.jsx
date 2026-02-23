@@ -1,32 +1,24 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import {
   getJobs,
   getAllJobs,
-  getPendingJobs,
-  createJob,
-  updateJob,
-  deleteJob,
-  confirmJob,
-  rejectJob,
-  reactivateJob,
+  createJob, // اختياري (Nouvelle offre)
+  updateJob, // اختياري (Nouvelle offre)
 } from "../../services/job.api";
-import JobModal from "./JobModal";
-import { getUsers } from "../../services/ResponsableMetier.api";
-import DeleteJobModal from "./DeleteJobModal";
+import JobModal from "./JobModal"; // اختياري (Nouvelle offre)
+import { getUsers } from "../../services/ResponsableMetier.api"; // اختياري
 import Pagination from "../../components/Pagination";
 import {
-  Trash2,
-  Edit2,
   CheckCircle2,
   XCircle,
   Clock,
   Briefcase,
   Calendar,
   CalendarClock,
-    MapPin,
-
+  MapPin,
 } from "lucide-react";
 
 /* ================= UTILS ================= */
@@ -39,6 +31,21 @@ function getJobStatus(job) {
   const s = (job.status || "").toString().toUpperCase().trim();
   if (s === "CONFIRMEE" || s === "REJETEE" || s === "EN_ATTENTE") return s;
   return "EN_ATTENTE";
+}
+
+// ✅ robust (date-only) باش ما تتلخبطش بالtimezone
+function isExpired(job) {
+  if (!job?.dateCloture) return false;
+
+  const d = new Date(job.dateCloture);
+  if (Number.isNaN(d.getTime())) return false;
+
+  const end = new Date(d.getFullYear(), d.getMonth(), d.getDate(), 23, 59, 59);
+  return end < new Date();
+}
+
+function isInactive(job) {
+  return isExpired(job);
 }
 
 /* ================= STATUS CONFIG ================= */
@@ -66,21 +73,42 @@ const STATUS_CONFIG = {
   },
 };
 
-function StatusBadge({ status }) {
+// ✅ badge Expirée (couleur différente)
+const EXPIRED_BADGE = {
+  label: "Expirée",
+  bg: "bg-gray-100 dark:bg-gray-700",
+  text: "text-gray-700 dark:text-gray-200",
+  border: "border-gray-300 dark:border-gray-600",
+};
+
+function StatusBadges({ status, expired }) {
   const config = STATUS_CONFIG[status] || STATUS_CONFIG.EN_ATTENTE;
   const Icon = config.icon;
 
   return (
-    <span
-      className={`inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1 rounded-full border ${config.bg} ${config.text} ${config.border}`}
-    >
-      <Icon size={13} />
-      {config.label}
-    </span>
+    <div className="flex flex-wrap items-center justify-end gap-2">
+      <span
+        className={`inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1 rounded-full border
+        ${config.bg} ${config.text} ${config.border}`}
+      >
+        <Icon size={13} />
+        {config.label}
+      </span>
+
+      {/* ✅ show Expirée only when CONFIRMEE + expired */}
+      {status === "CONFIRMEE" && expired && (
+        <span
+          className={`inline-flex items-center text-xs font-semibold px-3 py-1 rounded-full border
+          ${EXPIRED_BADGE.bg} ${EXPIRED_BADGE.text} ${EXPIRED_BADGE.border}`}
+        >
+          {EXPIRED_BADGE.label}
+        </span>
+      )}
+    </div>
   );
 }
 
-/* ================= TABS ================= */
+/* ================= TABS (filters) ================= */
 const TABS = [
   { key: "all", label: "Toutes" },
   { key: "EN_ATTENTE", label: "En attente" },
@@ -92,58 +120,21 @@ const TABS = [
 /* ================= PAGE ================= */
 export default function JobsPage() {
   const [jobs, setJobs] = useState([]);
+
+  // (اختياري) Nouvelle offre
   const [modalOpen, setModalOpen] = useState(false);
   const [editingJob, setEditingJob] = useState(null);
 
-  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
-  const [jobToDelete, setJobToDelete] = useState(null);
-
+  // users اختياري
   const [users, setUsers] = useState([]);
+
+  // filters
   const [activeTab, setActiveTab] = useState("all");
-
-  const [expandedJobs, setExpandedJobs] = useState({});
-  const [actionLoading, setActionLoading] = useState(null);
-
-  const [rejectModalOpen, setRejectModalOpen] = useState(false);
-  const [jobToReject, setJobToReject] = useState(null);
-  const [rejectReason, setRejectReason] = useState("");
-
-  const [reactivateModalOpen, setReactivateModalOpen] = useState(false);
-  const [jobToReactivate, setJobToReactivate] = useState(null);
-  const [newClosingDate, setNewClosingDate] = useState("");
 
   // Pagination
   const [page, setPage] = useState(1);
   const pageSize = 6;
 
-  function isExpired(job) {
-    if (!job.dateCloture) return false;
-    return new Date(job.dateCloture) < new Date();
-  }
-
-  function isInactive(job) {
-    return isExpired(job);
-  }
-
-  async function handleReactivate() {
-    if (!jobToReactivate || !newClosingDate) return;
-
-    setActionLoading(jobToReactivate._id);
-
-    try {
-      await reactivateJob(jobToReactivate._id, newClosingDate);
-      await loadJobs();
-    } catch (err) {
-      console.error("Erreur réactivation:", err);
-    } finally {
-      setActionLoading(null);
-      setReactivateModalOpen(false);
-      setJobToReactivate(null);
-      setNewClosingDate("");
-    }
-  }
-
-  /* ---- loaders ---- */
   async function loadJobs() {
     try {
       const res = await getAllJobs();
@@ -154,6 +145,7 @@ export default function JobsPage() {
         setJobs(res.data || []);
       } catch (err) {
         console.error("Impossible de charger les offres", err);
+        setJobs([]);
       }
     }
   }
@@ -164,12 +156,12 @@ export default function JobsPage() {
       const list = Array.isArray(res?.data)
         ? res.data
         : Array.isArray(res?.data?.users)
-          ? res.data.users
-          : Array.isArray(res?.data?.data)
-            ? res.data.data
-            : Array.isArray(res?.data?.data?.users)
-              ? res.data.data.users
-              : [];
+        ? res.data.users
+        : Array.isArray(res?.data?.data)
+        ? res.data.data
+        : Array.isArray(res?.data?.data?.users)
+        ? res.data.data.users
+        : [];
       setUsers(list);
     } catch {
       setUsers([]);
@@ -179,17 +171,16 @@ export default function JobsPage() {
   useEffect(() => {
     (async () => {
       await loadJobs();
-      await loadUsers();
+      await loadUsers(); // اختياري
     })();
   }, []);
 
-  /* ---- handlers ---- */
+  // (اختياري) create/update للـ Nouvelle offre
   async function handleCreate(data) {
     await createJob(data);
     setModalOpen(false);
     loadJobs();
   }
-
   async function handleUpdate(data) {
     await updateJob(editingJob._id, data);
     setEditingJob(null);
@@ -197,45 +188,11 @@ export default function JobsPage() {
     loadJobs();
   }
 
-  async function handleConfirm(jobId) {
-    setActionLoading(jobId);
-    try {
-      await confirmJob(jobId);
-      await loadJobs();
-    } catch (err) {
-      console.error("Erreur confirmation:", err);
-    } finally {
-      setActionLoading(null);
-    }
-  }
-
-  async function handleReject() {
-    if (!jobToReject) return;
-    setActionLoading(jobToReject._id);
-    try {
-      await rejectJob(jobToReject._id, rejectReason || undefined);
-      await loadJobs();
-    } catch (err) {
-      console.error("Erreur rejet:", err);
-    } finally {
-      setActionLoading(null);
-      setRejectModalOpen(false);
-      setJobToReject(null);
-      setRejectReason("");
-    }
-  }
-
-  function toggleReadMore(jobId) {
-    setExpandedJobs((prev) => ({
-      ...prev,
-      [jobId]: !prev[jobId],
-    }));
-  }
-
   const normalizedJobs = useMemo(() => {
     return jobs.map((j) => ({
       ...j,
       _normalizedStatus: getJobStatus(j),
+      _expired: isExpired(j),
     }));
   }, [jobs]);
 
@@ -250,7 +207,6 @@ export default function JobsPage() {
   }, [normalizedJobs, activeTab]);
 
   const totalPages = Math.max(1, Math.ceil(filteredJobs.length / pageSize));
-
   const paginatedJobs = useMemo(() => {
     const start = (page - 1) * pageSize;
     return filteredJobs.slice(start, start + pageSize);
@@ -281,19 +237,6 @@ export default function JobsPage() {
     setPage(1);
   }, [activeTab]);
 
-  function getCreatorName(job) {
-    if (!job.createdBy) return null;
-    const creatorId =
-      typeof job.createdBy === "string"
-        ? job.createdBy
-        : job.createdBy?._id || job.createdBy?.toString();
-
-    const u = users.find(
-      (user) => user._id === creatorId || user._id?.toString() === creatorId
-    );
-    return u ? `${u.prenom || ""} ${u.nom || ""}`.trim() || u.email : null;
-  }
-
   return (
     <div className="min-h-screen bg-[#F0FAF0] dark:bg-gray-950 transition-colors duration-300">
       <div className="max-w-6xl mx-auto px-6 pt-10 pb-16">
@@ -308,6 +251,7 @@ export default function JobsPage() {
             </p>
           </div>
 
+          {/* ✅ (اختياري) Nouvelle offre */}
           <button
             onClick={() => {
               setEditingJob(null);
@@ -320,7 +264,7 @@ export default function JobsPage() {
           </button>
         </div>
 
-        {/* TABS */}
+        {/* FILTERS (TABS) */}
         <div className="flex gap-2 mb-8 flex-wrap">
           {TABS.map((tab) => {
             const isActive = activeTab === tab.key;
@@ -331,17 +275,19 @@ export default function JobsPage() {
                 key={tab.key}
                 onClick={() => setActiveTab(tab.key)}
                 className={`px-5 py-2.5 rounded-full text-sm font-semibold transition-all duration-200
-                  ${isActive
-                    ? "bg-[#6CB33F] dark:bg-emerald-600 text-white shadow-md shadow-green-500/20"
-                    : "bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 border border-gray-200 dark:border-gray-700 hover:border-[#6CB33F] dark:hover:border-emerald-500"
+                  ${
+                    isActive
+                      ? "bg-[#6CB33F] dark:bg-emerald-600 text-white shadow-md shadow-green-500/20"
+                      : "bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 border border-gray-200 dark:border-gray-700 hover:border-[#6CB33F] dark:hover:border-emerald-500"
                   }`}
               >
                 {tab.label}
                 <span
-                  className={`ml-2 text-xs px-2 py-0.5 rounded-full ${isActive
+                  className={`ml-2 text-xs px-2 py-0.5 rounded-full ${
+                    isActive
                       ? "bg-white/20 text-white"
                       : "bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400"
-                    }`}
+                  }`}
                 >
                   {count}
                 </span>
@@ -353,179 +299,62 @@ export default function JobsPage() {
         {/* JOBS GRID */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {paginatedJobs.map((job) => {
-            const isExpanded = !!expandedJobs[job._id];
-            const hasLongDescription = (job.description || "").length > 160;
             const status = job._normalizedStatus;
-            const isPending = status === "EN_ATTENTE";
-            const isLoading = actionLoading === job._id;
-            const creatorName = getCreatorName(job);
-            const expired = isExpired(job);
+            const expired = job._expired;
 
             return (
               <div
                 key={job._id}
                 className="bg-white dark:bg-gray-800 rounded-2xl shadow p-6 flex flex-col hover:shadow-lg transition-all duration-300"
               >
+                {/* title + badges */}
                 <div className="flex items-start justify-between gap-3 mb-2">
                   <h3 className="text-xl font-semibold text-gray-800 dark:text-white">
                     {job.titre}
                   </h3>
-                  <StatusBadge status={status} />
+                  <StatusBadges status={status} expired={expired} />
                 </div>
 
-                {creatorName && (
-                  <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">
-                    Créée par :{" "}
-                    <span className="font-semibold">{creatorName}</span>
-                  </p>
-                )}
-
-                <p
-                  className={`text-gray-600 dark:text-gray-300 text-sm mb-2 whitespace-pre-line ${!isExpanded ? "line-clamp-3" : ""
-                    }`}
-                >
-                  {job.description}
+                {/* description short */}
+                <p className="text-gray-600 dark:text-gray-300 text-sm mb-4 line-clamp-3 whitespace-pre-line">
+                  {job.description || "—"}
                 </p>
-
-                {hasLongDescription && (
-                  <button
-                    onClick={() => toggleReadMore(job._id)}
-                    className="text-sm text-[#4E8F2F] dark:text-emerald-400 font-semibold hover:underline self-start"
-                  >
-                    {isExpanded ? "Réduire ↑" : "Lire la suite →"}
-                  </button>
-                )}
-
-                {/* HARD SKILLS */}
-                {Array.isArray(job.hardSkills) && job.hardSkills.length > 0 && (
-                  <div className="mt-4">
-                    <p className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1">
-                      Hard Skills
-                    </p>
-                    <div className="flex flex-wrap gap-2">
-                      {job.hardSkills.map((skill, i) => (
-                        <span
-                          key={i}
-                          className="bg-[#E9F5E3] dark:bg-gray-700 text-[#4E8F2F] dark:text-emerald-400 text-xs font-medium px-3 py-1 rounded-full border border-[#d7ebcf] dark:border-gray-600"
-                        >
-                          {skill}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {/* SOFT SKILLS */}
-                {Array.isArray(job.softSkills) && job.softSkills.length > 0 && (
-                  <div className="mt-3 mb-4">
-                    <p className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1">
-                      Soft Skills
-                    </p>
-                    <div className="flex flex-wrap gap-2">
-                      {job.softSkills.map((skill, i) => (
-                        <span
-                          key={i}
-                          className="bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-300 text-xs font-medium px-3 py-1 rounded-full border border-blue-100 dark:border-blue-900"
-                        >
-                          {skill}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                )}
 
                 <div className="border-t border-gray-100 dark:border-gray-700 my-4" />
 
-                <div className="flex items-center justify-between mt-auto gap-4">
-                  <div className="text-sm text-gray-500 dark:text-gray-400 space-y-1">
-                    <div className="flex items-center gap-2">
-                      {job.lieu && (
-                        <span className="flex items-center gap-1">
-                          <MapPin className="w-4 h-4 text-gray-500 dark:text-gray-400" />
-                          <span>{job.lieu}</span>
-                        </span>
-                      )}
-                    </div>
+                {/* meta + details button aligned */}
+                <div className="mt-1 flex items-end justify-between gap-4">
+                  {/* LEFT: infos */}
+                  <div className="text-sm text-gray-500 dark:text-gray-400 space-y-2">
+                    {job.lieu && (
+                      <div className="flex items-center gap-2">
+                        <MapPin className="w-4 h-4 text-gray-400 dark:text-gray-500" />
+                        <span>{job.lieu}</span>
+                      </div>
+                    )}
 
                     <div className="flex items-center gap-2">
-                      <Calendar size={16} className="text-gray-400 dark:text-gray-500" />
+                      <Calendar className="w-4 h-4 text-gray-400 dark:text-gray-500" />
                       <span>Créée : {formatDate(job.createdAt)}</span>
                     </div>
 
                     <div className="flex items-center gap-2">
-                      <CalendarClock size={16} className="text-gray-400 dark:text-gray-500" />
+                      <CalendarClock className="w-4 h-4 text-gray-400 dark:text-gray-500" />
                       <span>Clôture : {formatDate(job.dateCloture)}</span>
                     </div>
                   </div>
 
-                  {/* ✅ FIX MOBILE ACTIONS */}
-                  <div className="flex flex-wrap items-center justify-end gap-2 w-full sm:w-auto">
-                    {isPending && (
-                      <>
-                        <button
-                          onClick={() => handleConfirm(job._id)}
-                          disabled={isLoading}
-                          title="Confirmer cette offre"
-                          className="h-10 w-10 rounded-full grid place-items-center bg-green-100 dark:bg-emerald-900/30 text-green-700 dark:text-emerald-400 hover:bg-green-200 dark:hover:bg-emerald-800/50 transition-colors disabled:opacity-50"
-                        >
-                          <CheckCircle2 size={20} />
-                        </button>
-
-                        <button
-                          onClick={() => {
-                            setJobToReject(job);
-                            setRejectReason("");
-                            setRejectModalOpen(true);
-                          }}
-                          disabled={isLoading}
-                          title="Rejeter cette offre"
-                          className="h-10 w-10 rounded-full grid place-items-center bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 hover:bg-red-200 dark:hover:bg-red-800/50 transition-colors disabled:opacity-50"
-                        >
-                          <XCircle size={20} />
-                        </button>
-                      </>
-                    )}
-
-                    <button
-                      onClick={() => {
-                        setEditingJob(job);
-                        setModalOpen(true);
-                      }}
-                      title="Modifier"
-                      className="h-9 w-9 rounded-full grid place-items-center text-[#4E8F2F] dark:text-emerald-400 hover:bg-green-100 dark:hover:bg-emerald-900/30 transition-colors"
-                    >
-                      <Edit2 size={17} />
-                    </button>
-
-                    <button
-                      onClick={() => {
-                        setJobToDelete(job);
-                        setDeleteModalOpen(true);
-                      }}
-                      title="Supprimer"
-                      className="h-9 w-9 rounded-full grid place-items-center text-red-500 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-900/30 transition-colors"
-                    >
-                      <Trash2 size={17} />
-                    </button>
-
-                    {/* ✅ Bouton réactiver devient full width en mobile */}
-                    {expired && (
-                      <button
-                        onClick={() => {
-                          setJobToReactivate(job);
-                          setNewClosingDate("");
-                          setReactivateModalOpen(true);
-                        }}
-                        title="Réactiver cette offre"
-                        className="h-9 px-4 rounded-full bg-blue-100 dark:bg-blue-900/30
-                                   text-blue-700 dark:text-blue-400 hover:bg-blue-200 dark:hover:bg-blue-800/50
-                                   transition-colors text-sm font-semibold
-                                   w-full sm:w-auto"
-                      >
-                        Réactiver
-                      </button>
-                    )}
-                  </div>
+                  {/* RIGHT: button */}
+                  <Link
+                    href={`/recruiter/jobs/${job._id}`}
+                    className="h-10 px-6 rounded-full font-semibold text-sm
+                               inline-flex items-center justify-center shrink-0
+                               bg-[#6CB33F] hover:bg-[#4E8F2F]
+                               dark:bg-emerald-600 dark:hover:bg-emerald-500
+                               text-white transition-colors"
+                  >
+                    Détails
+                  </Link>
                 </div>
               </div>
             );
@@ -541,17 +370,22 @@ export default function JobsPage() {
           )}
         </div>
 
+        {/* Pagination */}
         {filteredJobs.length > 0 && (
           <div className="mt-10 flex items-center justify-between text-sm text-gray-500 dark:text-gray-400">
             <p>
               Total: {filteredJobs.length} offre(s) — Page {page} / {totalPages}
             </p>
-            <Pagination currentPage={page} totalPages={totalPages} onPageChange={setPage} />
+            <Pagination
+              currentPage={page}
+              totalPages={totalPages}
+              onPageChange={setPage}
+            />
           </div>
         )}
       </div>
 
-      {/* MODALS */}
+      {/* ✅ (اختياري) JobModal */}
       <JobModal
         open={modalOpen}
         onClose={() => setModalOpen(false)}
@@ -559,210 +393,6 @@ export default function JobsPage() {
         initialData={editingJob}
         users={users}
       />
-
-      <DeleteJobModal
-        open={deleteModalOpen}
-        job={jobToDelete}
-        onClose={() => setDeleteModalOpen(false)}
-        onConfirm={async () => {
-          await deleteJob(jobToDelete._id);
-          setDeleteModalOpen(false);
-          loadJobs();
-        }}
-      />
-
-      {/* REJECT MODAL */}
-      {rejectModalOpen && (
-        <div
-          className="fixed inset-0 z-50 bg-black/40 dark:bg-black/60 flex items-center justify-center px-4"
-          onMouseDown={(e) => {
-            if (e.target === e.currentTarget) setRejectModalOpen(false);
-          }}
-        >
-          <div className="bg-white dark:bg-gray-800 w-full max-w-lg rounded-[32px] shadow-2xl overflow-hidden">
-            <div className="px-8 pt-7 pb-5">
-              <div className="flex items-start justify-between">
-                <div>
-                  <h2 className="text-2xl font-extrabold text-gray-900 dark:text-white">
-                    Rejeter l'offre
-                  </h2>
-                  <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                    {jobToReject?.titre}
-                  </p>
-                </div>
-
-                <button
-                  onClick={() => {
-                    setRejectModalOpen(false);
-                    setJobToReject(null);
-                  }}
-                  className="h-10 w-10 rounded-full grid place-items-center text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-                >
-                  ✕
-                </button>
-              </div>
-            </div>
-
-            <div className="border-t border-gray-200 dark:border-gray-700" />
-
-            <div className="px-8 py-6">
-              <label className="block text-xs font-semibold tracking-wide text-gray-700 dark:text-gray-300 mb-2 uppercase">
-                Motif du rejet (optionnel)
-              </label>
-
-              <textarea
-                rows={3}
-                value={rejectReason}
-                onChange={(e) => setRejectReason(e.target.value)}
-                placeholder="Expliquez pourquoi cette offre est rejetée..."
-                className="w-full px-5 py-4 rounded-2xl border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 resize-none focus:border-red-400 dark:focus:border-red-500 focus:ring-4 focus:ring-red-500/10 outline-none transition-colors"
-              />
-
-              <div className="flex justify-end gap-4 pt-6">
-                <button
-                  onClick={() => {
-                    setRejectModalOpen(false);
-                    setJobToReject(null);
-                  }}
-                  className="h-12 px-8 rounded-full border border-gray-200 dark:border-gray-600 text-gray-800 dark:text-gray-200 font-semibold hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
-                >
-                  Annuler
-                </button>
-
-                <button
-                  onClick={handleReject}
-                  disabled={actionLoading === jobToReject?._id}
-                  className="h-12 px-8 rounded-full bg-red-500 hover:bg-red-600 dark:bg-red-600 dark:hover:bg-red-500 text-white font-semibold shadow-md shadow-red-500/30 transition-colors disabled:opacity-50"
-                >
-                  Rejeter
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* REACTIVATE MODAL */}
-      {reactivateModalOpen && (
-        <div
-          className="fixed inset-0 z-50 bg-black/40 dark:bg-black/60 flex items-center justify-center px-4"
-          onMouseDown={(e) => {
-            if (e.target === e.currentTarget) {
-              setReactivateModalOpen(false);
-              setJobToReactivate(null);
-              setNewClosingDate("");
-            }
-          }}
-        >
-          <div className="bg-white dark:bg-gray-800 w-full max-w-2xl rounded-[32px] shadow-2xl overflow-hidden transition-colors duration-300">
-            <div className="px-8 pt-8 pb-6">
-              <div className="flex items-start justify-between">
-                <div>
-                  <h2 className="text-3xl font-extrabold text-gray-900 dark:text-white">
-                    Réactiver l'offre
-                  </h2>
-                  <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                    Mettez à jour la date de clôture pour republier cette annonce.
-                  </p>
-                </div>
-
-                <button
-                  type="button"
-                  onClick={() => {
-                    setReactivateModalOpen(false);
-                    setJobToReactivate(null);
-                    setNewClosingDate("");
-                  }}
-                  className="h-10 w-10 rounded-full grid place-items-center
-                             text-gray-500 dark:text-gray-400
-                             hover:text-gray-800 dark:hover:text-white
-                             hover:bg-gray-100 dark:hover:bg-gray-700
-                             transition-colors"
-                >
-                  ✕
-                </button>
-              </div>
-            </div>
-
-            <div className="border-t border-gray-200 dark:border-gray-700" />
-
-            <div className="px-8 py-8 space-y-6">
-              <div>
-                <label className="block text-xs font-semibold tracking-wide text-gray-700 dark:text-gray-300 mb-2 uppercase">
-                  Offre concernée
-                </label>
-
-                <div
-                  className="px-5 py-4 rounded-2xl
-                             border border-gray-200 dark:border-gray-600
-                             bg-gray-50 dark:bg-gray-700
-                             text-gray-800 dark:text-gray-100"
-                >
-                  {jobToReactivate?.titre}
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold tracking-wide text-gray-700 dark:text-gray-300 mb-2 uppercase">
-                  Nouvelle date de clôture
-                </label>
-
-                <input
-                  type="date"
-                  value={newClosingDate}
-                  min={new Date().toISOString().split("T")[0]}
-                  onChange={(e) => setNewClosingDate(e.target.value)}
-                  className="w-full px-5 py-4 rounded-2xl
-                             border border-gray-200 dark:border-gray-600
-                             bg-white dark:bg-gray-700
-                             text-gray-800 dark:text-gray-100
-                             focus:border-[#6CB33F] dark:focus:border-emerald-500
-                             focus:ring-4 focus:ring-[#6CB33F]/10
-                             outline-none transition-colors"
-                />
-
-                <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
-                  La nouvelle date doit être postérieure à aujourd'hui.
-                </p>
-              </div>
-            </div>
-
-            <div className="border-t border-gray-200 dark:border-gray-700" />
-
-            <div className="px-8 py-6 flex justify-end gap-4">
-              <button
-                type="button"
-                onClick={() => {
-                  setReactivateModalOpen(false);
-                  setJobToReactivate(null);
-                  setNewClosingDate("");
-                }}
-                className="h-12 px-8 rounded-full
-                           border border-gray-200 dark:border-gray-600
-                           text-gray-800 dark:text-gray-200 font-semibold
-                           hover:bg-gray-50 dark:hover:bg-gray-700
-                           transition-colors"
-              >
-                Annuler
-              </button>
-
-              <button
-                type="button"
-                onClick={handleReactivate}
-                disabled={!newClosingDate || actionLoading === jobToReactivate?._id}
-                className="h-12 px-8 rounded-full
-                           bg-[#6CB33F] hover:bg-[#4E8F2F]
-                           dark:bg-emerald-600 dark:hover:bg-emerald-500
-                           text-white font-semibold
-                           shadow-md shadow-green-500/20
-                           transition-colors disabled:opacity-50"
-              >
-                {actionLoading === jobToReactivate?._id ? "Enregistrement..." : "Enregistrer"}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

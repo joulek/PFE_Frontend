@@ -5,6 +5,9 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 function authHeaders() {
   const token =
     typeof window !== "undefined" ? localStorage.getItem("token") : null;
+
+  console.log("🔑 FRONT token exists?", !!token, token?.slice(0, 15));
+
   return token ? { Authorization: `Bearer ${token}` } : {};
 }
 
@@ -90,4 +93,21 @@ export function reactivateJob(id, newDateCloture) {
     { newDateCloture },
     { headers: authHeaders() }
   );
+}
+
+
+export function publishJobToLinkedIn(id, text) {
+  return axios.post(
+    `${API_URL}/jobs/${id}/publish-linkedin`,
+    text ? { text } : {},
+    { headers: authHeaders() }
+  );
+}
+
+export async function redirectToLinkedInConnect() {
+  const res = await getLinkedInAuthUrl();
+  window.location.href = res.data.url;
+}
+export async function getLinkedInAuthUrl() {
+  return axios.get(`${API_URL}/linkedin/auth-url`, { headers: authHeaders() });
 }
