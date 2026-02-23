@@ -337,11 +337,11 @@ export default function GestionUtilisateursPage() {
                       <td className="px-6 py-4">
                         {u?.passwordSet ? (
                           <span className="inline-flex items-center gap-1 rounded-full bg-green-100 dark:bg-green-900/30 px-3 py-1 text-xs font-semibold text-green-700 dark:text-green-400">
-                            ✓ Actif
+                             Actif
                           </span>
                         ) : (
                           <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 dark:bg-amber-900/30 px-3 py-1 text-xs font-semibold text-amber-700 dark:text-amber-400">
-                            ⏳ En attente
+                            En attente
                           </span>
                         )}
                       </td>

@@ -26,7 +26,7 @@ function safeStr(v) {
 function getFieldLabel(opt) {
   const label = opt.otherLabel?.trim();
   if (label) return label;
-  if (opt.otherType === "date")   return "Date d'obtention";
+  if (opt.otherType === "date") return "Date d'obtention";
   if (opt.otherType === "number") return "Nombre";
   return "Précisez...";
 }
@@ -37,19 +37,26 @@ function ensureQuestionIds(questions = []) {
     id: q.id || uid(),
     options: Array.isArray(q.options)
       ? q.options.map((opt) => ({
-          ...opt,
-          id: opt.id || uid(),
-          hasText:    opt.hasText    || false,
-          otherLabel: opt.otherLabel || "",
-          otherType:  opt.otherType  || "text",
-        }))
+        ...opt,
+        id: opt.id || uid(),
+        hasText: opt.hasText || false,
+        otherLabel: opt.otherLabel || "",
+        otherType: opt.otherType || "text",
+      }))
       : [],
     items: Array.isArray(q.items)
       ? q.items.map((it) => ({ ...it, id: it.id || uid() }))
       : [],
     scale: q.scale || {
-      min: 0, max: 4,
-      labels: { 0: "Néant", 1: "Débutant", 2: "Intermédiaire", 3: "Avancé", 4: "Expert" },
+      min: 0,
+      max: 4,
+      labels: {
+        0: "Néant",
+        1: "Débutant",
+        2: "Intermédiaire",
+        3: "Avancé",
+        4: "Expert",
+      },
     },
   }));
 }
@@ -57,7 +64,7 @@ function ensureQuestionIds(questions = []) {
 function defaultValueFor(q) {
   if (!q) return null;
   if (q.type === "text" || q.type === "textarea") return "";
-  if (q.type === "radio")    return { selected: "", textValue: "" };
+  if (q.type === "radio") return { selected: "", textValue: "" };
   if (q.type === "checkbox") return { selected: [], textValues: {} };
   if (q.type === "scale_group") {
     const obj = {};
@@ -68,25 +75,128 @@ function defaultValueFor(q) {
 }
 
 /* =======================
+   ACCESS DENIED UI (same style as quiz)
+======================= */
+function AccessDeniedLikeQuiz({ title, subtitle, hint, onHome }) {
+  return (
+    <div
+      className="
+        min-h-screen flex items-center justify-center px-4 py-10
+        bg-[#F0FAF0] text-gray-900
+        dark:bg-[#060B14] dark:text-white
+        transition-colors duration-300
+      "
+    >
+      {/* background glow (light + dark) */}
+      <div className="pointer-events-none fixed inset-0">
+        {/* light glow */}
+        <div className="absolute -top-24 -left-24 h-80 w-80 rounded-full bg-emerald-500/10 blur-3xl dark:hidden" />
+        <div className="absolute -bottom-24 -right-24 h-96 w-96 rounded-full bg-emerald-500/10 blur-3xl dark:hidden" />
+
+        {/* dark glow */}
+        <div className="absolute -top-24 -left-24 h-80 w-80 rounded-full bg-emerald-500/10 blur-3xl hidden dark:block" />
+        <div className="absolute -bottom-24 -right-24 h-96 w-96 rounded-full bg-emerald-500/10 blur-3xl hidden dark:block" />
+      </div>
+
+      <div className="relative w-full max-w-2xl">
+        <div
+          className="
+            rounded-[36px]
+            border border-emerald-200
+            bg-white/90
+            shadow-[0_20px_60px_rgba(0,0,0,0.12)]
+            backdrop-blur
+            px-6 sm:px-10 py-10
+            dark:border-emerald-500/30
+            dark:bg-[#0B1220]/80
+            dark:shadow-[0_20px_80px_rgba(0,0,0,0.6)]
+            transition-colors duration-300
+          "
+        >
+          {/* top icon */}
+          <div className="flex justify-center">
+            <div className="h-20 w-20 rounded-full bg-emerald-500/15 grid place-items-center">
+              <div className="h-14 w-14 rounded-full bg-emerald-500 grid place-items-center shadow-[0_0_0_10px_rgba(16,185,129,0.18)]">
+                <div className="h-6 w-6 rounded-full border-2 border-white grid place-items-center">
+                  <div className="h-2 w-2 rounded-full bg-white" />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* pill */}
+          <div className="mt-6 flex justify-center">
+            <span
+              className="
+                px-5 py-2 rounded-full text-xs font-extrabold tracking-widest
+                bg-emerald-100 text-emerald-700 border border-emerald-200
+                dark:bg-emerald-600/25 dark:text-emerald-300 dark:border-emerald-500/30
+              "
+            >
+              ACCÈS REFUSÉ
+            </span>
+          </div>
+
+          {/* text */}
+          <h1 className="mt-6 text-center text-3xl sm:text-4xl font-extrabold">
+            {title}
+          </h1>
+
+          <p className="mt-4 text-center text-base sm:text-lg text-gray-600 dark:text-slate-300">
+            {subtitle}
+          </p>
+
+          <div className="mt-8 h-px w-full bg-gray-200 dark:bg-white/10" />
+
+          {/* button */}
+          <div className="mt-8 flex justify-center">
+            <button
+              onClick={onHome}
+              className="
+                h-12 px-10 rounded-2xl font-bold text-white
+                bg-emerald-600 hover:bg-emerald-700
+                shadow-[0_14px_35px_rgba(16,185,129,0.25)]
+                dark:bg-emerald-500 dark:hover:bg-emerald-400
+                dark:shadow-[0_14px_40px_rgba(16,185,129,0.28)]
+                transition-colors
+              "
+            >
+              Retour à l&apos;accueil
+            </button>
+          </div>
+
+          {/* hint */}
+          {hint ? (
+            <p className="mt-6 text-center text-sm text-gray-500 dark:text-slate-400">
+              {hint}
+            </p>
+          ) : null}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* =======================
    MAIN COMPONENT
 ======================= */
 export default function CandidatFicheWizardPage() {
   const router = useRouter();
   const { submissionId } = useParams();
 
-  const [loading,   setLoading]   = useState(true);
-  const [blocked,   setBlocked]   = useState(false);
-  const [error,     setError]     = useState("");
-  const [fiche,     setFiche]     = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [blocked, setBlocked] = useState(false);
+  const [error, setError] = useState("");
+  const [fiche, setFiche] = useState(null);
   const [questions, setQuestions] = useState([]);
-  const [idx,       setIdx]       = useState(0);
-  const [value,     setValue]     = useState(null);
-  const [timeLeft,  setTimeLeft]  = useState(0);
+  const [idx, setIdx] = useState(0);
+  const [value, setValue] = useState(null);
+  const [timeLeft, setTimeLeft] = useState(0);
 
   const nextLockRef = useRef(false);
 
   const question = questions[idx];
-  const total    = questions.length;
+  const total = questions.length;
   const progress = total > 0 ? Math.round(((idx + 1) / total) * 100) : 0;
 
   /* ── Validation ── */
@@ -105,10 +215,12 @@ export default function CandidatFicheWizardPage() {
     }
 
     if (question.type === "checkbox") {
-      if (!Array.isArray(value?.selected) || value.selected.length === 0) return false;
+      if (!Array.isArray(value?.selected) || value.selected.length === 0)
+        return false;
       for (const label of value.selected) {
         const opt = question.options.find((o) => o.label === label);
-        if (opt?.hasText && !safeStr(value.textValues?.[label]).trim()) return false;
+        if (opt?.hasText && !safeStr(value.textValues?.[label]).trim())
+          return false;
       }
       return true;
     }
@@ -127,16 +239,28 @@ export default function CandidatFicheWizardPage() {
       try {
         setLoading(true);
         setError("");
-        if (!submissionId) { setError("Lien invalide."); return; }
+        if (!submissionId) {
+          setError("Lien invalide.");
+          return;
+        }
 
         const resSub = await getSubmissionById(submissionId);
         const submission = resSub?.data?.submission;
-        if (!submission)                     { setError("Soumission introuvable."); return; }
-        if (submission.status === "SUBMITTED") { setBlocked(true); return; }
+        if (!submission) {
+          setError("Soumission introuvable.");
+          return;
+        }
+        if (submission.status === "SUBMITTED") {
+          setBlocked(true);
+          return;
+        }
 
         const resF = await getFicheById(submission.ficheId);
         const ficheData = resF?.data?.fiche || resF?.data;
-        if (!ficheData) { setError("Fiche introuvable."); return; }
+        if (!ficheData) {
+          setError("Fiche introuvable.");
+          return;
+        }
 
         const qs = ensureQuestionIds(ficheData.questions || []);
         setFiche(ficheData);
@@ -169,7 +293,11 @@ export default function CandidatFicheWizardPage() {
     if (!question || timeLeft <= 0) return;
     const timer = setInterval(() => {
       setTimeLeft((prev) => {
-        if (prev <= 1) { clearInterval(timer); handleNext(true); return 0; }
+        if (prev <= 1) {
+          clearInterval(timer);
+          handleNext(true);
+          return 0;
+        }
         return prev - 1;
       });
     }, 1000);
@@ -201,7 +329,12 @@ export default function CandidatFicheWizardPage() {
     }
 
     try {
-      await addAnswer(submissionId, { questionId: question.id, value: finalValue, timeSpent: spent, auto });
+      await addAnswer(submissionId, {
+        questionId: question.id,
+        value: finalValue,
+        timeSpent: spent,
+        auto,
+      });
     } catch (err) {
       console.error("Erreur sauvegarde réponse:", err);
       setError("Erreur lors de l'enregistrement de la réponse.");
@@ -231,61 +364,80 @@ export default function CandidatFicheWizardPage() {
   }
 
   /* ── Écrans d'état ── */
-  if (loading) return (
-    <div className="min-h-screen bg-[#F0FAF0] dark:bg-gray-950 flex items-center justify-center text-gray-600 dark:text-gray-400">
-      Chargement...
-    </div>
-  );
-
-  if (blocked) return (
-    <div className="min-h-screen bg-[#F0FAF0] dark:bg-gray-950 flex items-center justify-center p-6">
-      <div className="max-w-lg text-center">
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-3">Accès refusé</h1>
-        <p className="text-gray-600 dark:text-gray-400">Cette fiche a déjà été soumise.</p>
+  if (loading)
+    return (
+      <div className="min-h-screen bg-[#F0FAF0] dark:bg-gray-950 flex items-center justify-center text-gray-600 dark:text-gray-400">
+        Chargement...
       </div>
-    </div>
-  );
+    );
 
-  if (error && !fiche) return (
-    <div className="min-h-screen bg-[#F0FAF0] dark:bg-gray-950 flex items-center justify-center p-6">
-      <div className="max-w-lg text-center">
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-3">Erreur</h1>
-        <p className="text-red-600 dark:text-red-400">{error}</p>
-      </div>
-    </div>
-  );
+  // ✅ NEW DESIGN HERE (same style as quiz)
+  if (blocked)
+    return (
+      <AccessDeniedLikeQuiz
+        title="Cette fiche a déjà été soumise"
+        subtitle="Vous avez déjà complété et soumis cette fiche. Il n’est pas possible de répondre une deuxième fois."
+        hint="Si vous pensez qu'il s'agit d'une erreur, contactez le recruteur."
+        onHome={() => router.replace("/jobs")} // ✅ change to your home route if needed
+      />
+    );
 
-  if (total === 0) return (
-    <div className="min-h-screen bg-[#F0FAF0] dark:bg-gray-950 flex items-center justify-center p-6">
-      <div className="max-w-lg text-center">
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-3">Aucune question</h1>
-        <p className="text-gray-600 dark:text-gray-400">Cette fiche ne contient aucune question.</p>
+  if (error && !fiche)
+    return (
+      <div className="min-h-screen bg-[#F0FAF0] dark:bg-gray-950 flex items-center justify-center p-6">
+        <div className="max-w-lg text-center">
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-3">
+            Erreur
+          </h1>
+          <p className="text-red-600 dark:text-red-400">{error}</p>
+        </div>
       </div>
-    </div>
-  );
+    );
+
+  if (total === 0)
+    return (
+      <div className="min-h-screen bg-[#F0FAF0] dark:bg-gray-950 flex items-center justify-center p-6">
+        <div className="max-w-lg text-center">
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-3">
+            Aucune question
+          </h1>
+          <p className="text-gray-600 dark:text-gray-400">
+            Cette fiche ne contient aucune question.
+          </p>
+        </div>
+      </div>
+    );
 
   /* ── Rendu principal ── */
   return (
     <div className="min-h-screen bg-[#F0FAF0] dark:bg-gray-950 transition-colors duration-300">
       <div className="max-w-4xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
         <div className="bg-white dark:bg-gray-800 rounded-2xl sm:rounded-3xl shadow border border-green-100 dark:border-gray-700 p-6 sm:p-8 transition-colors duration-300">
-
           <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">
             {fiche?.title || "Fiche de renseignement"}
           </h1>
           {fiche?.description && (
-            <p className="mt-2 text-gray-600 dark:text-gray-400 leading-relaxed">{fiche.description}</p>
+            <p className="mt-2 text-gray-600 dark:text-gray-400 leading-relaxed">
+              {fiche.description}
+            </p>
           )}
 
           {/* Progression */}
           <div className="mt-6">
             <div className="flex flex-wrap justify-between items-center gap-4 text-sm text-gray-600 dark:text-gray-400 mb-3">
-              <span>Question <strong className="text-gray-900 dark:text-white">{idx + 1}</strong> / {total}</span>
+              <span>
+                Question{" "}
+                <strong className="text-gray-900 dark:text-white">
+                  {idx + 1}
+                </strong>{" "}
+                / {total}
+              </span>
               <div className="flex items-center gap-4">
                 <span className="font-medium">{progress}%</span>
                 {Number(question?.timeLimit || 0) > 0 && (
                   <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 font-medium">
-                    <span>⏱</span><span>{Math.max(0, timeLeft)}s</span>
+                    <span>⏱</span>
+                    <span>{Math.max(0, timeLeft)}s</span>
                   </div>
                 )}
               </div>
@@ -302,7 +454,9 @@ export default function CandidatFicheWizardPage() {
           <div className="mt-8">
             <h2 className="text-xl font-semibold text-gray-800 dark:text-gray-100">
               {question.label}
-              {question.required && <span className="text-red-500 dark:text-red-400 ml-1.5">*</span>}
+              {question.required && (
+                <span className="text-red-500 dark:text-red-400 ml-1.5">*</span>
+              )}
             </h2>
 
             <div className="mt-5">
@@ -335,7 +489,6 @@ export default function CandidatFicheWizardPage() {
    QuestionRenderer
 ======================= */
 function QuestionRenderer({ q, value, setValue }) {
-
   /* ── TEXT ── */
   if (q.type === "text") {
     return (
@@ -366,9 +519,9 @@ function QuestionRenderer({ q, value, setValue }) {
     return (
       <div className="space-y-3">
         {q.options.map((opt) => {
-          const isSelected  = value?.selected === opt.label;
-          const fieldLabel  = getFieldLabel(opt); // ✅ fallback intelligent
-          const fieldType   = opt.otherType || "text";
+          const isSelected = value?.selected === opt.label;
+          const fieldLabel = getFieldLabel(opt);
+          const fieldType = opt.otherType || "text";
 
           return (
             <div key={opt.id} className="space-y-2">
@@ -382,7 +535,6 @@ function QuestionRenderer({ q, value, setValue }) {
                 <span className="text-gray-700 dark:text-gray-200">{opt.label}</span>
               </label>
 
-              {/* ✅ Champ conditionnel — label et type corrects */}
               {opt.hasText && isSelected && (
                 <div className="ml-10 p-3 bg-green-50 dark:bg-gray-700/50 border border-green-200 dark:border-emerald-800 rounded-xl flex flex-col gap-1.5">
                   <label className="text-xs font-semibold text-green-700 dark:text-emerald-400 uppercase tracking-wide flex items-center gap-1">
@@ -408,15 +560,15 @@ function QuestionRenderer({ q, value, setValue }) {
 
   /* ── CHECKBOX ── */
   if (q.type === "checkbox") {
-    const selected   = Array.isArray(value?.selected) ? value.selected : [];
+    const selected = Array.isArray(value?.selected) ? value.selected : [];
     const textValues = value?.textValues || {};
 
     return (
       <div className="space-y-3">
         {q.options.map((opt) => {
-          const isChecked  = selected.includes(opt.label);
-          const fieldLabel = getFieldLabel(opt); // ✅ fallback intelligent
-          const fieldType  = opt.otherType || "text";
+          const isChecked = selected.includes(opt.label);
+          const fieldLabel = getFieldLabel(opt);
+          const fieldType = opt.otherType || "text";
 
           return (
             <div key={opt.id} className="space-y-2">
@@ -425,7 +577,9 @@ function QuestionRenderer({ q, value, setValue }) {
                   type="checkbox"
                   checked={isChecked}
                   onChange={() => {
-                    const newSelected   = isChecked ? selected.filter((x) => x !== opt.label) : [...selected, opt.label];
+                    const newSelected = isChecked
+                      ? selected.filter((x) => x !== opt.label)
+                      : [...selected, opt.label];
                     const newTextValues = { ...textValues };
                     if (isChecked) delete newTextValues[opt.label];
                     setValue({ selected: newSelected, textValues: newTextValues });
@@ -435,7 +589,6 @@ function QuestionRenderer({ q, value, setValue }) {
                 <span className="text-gray-700 dark:text-gray-200">{opt.label}</span>
               </label>
 
-              {/* ✅ Champ conditionnel — label et type corrects */}
               {opt.hasText && isChecked && (
                 <div className="ml-10 p-3 bg-green-50 dark:bg-gray-700/50 border border-green-200 dark:border-emerald-800 rounded-xl flex flex-col gap-1.5">
                   <label className="text-xs font-semibold text-green-700 dark:text-emerald-400 uppercase tracking-wide flex items-center gap-1">
@@ -449,7 +602,10 @@ function QuestionRenderer({ q, value, setValue }) {
                     className="w-full sm:max-w-xs rounded-xl border border-green-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 px-4 py-2.5 focus:border-green-500 dark:focus:border-emerald-500 focus:ring-1 outline-none transition-colors"
                     value={textValues[opt.label] || ""}
                     onChange={(e) =>
-                      setValue({ ...value, textValues: { ...textValues, [opt.label]: e.target.value } })
+                      setValue({
+                        ...value,
+                        textValues: { ...textValues, [opt.label]: e.target.value },
+                      })
                     }
                   />
                 </div>
@@ -463,23 +619,30 @@ function QuestionRenderer({ q, value, setValue }) {
 
   /* ── SCALE GROUP ── */
   if (q.type === "scale_group") {
-    const obj    = value || {};
-    const min    = q.scale?.min ?? 0;
-    const max    = q.scale?.max ?? 4;
+    const obj = value || {};
+    const min = q.scale?.min ?? 0;
+    const max = q.scale?.max ?? 4;
     const levels = Array.from({ length: max - min + 1 }, (_, i) => min + i);
 
     return (
       <div className="space-y-4">
         {q.items.map((it) => (
-          <div key={it.id} className="grid grid-cols-1 sm:grid-cols-2 gap-4 items-center py-3 border-b border-gray-200 dark:border-gray-700">
-            <div className="font-medium text-gray-800 dark:text-gray-100 text-base">{it.label}</div>
+          <div
+            key={it.id}
+            className="grid grid-cols-1 sm:grid-cols-2 gap-4 items-center py-3 border-b border-gray-200 dark:border-gray-700"
+          >
+            <div className="font-medium text-gray-800 dark:text-gray-100 text-base">
+              {it.label}
+            </div>
             <div>
               <select
                 className="w-full sm:max-w-xs rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 px-4 py-2.5 text-sm sm:text-base focus:border-green-500 focus:ring-2 focus:ring-green-400/30 outline-none transition-all cursor-pointer shadow-sm"
                 value={obj[it.id] ?? ""}
                 onChange={(e) => setValue({ ...obj, [it.id]: e.target.value })}
               >
-                <option value="" disabled>— Choisir un niveau —</option>
+                <option value="" disabled>
+                  — Choisir un niveau —
+                </option>
                 {levels.map((lvl) => (
                   <option key={lvl} value={String(lvl)}>
                     {lvl} – {q.scale?.labels?.[lvl] ?? `Niveau ${lvl}`}

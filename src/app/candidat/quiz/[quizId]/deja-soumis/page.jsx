@@ -6,7 +6,7 @@ export default function DejaSoumisPage() {
   const router = useRouter();
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-green-50 dark:bg-green-950 p-6 transition-colors duration-300">
+    <div className="min-h-screen flex items-center justify-center bg-green-50 dark:bg-gray-950 p-6 transition-colors duration-300">
       {/* CARD */}
       <div className="w-full max-w-xl bg-white dark:bg-gray-900 rounded-3xl shadow-xl border border-green-100 dark:border-green-900 p-8 sm:p-10 text-center transition-colors duration-300">
 

@@ -290,19 +290,17 @@ export default function UserJobsPage() {
               <button
                 key={tab.key}
                 onClick={() => setActiveTab(tab.key)}
-                className={`px-5 py-2.5 rounded-full text-sm font-semibold transition-all duration-200 ${
-                  isActive
+                className={`px-5 py-2.5 rounded-full text-sm font-semibold transition-all duration-200 ${isActive
                     ? "bg-[#6CB33F] dark:bg-emerald-600 text-white shadow-md shadow-green-500/20"
                     : "bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 border border-gray-200 dark:border-gray-700 hover:border-[#6CB33F] dark:hover:border-emerald-500"
-                }`}
+                  }`}
               >
                 {tab.label}
                 <span
-                  className={`ml-2 text-xs px-2 py-0.5 rounded-full ${
-                    isActive
+                  className={`ml-2 text-xs px-2 py-0.5 rounded-full ${isActive
                       ? "bg-white/20 text-white"
                       : "bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400"
-                  }`}
+                    }`}
                 >
                   {counts[tab.key] || 0}
                 </span>
@@ -348,9 +346,8 @@ export default function UserJobsPage() {
 
                 {/* DESCRIPTION (only) */}
                 <p
-                  className={`text-gray-600 dark:text-gray-300 text-sm mb-2 whitespace-pre-line ${
-                    !isExpanded ? "line-clamp-3" : ""
-                  }`}
+                  className={`text-gray-600 dark:text-gray-300 text-sm mb-2 whitespace-pre-line ${!isExpanded ? "line-clamp-3" : ""
+                    }`}
                 >
                   {job.description || "—"}
                 </p>
@@ -368,8 +365,10 @@ export default function UserJobsPage() {
                 <div className="border-t border-gray-100 dark:border-gray-700 my-4" />
 
                 {/* META + ACTIONS */}
-                <div className="flex items-end justify-between mt-auto gap-4">
-                  <div className="text-sm text-gray-500 dark:text-gray-400 space-y-1">
+                {/* META + DETAILS (aligned like image 2) */}
+                <div className="mt-auto relative">
+                  {/* meta */}
+                  <div className="text-sm text-gray-500 dark:text-gray-400 space-y-1 pr-36">
                     {job.lieu && (
                       <div className="flex items-center gap-2">
                         <MapPin className="w-4 h-4 text-gray-500 dark:text-gray-400" />
@@ -397,16 +396,18 @@ export default function UserJobsPage() {
                     )}
                   </div>
 
-                  {/* ✅ Détails + Edit (edit uniquement si EN_ATTENTE) */}
-                  <div className="flex items-center gap-2 shrink-0">
+                  {/* details button aligned with meta */}
+                  <div className="absolute right-0 top-1/2 -translate-y-1/2 flex items-center gap-2">
                     <Link
                       href={`${detailsBase}/${job._id}`}
-                      className="h-10 px-4 rounded-full font-semibold text-sm
-                                 inline-flex items-center justify-center
-                                 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700
-                                 text-gray-700 dark:text-gray-200
-                                 hover:border-[#6CB33F] dark:hover:border-emerald-500
-                                 transition-colors"
+                      className="
+        h-11 px-8 rounded-full font-extrabold text-sm
+        inline-flex items-center justify-center
+        bg-[#6CB33F] hover:bg-[#4E8F2F]
+        dark:bg-emerald-600 dark:hover:bg-emerald-500
+        text-white shadow-md shadow-green-500/20
+        transition-colors
+      "
                     >
                       Détails
                     </Link>
@@ -418,10 +419,12 @@ export default function UserJobsPage() {
                           setModalOpen(true);
                         }}
                         title="Modifier cette offre"
-                        className="h-10 w-10 rounded-full grid place-items-center
-                                   text-[#4E8F2F] dark:text-emerald-400
-                                   hover:bg-green-100 dark:hover:bg-emerald-900/30
-                                   transition-colors"
+                        className="h-11 w-11 rounded-full grid place-items-center
+                   text-[#4E8F2F] dark:text-emerald-400
+                   bg-white dark:bg-gray-800
+                   border border-gray-200 dark:border-gray-700
+                   hover:bg-green-50 dark:hover:bg-emerald-900/30
+                   transition-colors"
                       >
                         <Edit2 size={18} />
                       </button>
@@ -730,11 +733,10 @@ function JobOfferModal({ open, onClose, onSubmit, initialData }) {
               </div>
 
               <span
-                className={`text-xs font-bold px-3 py-1 rounded-full border ${
-                  isValidTotal
+                className={`text-xs font-bold px-3 py-1 rounded-full border ${isValidTotal
                     ? "bg-green-100 dark:bg-emerald-900/30 text-green-700 dark:text-emerald-400 border-green-200 dark:border-emerald-800"
                     : "bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 border-red-200 dark:border-red-800"
-                }`}
+                  }`}
               >
                 Total : {totalWeights}%
               </span>
