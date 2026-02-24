@@ -216,7 +216,6 @@ function normalizeJobMatch(jobMatch) {
 function CandidatureCard({ c, onTogglePreselect }) {
   const [toggling, setToggling] = useState(false);
 
-  // Lire le statut depuis la BDD (retourné par l'API)
   const isPreselected = c?.preInterview?.status === "SELECTED";
 
   const handleToggle = async () => {
@@ -228,6 +227,7 @@ function CandidatureCard({ c, onTogglePreselect }) {
       setToggling(false);
     }
   };
+
   const analysis = c?.analysis || {};
   const ai = analysis?.aiDetection || {};
   const match = normalizeJobMatch(analysis?.jobMatch);
@@ -279,7 +279,8 @@ function CandidatureCard({ c, onTogglePreselect }) {
     <div data-cy="candidature-card"
       className="bg-white dark:bg-gray-800 rounded-3xl border border-gray-100 dark:border-gray-700 shadow-sm overflow-hidden transition-colors duration-300">
       <div className="p-6">
-        {/* TOP HEADER */}
+
+        {/* TOP HEADER - inchangé */}
         <div className="flex items-start justify-between gap-4">
           <div className="flex items-start gap-4">
             <div className="w-14 h-14 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center text-green-700 dark:text-emerald-400 font-bold">
@@ -330,18 +331,14 @@ function CandidatureCard({ c, onTogglePreselect }) {
             </div>
           </div>
 
-          {/* BUTTONS */}
           <div className="flex items-center gap-3">
-
-            {/* Bouton Pré-entretien */}
             <button
               onClick={handleToggle}
               disabled={toggling}
-              className={`inline-flex items-center gap-2 px-5 py-2.5 rounded-full text-sm font-semibold transition-all shadow-sm disabled:opacity-60 disabled:cursor-not-allowed ${
-                isPreselected
-                  ? "bg-green-500 dark:bg-green-600 text-white hover:bg-green-600 ring-2 ring-green-300 dark:ring-green-700"
-                  : "bg-violet-500 dark:bg-violet-600 text-white hover:bg-violet-600"
-              }`}
+              className={`inline-flex items-center gap-2 px-5 py-2.5 rounded-full text-sm font-semibold transition-all shadow-sm disabled:opacity-60 disabled:cursor-not-allowed ${isPreselected
+                ? "bg-green-500 dark:bg-green-600 text-white hover:bg-green-600 ring-2 ring-green-300 dark:ring-green-700"
+                : "bg-violet-500 dark:bg-violet-600 text-white hover:bg-violet-600"
+                }`}
             >
               {toggling ? (
                 <span className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />
@@ -355,7 +352,7 @@ function CandidatureCard({ c, onTogglePreselect }) {
           </div>
         </div>
 
-        {/* STATS ROW */}
+        {/* LES 3 CONTAINERS DEMANDÉS */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
           {/* MATCH SCORE */}
           <div className="rounded-2xl border border-gray-100 dark:border-gray-700 p-4 bg-white dark:bg-gray-800/50 transition-colors">
@@ -375,6 +372,7 @@ function CandidatureCard({ c, onTogglePreselect }) {
               Market: {match?.marketPositioning || "—"}
             </p>
           </div>
+
 
           {/* EXPERIENCE */}
           <div className="rounded-2xl border border-gray-100 dark:border-gray-700 p-4 bg-white dark:bg-gray-800/50 transition-colors">
@@ -405,29 +403,6 @@ function CandidatureCard({ c, onTogglePreselect }) {
               </p>
             )}
 
-            {/* Breakdown */}
-            {match?.expBreakdown?.length > 0 && (
-              <div className="space-y-2 mt-2 border-t border-gray-100 dark:border-gray-700 pt-3">
-                {match.expBreakdown.map((exp, i) => (
-                  <div key={i} className="flex items-start gap-2">
-                    {/* Badge type */}
-                    <span className={`shrink-0 text-[10px] font-bold px-1.5 py-0.5 rounded-full mt-0.5
-                      ${exp.type === "cdi" ? "bg-green-100 text-green-700 dark:bg-emerald-900/30 dark:text-emerald-400"
-                        : exp.type === "freelance" ? "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400"
-                        : exp.type === "stage" ? "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400"
-                        : exp.type === "cdd" ? "bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400"
-                        : "bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-400"
-                      }`}>
-                      {exp.type?.toUpperCase() || "—"}
-                    </span>
-                    <div className="min-w-0">
-                      <p className="text-xs font-semibold text-gray-800 dark:text-gray-200 truncate">{exp.role}</p>
-                      <p className="text-[10px] text-gray-500 dark:text-gray-400">{exp.company} · {exp.duration}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
           </div>
 
           {/* AI DETECTION */}
@@ -471,57 +446,77 @@ function CandidatureCard({ c, onTogglePreselect }) {
               </div>
             )}
           </div>
+
         </div>
 
-        {/* MAIN GRID */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 mt-6">
-          {/* LEFT */}
-          <div className="lg:col-span-2 space-y-5">
-            {/* Summary */}
+        {/* DETAILS GRID - organisation demandée */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+          {/* GAUCHE */}
+          <div className="space-y-6">
+
+            {/* AI Match Summary */}
             <div className="rounded-2xl border border-gray-100 dark:border-gray-700 p-5 bg-white dark:bg-gray-800/50 transition-colors">
               <div className="flex items-center gap-2 text-gray-900 dark:text-white font-semibold">
-                <BadgeCheck className="w-5 h-5 text-green-600 dark:text-emerald-400" />
+                <CheckCircle2 className="w-5 h-5 text-gray-700 dark:text-gray-300" />
                 AI Match Summary
               </div>
-
-              <p className="text-sm text-gray-600 dark:text-gray-300 mt-3">
-                {safeStr(match?.summary) || "Aucun résumé disponible."}
+              <p className="mt-3 text-sm text-gray-700 dark:text-gray-300">
+                {match?.summary || "No summary available."}
               </p>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-                <div className="rounded-xl border border-gray-100 dark:border-gray-700 p-4 bg-white dark:bg-gray-800 transition-colors">
-                  <p className="text-sm font-semibold text-gray-900 dark:text-white">
+              <div className="grid grid-cols-2 gap-4 mt-4">
+                <div>
+                  <p className="text-sm font-semibold text-gray-800 dark:text-gray-200 mb-2">
                     Points forts
                   </p>
-                  <ul className="mt-2 text-sm text-gray-600 dark:text-gray-300 list-disc pl-5 space-y-1">
+                  <ul className="text-sm text-gray-600 dark:text-gray-400 space-y-1">
                     {(match?.strengths || []).length === 0 ? (
                       <li>—</li>
                     ) : (
-                      match.strengths.slice(0, 4).map((x, i) => (
-                        <li key={i}>{x}</li>
-                      ))
+                      match.strengths.slice(0, 4).map((x, i) => <li key={i}>• {x}</li>)
                     )}
                   </ul>
                 </div>
 
-                <div className="rounded-xl border border-gray-100 dark:border-gray-700 p-4 bg-white dark:bg-gray-800 transition-colors">
-                  <p className="text-sm font-semibold text-gray-900 dark:text-white">
+                <div>
+                  <p className="text-sm font-semibold text-gray-800 dark:text-gray-200 mb-2">
                     Points faibles
                   </p>
-                  <ul className="mt-2 text-sm text-gray-600 dark:text-gray-300 list-disc pl-5 space-y-1">
+                  <ul className="text-sm text-gray-600 dark:text-gray-400 space-y-1">
                     {(match?.weaknesses || []).length === 0 ? (
                       <li>—</li>
                     ) : (
-                      match.weaknesses.slice(0, 4).map((x, i) => (
-                        <li key={i}>{x}</li>
-                      ))
+                      match.weaknesses.slice(0, 4).map((x, i) => <li key={i}>• {x}</li>)
                     )}
                   </ul>
                 </div>
               </div>
             </div>
 
-            {/* Scores */}
+            {/* Détails d'Expérience - PLACÉ ICI COMME DEMANDÉ */}
+            <div className="rounded-2xl border border-gray-100 dark:border-gray-700 p-5 bg-white dark:bg-gray-800/50 transition-colors">
+              <div className="flex items-center gap-2 text-gray-900 dark:text-white font-semibold">
+                <TrendingUp className="w-5 h-5 text-gray-700 dark:text-gray-300" />
+                Détails d'Expérience
+              </div>
+              <ul className="mt-4 space-y-3 text-sm text-gray-700 dark:text-gray-300">
+                {(match?.expBreakdown || []).length === 0 ? (
+                  <li>Aucune expérience détaillée disponible.</li>
+                ) : (
+                  match.expBreakdown.map((exp, i) => (
+                    <li key={i} className="border-b border-gray-200 dark:border-gray-700 pb-2 last:border-0 last:pb-0">
+                      <p className="font-semibold text-gray-800 dark:text-gray-200">
+                        {exp.type ? `${exp.type}: ` : ""}{exp.role || exp.title || "—"}
+                      </p>
+                      <p>{exp.company || "—"}</p>
+                      <p>{exp.duration || "—"}</p>
+                    </li>
+                  ))
+                )}
+              </ul>
+            </div>
+
+            {/* Scores Détailés */}
             <div className="rounded-2xl border border-gray-100 dark:border-gray-700 p-5 bg-white dark:bg-gray-800/50 transition-colors">
               <p className="text-gray-900 dark:text-white font-semibold flex items-center gap-2">
                 <TrendingUp className="w-5 h-5 text-gray-700 dark:text-gray-300" />
@@ -550,153 +545,147 @@ function CandidatureCard({ c, onTogglePreselect }) {
             </div>
           </div>
 
-          {/* RIGHT */}
-          <div className="space-y-5">
-            {/* Skill Cloud */}
-            <div className="rounded-2xl border border-gray-100 dark:border-gray-700 p-5 bg-white dark:bg-gray-800/50 transition-colors">
-              <p className="text-gray-900 dark:text-white font-semibold">SKILL CLOUD</p>
-
-              <div className="flex flex-wrap gap-2 mt-4">
-                {skillCloud.length === 0 ? (
-                  <Tag>—</Tag>
-                ) : (
-                  skillCloud.map((s, i) => {
-                    const isMatched = (match?.matchedSkills || []).includes(s);
-                    const isMust = (match?.missingMustHaveSkills || []).includes(s);
-                    const isNice = (match?.missingNiceToHaveSkills || []).includes(s);
-
-                    return (
-                      <Tag
-                        key={i}
-                        variant={
-                          isMatched
-                            ? "green"
-                            : isMust
-                              ? "red"
-                              : isNice
-                                ? "yellow"
-                                : "gray"
-                        }
-                      >
-                        {s}
-                      </Tag>
-                    );
-                  })
-                )}
-              </div>
+        {/* DROITE - inchangée */}
+        <div className="space-y-6">
+          <div className="rounded-2xl border border-gray-100 dark:border-gray-700 p-5 bg-white dark:bg-gray-800/50 transition-colors">
+            <div className="flex items-center gap-2 text-gray-900 dark:text-white font-semibold">
+              <Brain className="w-5 h-5 text-gray-700 dark:text-gray-300" />
+              SKILL CLOUD
             </div>
-
-            {/* Missing Skills */}
-            <div className="rounded-2xl border border-gray-100 dark:border-gray-700 p-5 bg-white dark:bg-gray-800/50 transition-colors">
-              <div className="flex items-center gap-2 text-gray-900 dark:text-white font-semibold">
-                <Target className="w-5 h-5 text-gray-700 dark:text-gray-300" />
-                Job Match Details
-              </div>
-
-              <div className="mt-4 space-y-3">
-                <div>
-                  <p className="text-sm font-semibold text-gray-800 dark:text-gray-200 mb-2">
-                    Missing MUST-HAVE
-                  </p>
-                  <div className="flex flex-wrap gap-2">
-                    {(match?.missingMustHaveSkills || []).length === 0 ? (
-                      <Tag variant="green">Aucun</Tag>
-                    ) : (
-                      match.missingMustHaveSkills.map((x, i) => (
-                        <Tag key={i} variant="red">
-                          {x}
-                        </Tag>
-                      ))
-                    )}
-                  </div>
-                </div>
-
-                <div>
-                  <p className="text-sm font-semibold text-gray-800 dark:text-gray-200 mb-2">
-                    Missing NICE-TO-HAVE
-                  </p>
-                  <div className="flex flex-wrap gap-2">
-                    {(match?.missingNiceToHaveSkills || []).length === 0 ? (
-                      <Tag variant="green">Aucun</Tag>
-                    ) : (
-                      match.missingNiceToHaveSkills.map((x, i) => (
-                        <Tag key={i} variant="yellow">
-                          {x}
-                        </Tag>
-                      ))
-                    )}
-                  </div>
-                </div>
-
-                <div>
-                  <p className="text-sm font-semibold text-gray-800 dark:text-gray-200 mb-2">
-                    Transferable Skills
-                  </p>
-                  <div className="flex flex-wrap gap-2">
-                    {(match?.transferableSkills || []).length === 0 ? (
-                      <Tag>—</Tag>
-                    ) : (
-                      match.transferableSkills.map((x, i) => (
-                        <Tag key={i} variant="yellow">
-                          {x}
-                        </Tag>
-                      ))
-                    )}
-                  </div>
-                </div>
-
-                <div>
-                  <p className="text-sm font-semibold text-gray-800 dark:text-gray-200 mb-2">
-                    Recommendation
-                  </p>
-                  <Tag variant={recColor(match?.recommendation)}>
-                    {recLabel(match?.recommendation)}
-                  </Tag>
-                </div>
-              </div>
-            </div>
-
-            {/* Risk + Next Steps */}
-            <div className="rounded-2xl border border-gray-100 dark:border-gray-700 p-5 bg-white dark:bg-gray-800/50 transition-colors">
-              <div className="flex items-center gap-2 text-gray-900 dark:text-white font-semibold">
-                <ShieldAlert className="w-5 h-5 text-gray-700 dark:text-gray-300" />
-                Risk & Next Steps
-              </div>
-
-              <div className="mt-4 space-y-2 text-sm text-gray-700 dark:text-gray-300">
-                <p>
-                  <span className="font-semibold">Risk Level:</span>{" "}
-                  {match?.riskLevel || "—"}
-                </p>
-                <p>
-                  <span className="font-semibold">Immediate Action:</span>{" "}
-                  {match?.immediateAction || "—"}
-                </p>
-                <p>
-                  <span className="font-semibold">Talent Pool:</span>{" "}
-                  {match?.talentPoolStatus || "—"}
-                </p>
-              </div>
-
-              {(match?.mitigationStrategies || []).length > 0 && (
-                <div className="mt-3">
-                  <p className="text-sm font-semibold text-gray-900 dark:text-white">
-                    Mitigation Strategies
-                  </p>
-                  <ul className="mt-2 text-sm text-gray-600 dark:text-gray-300 list-disc pl-5 space-y-1">
-                    {match.mitigationStrategies.slice(0, 4).map((x, i) => (
-                      <li key={i}>{x}</li>
-                    ))}
-                  </ul>
-                </div>
+            <div className="flex flex-wrap gap-2 mt-4">
+              {skillCloud.length === 0 ? (
+                <Tag>—</Tag>
+              ) : (
+                skillCloud.map((x, i) => <Tag key={i}>{x}</Tag>)
               )}
             </div>
           </div>
-        </div>
 
-        <div className="h-4" />
+          <div className="rounded-2xl border border-gray-100 dark:border-gray-700 p-5 bg-white dark:bg-gray-800/50 transition-colors">
+            <div className="flex items-center gap-2 text-gray-900 dark:text-white font-semibold">
+              <BadgeCheck className="w-5 h-5 text-gray-700 dark:text-gray-300" />
+              Job Match Details
+            </div>
+
+            <div className="mt-4 space-y-4">
+              <div>
+                <p className="text-sm font-semibold text-gray-800 dark:text-gray-200 mb-2">
+                  Matched Skills
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  {(match?.matchedSkills || []).length === 0 ? (
+                    <Tag>—</Tag>
+                  ) : (
+                    match.matchedSkills.map((x, i) => (
+                      <Tag key={i} variant="green">
+                        {x}
+                      </Tag>
+                    ))
+                  )}
+                </div>
+              </div>
+
+              <div>
+                <p className="text-sm font-semibold text-gray-800 dark:text-gray-200 mb-2">
+                  Missing MUST-HAVE
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  {(match?.missingMustHaveSkills || []).length === 0 ? (
+                    <Tag variant="green">Aucun</Tag>
+                  ) : (
+                    match.missingMustHaveSkills.map((x, i) => (
+                      <Tag key={i} variant="red">
+                        {x}
+                      </Tag>
+                    ))
+                  )}
+                </div>
+              </div>
+
+              <div>
+                <p className="text-sm font-semibold text-gray-800 dark:text-gray-200 mb-2">
+                  Missing NICE-TO-HAVE
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  {(match?.missingNiceToHaveSkills || []).length === 0 ? (
+                    <Tag variant="green">Aucun</Tag>
+                  ) : (
+                    match.missingNiceToHaveSkills.map((x, i) => (
+                      <Tag key={i} variant="yellow">
+                        {x}
+                      </Tag>
+                    ))
+                  )}
+                </div>
+              </div>
+
+              <div>
+                <p className="text-sm font-semibold text-gray-800 dark:text-gray-200 mb-2">
+                  Transferable Skills
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  {(match?.transferableSkills || []).length === 0 ? (
+                    <Tag>—</Tag>
+                  ) : (
+                    match.transferableSkills.map((x, i) => (
+                      <Tag key={i} variant="yellow">
+                        {x}
+                      </Tag>
+                    ))
+                  )}
+                </div>
+              </div>
+
+              <div>
+                <p className="text-sm font-semibold text-gray-800 dark:text-gray-200 mb-2">
+                  Recommendation
+                </p>
+                <Tag variant={recColor(match?.recommendation)}>
+                  {recLabel(match?.recommendation)}
+                </Tag>
+              </div>
+            </div>
+          </div>
+
+          <div className="rounded-2xl border border-gray-100 dark:border-gray-700 p-5 bg-white dark:bg-gray-800/50 transition-colors">
+            <div className="flex items-center gap-2 text-gray-900 dark:text-white font-semibold">
+              <ShieldAlert className="w-5 h-5 text-gray-700 dark:text-gray-300" />
+              Risk & Next Steps
+            </div>
+
+            <div className="mt-4 space-y-2 text-sm text-gray-700 dark:text-gray-300">
+              <p>
+                <span className="font-semibold">Risk Level:</span>{" "}
+                {match?.riskLevel || "—"}
+              </p>
+              <p>
+                <span className="font-semibold">Immediate Action:</span>{" "}
+                {match?.immediateAction || "—"}
+              </p>
+              <p>
+                <span className="font-semibold">Talent Pool:</span>{" "}
+                {match?.talentPoolStatus || "—"}
+              </p>
+            </div>
+
+            {(match?.mitigationStrategies || []).length > 0 && (
+              <div className="mt-3">
+                <p className="text-sm font-semibold text-gray-900 dark:text-white">
+                  Mitigation Strategies
+                </p>
+                <ul className="mt-2 text-sm text-gray-600 dark:text-gray-300 list-disc pl-5 space-y-1">
+                  {match.mitigationStrategies.slice(0, 4).map((x, i) => (
+                    <li key={i}>{x}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </div>
+        </div>
       </div>
+
     </div>
+    </div >
   );
 }
 
@@ -710,11 +699,9 @@ export default function CandidatureAnalysisPage() {
   const [aiFilter, setAiFilter] = useState("ALL");
   const [minScore, setMinScore] = useState(0);
 
-  // ✅ Pagination
   const [page, setPage] = useState(1);
   const ITEMS_PER_PAGE = 5;
 
-  // Compter les pré-sélectionnés (lecture depuis les données)
   const preselectedCount = useMemo(
     () => items.filter((c) => c?.preInterview?.status === "SELECTED").length,
     [items]
@@ -775,12 +762,10 @@ export default function CandidatureAnalysisPage() {
     });
   }, [items, search, jobFilter, aiFilter, minScore]);
 
-  // reset page when filters change
   useEffect(() => {
     setPage(1);
   }, [search, jobFilter, aiFilter, minScore]);
 
-  // paginate
   const totalPages = Math.max(1, Math.ceil(filtered.length / ITEMS_PER_PAGE));
 
   const paginatedItems = useMemo(() => {
@@ -788,24 +773,22 @@ export default function CandidatureAnalysisPage() {
     return filtered.slice(start, start + ITEMS_PER_PAGE);
   }, [filtered, page]);
 
-  // ✅ Toggle pré-entretien → appel backend + mise à jour locale
   const handleTogglePreselect = useCallback(async (candidatureId) => {
     try {
       const res = await togglePreInterview(candidatureId);
       const { preInterviewStatus } = res.data;
 
-      // Mise à jour optimiste dans le state local
       setItems((prev) =>
         prev.map((c) =>
           c._id === candidatureId
             ? {
-                ...c,
-                preInterview: {
-                  ...c.preInterview,
-                  status: preInterviewStatus,
-                  selectedAt: preInterviewStatus === "SELECTED" ? new Date().toISOString() : undefined,
-                },
-              }
+              ...c,
+              preInterview: {
+                ...c.preInterview,
+                status: preInterviewStatus,
+                selectedAt: preInterviewStatus === "SELECTED" ? new Date().toISOString() : undefined,
+              },
+            }
             : c
         )
       );
@@ -817,7 +800,6 @@ export default function CandidatureAnalysisPage() {
 
   return (
     <div className="min-h-screen bg-[#F0FAF0] dark:bg-gray-950 transition-colors duration-300">
-      {/* Zone sticky pour les filtres */}
       <div className="sticky top-0 z-30 bg-[#F0FAF0]/90 dark:bg-gray-950/90 backdrop-blur-md">
         <div className="max-w-6xl mx-auto px-6 pt-5 pb-4">
           <div className="flex items-center justify-between mb-4">
@@ -825,7 +807,6 @@ export default function CandidatureAnalysisPage() {
               Analyse Candidatures
             </h1>
 
-            {/* Lien vers la page pré-entretien */}
             <a
               href="/recruiter/PreInterviewList"
               className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-[#22C55E] hover:bg-[#16A34A] text-white text-sm font-semibold transition-all shadow-sm"
@@ -897,9 +878,7 @@ export default function CandidatureAnalysisPage() {
         </div>
       </div>
 
-      {/* Contenu principal – avec padding en haut pour ne pas être masqué par le sticky */}
       <div className="max-w-6xl mx-auto px-6 pb-10 pt-4">
-        {/* CONTENT */}
         {loading ? (
           <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700 shadow-sm p-6 text-center">
             <p className="text-gray-600 dark:text-gray-400">Chargement...</p>
@@ -932,7 +911,6 @@ export default function CandidatureAnalysisPage() {
           </>
         )}
       </div>
-
     </div>
   );
 }
