@@ -112,7 +112,6 @@ const ChevRight = () => (
     <polyline points="9 18 15 12 9 6" />
   </svg>
 );
-
 /* ================= CONSTS ================= */
 const DAYS_SHORT = ["Lun", "Mar", "Mer", "Jeu", "Ven", "Sam", "Dim"];
 const DAYS_FULL = ["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi", "Dimanche"];
@@ -156,17 +155,17 @@ const makeStyles = (T, isDark) => ({
     fontSize: 13,
     color: T.text,
   },
-viewBtn: {
-  borderWidth: 1,
-  borderStyle: "solid",
-  borderColor: T.border,
-  background: "transparent",
-  padding: "7px 10px",
-  borderRadius: 10,
-  cursor: "pointer",
-  fontSize: 13,
-  color: T.text,
-},
+  viewBtn: {
+    borderWidth: 1,
+    borderStyle: "solid",
+    borderColor: T.border,
+    background: "transparent",
+    padding: "7px 10px",
+    borderRadius: 10,
+    cursor: "pointer",
+    fontSize: 13,
+    color: T.text,
+  },
   navBtn: {
     width: 34,
     height: 34,
@@ -274,22 +273,45 @@ viewBtn: {
   toggle: { width: 36, height: 20, borderRadius: 999, position: "relative", cursor: "pointer" },
   toggleThumb: { width: 16, height: 16, borderRadius: "50%", background: "#fff", position: "absolute", top: 2, transition: "transform .15s" },
 });
+function monthRange(d) {
+  const start = new Date(d.getFullYear(), d.getMonth(), 1, 0, 0, 0, 0);
+  const end = new Date(d.getFullYear(), d.getMonth() + 1, 1, 0, 0, 0, 0);
+  return { startDate: start.toISOString(), endDate: end.toISOString() };
+}
+function weekRange(weekStart) {
+  const start = new Date(weekStart); start.setHours(0, 0, 0, 0);
+  const end = new Date(start); end.setDate(end.getDate() + 7);
+  return { startDate: start.toISOString(), endDate: end.toISOString() };
+}
+function dayRange(d) {
+  const start = new Date(d); start.setHours(0, 0, 0, 0);
+  const end = new Date(start); end.setDate(end.getDate() + 1);
+  return { startDate: start.toISOString(), endDate: end.toISOString() };
+}
+
 
 /* ================= EVENT MODAL ================= */
 const EventModal = ({ T, S, event, defaultDate, defaultHour, onSave, onClose, onDelete }) => {
   const pad = (n) => String(n).padStart(2, "0");
-  const toLocal = (iso) => (iso ? new Date(iso).toISOString().slice(0, 16) : "");
-
-  const initStart = event
+  const toLocal = (iso) => {
+    if (!iso) return "";
+    const d = new Date(iso);
+    const yyyy = d.getFullYear();
+    const mm = pad(d.getMonth() + 1);
+    const dd = pad(d.getDate());
+    const hh = pad(d.getHours());
+    const mi = pad(d.getMinutes());
+    return `${yyyy}-${mm}-${dd}T${hh}:${mi}`;
+  };const initStart = event
     ? toLocal(event.startDate)
     : defaultDate
-    ? `${defaultDate}T${pad(defaultHour || 9)}:00`
-    : "";
+      ? `${defaultDate}T${pad(defaultHour || 9)}:00`
+      : "";
   const initEnd = event
     ? toLocal(event.endDate)
     : defaultDate
-    ? `${defaultDate}T${pad((defaultHour || 9) + 1)}:00`
-    : "";
+      ? `${defaultDate}T${pad((defaultHour || 9) + 1)}:00`
+      : "";
 
   const [form, setForm] = useState({
     title: event?.title || "",
@@ -1076,6 +1098,7 @@ const OutlookCalendar = ({ onDateSelect } = {}) => {
     createEvent,
     updateEvent,
     deleteEvent,
+    fetchEvents,
     syncNow,
   } = useOutlookCalendar();
 
@@ -1113,6 +1136,16 @@ const OutlookCalendar = ({ onDateSelect } = {}) => {
   const [defaultDate, setDefaultDate] = useState(null);
   const [defaultHour, setDefaultHour] = useState(9);
   const [toast, setToast] = useState(null);
+  // ✅ Auto-load Outlook events when view/date changes (month/week/day)
+  useEffect(() => {
+    if (!outlookStatus?.connected) return;
+    let range;
+    if (view === "month") range = monthRange(currentDate);
+    else if (view === "week") range = weekRange(weekStart);
+    else range = dayRange(dayDate);
+    fetchEvents(range);
+  }, [view, currentDate, weekStart, dayDate, outlookStatus?.connected, fetchEvents]);
+
 
   const showToast = (msg, type = "success") => {
     setToast({ msg, type });
@@ -1318,8 +1351,12 @@ const OutlookCalendar = ({ onDateSelect } = {}) => {
           {outlookStatus.connected && (
             <button
               onClick={async () => {
-                await syncNow();
-                showToast("🔄 Synchronisé !");
+                let range;
+                if (view === "month") range = monthRange(currentDate);
+                else if (view === "week") range = weekRange(weekStart);
+                else range = dayRange(dayDate);
+
+                await syncNow(range);
               }}
               style={S.outlookBtn}
               disabled={syncing}

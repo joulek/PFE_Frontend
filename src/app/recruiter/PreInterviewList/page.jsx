@@ -75,6 +75,7 @@ function SendDocumentsModal({ candidature, onClose, onSuccess }) {
   const [error, setError] = useState("");
   const name = getName(candidature);
 
+
   useEffect(() => {
     async function load() {
       setLoadingData(true);
@@ -502,102 +503,194 @@ function RHTechniqueFlow({ candidate, onBack, onClose }) {
   const [done, setDone] = useState(false);
   const [error, setError] = useState("");
 
-  useEffect(() => { fetchAvailability(); }, []);
+  // ✅ Recharge si candidat change
+  useEffect(() => {
+    fetchAvailability();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [candidate?._id, candidate?.jobOfferId]);
 
   async function fetchAvailability() {
     setLoading(true);
+    setError("");
+    setSelected(null);
+    setDone(false);
+
     try {
-      const r = await api.get("/interviews/availability", {
-        params: { candidatureId: candidate._id, jobOfferId: candidate.jobOfferId, days: 7 }
+      const candidatureId = candidate?._id;
+      const jobOfferId = candidate?.jobOfferId;
+
+      if (!candidatureId || !jobOfferId) {
+        setSlots([]);
+        setError("Candidature/jobOfferId manquant.");
+        setLoading(false);
+        return;
+      }
+
+      // ✅ FIX 404: bon endpoint
+      const r = await api.get("/api/calendar/rh-tech-slots", {
+        params: { candidatureId, jobOfferId, days: 7 },
       });
-      setSlots(r.data?.slots || []);
-    } catch(e) {
+
+      const got = r?.data?.slots || [];
+      setSlots(Array.isArray(got) ? got : []);
+    } catch (e) {
       console.error(e);
       setSlots([]);
+      setError(e?.response?.data?.message || e?.message || "Erreur lors du chargement des créneaux");
     }
+
     setLoading(false);
   }
 
   async function handleSchedule() {
     if (!selected) return;
-    setSaving(true); setError("");
+
+    setSaving(true);
+    setError("");
+
     try {
-      await api.post("/interviews/schedule", {
-        candidatureId: candidate._id,
-        jobOfferId:    candidate.jobOfferId,
-        interviewType: "rh_technique",
-        proposedDate:  selected.date,
-        proposedTime:  selected.time,
-        createCalendarEvent: true,
-        notifyResponsable: true,   // email au responsable pour confirmer
+      const candidatureId = candidate?._id;
+      const jobOfferId = candidate?.jobOfferId;
+
+      if (!candidatureId || !jobOfferId) {
+        setError("Candidature/jobOfferId manquant.");
+        setSaving(false);
+        return;
+      }
+
+      // ✅ FIX 404: bon endpoint + payload minimal attendu
+      await api.post("/api/calendar/rh-tech/schedule", {
+        candidatureId,
+        jobOfferId,
+        proposedDate: selected.date,
+        proposedTime: selected.time,
       });
+
       setDone(true);
-    } catch(e) {
-      setError(e?.response?.data?.message || "Erreur");
+    } catch (e) {
+      console.error(e);
+      setError(e?.response?.data?.message || e?.message || "Erreur");
     }
+
     setSaving(false);
   }
 
-  // Grouper par jour
-  const slotsByDay = slots.reduce((acc, s) => {
-    const day = s.date;
-    if (!acc[day]) acc[day] = [];
-    acc[day].push(s);
-    return acc;
-  }, {});
+  // Grouper par jour + trier heures
+  const slotsByDay = useMemo(() => {
+    const acc = {};
+    for (const s of slots) {
+      const day = s?.date;
+      if (!day) continue;
+      if (!acc[day]) acc[day] = [];
+      acc[day].push(s);
+    }
 
-  if (done) return (
-    <div className="p-5 text-center">
-      <div className="w-16 h-16 rounded-full bg-orange-100 flex items-center justify-center mx-auto mb-4">
-        <CheckCircle2 className="w-8 h-8 text-orange-600"/>
+    // trier chaque jour par time (HH:mm)
+    Object.keys(acc).forEach((day) => {
+      acc[day].sort((a, b) => String(a.time).localeCompare(String(b.time)));
+    });
+
+    return acc;
+  }, [slots]);
+
+  if (done) {
+    return (
+      <div className="p-5 text-center">
+        <div className="w-16 h-16 rounded-full bg-orange-100 dark:bg-orange-900/30 flex items-center justify-center mx-auto mb-4">
+          <CheckCircle2 className="w-8 h-8 text-orange-600 dark:text-orange-400" />
+        </div>
+
+        <h3 className="font-bold text-gray-800 dark:text-white text-lg mb-1">
+          Demande envoyée !
+        </h3>
+        <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">
+          Email envoyé au Responsable Métier pour confirmation.
+        </p>
+        <p className="text-xs text-gray-400 dark:text-gray-500">
+          S&apos;il accepte → email automatique au candidat avec les détails.
+        </p>
+
+        <button
+          onClick={onClose}
+          className="mt-5 inline-flex items-center justify-center px-4 py-2 rounded-xl bg-gray-900 text-white dark:bg-white dark:text-gray-900 font-bold text-sm"
+        >
+          Fermer
+        </button>
       </div>
-      <h3 className="font-bold text-gray-800 dark:text-white text-lg mb-1">Demande envoyée !</h3>
-      <p className="text-sm text-gray-500 mb-1">Email envoyé au Responsable Métier pour confirmation.</p>
-      <p className="text-xs text-gray-400">S&apos;il accepte → email automatique au candidat avec les détails.</p>
-    </div>
-  );
+    );
+  }
 
   return (
     <div className="p-5">
-      <button onClick={onBack} className="text-xs text-gray-400 hover:text-gray-600 flex items-center gap-1 mb-4">← Retour</button>
+      <button
+        onClick={onBack}
+        className="text-xs text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 flex items-center gap-1 mb-4"
+      >
+        ← Retour
+      </button>
+
       <div className="flex items-center gap-3 mb-4 p-3 bg-orange-50 dark:bg-orange-900/20 rounded-xl">
         <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-orange-500 to-red-500 flex items-center justify-center flex-shrink-0">
-          <UserCog className="w-4 h-4 text-white"/>
+          <UserCog className="w-4 h-4 text-white" />
         </div>
         <div>
-          <p className="text-sm font-bold text-gray-800 dark:text-white">Entretien RH + Technique</p>
-          <p className="text-xs text-gray-500">Créneaux libres — Recruteur & Responsable (7 jours)</p>
+          <p className="text-sm font-bold text-gray-800 dark:text-white">
+            Entretien RH + Technique
+          </p>
+          <p className="text-xs text-gray-500 dark:text-gray-400">
+            Créneaux libres — Recruteur & Responsable (7 jours)
+          </p>
         </div>
       </div>
 
       {loading ? (
         <div className="flex flex-col items-center py-8 gap-3">
-          <Loader2 className="w-7 h-7 animate-spin text-orange-400"/>
+          <Loader2 className="w-7 h-7 animate-spin text-orange-400" />
           <p className="text-sm text-gray-400">Analyse des calendriers...</p>
         </div>
       ) : slots.length === 0 ? (
         <div className="py-6 text-center">
-          <p className="text-sm text-gray-500 mb-3">Aucun créneau commun trouvé cette semaine.</p>
-          <button onClick={fetchAvailability} className="text-xs text-orange-500 hover:underline">Réessayer</button>
+          <p className="text-sm text-gray-500 dark:text-gray-400 mb-3">
+            Aucun créneau commun trouvé cette semaine.
+          </p>
+          <button
+            onClick={fetchAvailability}
+            className="text-xs text-orange-500 hover:underline"
+          >
+            Réessayer
+          </button>
         </div>
       ) : (
         <div className="max-h-72 overflow-y-auto space-y-3 mb-4 pr-1">
           {Object.entries(slotsByDay).map(([day, daySlots]) => (
             <div key={day}>
-              <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">
-                {new Date(day).toLocaleDateString("fr-FR", { weekday:"long", day:"numeric", month:"long" })}
+              <p className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">
+                {new Date(day).toLocaleDateString("fr-FR", {
+                  weekday: "long",
+                  day: "numeric",
+                  month: "long",
+                })}
               </p>
+
               <div className="flex flex-wrap gap-2">
-                {daySlots.map((s, i) => (
-                  <button key={i} onClick={() => setSelected(s)}
-                    className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all border-2 ${
-                      selected?.date === s.date && selected?.time === s.time
-                        ? "bg-orange-500 text-white border-orange-500"
-                        : "bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:border-orange-400"
-                    }`}>
-                    {s.time}
-                  </button>
-                ))}
+                {daySlots.map((s, i) => {
+                  const active =
+                    selected?.date === s.date && selected?.time === s.time;
+
+                  return (
+                    <button
+                      key={`${day}-${s.time}-${i}`}
+                      onClick={() => setSelected(s)}
+                      className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all border-2 ${
+                        active
+                          ? "bg-orange-500 text-white border-orange-500"
+                          : "bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-200 hover:border-orange-400"
+                      }`}
+                    >
+                      {s.time}
+                    </button>
+                  );
+                })}
               </div>
             </div>
           ))}
@@ -607,25 +700,38 @@ function RHTechniqueFlow({ candidate, onBack, onClose }) {
       {selected && (
         <div className="mb-3 p-3 bg-orange-50 dark:bg-orange-900/20 rounded-xl flex items-center justify-between">
           <div>
-            <p className="text-xs text-gray-500">Créneau sélectionné</p>
+            <p className="text-xs text-gray-500 dark:text-gray-400">Créneau sélectionné</p>
             <p className="text-sm font-bold text-gray-800 dark:text-white">
-              {new Date(selected.date).toLocaleDateString("fr-FR", { weekday:"long", day:"numeric", month:"long" })} à {selected.time}
+              {new Date(selected.date).toLocaleDateString("fr-FR", {
+                weekday: "long",
+                day: "numeric",
+                month: "long",
+              })}{" "}
+              à {selected.time}
             </p>
           </div>
-          <button onClick={() => setSelected(null)} className="text-gray-400 hover:text-gray-600"><X className="w-4 h-4"/></button>
+          <button
+            onClick={() => setSelected(null)}
+            className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
+          >
+            <X className="w-4 h-4" />
+          </button>
         </div>
       )}
 
       {error && <p className="text-xs text-red-500 mb-2">{error}</p>}
-      <button onClick={handleSchedule} disabled={!selected || saving}
-        className="w-full py-3 rounded-xl bg-orange-500 hover:bg-orange-600 text-white font-bold text-sm flex items-center justify-center gap-2 disabled:opacity-40">
-        {saving ? <Loader2 className="w-4 h-4 animate-spin"/> : <Send className="w-4 h-4"/>}
+
+      <button
+        onClick={handleSchedule}
+        disabled={!selected || saving}
+        className="w-full py-3 rounded-xl bg-orange-500 hover:bg-orange-600 text-white font-bold text-sm flex items-center justify-center gap-2 disabled:opacity-40"
+      >
+        {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
         {saving ? "Envoi..." : "Envoyer au Responsable pour confirmation"}
       </button>
     </div>
   );
 }
-
 // ── Wrapper Modal principal ─────────────────────────────────────
 function EntretienModal({ candidate, onClose, onRHScheduled }) {
   const [step, setStep] = useState("type");  // "type" | "telephonique" | "rh" | "rh_technique"

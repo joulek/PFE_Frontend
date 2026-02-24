@@ -53,3 +53,41 @@ export function getRecruiterFreeSlots(interviewId) {
 export function recruiterProposeNewSlot(interviewId, startISO) {
   // backend: POST /api/calendar/interview/:id/propose  body: { startISO }
   return api.post(`/api/calendar/interview/${interviewId}/propose`, { startISO });}
+
+  export function getRhTechSlots({ candidatureId, jobOfferId, days = 7 }) {
+  return axios.get(`${API_URL}/calendar/rh-tech-slots`, {
+    headers: authHeaders(),
+    params: { candidatureId, jobOfferId, days },
+  });
+}
+
+export function proposeRhTechInterview({ candidatureId, jobOfferId, proposedDate, proposedTime }) {
+  return axios.post(
+    `${API_URL}/calendar/rh-tech/schedule`,
+    { candidatureId, jobOfferId, proposedDate, proposedTime },
+    { headers: authHeaders() }
+  );
+}
+
+// email-confirm pages (no auth generally needed)
+export function managerConfirmRhTech(token) {
+  return axios.post(`${API_URL}/calendar/rh-tech/manager/confirm/${token}`);
+}
+
+export function managerProposeRhTech(token, { proposedDate, proposedTime }) {
+  return axios.post(`${API_URL}/calendar/rh-tech/manager/propose/${token}`, {
+    proposedDate,
+    proposedTime,
+  });
+}
+
+export function candidateConfirmRhTech(token) {
+  return axios.post(`${API_URL}/calendar/rh-tech/candidate/confirm/${token}`);
+}
+
+export function candidateProposeRhTech(token, { proposedDate, proposedTime }) {
+  return axios.post(`${API_URL}/calendar/rh-tech/candidate/propose/${token}`, {
+    proposedDate,
+    proposedTime,
+  });
+}
