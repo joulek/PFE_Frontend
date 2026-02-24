@@ -38,7 +38,7 @@ function formatDate(date) {
 
 function getJobStatus(job) {
   const s = (job?.status || "").toString().toUpperCase().trim();
-  if (["CONFIRMEE", "REJETEE", "EN_ATTENTE", "VALIDEE", "PUBLIEE"].includes(s)) return s;
+  if (["CONFIRMEE", "REJETEE", "EN_ATTENTE", "VALIDEE"].includes(s)) return s;
   return "EN_ATTENTE";
 }
 
@@ -59,7 +59,7 @@ function clamp(n, min, max) {
 /* ================= STATUS CONFIG ================= */
 const STATUS_CONFIG = {
   CONFIRMEE: {
-    label: "Confirmée",
+    label: "Publiée",
     bg: "bg-green-100 dark:bg-emerald-900/30",
     text: "text-green-700 dark:text-emerald-400",
     border: "border-green-200 dark:border-emerald-800",
@@ -74,14 +74,7 @@ const STATUS_CONFIG = {
     icon: CheckCircle2,
     cardBorder: "border-blue-200 dark:border-blue-800",
   },
-  PUBLIEE: {
-    label: "Publiée",
-    bg: "bg-emerald-100 dark:bg-emerald-900/30",
-    text: "text-emerald-700 dark:text-emerald-400",
-    border: "border-emerald-200 dark:border-emerald-800",
-    icon: Send,
-    cardBorder: "border-emerald-200 dark:border-emerald-800",
-  },
+
   EN_ATTENTE: {
     label: "En attente",
     bg: "bg-amber-100 dark:bg-amber-900/30",
@@ -145,8 +138,7 @@ function OriginBadge({ origin }) {
 const STATUS_TABS = [
   { key: "EN_ATTENTE", label: "En attente" },
   { key: "VALIDEE",    label: "Validées" },
-  { key: "PUBLIEE",    label: "Publiées" },
-  { key: "CONFIRMEE",  label: "Confirmées" },
+  { key: "CONFIRMEE",  label: "Publiées" },
   { key: "REJETEE",    label: "Rejetées" },
 ];
 
@@ -156,13 +148,6 @@ const ORIGIN_FILTERS = [
   { key: "ASSIGNED", label: "Assignées" },
 ];
 
-const SCORE_ITEMS = [
-  { key: "skillsFit",        label: "Skills Fit" },
-  { key: "experienceFit",    label: "Experience Fit" },
-  { key: "projectsFit",      label: "Projects Fit" },
-  { key: "educationFit",     label: "Education Fit" },
-  { key: "communicationFit", label: "Communication Fit" },
-];
 
 /* =================================================================
    PAGE
@@ -230,7 +215,7 @@ export default function ResponsableJobsPage() {
 
   // ✅ counts inclut VALIDEE et PUBLIEE
   const counts = useMemo(() => {
-    const c = { all: jobs.length, EN_ATTENTE: 0, VALIDEE: 0, PUBLIEE: 0, CONFIRMEE: 0, REJETEE: 0 };
+    const c = { all: jobs.length, EN_ATTENTE: 0, VALIDEE: 0,  CONFIRMEE: 0, REJETEE: 0 };
     for (const j of jobs) {
       const s = j._status || getJobStatus(j);
       if (c[s] !== undefined) c[s] += 1;
@@ -410,14 +395,12 @@ export default function ResponsableJobsPage() {
                 const colorMap = {
                   EN_ATTENTE: active ? "bg-amber-500 text-white"   : "text-amber-600 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-900/20",
                   VALIDEE:    active ? "bg-blue-500 text-white"    : "text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20",
-                  PUBLIEE:    active ? "bg-emerald-500 text-white" : "text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-900/20",
                   CONFIRMEE:  active ? "bg-green-600 text-white"   : "text-green-700 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/20",
                   REJETEE:    active ? "bg-red-500 text-white"     : "text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20",
                 };
                 const badgeColor = {
                   EN_ATTENTE: active ? "bg-white/25 text-white" : "bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300",
                   VALIDEE:    active ? "bg-white/25 text-white" : "bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300",
-                  PUBLIEE:    active ? "bg-white/25 text-white" : "bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300",
                   CONFIRMEE:  active ? "bg-white/25 text-white" : "bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300",
                   REJETEE:    active ? "bg-white/25 text-white" : "bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300",
                 };

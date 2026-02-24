@@ -74,10 +74,6 @@ export function getMyAssignedJobs() {
 
 export function validateJob(id) {
   // step 1: EN_ATTENTE -> VALIDEE
-  return axios.put(`${API_URL}/jobs/${id}/confirm`, {}, { headers: authHeaders() });
+  return axios.put(`${API_URL}/jobs/${id}/validate`, {}, { headers: authHeaders() });
 }
 
-export function publishJob(id) {
-  // step 2: VALIDEE -> PUBLIEE
-  return axios.put(`${API_URL}/jobs/${id}/publish`, {}, { headers: authHeaders() });
-}
