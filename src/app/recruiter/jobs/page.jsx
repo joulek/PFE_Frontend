@@ -30,7 +30,7 @@ function formatDate(date) {
 
 function getJobStatus(job) {
   const s = (job?.status || "").toString().toUpperCase().trim();
-  if (["CONFIRMEE", "REJETEE", "EN_ATTENTE", "VALIDEE", "PUBLIEE"].includes(s)) return s;
+  if (["CONFIRMEE", "REJETEE", "EN_ATTENTE", "VALIDEE"].includes(s)) return s;
   return "EN_ATTENTE";
 }
 
@@ -49,12 +49,12 @@ function isInactive(job) {
 /* ================= STATUS CONFIG ================= */
 const STATUS_CONFIG = {
   CONFIRMEE: {
-    label: "Confirmée",
-    bg: "bg-green-100 dark:bg-emerald-900/30",
-    text: "text-green-700 dark:text-emerald-400",
-    border: "border-green-200 dark:border-emerald-800",
-    icon: CheckCircle2,
-    cardBorder: "border-green-200 dark:border-emerald-800",
+    label: "Publiée", // 👈 IMPORTANT
+    bg: "bg-emerald-100 dark:bg-emerald-900/30",
+    text: "text-emerald-700 dark:text-emerald-400",
+    border: "border-emerald-200 dark:border-emerald-800",
+    icon: Send,
+    cardBorder: "border-emerald-200 dark:border-emerald-800",
   },
   VALIDEE: {
     label: "Validée",
@@ -63,14 +63,6 @@ const STATUS_CONFIG = {
     border: "border-blue-200 dark:border-blue-800",
     icon: CheckCircle2,
     cardBorder: "border-blue-200 dark:border-blue-800",
-  },
-  PUBLIEE: {
-    label: "Publiée",
-    bg: "bg-emerald-100 dark:bg-emerald-900/30",
-    text: "text-emerald-700 dark:text-emerald-400",
-    border: "border-emerald-200 dark:border-emerald-800",
-    icon: Send,
-    cardBorder: "border-emerald-200 dark:border-emerald-800",
   },
   EN_ATTENTE: {
     label: "En attente",
@@ -118,11 +110,10 @@ function StatusBadges({ status, expired }) {
 /* ================= TABS ================= */
 const STATUS_TABS = [
   { key: "EN_ATTENTE", label: "En attente" },
-  { key: "VALIDEE",    label: "Validées" },
-  { key: "PUBLIEE",    label: "Publiées" },
-  { key: "CONFIRMEE",  label: "Confirmées" },
-  { key: "REJETEE",    label: "Rejetées" },
-  { key: "INACTIVE",   label: "Inactives" },
+  { key: "VALIDEE", label: "Validées" },
+  { key: "CONFIRMEE", label: "Publiées" },
+  { key: "REJETEE", label: "Rejetées" },
+  { key: "INACTIVE", label: "Inactives" },
 ];
 
 /* ================= PAGE ================= */
@@ -155,9 +146,9 @@ export default function JobsPage() {
       const res = await getUsers();
       const list = Array.isArray(res?.data) ? res.data
         : Array.isArray(res?.data?.users) ? res.data.users
-        : Array.isArray(res?.data?.data) ? res.data.data
-        : Array.isArray(res?.data?.data?.users) ? res.data.data.users
-        : [];
+          : Array.isArray(res?.data?.data) ? res.data.data
+            : Array.isArray(res?.data?.data?.users) ? res.data.data.users
+              : [];
       setUsers(list);
     } catch {
       setUsers([]);
@@ -198,8 +189,14 @@ export default function JobsPage() {
   }, [normalizedJobs, activeTab]);
 
   const counts = useMemo(() => {
-    const c = { all: normalizedJobs.length, EN_ATTENTE: 0, VALIDEE: 0, PUBLIEE: 0, CONFIRMEE: 0, REJETEE: 0, INACTIVE: 0 };
-    normalizedJobs.forEach((j) => {
+    const c = {
+      all: normalizedJobs.length,
+      EN_ATTENTE: 0,
+      VALIDEE: 0,
+      CONFIRMEE: 0, // = Publiées
+      REJETEE: 0,
+      INACTIVE: 0
+    }; normalizedJobs.forEach((j) => {
       if (c[j._normalizedStatus] !== undefined) c[j._normalizedStatus]++;
       if (isInactive(j)) c.INACTIVE++;
     });
@@ -218,23 +215,21 @@ export default function JobsPage() {
   /* Color helpers */
   function colorMap(key, active) {
     return {
-      EN_ATTENTE: active ? "bg-amber-500 text-white"    : "text-amber-600 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-900/20",
-      VALIDEE:    active ? "bg-blue-500 text-white"     : "text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20",
-      PUBLIEE:    active ? "bg-emerald-500 text-white"  : "text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-900/20",
-      CONFIRMEE:  active ? "bg-green-600 text-white"    : "text-green-700 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/20",
-      REJETEE:    active ? "bg-red-500 text-white"      : "text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20",
-      INACTIVE:   active ? "bg-gray-600 text-white"     : "text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800",
+      EN_ATTENTE: active ? "bg-amber-500 text-white" : "text-amber-600 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-900/20",
+      VALIDEE: active ? "bg-blue-500 text-white" : "text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20",
+      CONFIRMEE: active ? "bg-green-600 text-white" : "text-green-700 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/20",
+      REJETEE: active ? "bg-red-500 text-white" : "text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20",
+      INACTIVE: active ? "bg-gray-600 text-white" : "text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800",
     }[key];
   }
 
   function badgeMap(key, active) {
     return {
       EN_ATTENTE: active ? "bg-white/25 text-white" : "bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300",
-      VALIDEE:    active ? "bg-white/25 text-white" : "bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300",
-      PUBLIEE:    active ? "bg-white/25 text-white" : "bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300",
-      CONFIRMEE:  active ? "bg-white/25 text-white" : "bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300",
-      REJETEE:    active ? "bg-white/25 text-white" : "bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300",
-      INACTIVE:   active ? "bg-white/25 text-white" : "bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400",
+      VALIDEE: active ? "bg-white/25 text-white" : "bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300",
+      CONFIRMEE: active ? "bg-white/25 text-white" : "bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300",
+      REJETEE: active ? "bg-white/25 text-white" : "bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300",
+      INACTIVE: active ? "bg-white/25 text-white" : "bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400",
     }[key];
   }
 
@@ -261,7 +256,7 @@ export default function JobsPage() {
           </button>
         </div>
 
-     
+
 
         {/* FILTER BAR — organisée */}
         <div className="bg-white dark:bg-gray-900/60 border border-gray-200 dark:border-gray-700 rounded-2xl mb-8 overflow-hidden shadow-sm">
@@ -278,18 +273,16 @@ export default function JobsPage() {
               <button
                 type="button"
                 onClick={() => setActiveTab("all")}
-                className={`inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-sm font-bold transition-all duration-150 ${
-                  activeTab === "all"
-                    ? "bg-[#6CB33F] dark:bg-emerald-600 text-white"
-                    : "text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
-                }`}
+                className={`inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-sm font-bold transition-all duration-150 ${activeTab === "all"
+                  ? "bg-[#6CB33F] dark:bg-emerald-600 text-white"
+                  : "text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
+                  }`}
               >
                 Tous
-                <span className={`text-xs px-1.5 py-0.5 rounded-full font-bold ${
-                  activeTab === "all"
-                    ? "bg-white/25 text-white"
-                    : "bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400"
-                }`}>
+                <span className={`text-xs px-1.5 py-0.5 rounded-full font-bold ${activeTab === "all"
+                  ? "bg-white/25 text-white"
+                  : "bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400"
+                  }`}>
                   {counts.all}
                 </span>
               </button>

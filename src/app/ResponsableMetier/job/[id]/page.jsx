@@ -29,7 +29,7 @@ function formatDate(date) {
 
 function getJobStatus(job) {
   const s = (job?.status || "").toString().toUpperCase().trim();
-  if (["CONFIRMEE", "REJETEE", "EN_ATTENTE", "VALIDEE", "PUBLIEE"].includes(s)) return s;
+  if (["CONFIRMEE", "REJETEE", "EN_ATTENTE", "VALIDEE"].includes(s)) return s;
   return "EN_ATTENTE";
 }
 
@@ -54,7 +54,7 @@ function clamp(n, min, max) {
 /* ================= UI CONFIG ================= */
 const STATUS_UI = {
   CONFIRMEE: {
-    label: "Confirmée",
+    label: "Publiée",
     pill: "bg-green-100 dark:bg-emerald-900/30 text-green-700 dark:text-emerald-400 border-green-200 dark:border-emerald-800",
     icon: CheckCircle2,
   },
@@ -62,11 +62,6 @@ const STATUS_UI = {
     label: "Validée",
     pill: "bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 border-blue-200 dark:border-blue-800",
     icon: CheckCircle2,
-  },
-  PUBLIEE: {
-    label: "Publiée",
-    pill: "bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800",
-    icon: Send,
   },
   EN_ATTENTE: {
     label: "En attente",

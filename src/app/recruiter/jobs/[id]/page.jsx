@@ -15,7 +15,7 @@ import {
   getLinkedInAuthUrl,
   checkLinkedInStatus,
   exchangeLinkedInCode,
-  validateJob, publishJob
+  validateJob
 } from "../../../services/job.api";
 
 import { getUsers } from "../../../services/ResponsableMetier.api";
@@ -53,7 +53,7 @@ function formatDate(date) {
 
 function getJobStatus(job) {
   const s = (job?.status || "").toString().toUpperCase().trim();
-  if (["CONFIRMEE", "REJETEE", "EN_ATTENTE", "VALIDEE", "PUBLIEE"].includes(s)) return s;
+  if (["CONFIRMEE", "REJETEE", "EN_ATTENTE", "VALIDEE"].includes(s)) return s;
   return "EN_ATTENTE";
 }
 
@@ -67,25 +67,20 @@ function isExpired(job) {
 
 /* ================= UI CONFIG ================= */
 const STATUS_UI = {
-  CONFIRMEE: {
-    label: "Confirmée",
-    pill: "bg-green-100 dark:bg-emerald-900/30 text-green-700 dark:text-emerald-400 border-green-200 dark:border-emerald-800",
-    icon: CheckCircle2,
+  EN_ATTENTE: {
+    label: "En attente",
+    pill: "bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 border-amber-200 dark:border-amber-800",
+    icon: Clock,
   },
   VALIDEE: {
     label: "Validée",
     pill: "bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 border-blue-200 dark:border-blue-800",
     icon: CheckCircle2,
   },
-  PUBLIEE: {
-    label: "Publiée",
+  CONFIRMEE: {
+    label: "Publiée", // 👈 IMPORTANT
     pill: "bg-green-100 dark:bg-emerald-900/30 text-green-700 dark:text-emerald-400 border-green-200 dark:border-emerald-800",
     icon: CheckCircle2,
-  },
-  EN_ATTENTE: {
-    label: "En attente",
-    pill: "bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 border-amber-200 dark:border-amber-800",
-    icon: Clock,
   },
   REJETEE: {
     label: "Rejetée",
@@ -205,18 +200,7 @@ export default function RecruiterJobDetailsPage() {
   }
 };
 
-const onPublish = async () => {
-  try {
-    setActionLoading(true);
-    await publishJob(job._id);
-    await load();
-  } catch (e) {
-    console.error(e);
-    alert(e?.response?.data?.message || "Erreur publication");
-  } finally {
-    setActionLoading(false);
-  }
-};
+
   // ✅ هل العرض متبوست قبل
   /* ================= LOAD ================= */
   async function load() {
@@ -589,7 +573,7 @@ const onPublish = async () => {
                   {/* ÉTAPE 2: PUBLIER (public candidats) */}
                   {status === "VALIDEE" && (
                     <button
-                      onClick={onPublish} // ✅ nouveau handler
+                      onClick={onConfirm} // ✅ nouveau handler
                       disabled={actionLoading}
                       className="h-11 px-5 rounded-full font-semibold inline-flex items-center justify-center gap-2
                    bg-[#6CB33F] hover:bg-[#4E8F2F] text-white transition-colors disabled:opacity-50"
@@ -645,7 +629,7 @@ const onPublish = async () => {
                       !liConnected
                         ? "Connecte LinkedIn d'abord"
                         : !canPublishLinkedIn
-                          ? expired ? "Offre expirée" : "Disponible après publication (étape 2)"
+                          ? expired ? "Offre expirée" : "Disponible après confirmation de l'offre"
                           : "Publier cette offre sur LinkedIn"
                     }                  >
                     {liConnecting
