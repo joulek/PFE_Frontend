@@ -330,24 +330,7 @@ export default function ResponsableJobsPage() {
           </button>
         </div>
 
-        {/* STATS — ✅ inclut VALIDEE et PUBLIEE */}
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
-          {[
-            { label: "Total",      value: counts.all,        cls: "bg-white dark:bg-gray-800 text-gray-900 dark:text-white" },
-            { label: "En attente", value: counts.EN_ATTENTE, cls: "bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-300" },
-            { label: "Validées",   value: counts.VALIDEE,    cls: "bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300" },
-            { label: "Publiées",   value: counts.PUBLIEE,    cls: "bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-300" },
-            { label: "Rejetées",   value: counts.REJETEE,    cls: "bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-300" },
-          ].map((s) => (
-            <div
-              key={s.label}
-              className={`rounded-2xl p-5 border border-gray-200 dark:border-gray-700 ${s.cls}`}
-            >
-              <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">{s.label}</p>
-              <p className="text-3xl font-extrabold mt-1">{s.value}</p>
-            </div>
-          ))}
-        </div>
+
 
         {/* FILTER BAR — redesigned */}
         <div className="bg-white dark:bg-gray-900/60 border border-gray-200 dark:border-gray-700 rounded-2xl mb-8 overflow-hidden shadow-sm">
