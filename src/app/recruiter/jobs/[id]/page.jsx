@@ -15,6 +15,7 @@ import {
   getLinkedInAuthUrl,
   checkLinkedInStatus,
   exchangeLinkedInCode,
+  validateJob, publishJob
 } from "../../../services/job.api";
 
 import { getUsers } from "../../../services/ResponsableMetier.api";
@@ -52,7 +53,7 @@ function formatDate(date) {
 
 function getJobStatus(job) {
   const s = (job?.status || "").toString().toUpperCase().trim();
-  if (s === "CONFIRMEE" || s === "REJETEE" || s === "EN_ATTENTE") return s;
+  if (["CONFIRMEE", "REJETEE", "EN_ATTENTE", "VALIDEE", "PUBLIEE"].includes(s)) return s;
   return "EN_ATTENTE";
 }
 
@@ -68,6 +69,16 @@ function isExpired(job) {
 const STATUS_UI = {
   CONFIRMEE: {
     label: "Confirmée",
+    pill: "bg-green-100 dark:bg-emerald-900/30 text-green-700 dark:text-emerald-400 border-green-200 dark:border-emerald-800",
+    icon: CheckCircle2,
+  },
+  VALIDEE: {
+    label: "Validée",
+    pill: "bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 border-blue-200 dark:border-blue-800",
+    icon: CheckCircle2,
+  },
+  PUBLIEE: {
+    label: "Publiée",
     pill: "bg-green-100 dark:bg-emerald-900/30 text-green-700 dark:text-emerald-400 border-green-200 dark:border-emerald-800",
     icon: CheckCircle2,
   },
@@ -181,6 +192,31 @@ export default function RecruiterJobDetailsPage() {
   const [liSuccess, setLiSuccess] = useState("");
   const [liError, setLiError] = useState("");
   const alreadyPublished = !!job?.linkedinLastPublishedAt;
+  const onValidate = async () => {
+  try {
+    setActionLoading(true);
+    await validateJob(job._id);
+    await load();
+  } catch (e) {
+    console.error(e);
+    alert(e?.response?.data?.message || "Erreur validation");
+  } finally {
+    setActionLoading(false);
+  }
+};
+
+const onPublish = async () => {
+  try {
+    setActionLoading(true);
+    await publishJob(job._id);
+    await load();
+  } catch (e) {
+    console.error(e);
+    alert(e?.response?.data?.message || "Erreur publication");
+  } finally {
+    setActionLoading(false);
+  }
+};
   // ✅ هل العرض متبوست قبل
   /* ================= LOAD ================= */
   async function load() {
@@ -208,6 +244,37 @@ export default function RecruiterJobDetailsPage() {
     } catch { setUsers([]); }
   }
 
+  function normalizeAdminStatus(raw) {
+    const s = String(raw || "").toUpperCase().trim();
+    if (["EN_ATTENTE", "VALIDEE", "PUBLIEE", "REJETEE"].includes(s)) return s;
+    // legacy
+    if (s === "CONFIRMEE") return "PUBLIEE";
+    return "EN_ATTENTE";
+  }
+
+  function AdminStatusPill({ status }) {
+    const s = normalizeAdminStatus(status);
+
+    const map = {
+      EN_ATTENTE: "bg-amber-100 text-amber-700 border-amber-200 dark:bg-amber-900/30 dark:text-amber-300 dark:border-amber-800",
+      VALIDEE: "bg-sky-100 text-sky-700 border-sky-200 dark:bg-sky-900/30 dark:text-sky-300 dark:border-sky-800",
+      PUBLIEE: "bg-green-100 text-green-700 border-green-200 dark:bg-emerald-900/30 dark:text-emerald-300 dark:border-emerald-800",
+      REJETEE: "bg-red-100 text-red-700 border-red-200 dark:bg-red-900/30 dark:text-red-300 dark:border-red-800",
+    };
+
+    const label = {
+      EN_ATTENTE: "En attente",
+      VALIDEE: "Validée (interne)",
+      PUBLIEE: "Publiée (public)",
+      REJETEE: "Rejetée",
+    };
+
+    return (
+      <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-extrabold border ${map[s]}`}>
+        {label[s]}
+      </span>
+    );
+  }
   // Vérifier statut LinkedIn
   async function checkLinkedIn() {
     try {
@@ -504,17 +571,44 @@ export default function RecruiterJobDetailsPage() {
               </div>
 
               {/* Confirm / Reject */}
-              {status === "EN_ATTENTE" && (
+              {/* ✅ ADMIN DOUBLE CONFIRMATION: Valider / Publier / Rejeter */}
+              {(status === "EN_ATTENTE" || status === "VALIDEE") && (
                 <div className="flex flex-col gap-2">
-                  <button onClick={onConfirm} disabled={actionLoading} className="h-11 px-5 rounded-full font-semibold inline-flex items-center justify-center gap-2 bg-[#6CB33F] hover:bg-[#4E8F2F] text-white transition-colors disabled:opacity-50">
-                    <CheckCircle2 size={16} /> Confirmer
-                  </button>
-                  <button onClick={() => setRejectOpen(true)} disabled={actionLoading} className="h-11 px-5 rounded-full font-semibold inline-flex items-center justify-center gap-2 bg-red-500 hover:bg-red-600 text-white transition-colors disabled:opacity-50">
+                  {/* ÉTAPE 1: VALIDER (interne) */}
+                  {status === "EN_ATTENTE" && (
+                    <button
+                      onClick={onValidate} // ✅ nouveau handler
+                      disabled={actionLoading}
+                      className="h-11 px-5 rounded-full font-semibold inline-flex items-center justify-center gap-2
+                   bg-sky-600 hover:bg-sky-700 text-white transition-colors disabled:opacity-50"
+                    >
+                      <CheckCircle2 size={16} /> Valider (étape 1)
+                    </button>
+                  )}
+
+                  {/* ÉTAPE 2: PUBLIER (public candidats) */}
+                  {status === "VALIDEE" && (
+                    <button
+                      onClick={onPublish} // ✅ nouveau handler
+                      disabled={actionLoading}
+                      className="h-11 px-5 rounded-full font-semibold inline-flex items-center justify-center gap-2
+                   bg-[#6CB33F] hover:bg-[#4E8F2F] text-white transition-colors disabled:opacity-50"
+                    >
+                      <CheckCircle2 size={16} /> Publier (étape 2)
+                    </button>
+                  )}
+
+                  {/* REJETER (toujours possible avant publication) */}
+                  <button
+                    onClick={() => setRejectOpen(true)}
+                    disabled={actionLoading}
+                    className="h-11 px-5 rounded-full font-semibold inline-flex items-center justify-center gap-2
+                 bg-red-500 hover:bg-red-600 text-white transition-colors disabled:opacity-50"
+                  >
                     <XCircle size={16} /> Rejeter
                   </button>
                 </div>
               )}
-
               {/* Réactiver */}
               {expired && (
                 <button onClick={() => setReactivateOpen(true)} disabled={actionLoading} className="h-11 px-5 rounded-full font-semibold inline-flex items-center justify-center bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 hover:bg-blue-200 transition-colors disabled:opacity-50">
@@ -547,8 +641,13 @@ export default function RecruiterJobDetailsPage() {
                         ? "bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-600"
                         : "bg-[#0A66C2]/10 dark:bg-[#0A66C2]/20 text-[#0A66C2] border border-[#0A66C2]/30 hover:bg-[#0A66C2]/20"
                       } disabled:opacity-50`}
-                    title={liConnected ? "Reconnecter LinkedIn" : "Connecter votre compte LinkedIn"}
-                  >
+                    title={
+                      !liConnected
+                        ? "Connecte LinkedIn d'abord"
+                        : !canPublishLinkedIn
+                          ? expired ? "Offre expirée" : "Disponible après publication (étape 2)"
+                          : "Publier cette offre sur LinkedIn"
+                    }                  >
                     {liConnecting
                       ? <Loader2 size={16} className="animate-spin" />
                       : liConnected

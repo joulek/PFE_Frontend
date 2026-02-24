@@ -338,7 +338,7 @@ export default function JobModal({
               {/* SELECT USERS */}
               <div>
                 <label className={labelBase}>
-                  Affectation utilisateurs
+                  Affectation responsable métier
                 </label>
                 <select
                   value={assignedUserId}
