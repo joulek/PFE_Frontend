@@ -278,33 +278,34 @@ function CandidatureCard({ c, onTogglePreselect }) {
   return (
     <div data-cy="candidature-card"
       className="bg-white dark:bg-gray-800 rounded-3xl border border-gray-100 dark:border-gray-700 shadow-sm overflow-hidden transition-colors duration-300">
-      <div className="p-6">
+      <div className="p-4 md:p-6">
 
-        {/* TOP HEADER - inchangé */}
-        <div className="flex items-start justify-between gap-4">
-          <div className="flex items-start gap-4">
-            <div className="w-14 h-14 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center text-green-700 dark:text-emerald-400 font-bold">
+        {/* TOP HEADER - RESPONSIVE */}
+        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+          <div className="flex items-start gap-3 sm:gap-4 min-w-0">
+            <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-green-100 dark:bg-green-900/30 flex-shrink-0 flex items-center justify-center text-green-700 dark:text-emerald-400 font-bold text-sm sm:text-base">
               {name?.[0]?.toUpperCase() || "C"}
             </div>
 
-            <div>
-              <h2 className="text-xl font-extrabold text-gray-900 dark:text-white">{name}</h2>
+            <div className="min-w-0 flex-1">
+              <h2 className="text-lg sm:text-xl font-extrabold text-gray-900 dark:text-white truncate">{name}</h2>
 
-              <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+              <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 mt-1 truncate">
                 {jobTitle} • <span className="font-medium">{expYears}</span>
               </p>
 
-              <div className="flex items-center gap-2 mt-2">
+              <div className="flex items-center gap-2 mt-2 flex-wrap">
                 {cvUrl ? (
                   <a
                     href={cvUrl}
                     target="_blank"
                     rel="noreferrer"
-                    className="inline-flex items-center gap-2 text-sm font-medium text-green-700 dark:text-emerald-400 hover:text-green-800 dark:hover:text-emerald-300"
+                    className="inline-flex items-center gap-1 sm:gap-2 text-xs sm:text-sm font-medium text-green-700 dark:text-emerald-400 hover:text-green-800 dark:hover:text-emerald-300"
                   >
-                    <FileText className="w-4 h-4" />
-                    Voir CV
-                    <span className="text-gray-400 dark:text-gray-500 text-xs">({cvName})</span>
+                    <FileText className="w-3 h-3 sm:w-4 sm:h-4 flex-shrink-0" />
+                    <span className="hidden sm:inline">Voir CV</span>
+                    <span className="sm:hidden">CV</span>
+                    <span className="text-gray-400 dark:text-gray-500 text-xs hidden sm:inline">({cvName})</span>
                   </a>
                 ) : (
                   <span className="text-xs text-red-500 dark:text-red-400 font-medium">
@@ -315,27 +316,28 @@ function CandidatureCard({ c, onTogglePreselect }) {
 
               <div className="flex flex-wrap gap-2 mt-3">
                 {match?.confidenceLevel && (
-                  <Tag variant="green">Confidence: {match.confidenceLevel}</Tag>
+                  <Tag variant="green"><span className="text-xs">Conf: {match.confidenceLevel}</span></Tag>
                 )}
                 {match?.riskLevel && (
                   <Tag variant={match.riskLevel === "low" ? "green" : "red"}>
-                    Risk: {match.riskLevel}
+                    <span className="text-xs">Risk: {match.riskLevel}</span>
                   </Tag>
                 )}
                 {match?.probabilityOfSuccess && (
                   <Tag variant="yellow">
-                    Success: {match.probabilityOfSuccess}
+                    <span className="text-xs">Suc: {match.probabilityOfSuccess}</span>
                   </Tag>
                 )}
               </div>
             </div>
           </div>
 
-          <div className="flex items-center gap-3">
+          {/* BUTTON - RESPONSIVE */}
+          <div className="flex items-center gap-2 self-start sm:self-center">
             <button
               onClick={handleToggle}
               disabled={toggling}
-              className={`inline-flex items-center gap-2 px-5 py-2.5 rounded-full text-sm font-semibold transition-all shadow-sm disabled:opacity-60 disabled:cursor-not-allowed ${isPreselected
+              className={`inline-flex items-center gap-1.5 px-3 py-2 sm:px-5 sm:py-2.5 rounded-full text-xs sm:text-sm font-semibold transition-all shadow-sm disabled:opacity-60 disabled:cursor-not-allowed whitespace-nowrap flex-shrink-0 ${isPreselected
                 ? "bg-green-500 dark:bg-green-600 text-white hover:bg-green-600 ring-2 ring-green-300 dark:ring-green-700"
                 : "bg-violet-500 dark:bg-violet-600 text-white hover:bg-violet-600"
                 }`}
@@ -343,23 +345,24 @@ function CandidatureCard({ c, onTogglePreselect }) {
               {toggling ? (
                 <span className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />
               ) : isPreselected ? (
-                <Check className="w-4 h-4" />
+                <Check className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
               ) : (
-                <UserCheck className="w-4 h-4" />
+                <UserCheck className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
               )}
-              {isPreselected ? "Déjà choisi" : "Pré-entretien"}
+              <span className="hidden sm:inline">{isPreselected ? "Déjà choisi" : "Pré-entretien"}</span>
+              <span className="sm:hidden">{isPreselected ? "Déjà choisi" : "Pré-entretien"}</span>
             </button>
           </div>
         </div>
 
         {/* LES 3 CONTAINERS DEMANDÉS */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3 md:gap-4 mt-4 md:mt-6">
           {/* MATCH SCORE */}
-          <div className="rounded-2xl border border-gray-100 dark:border-gray-700 p-4 bg-white dark:bg-gray-800/50 transition-colors">
+          <div className="rounded-2xl border border-gray-100 dark:border-gray-700 p-3 md:p-4 bg-white dark:bg-gray-800/50 transition-colors">
             <p className="text-xs font-semibold text-gray-500 dark:text-gray-400">MATCH SCORE</p>
             <div className="flex items-end justify-between mt-2">
               <p data-cy="match-score"
-                className="text-3xl font-extrabold text-green-600 dark:text-emerald-400">
+                className="text-2xl sm:text-3xl font-extrabold text-green-600 dark:text-emerald-400">
                 {typeof score === "number" ? pct(score) : "—"}
               </p>
               <span
@@ -375,16 +378,16 @@ function CandidatureCard({ c, onTogglePreselect }) {
 
 
           {/* EXPERIENCE */}
-          <div className="rounded-2xl border border-gray-100 dark:border-gray-700 p-4 bg-white dark:bg-gray-800/50 transition-colors">
+          <div className="rounded-2xl border border-gray-100 dark:border-gray-700 p-3 md:p-4 bg-white dark:bg-gray-800/50 transition-colors">
             <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-2">EXPERIENCE</p>
 
             {/* Total + Seniority */}
-            <div className="flex items-center gap-3 mb-3">
-              <p className="text-3xl font-extrabold text-gray-900 dark:text-white">
+            <div className="flex items-center gap-2 md:gap-3 mb-3">
+              <p className="text-2xl sm:text-3xl font-extrabold text-gray-900 dark:text-white">
                 {typeof match?.totalYears === "number" ? `${match.totalYears} ans` : expYears}
               </p>
               {match?.seniorityLevel && (
-                <span className={`text-xs font-bold px-2 py-1 rounded-full capitalize
+                <span className={`text-xs font-bold px-2 py-1 rounded-full capitalize flex-shrink-0
                   ${match.seniorityLevel === "senior" || match.seniorityLevel === "lead"
                     ? "bg-green-100 text-green-700 dark:bg-emerald-900/30 dark:text-emerald-400"
                     : match.seniorityLevel === "mid"
@@ -406,13 +409,13 @@ function CandidatureCard({ c, onTogglePreselect }) {
           </div>
 
           {/* AI DETECTION */}
-          <div className="rounded-2xl border border-gray-100 dark:border-gray-700 p-4 bg-white dark:bg-gray-800/50 min-h-[120px] flex flex-col justify-between transition-colors">
+          <div className="rounded-2xl border border-gray-100 dark:border-gray-700 p-3 md:p-4 bg-white dark:bg-gray-800/50 min-h-[120px] flex flex-col justify-between transition-colors">
             <p className="text-xs font-semibold text-gray-500 dark:text-gray-400">AI DETECTION</p>
 
             {ai?.status !== "DONE" ? (
               <div className="flex items-center gap-2 mt-2">
-                <Brain className="w-5 h-5 text-gray-600 dark:text-gray-400" />
-                <p className="text-lg font-bold text-gray-900 dark:text-white">
+                <Brain className="w-4 h-4 sm:w-5 sm:h-5 text-gray-600 dark:text-gray-400 flex-shrink-0" />
+                <p className="text-base sm:text-lg font-bold text-gray-900 dark:text-white">
                   {ai?.status || "—"}
                 </p>
               </div>
@@ -420,18 +423,18 @@ function CandidatureCard({ c, onTogglePreselect }) {
               <div className="mt-2">
                 <div className="flex items-center gap-3">
                   {ai?.isAIGenerated ? (
-                    <AlertTriangle className="w-6 h-6 text-red-500 dark:text-red-400" />
+                    <AlertTriangle className="w-5 h-5 sm:w-6 sm:h-6 text-red-500 dark:text-red-400 flex-shrink-0" />
                   ) : (
-                    <CheckCircle2 className="w-6 h-6 text-green-600 dark:text-emerald-400" />
+                    <CheckCircle2 className="w-5 h-5 sm:w-6 sm:h-6 text-green-600 dark:text-emerald-400 flex-shrink-0" />
                   )}
 
                   <p data-cy="ai-detection-result"
-                    className="text-3xl font-extrabold text-gray-900 dark:text-white">
+                    className="text-2xl sm:text-3xl font-extrabold text-gray-900 dark:text-white">
                     {ai.isAIGenerated ? "AI" : "Human"}
                   </p>
                 </div>
 
-                <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">
+                <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 mt-2">
                   Confidence:{" "}
                   <span className="font-semibold text-gray-800 dark:text-gray-200">
                     {`${Math.round((ai.confidence || 0) * 100)}%`}
@@ -450,26 +453,26 @@ function CandidatureCard({ c, onTogglePreselect }) {
         </div>
 
         {/* DETAILS GRID - organisation demandée */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6 mt-4 md:mt-6">
           {/* GAUCHE */}
-          <div className="space-y-6">
+          <div className="space-y-4 md:space-y-6">
 
             {/* AI Match Summary */}
-            <div className="rounded-2xl border border-gray-100 dark:border-gray-700 p-5 bg-white dark:bg-gray-800/50 transition-colors">
-              <div className="flex items-center gap-2 text-gray-900 dark:text-white font-semibold">
-                <CheckCircle2 className="w-5 h-5 text-gray-700 dark:text-gray-300" />
+            <div className="rounded-2xl border border-gray-100 dark:border-gray-700 p-4 md:p-5 bg-white dark:bg-gray-800/50 transition-colors">
+              <div className="flex items-center gap-2 text-gray-900 dark:text-white font-semibold text-sm md:text-base">
+                <CheckCircle2 className="w-4 h-4 md:w-5 md:h-5 text-gray-700 dark:text-gray-300 flex-shrink-0" />
                 AI Match Summary
               </div>
-              <p className="mt-3 text-sm text-gray-700 dark:text-gray-300">
+              <p className="mt-3 text-xs md:text-sm text-gray-700 dark:text-gray-300">
                 {match?.summary || "No summary available."}
               </p>
 
-              <div className="grid grid-cols-2 gap-4 mt-4">
+              <div className="grid grid-cols-2 gap-3 md:gap-4 mt-3 md:mt-4">
                 <div>
-                  <p className="text-sm font-semibold text-gray-800 dark:text-gray-200 mb-2">
+                  <p className="text-xs md:text-sm font-semibold text-gray-800 dark:text-gray-200 mb-2">
                     Points forts
                   </p>
-                  <ul className="text-sm text-gray-600 dark:text-gray-400 space-y-1">
+                  <ul className="text-xs md:text-sm text-gray-600 dark:text-gray-400 space-y-1">
                     {(match?.strengths || []).length === 0 ? (
                       <li>—</li>
                     ) : (
@@ -479,10 +482,10 @@ function CandidatureCard({ c, onTogglePreselect }) {
                 </div>
 
                 <div>
-                  <p className="text-sm font-semibold text-gray-800 dark:text-gray-200 mb-2">
+                  <p className="text-xs md:text-sm font-semibold text-gray-800 dark:text-gray-200 mb-2">
                     Points faibles
                   </p>
-                  <ul className="text-sm text-gray-600 dark:text-gray-400 space-y-1">
+                  <ul className="text-xs md:text-sm text-gray-600 dark:text-gray-400 space-y-1">
                     {(match?.weaknesses || []).length === 0 ? (
                       <li>—</li>
                     ) : (
@@ -494,12 +497,12 @@ function CandidatureCard({ c, onTogglePreselect }) {
             </div>
 
             {/* Détails d'Expérience - PLACÉ ICI COMME DEMANDÉ */}
-            <div className="rounded-2xl border border-gray-100 dark:border-gray-700 p-5 bg-white dark:bg-gray-800/50 transition-colors">
-              <div className="flex items-center gap-2 text-gray-900 dark:text-white font-semibold">
-                <TrendingUp className="w-5 h-5 text-gray-700 dark:text-gray-300" />
+            <div className="rounded-2xl border border-gray-100 dark:border-gray-700 p-4 md:p-5 bg-white dark:bg-gray-800/50 transition-colors">
+              <div className="flex items-center gap-2 text-gray-900 dark:text-white font-semibold text-sm md:text-base">
+                <TrendingUp className="w-4 h-4 md:w-5 md:h-5 text-gray-700 dark:text-gray-300 flex-shrink-0" />
                 Détails d'Expérience
               </div>
-              <ul className="mt-4 space-y-3 text-sm text-gray-700 dark:text-gray-300">
+              <ul className="mt-4 space-y-3 text-xs md:text-sm text-gray-700 dark:text-gray-300">
                 {(match?.expBreakdown || []).length === 0 ? (
                   <li>Aucune expérience détaillée disponible.</li>
                 ) : (
@@ -517,9 +520,9 @@ function CandidatureCard({ c, onTogglePreselect }) {
             </div>
 
             {/* Scores Détailés */}
-            <div className="rounded-2xl border border-gray-100 dark:border-gray-700 p-5 bg-white dark:bg-gray-800/50 transition-colors">
-              <p className="text-gray-900 dark:text-white font-semibold flex items-center gap-2">
-                <TrendingUp className="w-5 h-5 text-gray-700 dark:text-gray-300" />
+            <div className="rounded-2xl border border-gray-100 dark:border-gray-700 p-4 md:p-5 bg-white dark:bg-gray-800/50 transition-colors">
+              <p className="text-gray-900 dark:text-white font-semibold flex items-center gap-2 text-sm md:text-base">
+                <TrendingUp className="w-4 h-4 md:w-5 md:h-5 text-gray-700 dark:text-gray-300 flex-shrink-0" />
                 Scores Detaillés
               </p>
 
@@ -532,7 +535,7 @@ function CandidatureCard({ c, onTogglePreselect }) {
                   ["Communication", match?.communicationScore],
                 ].map(([label, val], idx) => (
                   <div key={idx}>
-                    <div className="flex items-center justify-between text-sm">
+                    <div className="flex items-center justify-between text-xs md:text-sm">
                       <span className="text-gray-700 dark:text-gray-300 font-medium">{label}</span>
                       <span className="text-gray-500 dark:text-gray-400">
                         {typeof val === "number" ? `${Math.round(val * 100)}%` : "—"}
@@ -546,10 +549,10 @@ function CandidatureCard({ c, onTogglePreselect }) {
           </div>
 
         {/* DROITE - inchangée */}
-        <div className="space-y-6">
-          <div className="rounded-2xl border border-gray-100 dark:border-gray-700 p-5 bg-white dark:bg-gray-800/50 transition-colors">
-            <div className="flex items-center gap-2 text-gray-900 dark:text-white font-semibold">
-              <Brain className="w-5 h-5 text-gray-700 dark:text-gray-300" />
+        <div className="space-y-4 md:space-y-6">
+          <div className="rounded-2xl border border-gray-100 dark:border-gray-700 p-4 md:p-5 bg-white dark:bg-gray-800/50 transition-colors">
+            <div className="flex items-center gap-2 text-gray-900 dark:text-white font-semibold text-sm md:text-base">
+              <Brain className="w-4 h-4 md:w-5 md:h-5 text-gray-700 dark:text-gray-300 flex-shrink-0" />
               SKILL CLOUD
             </div>
             <div className="flex flex-wrap gap-2 mt-4">
@@ -561,15 +564,15 @@ function CandidatureCard({ c, onTogglePreselect }) {
             </div>
           </div>
 
-          <div className="rounded-2xl border border-gray-100 dark:border-gray-700 p-5 bg-white dark:bg-gray-800/50 transition-colors">
-            <div className="flex items-center gap-2 text-gray-900 dark:text-white font-semibold">
-              <BadgeCheck className="w-5 h-5 text-gray-700 dark:text-gray-300" />
+          <div className="rounded-2xl border border-gray-100 dark:border-gray-700 p-4 md:p-5 bg-white dark:bg-gray-800/50 transition-colors">
+            <div className="flex items-center gap-2 text-gray-900 dark:text-white font-semibold text-sm md:text-base">
+              <BadgeCheck className="w-4 h-4 md:w-5 md:h-5 text-gray-700 dark:text-gray-300 flex-shrink-0" />
               Job Match Details
             </div>
 
             <div className="mt-4 space-y-4">
               <div>
-                <p className="text-sm font-semibold text-gray-800 dark:text-gray-200 mb-2">
+                <p className="text-xs md:text-sm font-semibold text-gray-800 dark:text-gray-200 mb-2">
                   Matched Skills
                 </p>
                 <div className="flex flex-wrap gap-2">
@@ -586,7 +589,7 @@ function CandidatureCard({ c, onTogglePreselect }) {
               </div>
 
               <div>
-                <p className="text-sm font-semibold text-gray-800 dark:text-gray-200 mb-2">
+                <p className="text-xs md:text-sm font-semibold text-gray-800 dark:text-gray-200 mb-2">
                   Missing MUST-HAVE
                 </p>
                 <div className="flex flex-wrap gap-2">
@@ -603,7 +606,7 @@ function CandidatureCard({ c, onTogglePreselect }) {
               </div>
 
               <div>
-                <p className="text-sm font-semibold text-gray-800 dark:text-gray-200 mb-2">
+                <p className="text-xs md:text-sm font-semibold text-gray-800 dark:text-gray-200 mb-2">
                   Missing NICE-TO-HAVE
                 </p>
                 <div className="flex flex-wrap gap-2">
@@ -620,7 +623,7 @@ function CandidatureCard({ c, onTogglePreselect }) {
               </div>
 
               <div>
-                <p className="text-sm font-semibold text-gray-800 dark:text-gray-200 mb-2">
+                <p className="text-xs md:text-sm font-semibold text-gray-800 dark:text-gray-200 mb-2">
                   Transferable Skills
                 </p>
                 <div className="flex flex-wrap gap-2">
@@ -637,7 +640,7 @@ function CandidatureCard({ c, onTogglePreselect }) {
               </div>
 
               <div>
-                <p className="text-sm font-semibold text-gray-800 dark:text-gray-200 mb-2">
+                <p className="text-xs md:text-sm font-semibold text-gray-800 dark:text-gray-200 mb-2">
                   Recommendation
                 </p>
                 <Tag variant={recColor(match?.recommendation)}>
@@ -647,13 +650,13 @@ function CandidatureCard({ c, onTogglePreselect }) {
             </div>
           </div>
 
-          <div className="rounded-2xl border border-gray-100 dark:border-gray-700 p-5 bg-white dark:bg-gray-800/50 transition-colors">
-            <div className="flex items-center gap-2 text-gray-900 dark:text-white font-semibold">
-              <ShieldAlert className="w-5 h-5 text-gray-700 dark:text-gray-300" />
+          <div className="rounded-2xl border border-gray-100 dark:border-gray-700 p-4 md:p-5 bg-white dark:bg-gray-800/50 transition-colors">
+            <div className="flex items-center gap-2 text-gray-900 dark:text-white font-semibold text-sm md:text-base">
+              <ShieldAlert className="w-4 h-4 md:w-5 md:h-5 text-gray-700 dark:text-gray-300 flex-shrink-0" />
               Risk & Next Steps
             </div>
 
-            <div className="mt-4 space-y-2 text-sm text-gray-700 dark:text-gray-300">
+            <div className="mt-4 space-y-2 text-xs md:text-sm text-gray-700 dark:text-gray-300">
               <p>
                 <span className="font-semibold">Risk Level:</span>{" "}
                 {match?.riskLevel || "—"}
@@ -670,10 +673,10 @@ function CandidatureCard({ c, onTogglePreselect }) {
 
             {(match?.mitigationStrategies || []).length > 0 && (
               <div className="mt-3">
-                <p className="text-sm font-semibold text-gray-900 dark:text-white">
+                <p className="text-xs md:text-sm font-semibold text-gray-900 dark:text-white">
                   Mitigation Strategies
                 </p>
-                <ul className="mt-2 text-sm text-gray-600 dark:text-gray-300 list-disc pl-5 space-y-1">
+                <ul className="mt-2 text-xs md:text-sm text-gray-600 dark:text-gray-300 list-disc pl-5 space-y-1">
                   {match.mitigationStrategies.slice(0, 4).map((x, i) => (
                     <li key={i}>{x}</li>
                   ))}
@@ -801,18 +804,19 @@ export default function CandidatureAnalysisPage() {
   return (
     <div className="min-h-screen bg-[#F0FAF0] dark:bg-gray-950 transition-colors duration-300">
       <div className="sticky top-0 z-30 bg-[#F0FAF0]/90 dark:bg-gray-950/90 backdrop-blur-md">
-        <div className="max-w-6xl mx-auto px-6 pt-5 pb-4">
-          <div className="flex items-center justify-between mb-4">
-            <h1 className="text-3xl font-extrabold text-gray-900 dark:text-white">
+        <div className="max-w-6xl mx-auto px-4 md:px-6 pt-4 md:pt-5 pb-3 md:pb-4">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
+            <h1 className="text-2xl sm:text-3xl font-extrabold text-gray-900 dark:text-white">
               Analyse Candidatures
             </h1>
 
             <a
               href="/recruiter/PreInterviewList"
-              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-[#22C55E] hover:bg-[#16A34A] text-white text-sm font-semibold transition-all shadow-sm"
+              className="inline-flex items-center gap-2 px-4 py-2 sm:px-5 sm:py-2.5 rounded-full bg-[#22C55E] hover:bg-[#16A34A] text-white text-xs sm:text-sm font-semibold transition-all shadow-sm whitespace-nowrap self-start sm:self-center"
             >
               <UserCheck className="w-4 h-4" />
-              Pré-sélectionnés
+              <span className="hidden sm:inline">Pré-sélectionnés</span>
+              <span className="sm:hidden">Pré-séléc.</span>
               {preselectedCount > 0 && (
                 <span className="ml-1 bg-white/20 text-white text-xs font-bold px-2 py-0.5 rounded-full">
                   {preselectedCount}
@@ -821,23 +825,23 @@ export default function CandidatureAnalysisPage() {
             </a>
           </div>
 
-          <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700 shadow-sm p-4">
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+          <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700 shadow-sm p-3 md:p-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 md:gap-3">
               <div className="flex items-center gap-2 border border-gray-200 dark:border-gray-600 rounded-xl px-3 py-2.5 bg-white dark:bg-gray-700">
-                <Search className="w-4 h-4 text-gray-500 dark:text-gray-400" />
+                <Search className="w-4 h-4 text-gray-500 dark:text-gray-400 flex-shrink-0" />
                 <input
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
                   data-cy="search-candidate"
-                  placeholder="Rechercher (nom, email, job)..."
-                  className="w-full outline-none text-sm bg-transparent text-gray-800 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500"
+                  placeholder="Rechercher..."
+                  className="w-full outline-none text-xs sm:text-sm bg-transparent text-gray-800 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500"
                 />
               </div>
 
               <select
                 value={jobFilter}
                 onChange={(e) => setJobFilter(e.target.value)}
-                className="border border-gray-200 dark:border-gray-600 rounded-xl px-3 py-2.5 text-sm bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100"
+                className="border border-gray-200 dark:border-gray-600 rounded-xl px-3 py-2.5 text-xs sm:text-sm bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100"
               >
                 {jobs.map((j) => (
                   <option key={j} value={j}>
@@ -850,16 +854,16 @@ export default function CandidatureAnalysisPage() {
                 value={aiFilter}
                 data-cy="ai-filter"
                 onChange={(e) => setAiFilter(e.target.value)}
-                className="border border-gray-200 dark:border-gray-600 rounded-xl px-3 py-2.5 text-sm bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100"
+                className="border border-gray-200 dark:border-gray-600 rounded-xl px-3 py-2.5 text-xs sm:text-sm bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100"
               >
-                <option value="ALL">AI Detection: Tous</option>
-                <option value="HUMAN">CV humain</option>
-                <option value="AI">CV généré par IA</option>
+                <option value="ALL">AI: Tous</option>
+                <option value="HUMAN">Humain</option>
+                <option value="AI">Généré IA</option>
               </select>
 
-              <div className="flex items-center gap-3 border border-gray-200 dark:border-gray-600 rounded-xl px-3 py-2.5 bg-white dark:bg-gray-700">
-                <span className="text-sm text-gray-600 dark:text-gray-300 whitespace-nowrap">
-                  Min score
+              <div className="flex items-center gap-2 md:gap-3 border border-gray-200 dark:border-gray-600 rounded-xl px-3 py-2.5 bg-white dark:bg-gray-700">
+                <span className="text-xs md:text-sm text-gray-600 dark:text-gray-300 whitespace-nowrap">
+                  Score
                 </span>
                 <input
                   type="range"
@@ -869,7 +873,7 @@ export default function CandidatureAnalysisPage() {
                   onChange={(e) => setMinScore(Number(e.target.value))}
                   className="w-full accent-green-600"
                 />
-                <span className="text-sm font-semibold text-gray-800 dark:text-gray-100 w-10 text-right">
+                <span className="text-xs md:text-sm font-semibold text-gray-800 dark:text-gray-100 w-8 md:w-10 text-right flex-shrink-0">
                   {minScore}%
                 </span>
               </div>
@@ -878,7 +882,7 @@ export default function CandidatureAnalysisPage() {
         </div>
       </div>
 
-      <div className="max-w-6xl mx-auto px-6 pb-10 pt-4">
+      <div className="max-w-6xl mx-auto px-4 md:px-6 pb-10 pt-4">
         {loading ? (
           <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700 shadow-sm p-6 text-center">
             <p className="text-gray-600 dark:text-gray-400">Chargement...</p>
@@ -889,7 +893,7 @@ export default function CandidatureAnalysisPage() {
           </div>
         ) : (
           <>
-            <div className="space-y-6 mt-6">
+            <div className="space-y-4 md:space-y-6 mt-4 md:mt-6">
               {paginatedItems.map((c) => (
                 <CandidatureCard
                   key={c._id}

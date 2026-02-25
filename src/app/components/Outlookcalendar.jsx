@@ -2,6 +2,7 @@
 
 import React, { useState, useMemo, useEffect } from "react";
 import { useOutlookCalendar } from "../hooks/Useoutlookcalendar";
+import { Trash2 } from "lucide-react";
 
 /* ================= THEME OPTYLAB ================= */
 const THEME_LIGHT = {
@@ -27,7 +28,6 @@ const THEME_LIGHT = {
 };
 
 const THEME_DARK = {
-  // Dark Optylab (navy)
   bgPage: "#0B1220",
   surface: "#0F1A2F",
   surface2: "#0B1220",
@@ -112,6 +112,7 @@ const ChevRight = () => (
     <polyline points="9 18 15 12 9 6" />
   </svg>
 );
+
 /* ================= CONSTS ================= */
 const DAYS_SHORT = ["Lun", "Mar", "Mer", "Jeu", "Ven", "Sam", "Dim"];
 const DAYS_FULL = ["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi", "Dimanche"];
@@ -273,6 +274,7 @@ const makeStyles = (T, isDark) => ({
   toggle: { width: 36, height: 20, borderRadius: 999, position: "relative", cursor: "pointer" },
   toggleThumb: { width: 16, height: 16, borderRadius: "50%", background: "#fff", position: "absolute", top: 2, transition: "transform .15s" },
 });
+
 function monthRange(d) {
   const start = new Date(d.getFullYear(), d.getMonth(), 1, 0, 0, 0, 0);
   const end = new Date(d.getFullYear(), d.getMonth() + 1, 1, 0, 0, 0, 0);
@@ -289,6 +291,69 @@ function dayRange(d) {
   return { startDate: start.toISOString(), endDate: end.toISOString() };
 }
 
+/* ================= CONFIRMATION MODAL ================= */
+const ConfirmDeleteModal = ({ T, S, onConfirm, onCancel }) => {
+  return (
+    <div style={S.overlay}>
+      <div style={{ ...S.modal, maxWidth: 420 }}>
+        <div style={{
+          padding: "24px",
+          background: T.surface,
+          textAlign: "center",
+        }}>
+          <div style={{ display: "flex", justifyContent: "center", marginBottom: 16 }}>
+  <Trash2 size={48} color="#EF4444" />
+</div>
+          <h3 style={{ 
+            fontSize: 20, 
+            fontWeight: 800, 
+            color: T.text, 
+            marginBottom: 12 
+          }}>
+            Confirmer la suppression ?
+          </h3>
+          <p style={{ 
+            fontSize: 14, 
+            color: T.muted, 
+            marginBottom: 28,
+            lineHeight: 1.5
+          }}>
+            Vous allez supprimer définitivement cet événement.<br/>
+            Cette action est irréversible.
+          </p>
+
+          <div style={{ display: "flex", gap: 16, justifyContent: "center" }}>
+            <button
+              onClick={onCancel}
+              style={{
+                ...S.btnSecondary,
+                padding: "12px 24px",
+                fontSize: 14
+              }}
+            >
+              Annuler
+            </button>
+            <button
+              onClick={onConfirm}
+              style={{
+                border: "none",
+                background: "#EF4444",
+                color: "#fff",
+                borderRadius: 12,
+                padding: "12px 28px",
+                cursor: "pointer",
+                fontSize: 14,
+                fontWeight: 700,
+              }}
+            >
+              Supprimer
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
 
 /* ================= EVENT MODAL ================= */
 const EventModal = ({ T, S, event, defaultDate, defaultHour, onSave, onClose, onDelete }) => {
@@ -302,7 +367,8 @@ const EventModal = ({ T, S, event, defaultDate, defaultHour, onSave, onClose, on
     const hh = pad(d.getHours());
     const mi = pad(d.getMinutes());
     return `${yyyy}-${mm}-${dd}T${hh}:${mi}`;
-  };const initStart = event
+  };
+  const initStart = event
     ? toLocal(event.startDate)
     : defaultDate
       ? `${defaultDate}T${pad(defaultHour || 9)}:00`
@@ -325,6 +391,7 @@ const EventModal = ({ T, S, event, defaultDate, defaultHour, onSave, onClose, on
   });
 
   const [attendeeInput, setAttendeeInput] = useState("");
+  const [showConfirm, setShowConfirm] = useState(false);
 
   const addAttendee = () => {
     const email = attendeeInput.trim();
@@ -344,279 +411,290 @@ const EventModal = ({ T, S, event, defaultDate, defaultHour, onSave, onClose, on
   };
 
   return (
-    <div style={S.overlay}>
-      <div style={{ ...S.modal, maxWidth: 680 }}>
-        <div
-          style={{
-            background: T.surface2,
-            padding: "8px 16px",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            borderBottom: `1px solid ${T.border}`,
-          }}
-        >
-          <span style={{ fontWeight: 900, fontSize: 14, color: T.text }}>
-            {event ? "Modifier l'événement" : "Nouvel événement"}
-          </span>
-
-          <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-            {event && (
-              <button
-                type="button"
-                onClick={() => onDelete?.(event._id?.toString() || event.outlookId)}
-                style={{
-                  border: `1px solid ${T.border}`,
-                  background: "transparent",
-                  color: T.text,
-                  borderRadius: 10,
-                  padding: "8px 10px",
-                  cursor: "pointer",
-                  fontWeight: 900,
-                  fontSize: 12,
-                }}
-              >
-                Supprimer
-              </button>
-            )}
-
-            <button
-              type="button"
-              onClick={() =>
-                document
-                  .getElementById("outlook-form")
-                  ?.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true }))
-              }
-              style={S.btnOutlookSave}
-            >
-              Enregistrer
-            </button>
-
-            <button
-              onClick={onClose}
-              style={{
-                background: "none",
-                border: "none",
-                cursor: "pointer",
-                fontSize: 20,
-                color: T.muted,
-                padding: "0 4px",
-              }}
-            >
-              ✕
-            </button>
-          </div>
-        </div>
-
-        <div
-          style={{
-            background: T.surface,
-            padding: "8px 20px",
-            display: "flex",
-            gap: 10,
-            borderBottom: `1px solid ${T.border}`,
-            flexWrap: "wrap",
-            alignItems: "center",
-          }}
-        >
-          <label
+    <>
+      <div style={S.overlay}>
+        <div style={{ ...S.modal, maxWidth: 680 }}>
+          <div
             style={{
+              background: T.surface2,
+              padding: "8px 16px",
               display: "flex",
               alignItems: "center",
-              gap: 6,
-              cursor: "pointer",
-              fontSize: 13,
-              color: form.isTeams ? "#5059C9" : T.muted,
-              fontWeight: form.isTeams ? 700 : 400,
+              justifyContent: "space-between",
+              borderBottom: `1px solid ${T.border}`,
             }}
           >
-            <div
-              style={{ ...S.toggle, background: form.isTeams ? "#5059C9" : (T.border || "#D1D5DB") }}
-              onClick={() => setForm({ ...form, isTeams: !form.isTeams })}
-            >
-              <div
-                style={{
-                  ...S.toggleThumb,
-                  transform: form.isTeams ? "translateX(16px)" : "translateX(2px)",
-                }}
-              />
-            </div>
-            <TeamsIcon /> Réunion Teams
-          </label>
+            <span style={{ fontWeight: 900, fontSize: 14, color: T.text }}>
+              {event ? "Modifier l'événement" : "Nouvel événement"}
+            </span>
 
-          <label style={{ display: "flex", alignItems: "center", gap: 6, cursor: "pointer", fontSize: 13, color: T.muted }}>
-            <input
-              type="checkbox"
-              checked={form.isAllDay}
-              onChange={(e) => setForm({ ...form, isAllDay: e.target.checked })}
-            />
-            Journée entière
-          </label>
-        </div>
-
-        <form id="outlook-form" onSubmit={handleSubmit} style={{ padding: 0 }}>
-          <div style={{ padding: "16px 20px 0" }}>
-            <input
-              style={{
-                width: "100%",
-                border: "none",
-                borderBottom: `2px solid ${T.primary}`,
-                outline: "none",
-                fontSize: 20,
-                fontWeight: 800,
-                color: T.text,
-                padding: "4px 0",
-                boxSizing: "border-box",
-                fontFamily: "inherit",
-                background: "transparent",
-              }}
-              value={form.title}
-              onChange={(e) => setForm({ ...form, title: e.target.value })}
-              placeholder="Ajoutez un titre"
-              required
-            />
-          </div>
-
-          <div style={{ padding: "16px 20px", display: "flex", flexDirection: "column", gap: 14 }}>
-            {/* Attendees */}
-            <div style={{ display: "flex", gap: 10, alignItems: "flex-start" }}>
-              <span style={S.fieldIcon}>👥</span>
-              <div style={{ flex: 1 }}>
-                <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 6 }}>
-                  {form.attendees.map((a, i) => (
-                    <span key={i} style={S.attendeeChip}>
-                      {a.name || a.email}
-                      <button
-                        type="button"
-                        onClick={() =>
-                          setForm({ ...form, attendees: form.attendees.filter((_, j) => j !== i) })
-                        }
-                        style={{
-                          background: "none",
-                          border: "none",
-                          cursor: "pointer",
-                          marginLeft: 4,
-                          color: T.muted,
-                          fontSize: 12,
-                        }}
-                      >
-                        ✕
-                      </button>
-                    </span>
-                  ))}
-                </div>
-
-                <div style={{ display: "flex", gap: 8 }}>
-                  <input
-                    style={{ ...S.fieldInput, flex: 1 }}
-                    value={attendeeInput}
-                    onChange={(e) => setAttendeeInput(e.target.value)}
-                    onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), addAttendee())}
-                    placeholder="Invitez des participants (email)"
-                  />
-                  <button
-                    type="button"
-                    onClick={addAttendee}
-                    style={{ ...S.btnSmall, background: T.primary, color: "#fff" }}
-                  >
-                    Ajouter
-                  </button>
-                </div>
-              </div>
-            </div>
-
-            {/* Date/Time */}
-            <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
-              <span style={S.fieldIcon}>🕐</span>
-              <input
-                type="datetime-local"
-                style={S.fieldInput}
-                value={form.start}
-                onChange={(e) => setForm({ ...form, start: e.target.value })}
-                required
-                disabled={form.isAllDay}
-              />
-              <span style={{ color: T.muted, fontSize: 13 }}>à</span>
-              <input
-                type="datetime-local"
-                style={S.fieldInput}
-                value={form.end}
-                onChange={(e) => setForm({ ...form, end: e.target.value })}
-                required
-                disabled={form.isAllDay}
-              />
-              {form.isAllDay && (
-                <input
-                  type="date"
-                  style={S.fieldInput}
-                  value={form.start?.slice(0, 10)}
-                  onChange={(e) =>
-                    setForm({
-                      ...form,
-                      start: e.target.value + "T00:00",
-                      end: e.target.value + "T23:59",
-                    })
-                  }
-                  required
-                />
+            <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+              {event && (
+                <button
+                  type="button"
+                  onClick={() => setShowConfirm(true)}
+                  style={{
+                    border: `1px solid ${T.border}`,
+                    background: "transparent",
+                    color: T.text,
+                    borderRadius: 10,
+                    padding: "8px 10px",
+                    cursor: "pointer",
+                    fontWeight: 900,
+                    fontSize: 12,
+                  }}
+                >
+                  Supprimer
+                </button>
               )}
-            </div>
 
-            {/* Location */}
-            <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
-              <span style={S.fieldIcon}>📍</span>
-              <input
-                style={{ ...S.fieldInput, flex: 1 }}
-                value={form.location}
-                onChange={(e) => setForm({ ...form, location: e.target.value })}
-                placeholder="Rechercher un lieu"
-              />
-            </div>
+              <button
+                type="button"
+                onClick={() =>
+                  document
+                    .getElementById("outlook-form")
+                    ?.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true }))
+                }
+                style={S.btnOutlookSave}
+              >
+                Enregistrer
+              </button>
 
-            {/* Teams link */}
-            {form.isTeams && (
-              <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
-                <span style={S.fieldIcon}>
-                  <TeamsIcon />
-                </span>
-                <span style={{ fontSize: 13, color: "#5059C9", fontWeight: 700 }}>
-                  Lien de réunion Teams généré automatiquement
-                </span>
-              </div>
-            )}
-
-            {/* Description */}
-            <div style={{ display: "flex", gap: 10, alignItems: "flex-start" }}>
-              <span style={S.fieldIcon}>≡</span>
-              <textarea
-                style={{ ...S.fieldInput, flex: 1, height: 90, resize: "vertical" }}
-                value={form.description}
-                onChange={(e) => setForm({ ...form, description: e.target.value })}
-                placeholder="Ajoutez une description..."
-              />
+              <button
+                onClick={onClose}
+                style={{
+                  background: "none",
+                  border: "none",
+                  cursor: "pointer",
+                  fontSize: 20,
+                  color: T.muted,
+                  padding: "0 4px",
+                }}
+              >
+                ✕
+              </button>
             </div>
           </div>
 
           <div
             style={{
+              background: T.surface,
+              padding: "8px 20px",
               display: "flex",
-              justifyContent: "flex-end",
               gap: 10,
-              padding: "12px 20px",
-              borderTop: `1px solid ${T.border}`,
-              background: T.surface2,
+              borderBottom: `1px solid ${T.border}`,
+              flexWrap: "wrap",
+              alignItems: "center",
             }}
           >
-            <button type="button" onClick={onClose} style={S.btnSecondary}>
-              Annuler
-            </button>
-            <button type="submit" style={S.btnPrimary}>
-              Enregistrer & sync Outlook
-            </button>
+            <label
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 6,
+                cursor: "pointer",
+                fontSize: 13,
+                color: form.isTeams ? "#5059C9" : T.muted,
+                fontWeight: form.isTeams ? 700 : 400,
+              }}
+            >
+              <div
+                style={{ ...S.toggle, background: form.isTeams ? "#5059C9" : (T.border || "#D1D5DB") }}
+                onClick={() => setForm({ ...form, isTeams: !form.isTeams })}
+              >
+                <div
+                  style={{
+                    ...S.toggleThumb,
+                    transform: form.isTeams ? "translateX(16px)" : "translateX(2px)",
+                  }}
+                />
+              </div>
+              <TeamsIcon /> Réunion Teams
+            </label>
+
+            <label style={{ display: "flex", alignItems: "center", gap: 6, cursor: "pointer", fontSize: 13, color: T.muted }}>
+              <input
+                type="checkbox"
+                checked={form.isAllDay}
+                onChange={(e) => setForm({ ...form, isAllDay: e.target.checked })}
+              />
+              Journée entière
+            </label>
           </div>
-        </form>
+
+          <form id="outlook-form" onSubmit={handleSubmit} style={{ padding: 0 }}>
+            <div style={{ padding: "16px 20px 0" }}>
+              <input
+                style={{
+                  width: "100%",
+                  border: "none",
+                  borderBottom: `2px solid ${T.primary}`,
+                  outline: "none",
+                  fontSize: 20,
+                  fontWeight: 800,
+                  color: T.text,
+                  padding: "4px 0",
+                  boxSizing: "border-box",
+                  fontFamily: "inherit",
+                  background: "transparent",
+                }}
+                value={form.title}
+                onChange={(e) => setForm({ ...form, title: e.target.value })}
+                placeholder="Ajoutez un titre"
+                required
+              />
+            </div>
+
+            <div style={{ padding: "16px 20px", display: "flex", flexDirection: "column", gap: 14 }}>
+              <div style={{ display: "flex", gap: 10, alignItems: "flex-start" }}>
+                <span style={S.fieldIcon}>👥</span>
+                <div style={{ flex: 1 }}>
+                  <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 6 }}>
+                    {form.attendees.map((a, i) => (
+                      <span key={i} style={S.attendeeChip}>
+                        {a.name || a.email}
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setForm({ ...form, attendees: form.attendees.filter((_, j) => j !== i) })
+                          }
+                          style={{
+                            background: "none",
+                            border: "none",
+                            cursor: "pointer",
+                            marginLeft: 4,
+                            color: T.muted,
+                            fontSize: 12,
+                          }}
+                        >
+                          ✕
+                        </button>
+                      </span>
+                    ))}
+                  </div>
+
+                  <div style={{ display: "flex", gap: 8 }}>
+                    <input
+                      style={{ ...S.fieldInput, flex: 1 }}
+                      value={attendeeInput}
+                      onChange={(e) => setAttendeeInput(e.target.value)}
+                      onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), addAttendee())}
+                      placeholder="Invitez des participants (email)"
+                    />
+                    <button
+                      type="button"
+                      onClick={addAttendee}
+                      style={{ ...S.btnSmall, background: T.primary, color: "#fff" }}
+                    >
+                      Ajouter
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
+                <span style={S.fieldIcon}>🕐</span>
+                <input
+                  type="datetime-local"
+                  style={S.fieldInput}
+                  value={form.start}
+                  onChange={(e) => setForm({ ...form, start: e.target.value })}
+                  required
+                  disabled={form.isAllDay}
+                />
+                <span style={{ color: T.muted, fontSize: 13 }}>à</span>
+                <input
+                  type="datetime-local"
+                  style={S.fieldInput}
+                  value={form.end}
+                  onChange={(e) => setForm({ ...form, end: e.target.value })}
+                  required
+                  disabled={form.isAllDay}
+                />
+                {form.isAllDay && (
+                  <input
+                    type="date"
+                    style={S.fieldInput}
+                    value={form.start?.slice(0, 10)}
+                    onChange={(e) =>
+                      setForm({
+                        ...form,
+                        start: e.target.value + "T00:00",
+                        end: e.target.value + "T23:59",
+                      })
+                    }
+                    required
+                  />
+                )}
+              </div>
+
+              <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
+                <span style={S.fieldIcon}>📍</span>
+                <input
+                  style={{ ...S.fieldInput, flex: 1 }}
+                  value={form.location}
+                  onChange={(e) => setForm({ ...form, location: e.target.value })}
+                  placeholder="Rechercher un lieu"
+                />
+              </div>
+
+              {form.isTeams && (
+                <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
+                  <span style={S.fieldIcon}>
+                    <TeamsIcon />
+                  </span>
+                  <span style={{ fontSize: 13, color: "#5059C9", fontWeight: 700 }}>
+                    Lien de réunion Teams généré automatiquement
+                  </span>
+                </div>
+              )}
+
+              <div style={{ display: "flex", gap: 10, alignItems: "flex-start" }}>
+                <span style={S.fieldIcon}>≡</span>
+                <textarea
+                  style={{ ...S.fieldInput, flex: 1, height: 90, resize: "vertical" }}
+                  value={form.description}
+                  onChange={(e) => setForm({ ...form, description: e.target.value })}
+                  placeholder="Ajoutez une description..."
+                />
+              </div>
+            </div>
+
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "flex-end",
+                gap: 10,
+                padding: "12px 20px",
+                borderTop: `1px solid ${T.border}`,
+                background: T.surface2,
+              }}
+            >
+              <button type="button" onClick={onClose} style={S.btnSecondary}>
+                Annuler
+              </button>
+              <button type="submit" style={S.btnPrimary}>
+                Enregistrer & sync Outlook
+              </button>
+            </div>
+          </form>
+        </div>
       </div>
-    </div>
+
+      {/* Modal de confirmation de suppression */}
+      {showConfirm && (
+        <ConfirmDeleteModal
+          T={T}
+          S={S}
+          onConfirm={() => {
+            onDelete(event._id?.toString() || event.outlookId);
+            setShowConfirm(false);
+            onClose();
+          }}
+          onCancel={() => setShowConfirm(false)}
+        />
+      )}
+    </>
   );
 };
 
@@ -1104,7 +1182,6 @@ const OutlookCalendar = ({ onDateSelect } = {}) => {
 
   const today = new Date();
 
-  /* detect dark mode from <html class="dark"> */
   const [isDark, setIsDark] = useState(false);
   useEffect(() => {
     const root = document.documentElement;
@@ -1136,7 +1213,7 @@ const OutlookCalendar = ({ onDateSelect } = {}) => {
   const [defaultDate, setDefaultDate] = useState(null);
   const [defaultHour, setDefaultHour] = useState(9);
   const [toast, setToast] = useState(null);
-  // ✅ Auto-load Outlook events when view/date changes (month/week/day)
+
   useEffect(() => {
     if (!outlookStatus?.connected) return;
     let range;
@@ -1145,7 +1222,6 @@ const OutlookCalendar = ({ onDateSelect } = {}) => {
     else range = dayRange(dayDate);
     fetchEvents(range);
   }, [view, currentDate, weekStart, dayDate, outlookStatus?.connected, fetchEvents]);
-
 
   const showToast = (msg, type = "success") => {
     setToast({ msg, type });
@@ -1190,7 +1266,6 @@ const OutlookCalendar = ({ onDateSelect } = {}) => {
   };
 
   const openNewEventModal = (date, hour = 9) => {
-    // Si un handler externe est fourni (ex: InterviewEventModal), l'appeler à la place
     if (onDateSelect) {
       onDateSelect(date);
       return;
@@ -1210,7 +1285,7 @@ const OutlookCalendar = ({ onDateSelect } = {}) => {
       : await createEvent(formData);
 
     if (result.success) {
-      showToast(editingEv ? "✅ Mis à jour !" : "✅ Créé !");
+      showToast(editingEv ? " Mis à jour !" : " Créé !");
       setShowModal(false);
       setEditingEv(null);
     } else {
@@ -1219,7 +1294,6 @@ const OutlookCalendar = ({ onDateSelect } = {}) => {
   };
 
   const handleDelete = async (id) => {
-    if (!confirm("Supprimer ?")) return;
     const result = await deleteEvent(id);
     if (result.success) showToast("🗑️ Supprimé");
     else showToast("Erreur", "error");
@@ -1239,7 +1313,6 @@ const OutlookCalendar = ({ onDateSelect } = {}) => {
     }
   };
 
-  // Mini calendar interactions
   const handlePickDay = (date) => {
     setDayDate(date);
     setView("day");
@@ -1271,7 +1344,6 @@ const OutlookCalendar = ({ onDateSelect } = {}) => {
           fontFamily: "'Segoe UI', system-ui, sans-serif",
         }}
       >
-        {/* Top bar */}
         <div style={{ background: T.primary, padding: "0 16px", display: "flex", alignItems: "center", gap: 10, height: 46 }}>
           <OutlookIcon color={T.primaryDark} />
           <span style={{ color: "#fff", fontWeight: 900, fontSize: 15, marginRight: "auto" }}>Calendrier</span>
@@ -1316,7 +1388,6 @@ const OutlookCalendar = ({ onDateSelect } = {}) => {
           )}
         </div>
 
-        {/* Actions bar */}
         <div
           style={{
             background: T.surface2,
@@ -1422,7 +1493,6 @@ const OutlookCalendar = ({ onDateSelect } = {}) => {
           </div>
         )}
 
-        {/* Nav bar */}
         <div
           style={{
             display: "flex",
@@ -1448,15 +1518,13 @@ const OutlookCalendar = ({ onDateSelect } = {}) => {
               border: `1px solid ${T.primary}`,
             }}
           >
-            Aujourd&apos;hui
+            Aujourd'hui
           </button>
           <h2 style={{ margin: 0, fontSize: 16, fontWeight: 900, color: T.text }}>{getNavLabel()}</h2>
           {loading && <span style={{ fontSize: 12, color: T.muted }}>⏳ Chargement…</span>}
         </div>
 
-        {/* CONTENT */}
         <div style={{ flex: 1, display: "grid", gridTemplateColumns: "280px 1fr", minHeight: 0 }}>
-          {/* LEFT SIDEBAR */}
           <div
             style={{
               padding: 12,
@@ -1485,7 +1553,6 @@ const OutlookCalendar = ({ onDateSelect } = {}) => {
             </div>
           </div>
 
-          {/* MAIN VIEW */}
           <div style={{ minHeight: 0, overflow: "auto", background: T.surface }}>
             {view === "month" && (
               <MonthView
@@ -1522,7 +1589,6 @@ const OutlookCalendar = ({ onDateSelect } = {}) => {
           </div>
         </div>
 
-        {/* Modal */}
         {showModal && (
           <EventModal
             T={T}
@@ -1540,7 +1606,6 @@ const OutlookCalendar = ({ onDateSelect } = {}) => {
           />
         )}
 
-        {/* Toast */}
         {toast && (
           <div
             style={{

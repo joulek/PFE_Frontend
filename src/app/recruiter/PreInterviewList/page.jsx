@@ -7,10 +7,29 @@ import api from "../../services/api";
 import Link from "next/link";
 
 import {
-  UserCheck, FileText, Search, Calendar, ArrowLeft,
-  Mail, Phone, Clock, Briefcase, Send, X, CheckCircle2,
-  Brain, ClipboardList, AlertCircle, Loader2, BarChart2,
-  PhoneCall, Users, UserCog, Star, ChevronRight, StickyNote,
+  UserCheck,
+  FileText,
+  Search,
+  Calendar,
+  ArrowLeft,
+  Mail,
+  Phone,
+  Clock,
+  Briefcase,
+  Send,
+  X,
+  CheckCircle2,
+  Brain,
+  ClipboardList,
+  AlertCircle,
+  Loader2,
+  BarChart2,
+  PhoneCall,
+  Users,
+  UserCog,
+  Star,
+  ChevronRight,
+  StickyNote,
 } from "lucide-react";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL;
@@ -37,7 +56,9 @@ function getCvUrl(c) {
   if (u.startsWith("http")) return u;
   return `${API_BASE}${u.startsWith("/") ? "" : "/"}${u}`;
 }
-function getCvName(c) { return safeStr(c?.cv?.originalName) || "CV.pdf"; }
+function getCvName(c) {
+  return safeStr(c?.cv?.originalName) || "CV.pdf";
+}
 function getMatchScore(c) {
   const j = c?.analysis?.jobMatch;
   if (!j) return null;
@@ -57,8 +78,18 @@ function formatDate(d) {
 }
 
 // ── localStorage pour persister "envoyé" entre refreshes ──
-function markSent(id) { try { localStorage.setItem(`docs_sent_${id}`, "1"); } catch {} }
-function wasSent(id) { try { return localStorage.getItem(`docs_sent_${id}`) === "1"; } catch { return false; } }
+function markSent(id) {
+  try {
+    localStorage.setItem(`docs_sent_${id}`, "1");
+  } catch {}
+}
+function wasSent(id) {
+  try {
+    return localStorage.getItem(`docs_sent_${id}`) === "1";
+  } catch {
+    return false;
+  }
+}
 
 /* ================================================================
    MODAL — Envoyer Fiche + Quiz
@@ -75,7 +106,6 @@ function SendDocumentsModal({ candidature, onClose, onSuccess }) {
   const [error, setError] = useState("");
   const name = getName(candidature);
 
-
   useEffect(() => {
     async function load() {
       setLoadingData(true);
@@ -89,7 +119,9 @@ function SendDocumentsModal({ candidature, onClose, onSuccess }) {
             const q = qr?.data || null;
             setQuiz(q);
             if (q) setIncludeQuiz(true);
-          } catch { setQuiz(null); }
+          } catch {
+            setQuiz(null);
+          }
         }
       } catch (e) {
         console.error("Erreur chargement modal:", e?.message);
@@ -124,32 +156,35 @@ function SendDocumentsModal({ candidature, onClose, onSuccess }) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden">
+      <div className="relative bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden border border-gray-100 dark:border-gray-800">
+        {/* Header (theme app: clean + green accent) */}
+        <div className="px-6 py-4 border-b border-gray-100 dark:border-gray-800 bg-green-50/60 dark:bg-green-900/10">
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="text-lg font-extrabold text-gray-900 dark:text-white flex items-center gap-2">
+                <Send className="w-5 h-5 text-green-600" />
+                Envoyer des documents
+              </h2>
+              <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
+                à <span className="font-semibold text-gray-700 dark:text-gray-300">{name}</span>
+              </p>
+            </div>
 
-        {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 dark:border-gray-700">
-          <div>
-            <h2 className="text-lg font-extrabold text-gray-900 dark:text-white flex items-center gap-2">
-              <Send className="w-5 h-5 text-violet-500" />
-              Envoyer des documents
-            </h2>
-            <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
-              à <span className="font-semibold text-gray-700 dark:text-gray-300">{name}</span>
-            </p>
+            <button
+              onClick={onClose}
+              className="w-9 h-9 rounded-full hover:bg-white/70 dark:hover:bg-gray-800 flex items-center justify-center transition-colors"
+            >
+              <X className="w-5 h-5 text-gray-500" />
+            </button>
           </div>
-          <button onClick={onClose} className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
-            <X className="w-5 h-5 text-gray-500" />
-          </button>
         </div>
 
         {/* Body */}
         <div className="px-6 py-5 space-y-5 max-h-[70vh] overflow-y-auto">
-
-          {/* Succès */}
           {success ? (
             <div className="flex flex-col items-center gap-3 py-6 text-center">
               <div className="w-16 h-16 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
-                <CheckCircle2 className="w-9 h-9 text-green-500" />
+                <CheckCircle2 className="w-9 h-9 text-green-600 dark:text-green-400" />
               </div>
               <h3 className="text-lg font-extrabold text-gray-900 dark:text-white">Envoyé avec succès !</h3>
               <div className="flex gap-2 flex-wrap justify-center">
@@ -159,23 +194,26 @@ function SendDocumentsModal({ candidature, onClose, onSuccess }) {
                   </span>
                 )}
                 {success.sentQuiz && (
-                  <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-violet-50 dark:bg-violet-900/20 text-violet-700 dark:text-violet-400 rounded-full text-sm font-medium">
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 rounded-full text-sm font-medium">
                     <Brain className="w-4 h-4" /> Quiz envoyé
                   </span>
                 )}
               </div>
-              <p className="text-sm text-gray-400">Email envoyé à <strong>{email}</strong></p>
-              <button onClick={onClose} className="mt-2 px-6 py-2.5 bg-violet-600 hover:bg-violet-700 text-white rounded-full font-semibold text-sm transition-colors">
+              <p className="text-sm text-gray-400">
+                Email envoyé à <strong>{email}</strong>
+              </p>
+              <button
+                onClick={onClose}
+                className="mt-2 px-6 py-2.5 bg-green-600 hover:bg-green-700 text-white rounded-full font-semibold text-sm transition-colors"
+              >
                 Fermer
               </button>
             </div>
-
           ) : loadingData ? (
             <div className="flex items-center justify-center gap-2 py-10 text-gray-400">
               <Loader2 className="w-5 h-5 animate-spin" />
               <span className="text-sm">Chargement des données...</span>
             </div>
-
           ) : (
             <>
               {/* Email */}
@@ -189,30 +227,43 @@ function SendDocumentsModal({ candidature, onClose, onSuccess }) {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="candidat@email.com"
-                  className="w-full border border-gray-200 dark:border-gray-600 rounded-xl px-4 py-2.5 text-sm bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 outline-none focus:ring-2 focus:ring-violet-400"
+                  className="w-full border border-gray-200 dark:border-gray-700 rounded-xl px-4 py-2.5 text-sm bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-100 outline-none focus:ring-2 focus:ring-green-400"
                 />
               </div>
 
               {/* Quiz */}
               <div>
                 <p className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
-                  <Brain className="w-4 h-4 inline mr-1.5 text-violet-500" />
+                  <Brain className="w-4 h-4 inline mr-1.5 text-green-600" />
                   Quiz technique
                 </p>
+
                 {quiz ? (
-                  <label className={`flex items-start gap-3 p-4 rounded-xl border-2 cursor-pointer transition-all ${
-                    includeQuiz
-                      ? "border-violet-500 bg-violet-50 dark:bg-violet-900/20"
-                      : "border-gray-200 dark:border-gray-600 hover:border-violet-300"
-                  }`}>
-                    <input type="checkbox" checked={includeQuiz} onChange={(e) => setIncludeQuiz(e.target.checked)}
-                      className="mt-0.5 accent-violet-600 w-4 h-4 shrink-0" />
+                  <label
+                    className={`flex items-start gap-3 p-4 rounded-xl border-2 cursor-pointer transition-all ${
+                      includeQuiz
+                        ? "border-green-500 bg-green-50/60 dark:bg-green-900/20"
+                        : "border-gray-200 dark:border-gray-700 hover:border-green-300 dark:hover:border-green-700"
+                    }`}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={includeQuiz}
+                      onChange={(e) => setIncludeQuiz(e.target.checked)}
+                      className="mt-0.5 accent-green-600 w-4 h-4 shrink-0"
+                    />
                     <div>
-                      <p className="font-semibold text-sm text-gray-800 dark:text-gray-200">{quiz.jobTitle || "Quiz technique"}</p>
+                      <p className="font-semibold text-sm text-gray-800 dark:text-gray-200">
+                        {quiz.jobTitle || "Quiz technique"}
+                      </p>
                       <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
                         {quiz.totalQuestions || 0} questions · ~{Math.ceil((quiz.totalQuestions || 0) * 2)} min
                       </p>
-                      {includeQuiz && <span className="text-xs font-medium text-violet-600 dark:text-violet-400 mt-1 inline-block">✓ Sera inclus</span>}
+                      {includeQuiz && (
+                        <span className="text-xs font-medium text-green-600 dark:text-green-400 mt-1 inline-block">
+                          ✓ Sera inclus
+                        </span>
+                      )}
                     </div>
                   </label>
                 ) : (
@@ -229,22 +280,43 @@ function SendDocumentsModal({ candidature, onClose, onSuccess }) {
                   <ClipboardList className="w-4 h-4 inline mr-1.5 text-green-600" />
                   Fiche de renseignement
                 </p>
+
                 <div className="space-y-2 max-h-48 overflow-y-auto">
-                  <label className={`flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition-all ${
-                    !selectedFicheId ? "border-gray-400 bg-gray-50 dark:bg-gray-700" : "border-gray-200 dark:border-gray-600 hover:border-gray-300"
-                  }`}>
-                    <input type="radio" name="fiche" value="" checked={!selectedFicheId}
-                      onChange={() => setSelectedFicheId("")} className="w-4 h-4" />
+                  <label
+                    className={`flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition-all ${
+                      !selectedFicheId
+                        ? "border-gray-300 bg-gray-50 dark:bg-gray-800 dark:border-gray-700"
+                        : "border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600"
+                    }`}
+                  >
+                    <input
+                      type="radio"
+                      name="fiche"
+                      value=""
+                      checked={!selectedFicheId}
+                      onChange={() => setSelectedFicheId("")}
+                      className="w-4 h-4"
+                    />
                     <span className="text-sm text-gray-500 dark:text-gray-400">Ne pas envoyer de fiche</span>
                   </label>
+
                   {fiches.map((f) => (
-                    <label key={f._id} className={`flex items-start gap-3 p-3 rounded-xl border cursor-pointer transition-all ${
-                      selectedFicheId === f._id
-                        ? "border-green-500 bg-green-50 dark:bg-green-900/20"
-                        : "border-gray-200 dark:border-gray-600 hover:border-green-300"
-                    }`}>
-                      <input type="radio" name="fiche" value={f._id} checked={selectedFicheId === f._id}
-                        onChange={() => setSelectedFicheId(f._id)} className="mt-0.5 accent-green-600 w-4 h-4 shrink-0" />
+                    <label
+                      key={f._id}
+                      className={`flex items-start gap-3 p-3 rounded-xl border cursor-pointer transition-all ${
+                        selectedFicheId === f._id
+                          ? "border-green-500 bg-green-50/60 dark:bg-green-900/20"
+                          : "border-gray-200 dark:border-gray-700 hover:border-green-300 dark:hover:border-green-700"
+                      }`}
+                    >
+                      <input
+                        type="radio"
+                        name="fiche"
+                        value={f._id}
+                        checked={selectedFicheId === f._id}
+                        onChange={() => setSelectedFicheId(f._id)}
+                        className="mt-0.5 accent-green-600 w-4 h-4 shrink-0"
+                      />
                       <div>
                         <p className="font-semibold text-sm text-gray-800 dark:text-gray-200">{f.title}</p>
                         {f.description && <p className="text-xs text-gray-500 mt-0.5">{f.description}</p>}
@@ -257,22 +329,26 @@ function SendDocumentsModal({ candidature, onClose, onSuccess }) {
 
               {/* Erreur */}
               {error && (
-                <div className="flex items-center gap-2 p-3 bg-red-50 dark:bg-red-900/20 rounded-xl border border-red-200 dark:border-red-700 text-sm text-red-600 dark:text-red-400">
-                  <AlertCircle className="w-4 h-4 shrink-0" />{error}
+                <div className="flex items-center gap-2 p-3 bg-red-50 dark:bg-red-900/20 rounded-xl border border-red-200 dark:border-red-800 text-sm text-red-600 dark:text-red-400">
+                  <AlertCircle className="w-4 h-4 shrink-0" />
+                  {error}
                 </div>
               )}
 
-              {/* Résumé */}
+              {/* Résumé (match theme green, pas bleu) */}
               {(selectedFicheId || includeQuiz) && (
-                <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-800 rounded-xl p-3 text-sm text-blue-700 dark:text-blue-300">
-                  Sera envoyé : {[includeQuiz && "Quiz technique", selectedFicheId && "Fiche de renseignement"].filter(Boolean).join(" + ")}
+                <div className="bg-green-50/60 dark:bg-green-900/20 border border-green-100 dark:border-green-800 rounded-xl p-3 text-sm text-green-700 dark:text-green-300">
+                  Sera envoyé :{" "}
+                  {[includeQuiz && "Quiz technique", selectedFicheId && "Fiche de renseignement"]
+                    .filter(Boolean)
+                    .join(" + ")}
                 </div>
               )}
 
               <button
                 onClick={handleSend}
                 disabled={!canSend}
-                className="w-full py-3 rounded-xl bg-violet-600 hover:bg-violet-700 text-white font-extrabold text-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                className="w-full py-3 rounded-xl bg-green-600 hover:bg-green-700 text-white font-extrabold text-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
               >
                 {sending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
                 {sending ? "Envoi en cours..." : "Envoyer"}
@@ -286,41 +362,40 @@ function SendDocumentsModal({ candidature, onClose, onSuccess }) {
 }
 
 /* ================================================================
-   CARD CANDIDAT
-================================================================ */
-/* ================================================================
    MODAL — Planifier Entretien (3 flows)
+   (refonte couleurs + responsive interne)
 ================================================================ */
 
 // ── Flow 1: Téléphonique — note CRUD ──────────────────────────
-function TelephoniqueFlow({ candidate, onBack, onClose }) {
+function TelephoniqueFlow({ candidate, onBack }) {
   const [notes, setNotes] = useState([]);
   const [noteText, setNoteText] = useState("");
   const [editId, setEditId] = useState(null);
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => { fetchNotes(); }, []);
+  useEffect(() => {
+    fetchNotes();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   async function fetchNotes() {
     setLoading(true);
     try {
       const r = await api.get(`/candidatures/${candidate._id}/entretien-notes`);
-      console.log("📋 notes raw:", JSON.stringify(r.data?.slice?.(0,1)));
-      // Normaliser _id — peut être string, ObjectId JSON, ou absent
       const normalized = (r.data || []).map((n, idx) => {
         const rawId = n._id ?? n.id;
-        const strId = rawId?.$oid
-          || (typeof rawId === "string" ? rawId : null)
-          || rawId?.toString?.()
-          || `note-idx-${idx}-${Date.now()}`;
+        const strId =
+          rawId?.$oid || (typeof rawId === "string" ? rawId : null) || rawId?.toString?.() || `note-idx-${idx}-${Date.now()}`;
         return { ...n, _id: strId };
       });
       setNotes(normalized);
-    } catch(e) {
+    } catch (e) {
       console.error("fetchNotes error:", e);
       setNotes([]);
-    } finally { setLoading(false); }
+    } finally {
+      setLoading(false);
+    }
   }
 
   async function saveNote() {
@@ -333,23 +408,24 @@ function TelephoniqueFlow({ candidate, onBack, onClose }) {
       } else {
         await api.post(`/candidatures/${candidate._id}/entretien-note`, { type: "telephonique", note: noteText.trim() });
       }
-      setNoteText(""); setEditId(null);
+      setNoteText("");
+      setEditId(null);
       await fetchNotes();
-    } catch(e) { console.error(e); }
+    } catch (e) {
+      console.error(e);
+    }
     setSaving(false);
   }
 
   async function deleteNote(noteId) {
-    console.log("🗑️ deleteNote called with:", noteId);
-    if (!noteId || noteId === "undefined" || noteId.startsWith("note-idx-")) {
-      console.error("noteId invalide — impossible de supprimer:", noteId);
-      return;
-    }
+    if (!noteId || noteId === "undefined" || noteId.startsWith("note-idx-")) return;
     if (!confirm("Supprimer cette note ?")) return;
     try {
       await api.delete(`/candidatures/${candidate._id}/entretien-notes/${noteId}`);
       await fetchNotes();
-    } catch(e) { console.error("deleteNote error:", e?.response?.status, e?.response?.data); }
+    } catch (e) {
+      console.error("deleteNote error:", e?.response?.status, e?.response?.data);
+    }
   }
 
   function startEdit(n) {
@@ -360,47 +436,76 @@ function TelephoniqueFlow({ candidate, onBack, onClose }) {
 
   return (
     <div className="p-5">
-      <button onClick={onBack} className="text-xs text-gray-400 hover:text-gray-600 flex items-center gap-1 mb-4">← Retour</button>
-      <div className="flex items-center gap-3 mb-5 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-xl">
-        <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center flex-shrink-0">
+      <button onClick={onBack} className="text-xs text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 flex items-center gap-1 mb-4">
+        ← Retour
+      </button>
+
+      {/* Header mini (theme) */}
+      <div className="flex items-center gap-3 mb-5 p-3 bg-green-50/60 dark:bg-green-900/20 rounded-xl border border-green-100 dark:border-green-800">
+        <div className="w-9 h-9 rounded-xl bg-green-600 flex items-center justify-center flex-shrink-0">
           <PhoneCall className="w-4 h-4 text-white" />
         </div>
         <div>
           <p className="text-sm font-bold text-gray-800 dark:text-white">Entretien Téléphonique</p>
-          <p className="text-xs text-gray-500">{new Date().toLocaleDateString("fr-FR", { day:"numeric", month:"long", year:"numeric" })}</p>
+          <p className="text-xs text-gray-500 dark:text-gray-400">
+            {new Date().toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" })}
+          </p>
         </div>
       </div>
+
       {/* Zone de saisie */}
-      <textarea value={noteText} onChange={e => setNoteText(e.target.value)}
+      <textarea
+        value={noteText}
+        onChange={(e) => setNoteText(e.target.value)}
         placeholder={editId ? "Modifier la note..." : "Ajouter une note après l'entretien téléphonique..."}
         rows={3}
-        className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-blue-400 mb-2" />
-      <div className="flex gap-2 mb-5">
-        <button onClick={saveNote} disabled={!noteText.trim() || saving}
-          className="flex-1 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold disabled:opacity-40 flex items-center justify-center gap-2">
-          {saving ? <Loader2 className="w-4 h-4 animate-spin"/> : <StickyNote className="w-4 h-4"/>}
+        className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-green-400 mb-2"
+      />
+
+      <div className="flex flex-col sm:flex-row gap-2 mb-5">
+        <button
+          onClick={saveNote}
+          disabled={!noteText.trim() || saving}
+          className="flex-1 py-2.5 rounded-xl bg-green-600 hover:bg-green-700 text-white text-sm font-bold disabled:opacity-40 flex items-center justify-center gap-2"
+        >
+          {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <StickyNote className="w-4 h-4" />}
           {editId ? "Modifier" : "Sauvegarder"}
         </button>
+
         {editId && (
-          <button onClick={() => { setEditId(null); setNoteText(""); }}
-            className="px-4 py-2.5 rounded-xl border border-gray-200 text-sm text-gray-600 hover:bg-gray-50">Annuler</button>
+          <button
+            onClick={() => {
+              setEditId(null);
+              setNoteText("");
+            }}
+            className="px-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 text-sm text-gray-600 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800"
+          >
+            Annuler
+          </button>
         )}
       </div>
+
       {/* Liste des notes */}
       {loading ? (
-        <div className="flex justify-center py-4"><Loader2 className="w-5 h-5 animate-spin text-blue-400"/></div>
+        <div className="flex justify-center py-4">
+          <Loader2 className="w-5 h-5 animate-spin text-green-400" />
+        </div>
       ) : notes.length === 0 ? (
         <p className="text-center text-sm text-gray-400 py-3">Aucune note enregistrée</p>
       ) : (
-        <div className="space-y-2 max-h-48 overflow-y-auto">
+        <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
           {notes.map((n, i) => (
             <div key={n._id || i} className="p-3 bg-gray-50 dark:bg-gray-800/50 rounded-xl border border-gray-100 dark:border-gray-700">
               <p className="text-sm text-gray-700 dark:text-gray-300 mb-2">{n.note}</p>
-              <div className="flex items-center justify-between">
+              <div className="flex items-center justify-between gap-3">
                 <span className="text-xs text-gray-400">{new Date(n.createdAt).toLocaleDateString("fr-FR")}</span>
-                <div className="flex gap-2">
-                  <button onClick={() => startEdit(n)} className="text-xs text-blue-500 hover:text-blue-700 font-medium">Modifier</button>
-                  <button onClick={() => deleteNote(n._id)} className="text-xs text-red-400 hover:text-red-600 font-medium">Supprimer</button>
+                <div className="flex gap-3">
+                  <button onClick={() => startEdit(n)} className="text-xs text-green-600 hover:text-green-700 font-medium">
+                    Modifier
+                  </button>
+                  <button onClick={() => deleteNote(n._id)} className="text-xs text-red-400 hover:text-red-600 font-medium">
+                    Supprimer
+                  </button>
                 </div>
               </div>
             </div>
@@ -412,82 +517,74 @@ function TelephoniqueFlow({ candidate, onBack, onClose }) {
 }
 
 // ── Flow 2: Entretien RH — redirige vers la page calendrier ──────
-// Quand l'utilisateur clique "Entretien RH", on redirige directement
-// vers /recruiter/calendar avec les infos du candidat en query params.
-// Le calendrier détecte ces params et ouvre automatiquement le formulaire
-// "Nouvel événement" pré-rempli.
-function RHFlow({ candidate, onBack, onClose, onScheduled }) {
-  const name      = candidate?.fullName
-    || `${candidate?.prenom || ""} ${candidate?.nom || ""}`.trim()
-    || "Candidat";
-  const email     = candidate?.email || "";
-  const jobTitle  = candidate?.jobTitle || "";
-  const candidId  = candidate?._id || "";
+function RHFlow({ candidate, onBack, onClose }) {
+  const name =
+    candidate?.fullName || `${candidate?.prenom || ""} ${candidate?.nom || ""}`.trim() || "Candidat";
+  const email = candidate?.email || "";
+  const jobTitle = candidate?.jobTitle || "";
+  const candidId = candidate?._id || "";
 
   function openCalendar() {
     const params = new URLSearchParams({
-      newEvent:      "1",
-      type:          "entretien_rh",
+      newEvent: "1",
+      type: "entretien_rh",
       candidateName: name,
       candidateEmail: email,
       jobTitle,
       candidatureId: candidId,
     });
-    // Fermer le modal et ouvrir le calendrier dans le même onglet
     onClose();
     window.location.href = `/recruiter/calendar?${params.toString()}`;
   }
 
   return (
     <div className="p-5">
-      <button onClick={onBack} className="text-xs text-gray-400 hover:text-gray-600 flex items-center gap-1 mb-4">
+      <button onClick={onBack} className="text-xs text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 flex items-center gap-1 mb-4">
         ← Retour
       </button>
 
-      {/* Header */}
-      <div className="flex items-center gap-3 mb-6 p-3 bg-violet-50 dark:bg-violet-900/20 rounded-xl">
-        <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center flex-shrink-0">
-          <Users className="w-4 h-4 text-white"/>
+      <div className="flex items-center gap-3 mb-6 p-3 bg-green-50/60 dark:bg-green-900/20 rounded-xl border border-green-100 dark:border-green-800">
+        <div className="w-9 h-9 rounded-xl bg-green-600 flex items-center justify-center flex-shrink-0">
+          <Users className="w-4 h-4 text-white" />
         </div>
         <div>
           <p className="text-sm font-bold text-gray-800 dark:text-white">Entretien RH</p>
-          <p className="text-xs text-gray-500">Planifier depuis votre calendrier Outlook</p>
+          <p className="text-xs text-gray-500 dark:text-gray-400">Planifier depuis votre calendrier Outlook</p>
         </div>
       </div>
 
-      {/* Info candidat */}
-      <div className="mb-6 p-4 bg-gray-50 dark:bg-gray-800 rounded-xl space-y-2">
+      <div className="mb-6 p-4 bg-gray-50 dark:bg-gray-800 rounded-xl space-y-2 border border-gray-100 dark:border-gray-700">
         <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-full bg-violet-100 dark:bg-violet-900/30 flex items-center justify-center text-violet-700 dark:text-violet-300 font-bold text-sm flex-shrink-0">
+          <div className="w-8 h-8 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center text-green-700 dark:text-green-300 font-bold text-sm flex-shrink-0">
             {name?.[0]?.toUpperCase() || "C"}
           </div>
-          <div>
-            <p className="text-sm font-bold text-gray-800 dark:text-white">{name}</p>
-            {email && <p className="text-xs text-gray-400">{email}</p>}
+          <div className="min-w-0">
+            <p className="text-sm font-bold text-gray-800 dark:text-white truncate">{name}</p>
+            {email && <p className="text-xs text-gray-400 truncate">{email}</p>}
           </div>
         </div>
         {jobTitle && (
-          <div className="flex items-center gap-1.5 text-xs text-gray-500 pl-10">
-            <Briefcase className="w-3 h-3"/>
-            {jobTitle}
+          <div className="flex items-center gap-1.5 text-xs text-gray-500 dark:text-gray-400 pl-10">
+            <Briefcase className="w-3 h-3" />
+            <span className="truncate">{jobTitle}</span>
           </div>
         )}
       </div>
 
-      {/* Explication */}
-      <div className="mb-6 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-xl">
-        <p className="text-xs text-blue-700 dark:text-blue-300 leading-relaxed">
-          📅 Vous allez être redirigé vers votre <strong>calendrier Outlook</strong> pour créer l&apos;événement directement.<br/>
-          <span className="mt-1 block text-blue-600/70 dark:text-blue-400/70">
-            Le formulaire sera pré-rempli avec les informations du candidat.<br/>
-            Une fois l&apos;entretien créé, un email sera envoyé automatiquement au candidat.
+      <div className="mb-6 p-3 bg-green-50/60 dark:bg-green-900/20 rounded-xl border border-green-100 dark:border-green-800">
+        <p className="text-xs text-green-800 dark:text-green-200 leading-relaxed">
+          📅 Vous allez être redirigé vers votre <strong>calendrier Outlook</strong> pour créer l&apos;événement directement.
+          <span className="mt-1 block text-green-700/70 dark:text-green-300/70">
+            Le formulaire sera pré-rempli avec les informations du candidat. Une fois l&apos;entretien créé, un email sera envoyé automatiquement.
           </span>
         </p>
       </div>
 
-      <button onClick={openCalendar}
-        className="w-full py-3.5 rounded-xl bg-violet-600 hover:bg-violet-700 text-white font-bold text-sm flex items-center justify-center gap-2 transition-colors shadow-md hover:shadow-lg">
-        <Calendar className="w-4 h-4"/>
+      <button
+        onClick={openCalendar}
+        className="w-full py-3.5 rounded-xl bg-green-600 hover:bg-green-700 text-white font-bold text-sm flex items-center justify-center gap-2 transition-colors shadow-sm"
+      >
+        <Calendar className="w-4 h-4" />
         Ouvrir le calendrier &amp; Créer l&apos;entretien
       </button>
     </div>
@@ -503,7 +600,6 @@ function RHTechniqueFlow({ candidate, onBack, onClose }) {
   const [done, setDone] = useState(false);
   const [error, setError] = useState("");
 
-  // ✅ Recharge si candidat change
   useEffect(() => {
     fetchAvailability();
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -526,7 +622,6 @@ function RHTechniqueFlow({ candidate, onBack, onClose }) {
         return;
       }
 
-      // ✅ FIX 404: bon endpoint
       const r = await api.get("/api/calendar/rh-tech-slots", {
         params: { candidatureId, jobOfferId, days: 7 },
       });
@@ -558,7 +653,6 @@ function RHTechniqueFlow({ candidate, onBack, onClose }) {
         return;
       }
 
-      // ✅ FIX 404: bon endpoint + payload minimal attendu
       await api.post("/api/calendar/rh-tech/schedule", {
         candidatureId,
         jobOfferId,
@@ -575,7 +669,6 @@ function RHTechniqueFlow({ candidate, onBack, onClose }) {
     setSaving(false);
   }
 
-  // Grouper par jour + trier heures
   const slotsByDay = useMemo(() => {
     const acc = {};
     for (const s of slots) {
@@ -584,25 +677,20 @@ function RHTechniqueFlow({ candidate, onBack, onClose }) {
       if (!acc[day]) acc[day] = [];
       acc[day].push(s);
     }
-
-    // trier chaque jour par time (HH:mm)
     Object.keys(acc).forEach((day) => {
       acc[day].sort((a, b) => String(a.time).localeCompare(String(b.time)));
     });
-
     return acc;
   }, [slots]);
 
   if (done) {
     return (
       <div className="p-5 text-center">
-        <div className="w-16 h-16 rounded-full bg-orange-100 dark:bg-orange-900/30 flex items-center justify-center mx-auto mb-4">
-          <CheckCircle2 className="w-8 h-8 text-orange-600 dark:text-orange-400" />
+        <div className="w-16 h-16 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center mx-auto mb-4">
+          <CheckCircle2 className="w-8 h-8 text-green-600 dark:text-green-400" />
         </div>
 
-        <h3 className="font-bold text-gray-800 dark:text-white text-lg mb-1">
-          Demande envoyée !
-        </h3>
+        <h3 className="font-bold text-gray-800 dark:text-white text-lg mb-1">Demande envoyée !</h3>
         <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">
           Email envoyé au Responsable Métier pour confirmation.
         </p>
@@ -612,7 +700,7 @@ function RHTechniqueFlow({ candidate, onBack, onClose }) {
 
         <button
           onClick={onClose}
-          className="mt-5 inline-flex items-center justify-center px-4 py-2 rounded-xl bg-gray-900 text-white dark:bg-white dark:text-gray-900 font-bold text-sm"
+          className="mt-5 inline-flex items-center justify-center px-4 py-2 rounded-xl bg-green-600 hover:bg-green-700 text-white font-bold text-sm transition-colors"
         >
           Fermer
         </button>
@@ -622,41 +710,29 @@ function RHTechniqueFlow({ candidate, onBack, onClose }) {
 
   return (
     <div className="p-5">
-      <button
-        onClick={onBack}
-        className="text-xs text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 flex items-center gap-1 mb-4"
-      >
+      <button onClick={onBack} className="text-xs text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 flex items-center gap-1 mb-4">
         ← Retour
       </button>
 
-      <div className="flex items-center gap-3 mb-4 p-3 bg-orange-50 dark:bg-orange-900/20 rounded-xl">
-        <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-orange-500 to-red-500 flex items-center justify-center flex-shrink-0">
+      <div className="flex items-center gap-3 mb-4 p-3 bg-green-50/60 dark:bg-green-900/20 rounded-xl border border-green-100 dark:border-green-800">
+        <div className="w-9 h-9 rounded-xl bg-green-600 flex items-center justify-center flex-shrink-0">
           <UserCog className="w-4 h-4 text-white" />
         </div>
         <div>
-          <p className="text-sm font-bold text-gray-800 dark:text-white">
-            Entretien RH + Technique
-          </p>
-          <p className="text-xs text-gray-500 dark:text-gray-400">
-            Créneaux libres — Recruteur & Responsable (7 jours)
-          </p>
+          <p className="text-sm font-bold text-gray-800 dark:text-white">Entretien RH + Technique</p>
+          <p className="text-xs text-gray-500 dark:text-gray-400">Créneaux libres — Recruteur & Responsable (7 jours)</p>
         </div>
       </div>
 
       {loading ? (
         <div className="flex flex-col items-center py-8 gap-3">
-          <Loader2 className="w-7 h-7 animate-spin text-orange-400" />
+          <Loader2 className="w-7 h-7 animate-spin text-green-400" />
           <p className="text-sm text-gray-400">Analyse des calendriers...</p>
         </div>
       ) : slots.length === 0 ? (
         <div className="py-6 text-center">
-          <p className="text-sm text-gray-500 dark:text-gray-400 mb-3">
-            Aucun créneau commun trouvé cette semaine.
-          </p>
-          <button
-            onClick={fetchAvailability}
-            className="text-xs text-orange-500 hover:underline"
-          >
+          <p className="text-sm text-gray-500 dark:text-gray-400 mb-3">Aucun créneau commun trouvé cette semaine.</p>
+          <button onClick={fetchAvailability} className="text-xs text-green-600 hover:underline">
             Réessayer
           </button>
         </div>
@@ -674,17 +750,15 @@ function RHTechniqueFlow({ candidate, onBack, onClose }) {
 
               <div className="flex flex-wrap gap-2">
                 {daySlots.map((s, i) => {
-                  const active =
-                    selected?.date === s.date && selected?.time === s.time;
-
+                  const active = selected?.date === s.date && selected?.time === s.time;
                   return (
                     <button
                       key={`${day}-${s.time}-${i}`}
                       onClick={() => setSelected(s)}
                       className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all border-2 ${
                         active
-                          ? "bg-orange-500 text-white border-orange-500"
-                          : "bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-200 hover:border-orange-400"
+                          ? "bg-green-600 text-white border-green-600"
+                          : "bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-200 hover:border-green-400 dark:hover:border-green-700"
                       }`}
                     >
                       {s.time}
@@ -698,22 +772,15 @@ function RHTechniqueFlow({ candidate, onBack, onClose }) {
       )}
 
       {selected && (
-        <div className="mb-3 p-3 bg-orange-50 dark:bg-orange-900/20 rounded-xl flex items-center justify-between">
-          <div>
+        <div className="mb-3 p-3 bg-green-50/60 dark:bg-green-900/20 rounded-xl border border-green-100 dark:border-green-800 flex items-center justify-between gap-3">
+          <div className="min-w-0">
             <p className="text-xs text-gray-500 dark:text-gray-400">Créneau sélectionné</p>
-            <p className="text-sm font-bold text-gray-800 dark:text-white">
-              {new Date(selected.date).toLocaleDateString("fr-FR", {
-                weekday: "long",
-                day: "numeric",
-                month: "long",
-              })}{" "}
-              à {selected.time}
+            <p className="text-sm font-bold text-gray-800 dark:text-white truncate">
+              {new Date(selected.date).toLocaleDateString("fr-FR", { weekday: "long", day: "numeric", month: "long" })} à{" "}
+              {selected.time}
             </p>
           </div>
-          <button
-            onClick={() => setSelected(null)}
-            className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
-          >
+          <button onClick={() => setSelected(null)} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200">
             <X className="w-4 h-4" />
           </button>
         </div>
@@ -724,7 +791,7 @@ function RHTechniqueFlow({ candidate, onBack, onClose }) {
       <button
         onClick={handleSchedule}
         disabled={!selected || saving}
-        className="w-full py-3 rounded-xl bg-orange-500 hover:bg-orange-600 text-white font-bold text-sm flex items-center justify-center gap-2 disabled:opacity-40"
+        className="w-full py-3 rounded-xl bg-green-600 hover:bg-green-700 text-white font-bold text-sm flex items-center justify-center gap-2 disabled:opacity-40 transition-colors"
       >
         {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
         {saving ? "Envoi..." : "Envoyer au Responsable pour confirmation"}
@@ -732,37 +799,37 @@ function RHTechniqueFlow({ candidate, onBack, onClose }) {
     </div>
   );
 }
+
 // ── Wrapper Modal principal ─────────────────────────────────────
 function EntretienModal({ candidate, onClose, onRHScheduled }) {
-  const [step, setStep] = useState("type");  // "type" | "telephonique" | "rh" | "rh_technique"
+  const [step, setStep] = useState("type"); // "type" | "telephonique" | "rh" | "rh_technique"
   const name = getName(candidate);
 
   const types = [
-    { id:"telephonique",  label:"Entretien Téléphonique", icon:PhoneCall, color:"from-blue-500 to-cyan-500",    desc:"Note et suivi après appel" },
-    { id:"rh",            label:"Entretien RH",           icon:Users,     color:"from-violet-500 to-purple-600", desc:"Planifier + email candidat" },
-    { id:"rh_technique",  label:"Entretien RH + Technique",icon:UserCog,  color:"from-orange-500 to-red-500",   desc:"Créneaux libres communs" },
+    { id: "telephonique", label: "Entretien Téléphonique", icon: PhoneCall, desc: "Note et suivi après appel" },
+    { id: "rh", label: "Entretien RH", icon: Users, desc: "Planifier + email candidat" },
+    { id: "rh_technique", label: "Entretien RH + Technique", icon: UserCog, desc: "Créneaux libres communs" },
   ];
-
-  const headerColors = {
-    type:          "from-blue-600 to-indigo-600",
-    telephonique:  "from-blue-500 to-cyan-500",
-    rh:            "from-violet-600 to-purple-600",
-    rh_technique:  "from-orange-500 to-red-500",
-  };
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose}/>
-      <div className="relative bg-white dark:bg-gray-900 rounded-3xl shadow-2xl w-full max-w-md overflow-hidden">
-        {/* Header */}
-        <div className={`bg-gradient-to-r ${headerColors[step] || headerColors.type} px-6 py-5`}>
-          <div className="flex items-center justify-between">
-            <div>
-              <h2 className="text-white font-extrabold text-lg">Planifier un entretien</h2>
-              <p className="text-white/70 text-sm mt-0.5">{name}</p>
+      <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose} />
+
+      {/* Responsive: full width + max height */}
+      <div className="relative bg-white dark:bg-gray-900 rounded-3xl shadow-2xl w-full max-w-md overflow-hidden border border-gray-100 dark:border-gray-800">
+        {/* Header: neutral + green accent */}
+        <div className="px-6 py-5 bg-green-50/60 dark:bg-green-900/10 border-b border-gray-100 dark:border-gray-800">
+          <div className="flex items-center justify-between gap-3">
+            <div className="min-w-0">
+              <h2 className="text-gray-900 dark:text-white font-extrabold text-lg truncate">Planifier un entretien</h2>
+              <p className="text-gray-500 dark:text-gray-400 text-sm mt-0.5 truncate">{name}</p>
             </div>
-            <button onClick={onClose} className="w-8 h-8 rounded-full bg-white/20 hover:bg-white/30 flex items-center justify-center transition-colors">
-              <X className="w-4 h-4 text-white"/>
+
+            <button
+              onClick={onClose}
+              className="w-9 h-9 rounded-full hover:bg-white/70 dark:hover:bg-gray-800 flex items-center justify-center transition-colors shrink-0"
+            >
+              <X className="w-4.5 h-4.5 text-gray-600 dark:text-gray-300" />
             </button>
           </div>
         </div>
@@ -770,24 +837,37 @@ function EntretienModal({ candidate, onClose, onRHScheduled }) {
         {/* Steps */}
         {step === "type" && (
           <div className="p-5 space-y-3">
-            {types.map(t => (
-              <button key={t.id} onClick={() => setStep(t.id)}
-                className="w-full flex items-center gap-4 p-4 rounded-2xl border-2 border-gray-100 dark:border-gray-700 hover:border-blue-200 dark:hover:border-blue-700 hover:bg-blue-50/30 dark:hover:bg-blue-900/10 transition-all group text-left">
-                <div className={`w-11 h-11 rounded-xl bg-gradient-to-br ${t.color} flex items-center justify-center shadow-md flex-shrink-0`}>
-                  <t.icon className="w-5 h-5 text-white"/>
+            {types.map((t) => (
+              <button
+                key={t.id}
+                onClick={() => setStep(t.id)}
+                className="w-full flex items-center gap-4 p-4 rounded-2xl border border-gray-200 dark:border-gray-800 hover:border-green-300 dark:hover:border-green-700 hover:bg-green-50/60 dark:hover:bg-green-900/10 transition-all group text-left"
+              >
+                <div className="w-11 h-11 rounded-xl bg-green-600 flex items-center justify-center shadow-sm flex-shrink-0">
+                  <t.icon className="w-5 h-5 text-white" />
                 </div>
+
                 <div className="flex-1 min-w-0">
-                  <p className="font-bold text-gray-800 dark:text-white text-sm">{t.label}</p>
+                  <p className="font-extrabold text-gray-900 dark:text-white text-sm">{t.label}</p>
                   <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{t.desc}</p>
                 </div>
-                <ChevronRight className="w-4 h-4 text-gray-400 group-hover:text-blue-500 transition-colors flex-shrink-0"/>
+
+                <ChevronRight className="w-4 h-4 text-gray-400 group-hover:text-green-600 transition-colors flex-shrink-0" />
               </button>
             ))}
           </div>
         )}
-        {step === "telephonique" && <TelephoniqueFlow candidate={candidate} onBack={() => setStep("type")} onClose={onClose}/>}
-        {step === "rh"           && <RHFlow          candidate={candidate} onBack={() => setStep("type")} onClose={onClose} onScheduled={onRHScheduled}/>}
-        {step === "rh_technique" && <RHTechniqueFlow candidate={candidate} onBack={() => setStep("type")} onClose={onClose}/>}
+
+        {step === "telephonique" && <TelephoniqueFlow candidate={candidate} onBack={() => setStep("type")} onClose={onClose} />}
+        {step === "rh" && (
+          <RHFlow
+            candidate={candidate}
+            onBack={() => setStep("type")}
+            onClose={onClose}
+            onScheduled={onRHScheduled}
+          />
+        )}
+        {step === "rh_technique" && <RHTechniqueFlow candidate={candidate} onBack={() => setStep("type")} onClose={onClose} />}
       </div>
     </div>
   );
@@ -799,9 +879,13 @@ function NoteStars({ note }) {
     <div className="flex items-center gap-2 mb-4">
       <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">Appréciation :</span>
       <div className="flex gap-1">
-        {[1, 2, 3, 4, 5].map(s => (
+        {[1, 2, 3, 4, 5].map((s) => (
           <button key={s} onClick={() => setStars(s)}>
-            <Star className={`w-5 h-5 transition-colors ${s <= stars ? "text-yellow-400 fill-yellow-400" : "text-gray-300"}`} />
+            <Star
+              className={`w-5 h-5 transition-colors ${
+                s <= stars ? "text-yellow-400 fill-yellow-400" : "text-gray-300"
+              }`}
+            />
           </button>
         ))}
       </div>
@@ -813,7 +897,6 @@ function PreInterviewCard({ c, index }) {
   const [sent, setSent] = useState(() => wasSent(c?._id));
   const [showSendModal, setShowSendModal] = useState(false);
   const [showEntretienModal, setShowEntretienModal] = useState(false);
-  // Stocker l'entretien RH planifié pour remplacer le bouton par un lien
   const [rhInterview, setRhInterview] = useState(c?.latestRhInterview || null);
 
   const name = getName(c);
@@ -822,11 +905,7 @@ function PreInterviewCard({ c, index }) {
   const score = getMatchScore(c);
   const jobTitle = safeStr(c?.jobTitle) || "—";
   const email = safeStr(c?.email);
-  const telephone = safeStr(c?.telephone);
   const selectedAt = c?.preInterview?.selectedAt;
-  const recommendation =
-    c?.analysis?.jobMatch?.score?.recommendation ??
-    c?.analysis?.jobMatch?.recommendation ?? null;
 
   function handleSuccess() {
     markSent(c._id);
@@ -835,151 +914,126 @@ function PreInterviewCard({ c, index }) {
 
   return (
     <>
-      <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700 shadow-sm hover:shadow-md transition-all overflow-hidden">
-        <div className="h-1 bg-gradient-to-r from-violet-500 to-purple-600" />
-
-        <div className="p-5">
-          <div className="flex items-start justify-between gap-4">
-
-            {/* Avatar + Infos */}
-            <div className="flex items-start gap-4">
+      <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700 shadow-sm overflow-hidden">
+        <div className="p-6">
+          {/* TOP CONTENT — responsive */}
+          <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-6">
+            {/* LEFT */}
+            <div className="flex items-start gap-5 flex-1 min-w-0">
+              {/* Avatar */}
               <div className="relative shrink-0">
-                <div className="w-14 h-14 rounded-full bg-violet-100 dark:bg-violet-900/30 flex items-center justify-center text-violet-700 dark:text-violet-300 font-extrabold text-xl">
+                <div className="w-16 h-16 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center text-green-700 dark:text-green-300 font-extrabold text-2xl">
                   {name?.[0]?.toUpperCase() || "C"}
                 </div>
-                <span className="absolute -top-1 -left-1 w-5 h-5 rounded-full bg-violet-600 text-white text-[10px] font-bold flex items-center justify-center">
+                <span className="absolute -top-1 -left-1 w-6 h-6 rounded-full bg-green-600 text-white text-[11px] font-bold flex items-center justify-center">
                   {index + 1}
                 </span>
               </div>
 
-              <div>
-                <h2 className="text-lg font-extrabold text-gray-900 dark:text-white">{name}</h2>
-                <div className="flex items-center gap-1.5 mt-1">
-                  <Briefcase className="w-3.5 h-3.5 text-gray-400" />
-                  <p className="text-sm text-gray-500 dark:text-gray-400">{jobTitle}</p>
+              {/* Infos */}
+              <div className="min-w-0">
+                <h2 className="text-2xl font-extrabold text-gray-900 dark:text-white truncate">{name}</h2>
+
+                <div className="flex items-center gap-2 mt-1">
+                  <Briefcase className="w-4 h-4 text-gray-400 shrink-0" />
+                  <p className="text-sm text-gray-500 dark:text-gray-400 truncate">{jobTitle}</p>
                 </div>
-                <div className="flex flex-wrap gap-3 mt-2">
-                  {email && (
-                    <a href={`mailto:${email}`} className="inline-flex items-center gap-1 text-xs text-blue-600 dark:text-blue-400 hover:underline">
-                      <Mail className="w-3.5 h-3.5" />{email}
-                    </a>
-                  )}
-                  {telephone && (
-                    <span className="inline-flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400">
-                      <Phone className="w-3.5 h-3.5" />{telephone}
-                    </span>
-                  )}
-                </div>
+
+                {email && (
+                  <a
+                    href={`mailto:${email}`}
+                    className="mt-3 inline-flex items-center gap-2 text-sm text-blue-600 dark:text-blue-400 hover:underline"
+                  >
+                    <Mail className="w-4 h-4" />
+                    {email}
+                  </a>
+                )}
+
                 {cvUrl && (
-                  <a href={cvUrl} target="_blank" rel="noreferrer"
-                    className="inline-flex items-center gap-1.5 mt-2 text-sm font-medium text-green-700 dark:text-emerald-400 hover:text-green-800">
-                    <FileText className="w-4 h-4" />Voir CV
-                    <span className="text-gray-400 text-xs">({cvName})</span>
+                  <a
+                    href={cvUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="mt-3 inline-flex items-center gap-2 text-base font-semibold text-green-700 dark:text-emerald-400 hover:text-green-800"
+                  >
+                    <FileText className="w-5 h-5" />
+                    Voir CV <span className="text-gray-400 text-sm font-normal">({cvName})</span>
                   </a>
                 )}
               </div>
             </div>
 
-            {/* Score + Boutons */}
-            <div className="flex flex-col items-end gap-3 shrink-0">
-              {/* Match Score */}
-              <div className="text-right">
-                <p className="text-[10px] font-semibold text-gray-400 uppercase mb-1">Match Score</p>
-                <div className={`text-2xl font-extrabold px-3 py-1 rounded-xl ${scoreBg(score)}`}>
-                  {pct(score)}
-                </div>
-                {recommendation && (
-                  <p className="text-xs text-gray-400 mt-1 capitalize">{recommendation.replace("_", " ")}</p>
-                )}
+            {/* RIGHT (score + date) — no fixed width on mobile */}
+            <div className="w-full md:w-[320px] shrink-0 flex flex-row md:flex-col items-start md:items-end justify-between md:justify-start gap-4">
+              <div className="text-left md:text-right">
+                <p className="text-[11px] font-semibold text-gray-400 uppercase mb-2">Match score</p>
+                <div className={`inline-flex text-3xl font-extrabold px-5 py-2 rounded-2xl ${scoreBg(score)}`}>{pct(score)}</div>
+                <button className="block mt-2 md:ml-auto text-sm text-gray-400 hover:text-red-500 transition-colors">
+                  Reject
+                </button>
               </div>
 
-              {/* Date sélection */}
               {selectedAt && (
-                <div className="inline-flex items-center gap-1 text-xs text-violet-600 dark:text-violet-400 bg-violet-50 dark:bg-violet-900/20 px-2.5 py-1 rounded-full">
-                  <Clock className="w-3 h-3" />
+                <div className="inline-flex items-center gap-2 text-sm text-green-700 dark:text-green-400 bg-green-50 dark:bg-green-900/20 px-4 py-2 rounded-full">
+                  <Clock className="w-4 h-4" />
                   Sélectionné le {formatDate(selectedAt)}
                 </div>
               )}
-
-              {/* ── BOUTONS ── */}
-              <div className="flex flex-col gap-2 w-full min-w-[190px]">
-
-                {/* 1. Envoyer — disabled si déjà envoyé */}
-                {sent ? (
-                  <div className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-700 text-green-700 dark:text-green-400 text-sm font-semibold w-full cursor-not-allowed select-none">
-                    <CheckCircle2 className="w-4 h-4" />
-                    Documents envoyés
-                  </div>
-                ) : (
-                  <button
-                    onClick={() => setShowSendModal(true)}
-                    className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-violet-500 hover:bg-violet-600 text-white text-sm font-semibold transition-all shadow-sm w-full"
-                  >
-                    <Send className="w-4 h-4" />
-                    Envoyer (fiche / quiz)
-                  </button>
-                )}
-
-                {/* 2. Planifier entretien / lien si déjà planifié RH */}
-                {rhInterview ? (
-                  <div className="flex flex-col gap-1.5 w-full">
-                    {/* Entretien planifié → lien direct vers le calendrier */}
-                    <a
-                      href={`/recruiter/calendar`}
-                      className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-700 text-green-700 dark:text-green-400 text-sm font-semibold w-full hover:bg-green-100 transition-colors"
-                    >
-                      <CheckCircle2 className="w-4 h-4" />
-                      Voir dans le calendrier
-                    </a>
-                    <p className="text-[11px] text-gray-400 text-center">
-                      {rhInterview.date ? new Date(rhInterview.date).toLocaleDateString("fr-FR", { weekday:"short", day:"numeric", month:"short" }) + " · " + rhInterview.time : "Entretien RH planifié"}
-                    </p>
-                    <button
-                      onClick={() => setShowEntretienModal(true)}
-                      className="inline-flex items-center justify-center gap-1.5 text-[11px] text-gray-400 hover:text-violet-500 w-full py-1 transition-colors"
-                    >
-                      <Calendar className="w-3 h-3" />
-                      Planifier un autre
-                    </button>
-                  </div>
-                ) : (
-                  <button
-                    onClick={() => setShowEntretienModal(true)}
-                    className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-blue-500 hover:bg-blue-600 text-white text-sm font-semibold transition-colors shadow-sm w-full"
-                  >
-                    <Calendar className="w-4 h-4" />
-                    Planifier Entretien
-                  </button>
-                )}
-
-                {/* 3. Voir les résultats */}
-                <Link
-                  href={`/recruiter/PreInterviewList/${c._id}/results`}
-                  className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 text-sm font-semibold transition-colors w-full"
-                >
-                  <BarChart2 className="w-4 h-4" />
-                  Voir les résultats
-                </Link>
-              </div>
             </div>
+          </div>
+
+          {/* FOOTER ACTIONS — ALWAYS SAME LINE, but wrap on small to avoid overflow */}
+          <div className="mt-6 flex flex-wrap items-center justify-end gap-3">
+            {/* Envoyer */}
+            {sent ? (
+              <div className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-full bg-green-50 border border-green-200 text-green-700 text-sm font-semibold cursor-not-allowed">
+                <CheckCircle2 className="w-4 h-4" />
+                Envoyé
+              </div>
+            ) : (
+              <button
+                onClick={() => setShowSendModal(true)}
+                className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-full bg-green-600 hover:bg-green-700 text-white text-sm font-semibold transition"
+              >
+                <Send className="w-4 h-4" />
+                Envoyer (fiche / quiz)
+              </button>
+            )}
+
+            {/* Planifier */}
+            <button
+              onClick={() => setShowEntretienModal(true)}
+              className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-full bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold transition"
+            >
+              <Calendar className="w-4 h-4" />
+              Planifier entretien
+            </button>
+
+            {/* Résultats */}
+            <Link
+              href={`/recruiter/PreInterviewList/${c._id}/results`}
+              className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-full bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-800 dark:text-gray-100 text-sm font-semibold transition"
+            >
+              <BarChart2 className="w-4 h-4" />
+              Résultats
+            </Link>
           </div>
         </div>
       </div>
 
       {/* Modal envoi */}
       {showSendModal && (
-        <SendDocumentsModal
-          candidature={c}
-          onClose={() => setShowSendModal(false)}
-          onSuccess={handleSuccess}
-        />
+        <SendDocumentsModal candidature={c} onClose={() => setShowSendModal(false)} onSuccess={handleSuccess} />
       )}
 
       {showEntretienModal && (
         <EntretienModal
           candidate={c}
           onClose={() => setShowEntretienModal(false)}
-          onRHScheduled={(iv) => { setRhInterview(iv); setShowEntretienModal(false); }}
+          onRHScheduled={(iv) => {
+            setRhInterview(iv);
+            setShowEntretienModal(false);
+          }}
         />
       )}
     </>
@@ -1021,16 +1075,16 @@ export default function PreInterviewListPage() {
     });
   }, [candidates, search]);
 
-  if (loading) return (
-    <div className="min-h-screen bg-[#F0FAF0] dark:bg-gray-950 flex items-center justify-center">
-      <Loader2 className="w-8 h-8 animate-spin text-violet-500" />
-    </div>
-  );
+  if (loading)
+    return (
+      <div className="min-h-screen bg-[#F0FAF0] dark:bg-gray-950 flex items-center justify-center">
+        <Loader2 className="w-8 h-8 animate-spin text-green-500" />
+      </div>
+    );
 
   return (
     <div className="min-h-screen bg-[#F0FAF0] dark:bg-gray-950 transition-colors duration-300">
       <div className="max-w-4xl mx-auto px-4 py-8 space-y-6">
-
         {/* Header */}
         <div className="flex items-start justify-between gap-4">
           <div>
@@ -1038,17 +1092,17 @@ export default function PreInterviewListPage() {
               href="/recruiter/CandidatureAnalysis"
               className="inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 font-medium mb-3 transition-colors"
             >
-              <ArrowLeft className="w-4 h-4" /> Retour à l'analyse candidatures
+              <ArrowLeft className="w-4 h-4" /> Retour à l&apos;analyse candidatures
             </Link>
             <h1 className="text-3xl font-extrabold text-gray-900 dark:text-white flex items-center gap-3">
-              <UserCheck className="w-8 h-8 text-violet-500" />
+              <UserCheck className="w-8 h-8 text-green-500" />
               Candidats Pré-sélectionnés
             </h1>
             <p className="text-gray-500 dark:text-gray-400 mt-1">
               {candidates.length} candidat{candidates.length > 1 ? "s" : ""} prêt{candidates.length > 1 ? "s" : ""} pour entretien
             </p>
           </div>
-          <div className="inline-flex items-center gap-2 px-4 py-2 bg-violet-100 dark:bg-violet-900/30 text-violet-700 dark:text-violet-400 rounded-full font-semibold text-sm shrink-0">
+          <div className="inline-flex items-center gap-2 px-4 py-2 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 rounded-full font-semibold text-sm shrink-0">
             <UserCheck className="w-4 h-4" />
             {candidates.length} pré-sélectionné{candidates.length > 1 ? "s" : ""}
           </div>
@@ -1061,30 +1115,15 @@ export default function PreInterviewListPage() {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Rechercher un candidat (nom, email, job)..."
-            className="w-full pl-11 pr-4 py-3 rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-sm text-gray-800 dark:text-gray-100 outline-none focus:ring-2 focus:ring-violet-400 transition-colors"
+            className="w-full pl-11 pr-4 py-3 rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-sm text-gray-800 dark:text-gray-100 outline-none focus:ring-2 focus:ring-green-400 transition-colors"
           />
         </div>
-
-        {/* Banner info */}
-        {candidates.length > 0 && (
-          <div className="flex items-center justify-between px-4 py-3 bg-violet-50 dark:bg-violet-900/20 rounded-2xl border border-violet-100 dark:border-violet-800 text-sm">
-            <span className="flex items-center gap-2 text-violet-700 dark:text-violet-300 font-medium">
-              <UserCheck className="w-4 h-4" />
-              <strong>{candidates.length} candidats</strong> sélectionnés pour pré-entretien
-            </span>
-            <span className="text-violet-500 dark:text-violet-400 text-xs hidden sm:block">
-              Envoyez les documents ou planifiez leurs entretiens
-            </span>
-          </div>
-        )}
 
         {/* Liste */}
         {filtered.length === 0 ? (
           <div className="text-center py-16 text-gray-400">
             <UserCheck className="w-12 h-12 mx-auto mb-3 opacity-30" />
-            <p className="font-medium">
-              {search ? "Aucun candidat trouvé" : "Aucun candidat pré-sélectionné"}
-            </p>
+            <p className="font-medium">{search ? "Aucun candidat trouvé" : "Aucun candidat pré-sélectionné"}</p>
           </div>
         ) : (
           <div className="space-y-4">
@@ -1093,7 +1132,6 @@ export default function PreInterviewListPage() {
             ))}
           </div>
         )}
-
       </div>
     </div>
   );

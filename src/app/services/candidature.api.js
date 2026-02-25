@@ -1,5 +1,5 @@
 import api from "./api";
-
+import axios from "axios"; // ✅ OBLIGATOIRE
 export const getCondidature = () => api.get("/candidatures");
 export const getCandidaturesWithJob = () => api.get("/candidatures/with-job");
 export const getCondidatureCount = () => api.get("/candidatures/count");
@@ -19,3 +19,16 @@ export const getPreInterviewList = () =>
 export const sendDocuments = (candidatureId, payload) =>
   api.post(`/candidatures/${candidatureId}/send-documents`, payload);
 export const getCandidatureById = (id) => api.get(`/candidatures/${id}`);
+
+
+export const getPreInterviewCandidates = async () => {
+  const { data } = await axios.get(
+    `${API_URL}/api/candidatures/preinterview`,
+    {
+      headers: {
+        Authorization: `Bearer ${localStorage.getItem("token")}`,
+      },
+    }
+  );
+  return data;
+};

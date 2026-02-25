@@ -3,7 +3,8 @@
 import { useEffect, useMemo, useState } from "react";
 import { getCandidaturesWithJob } from "../../services/candidature.api";
 import Pagination from "../../components/Pagination";
-import { Search, FileText } from "lucide-react";
+import { Search, FileText, Linkedin, Phone, Mail,Calendar } from "lucide-react";
+
 
 /* ================= CONFIG ================= */
 const API_BASE = process.env.NEXT_PUBLIC_API_URL;
@@ -71,10 +72,10 @@ function getLinkedIn(c) {
 function normalizeUrl(raw) {
   if (!raw) return "";
   if (raw.startsWith("http")) return raw;
-  
+
   // Supprimer le slash au début si présent
   const cleanPath = raw.startsWith("/") ? raw : `/${raw}`;
-  
+
   // Éviter le double slash
   return `${API_BASE}${cleanPath}`;
 }
@@ -191,13 +192,15 @@ export default function CandidaturesTablePage() {
 
                 {getEmail(c) && (
                   <div className="text-sm text-gray-700 dark:text-gray-300 mb-1">
-                    📧 {getEmail(c)}
+                    <Mail className="inline-block w-4 h-4 mr-1 text-gray-500 dark:text-gray-400" />
+                    {getEmail(c)}
                   </div>
                 )}
 
                 {getPhone(c) && (
                   <div className="text-sm text-gray-700 dark:text-gray-300 mb-1">
-                    📱 {getPhone(c)}
+                    <Phone className="inline-block w-4 h-4 mr-1 text-gray-500 dark:text-gray-400" />
+                    {getPhone(c)}
                   </div>
                 )}
 
@@ -208,7 +211,8 @@ export default function CandidaturesTablePage() {
                     rel="noopener noreferrer"
                     className="text-sm underline text-[#4E8F2F] dark:text-emerald-400 hover:text-[#3a6b23] dark:hover:text-emerald-300 block mb-3 transition-colors"
                   >
-                    🔗 Profil LinkedIn
+                    <Linkedin className="inline-block w-4 h-4 mr-1 text-gray-500 dark:text-gray-400" />
+                    Profil LinkedIn
                   </a>
                 )}
 
@@ -230,7 +234,8 @@ export default function CandidaturesTablePage() {
                 </div>
 
                 <div className="mt-3 text-sm text-gray-600 dark:text-gray-400">
-                  📅 {formatDate(c?.createdAt)}
+                  <Calendar className="w-4 h-4 text-gray-400 dark:text-gray-500" />
+                  {formatDate(c?.createdAt)}
                 </div>
               </div>
             ))}

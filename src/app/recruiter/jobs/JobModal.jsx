@@ -38,10 +38,10 @@ export default function JobModal({
 
   const items = useMemo(
     () => [
-      { key: "skillsFit",        label: "Skills Fit" },
-      { key: "experienceFit",    label: "Professional Experience Fit" },
-      { key: "projectsFit",      label: "Projects Fit & Impact" },
-      { key: "educationFit",     label: "Education / Certifications" },
+      { key: "skillsFit", label: "Skills Fit" },
+      { key: "experienceFit", label: "Professional Experience Fit" },
+      { key: "projectsFit", label: "Projects Fit & Impact" },
+      { key: "educationFit", label: "Education / Certifications" },
       { key: "communicationFit", label: "Communication / Clarity signals" },
     ],
     [],
@@ -66,20 +66,20 @@ export default function JobModal({
             : "",
           lieu: initialData.lieu || "",
           scores: {
-            skillsFit:        initialData?.scores?.skillsFit        ?? 30,
-            experienceFit:    initialData?.scores?.experienceFit    ?? 30,
-            projectsFit:      initialData?.scores?.projectsFit      ?? 20,
-            educationFit:     initialData?.scores?.educationFit     ?? 10,
+            skillsFit: initialData?.scores?.skillsFit ?? 30,
+            experienceFit: initialData?.scores?.experienceFit ?? 30,
+            projectsFit: initialData?.scores?.projectsFit ?? 20,
+            educationFit: initialData?.scores?.educationFit ?? 10,
             communicationFit: initialData?.scores?.communicationFit ?? 10,
           },
         });
 
         const id =
           Array.isArray(initialData.assignedUserIds) &&
-          initialData.assignedUserIds.length > 0
+            initialData.assignedUserIds.length > 0
             ? (typeof initialData.assignedUserIds[0] === "string"
-                ? initialData.assignedUserIds[0]
-                : initialData.assignedUserIds[0]?._id)
+              ? initialData.assignedUserIds[0]
+              : initialData.assignedUserIds[0]?._id)
             : "";
         setAssignedUserId(id);
       } else {
@@ -111,8 +111,8 @@ export default function JobModal({
 
   function handleNumQuestions(val) {
     let n = parseInt(val, 10);
-    if (isNaN(n) || n < 1)  n = 1;
-    if (n > 30)              n = 30;
+    if (isNaN(n) || n < 1) n = 1;
+    if (n > 30) n = 30;
     setNumQuestions(n);
   }
 
@@ -373,16 +373,14 @@ export default function JobModal({
                         className="sr-only"
                       />
                       <div
-                        className={`w-11 h-6 rounded-full transition-colors duration-200 ${
-                          generateQuiz
+                        className={`w-11 h-6 rounded-full transition-colors duration-200 ${generateQuiz
                             ? "bg-[#6CB33F] dark:bg-emerald-500"
                             : "bg-gray-300 dark:bg-gray-600"
-                        }`}
+                          }`}
                       />
                       <div
-                        className={`absolute top-1 w-4 h-4 bg-white rounded-full shadow transition-transform duration-200 ${
-                          generateQuiz ? "translate-x-6" : "translate-x-1"
-                        }`}
+                        className={`absolute top-1 w-4 h-4 bg-white rounded-full shadow transition-transform duration-200 ${generateQuiz ? "translate-x-6" : "translate-x-1"
+                          }`}
                       />
                     </div>
                     <div>
@@ -400,46 +398,54 @@ export default function JobModal({
 
                   {/* Nombre de questions — visible seulement si cochée */}
                   {generateQuiz && (
-                    <div className="flex items-center gap-4 pl-14">
-                      <label className="text-sm font-semibold text-gray-700 dark:text-gray-300 whitespace-nowrap">
-                        Nombre de questions
-                      </label>
-                      <div className="flex items-center gap-2">
-                        <button
-                          type="button"
-                          onClick={() => handleNumQuestions(numQuestions - 1)}
-                          className="w-8 h-8 rounded-full border border-gray-200 dark:border-gray-600 
-                                     text-gray-700 dark:text-gray-300 font-bold
-                                     hover:bg-gray-100 dark:hover:bg-gray-700
-                                     transition-colors flex items-center justify-center"
-                        >
-                          −
-                        </button>
-                        <input
-                          type="number"
-                          min={1}
-                          max={30}
-                          value={numQuestions}
-                          onChange={(e) => handleNumQuestions(e.target.value)}
-                          className="w-16 h-9 text-center rounded-xl 
-                                     border border-gray-200 dark:border-gray-600 
-                                     bg-white dark:bg-gray-700 
-                                     text-gray-800 dark:text-gray-100 font-bold
-                                     focus:border-[#6CB33F] dark:focus:border-emerald-500
-                                     focus:ring-2 focus:ring-[#6CB33F]/20 dark:focus:ring-emerald-500/20
-                                     outline-none transition-colors"
-                        />
-                        <button
-                          type="button"
-                          onClick={() => handleNumQuestions(numQuestions + 1)}
-                          className="w-8 h-8 rounded-full border border-gray-200 dark:border-gray-600 
-                                     text-gray-700 dark:text-gray-300 font-bold
-                                     hover:bg-gray-100 dark:hover:bg-gray-700
-                                     transition-colors flex items-center justify-center"
-                        >
-                          +
-                        </button>
-                        <span className="text-xs text-gray-500 dark:text-gray-400">(max 30)</span>
+                    <div className="pl-14 space-y-2 sm:space-y-0">
+                      <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
+                        <label className="text-sm font-semibold text-gray-700 dark:text-gray-300 sm:whitespace-nowrap">
+                          Nombre de questions
+                        </label>
+
+                        <div className="flex flex-wrap items-center gap-2">
+                          <button
+                            type="button"
+                            onClick={() => handleNumQuestions(numQuestions - 1)}
+                            className="w-8 h-8 rounded-full border border-gray-200 dark:border-gray-600 
+                     text-gray-700 dark:text-gray-300 font-bold
+                     hover:bg-gray-100 dark:hover:bg-gray-700
+                     transition-colors flex items-center justify-center"
+                          >
+                            −
+                          </button>
+
+                          <input
+                            type="number"
+                            min={1}
+                            max={30}
+                            value={numQuestions}
+                            onChange={(e) => handleNumQuestions(e.target.value)}
+                            className="w-16 h-9 text-center rounded-xl 
+                     border border-gray-200 dark:border-gray-600 
+                     bg-white dark:bg-gray-700 
+                     text-gray-800 dark:text-gray-100 font-bold
+                     focus:border-[#6CB33F] dark:focus:border-emerald-500
+                     focus:ring-2 focus:ring-[#6CB33F]/20 dark:focus:ring-emerald-500/20
+                     outline-none transition-colors"
+                          />
+
+                          <button
+                            type="button"
+                            onClick={() => handleNumQuestions(numQuestions + 1)}
+                            className="w-8 h-8 rounded-full border border-gray-200 dark:border-gray-600 
+                     text-gray-700 dark:text-gray-300 font-bold
+                     hover:bg-gray-100 dark:hover:bg-gray-700
+                     transition-colors flex items-center justify-center"
+                          >
+                            +
+                          </button>
+
+                          <span className="text-xs text-gray-500 dark:text-gray-400 whitespace-nowrap">
+                            (max 30)
+                          </span>
+                        </div>
                       </div>
                     </div>
                   )}
@@ -459,11 +465,10 @@ export default function JobModal({
                     Pondérations (0 – 100)
                   </h3>
                   <span
-                    className={`text-sm font-extrabold ${
-                      isValidTotal
+                    className={`text-sm font-extrabold ${isValidTotal
                         ? "text-green-600 dark:text-emerald-400"
                         : "text-red-600 dark:text-red-400"
-                    }`}
+                      }`}
                   >
                     Total : {totalWeights}%
                   </span>
