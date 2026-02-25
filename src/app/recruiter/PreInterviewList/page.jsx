@@ -379,54 +379,74 @@ function TelephoniqueFlow({ candidate, onBack }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  async function fetchNotes() {
-    setLoading(true);
-    try {
-      const r = await api.get(`/candidatures/${candidate._id}/entretien-notes`);
-      const normalized = (r.data || []).map((n, idx) => {
-        const rawId = n._id ?? n.id;
-        const strId =
-          rawId?.$oid || (typeof rawId === "string" ? rawId : null) || rawId?.toString?.() || `note-idx-${idx}-${Date.now()}`;
-        return { ...n, _id: strId };
-      });
-      setNotes(normalized);
-    } catch (e) {
-      console.error("fetchNotes error:", e);
-      setNotes([]);
-    } finally {
-      setLoading(false);
-    }
-  }
+ async function fetchNotes() {
+  setLoading(true);
+  try {
+    const r = await api.get(`/candidatures/${candidate._id}/entretien-notes`);
 
-  async function saveNote() {
-    if (!noteText.trim()) return;
-    setSaving(true);
-    try {
-      if (editId) {
-        const safeEditId = editId?.$oid || String(editId || "");
-        await api.patch(`/candidatures/${candidate._id}/entretien-notes/${safeEditId}`, { note: noteText.trim() });
-      } else {
-        await api.post(`/candidatures/${candidate._id}/entretien-note`, { type: "telephonique", note: noteText.trim() });
-      }
-      setNoteText("");
-      setEditId(null);
-      await fetchNotes();
-    } catch (e) {
-      console.error(e);
+    // ✅ on accepte SEULEMENT les notes qui ont noteId (ou _id réel)
+    const normalized = (r.data || [])
+      .map((n) => {
+        const id =
+          n.noteId ||
+          n._id?.$oid ||
+          (typeof n._id === "string" ? n._id : null) ||
+          n.id ||
+          null;
+
+        if (!id) return null; // ❌ pas d'id => on ignore
+        return { ...n, noteId: String(id) };
+      })
+      .filter(Boolean);
+
+    setNotes(normalized);
+  } catch (e) {
+    console.error("fetchNotes error:", e);
+    setNotes([]);
+  } finally {
+    setLoading(false);
+  }
+}
+
+async function saveNote() {
+  if (!noteText.trim()) return;
+  setSaving(true);
+
+  try {
+    if (editId) {
+      await api.patch(
+        `/candidatures/${candidate._id}/entretien-note/${editId}`,
+        { note: noteText.trim() }
+      );
+    } else {
+      await api.post(
+        `/candidatures/${candidate._id}/entretien-note`,
+        { type: "telephonique", note: noteText.trim() }
+      );
     }
+
+    setNoteText("");
+    setEditId(null);
+    await fetchNotes();
+  } catch (e) {
+    console.error("saveNote error:", e?.response?.status, e?.response?.data);
+  } finally {
     setSaving(false);
   }
+}
 
-  async function deleteNote(noteId) {
-    if (!noteId || noteId === "undefined" || noteId.startsWith("note-idx-")) return;
-    if (!confirm("Supprimer cette note ?")) return;
-    try {
-      await api.delete(`/candidatures/${candidate._id}/entretien-notes/${noteId}`);
-      await fetchNotes();
-    } catch (e) {
-      console.error("deleteNote error:", e?.response?.status, e?.response?.data);
-    }
+async function deleteNote(noteId) {
+  console.log("deleteNote id:", noteId);
+  if (!noteId) return;
+  if (!confirm("Supprimer cette note ?")) return;
+
+  try {
+    await api.delete(`/candidatures/${candidate._id}/entretien-note/${noteId}`);
+    await fetchNotes();
+  } catch (e) {
+    console.error("deleteNote error:", e?.response?.status, e?.response?.data);
   }
+}
 
   function startEdit(n) {
     const id = n._id?.$oid || n._id?.toString?.() || String(n._id || "");
@@ -503,9 +523,13 @@ function TelephoniqueFlow({ candidate, onBack }) {
                   <button onClick={() => startEdit(n)} className="text-xs text-green-600 hover:text-green-700 font-medium">
                     Modifier
                   </button>
-                  <button onClick={() => deleteNote(n._id)} className="text-xs text-red-400 hover:text-red-600 font-medium">
-                    Supprimer
-                  </button>
+                <button
+  type="button"
+  onClick={() => deleteNote(n.noteId || n._id?.$oid || n._id)}
+  className="text-xs text-red-400 hover:text-red-600 font-medium"
+>
+  Supprimer
+</button>
                 </div>
               </div>
             </div>
