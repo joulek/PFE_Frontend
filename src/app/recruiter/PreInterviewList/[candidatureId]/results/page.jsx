@@ -1,30 +1,20 @@
+// app/recruiter/PreInterviewList/[candidatureId]/results/page.jsx
 "use client";
 
-// 📁 app/recruiter/PreInterviewList/[candidatureId]/results/page.jsx
-
 import { useEffect, useState } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useParams } from "next/navigation";
 import api from "../../../../services/api";
-import { getQuizByJob } from "../../../../services/quiz.api";
 import Link from "next/link";
 import {
-  ArrowLeft,
   Brain,
   ClipboardList,
   CheckCircle,
   XCircle,
-  Trophy,
-  Target,
-  AlertCircle,
   Loader2,
-  User,
   Briefcase,
-  Calendar,
-  BarChart2,
-  TrendingUp,
+  Mail,
+  Download,
 } from "lucide-react";
-
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "";
 
 function formatDate(d) {
   if (!d) return "—";
@@ -36,722 +26,352 @@ function formatDate(d) {
 }
 
 function safeStr(v) {
-  if (v === null || v === undefined) return "";
-  return typeof v === "string" ? v.trim() : String(v).trim();
+  return v ? String(v).trim() : "";
 }
 
-// Convertit n'importe quelle valeur de fiche en texte lisible
-// Formate une clé snake_case/camelCase en label lisible
-function formatKey(key) {
-  return String(key)
-    .replace(/_/g, " ")
-    .replace(/([A-Z])/g, " $1")
-    .toLowerCase()
-    .replace(/^./, (s) => s.toUpperCase());
-}
+// ── Cercle de score ──────────────────────────────────────────────────────────────
+function ScoreCircle({ percentage }) {
+  const radius = 58;
+  const circumference = 2 * Math.PI * radius;
+  const offset = circumference - (percentage / 100) * circumference;
 
-// Détecte si une clé est un ObjectId MongoDB (24 hex chars)
-function isObjectId(key) {
-  return /^[a-f0-9]{24}$/i.test(String(key));
-}
-
-// Formate une valeur primitive en string lisible
-function formatVal(v) {
-  if (v === null || v === undefined || v === "") return null;
-  if (typeof v === "boolean") return v ? "Oui" : "Non";
-  return String(v).trim() || null;
-}
-
-// Convertit n'importe quelle valeur de fiche en JSX lisible
-function renderFicheValue(value) {
-  if (value === null || value === undefined || value === "") {
-    return (
-      <span className="text-gray-400 italic text-sm font-normal">
-        Non renseigné
-      </span>
-    );
-  }
-
-  // ── Tableau ──────────────────────────────────────────────
-  if (Array.isArray(value)) {
-    if (value.length === 0)
-      return (
-        <span className="text-gray-400 italic text-sm font-normal">—</span>
-      );
-
-    // Tableau de primitives simples
-    if (!value.some((item) => item && typeof item === "object")) {
-      return (
-        <div className="flex flex-wrap gap-1.5 mt-1">
-          {value.map((item, i) => (
-            <span
-              key={i}
-              className="px-2.5 py-1 bg-violet-50 dark:bg-violet-900/20 text-violet-700 dark:text-violet-300 rounded-lg text-sm font-medium"
-            >
-              {String(item)}
-            </span>
-          ))}
-        </div>
-      );
-    }
-
-    // Tableau d'objets → mini table (ex: langues, logiciels)
-    return (
-      <div className="mt-2 space-y-2">
-        {value.map((item, i) => {
-          if (!item || typeof item !== "object") {
-            return (
-              <span
-                key={i}
-                className="px-2.5 py-1 bg-gray-100 dark:bg-gray-700 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-300 inline-block mr-2"
-              >
-                {String(item)}
-              </span>
-            );
-          }
-          // Filtrer les clés ObjectId MongoDB — garder seulement les vraies clés lisibles
-          const entries = Object.entries(item).filter(
-            ([k, v]) => !isObjectId(k) && formatVal(v) !== null,
-          );
-          // Si toutes les clés sont des ObjectIds, ignorer cet item
-          if (entries.length === 0) return null;
-          return (
-            <div
-              key={i}
-              className="flex flex-wrap gap-3 p-2.5 bg-gray-50 dark:bg-gray-700/50 rounded-xl border border-gray-100 dark:border-gray-600"
-            >
-              {entries.map(([k, v]) => (
-                <span key={k} className="flex items-center gap-1.5 text-sm">
-                  <span className="text-gray-400 dark:text-gray-500 font-medium text-xs uppercase tracking-wide">
-                    {formatKey(k)} :
-                  </span>
-                  <span className="font-semibold text-gray-800 dark:text-gray-200">
-                    {formatVal(v)}
-                  </span>
-                </span>
-              ))}
-            </div>
-          );
-        })}
-      </div>
-    );
-  }
-
-  // ── Objet simple ─────────────────────────────────────────
-  if (typeof value === "object") {
-    const entries = Object.entries(value).filter(
-      ([k, v]) => !isObjectId(k) && formatVal(v) !== null,
-    );
-    if (entries.length === 0)
-      return (
-        <span className="text-gray-400 italic text-sm font-normal">—</span>
-      );
-    return (
-      <div className="flex flex-wrap gap-2 mt-1">
-        {entries.map(([k, v]) => (
-          <span key={k} className="flex items-center gap-1.5 text-sm">
-            <span className="text-gray-400 dark:text-gray-500 font-medium text-xs uppercase tracking-wide">
-              {formatKey(k)} :
-            </span>
-            <span className="font-semibold text-gray-800 dark:text-gray-200">
-              {formatVal(v)}
-            </span>
-          </span>
-        ))}
-      </div>
-    );
-  }
-
-  // ── Primitif ─────────────────────────────────────────────
-  const str = String(value).trim();
-  if (!str)
-    return (
-      <span className="text-gray-400 italic text-sm font-normal">
-        Non renseigné
-      </span>
-    );
-  return str;
-}
-
-/* ── Cercle score animé ── */
-function ScoreRing({ percentage, size = 120 }) {
-  const r = size / 2 - 10;
-  const dash = 2 * Math.PI * r;
-  const offset = dash - (percentage / 100) * dash;
-  const color =
-    percentage >= 75 ? "#22c55e" : percentage >= 50 ? "#eab308" : "#ef4444";
-  const bg =
-    percentage >= 75
-      ? "from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20"
-      : percentage >= 50
-        ? "from-yellow-50 to-amber-50 dark:from-yellow-900/20 dark:to-amber-900/20"
-        : "from-red-50 to-rose-50 dark:from-red-900/20 dark:to-rose-900/20";
+  const color = percentage >= 80 ? "#16A34A" : percentage >= 65 ? "#22C55E" : percentage >= 50 ? "#eab308" : "#ef4444";
 
   return (
-    <div
-      className={`relative inline-flex items-center justify-center rounded-3xl p-6 bg-gradient-to-br ${bg}`}
-    >
-      <svg width={size} height={size} className="-rotate-90">
+    <div className="relative w-36 h-36 flex items-center justify-center">
+      <svg className="w-full h-full -rotate-90">
+        <circle cx="72" cy="72" r={radius} fill="none" stroke="#e5e7eb dark:stroke-slate-700" strokeWidth="12" />
         <circle
-          cx={size / 2}
-          cy={size / 2}
-          r={r}
-          fill="none"
-          stroke="#e5e7eb"
-          strokeWidth="10"
-          className="dark:stroke-gray-700"
-        />
-        <circle
-          cx={size / 2}
-          cy={size / 2}
-          r={r}
+          cx="72"
+          cy="72"
+          r={radius}
           fill="none"
           stroke={color}
-          strokeWidth="10"
-          strokeDasharray={dash}
+          strokeWidth="12"
+          strokeDasharray={circumference}
           strokeDashoffset={offset}
           strokeLinecap="round"
-          style={{ transition: "stroke-dashoffset 1.2s ease" }}
         />
       </svg>
       <div className="absolute inset-0 flex flex-col items-center justify-center">
-        <span className="text-3xl font-black" style={{ color }}>
+        <span className="text-4xl font-extrabold" style={{ color }}>
           {percentage}%
         </span>
+        <span className="text-xs font-medium mt-1" style={{ color }}>
+          SCORE
+        </span>
       </div>
     </div>
   );
 }
 
-/* ── Badge label ── */
-function ScoreLabel({ percentage }) {
-  if (percentage >= 80)
-    return (
-      <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 font-bold text-sm">
-        <Trophy className="w-4 h-4" /> Excellent
-      </span>
-    );
-  if (percentage >= 60)
-    return (
-      <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 font-bold text-sm">
-        <Target className="w-4 h-4" /> Bon résultat
-      </span>
-    );
-  if (percentage >= 40)
-    return (
-      <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400 font-bold text-sm">
-        <AlertCircle className="w-4 h-4" /> Passable
-      </span>
-    );
-  return (
-    <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 font-bold text-sm">
-      <XCircle className="w-4 h-4" /> À améliorer
-    </span>
-  );
-}
-
-/* ================================================================
-   SECTION QUIZ
-================================================================ */
-function QuizSection({ quiz, questions = [] }) {
-  const [expanded, setExpanded] = useState(true);
-
-  // Extraire le texte lisible d'une option (gère tous formats ML)
-  function normalizeOption(raw) {
-    if (!raw) return null;
-    if (typeof raw === "string") return raw.trim() || null;
-    // {key:"A", text:"..."} ou {label:"...", value:"..."}
-    const text =
-      raw.text ?? raw.label ?? raw.value ?? raw.content ?? raw.option ?? null;
-    if (text !== null && text !== undefined) return String(text).trim() || null;
-    // {A: "texte"} — clé lettre directe
-    const letterKeys = ["A", "B", "C", "D", "E"];
-    for (const k of letterKeys) {
-      if (raw[k] !== undefined) return String(raw[k]).trim() || null;
-    }
-    // Dernier recours: première valeur string de l'objet
-    const vals = Object.values(raw).filter(
-      (v) => typeof v === "string" && v.trim(),
-    );
-    return vals[0] || null;
-  }
-
-  // Mapper lettre (A/B/C/D) vers le texte complet de l'option
-  function resolveAnswer(answerVal, order) {
-    if (!answerVal && answerVal !== 0) return "Sans réponse";
-    const val = String(answerVal).trim();
-    if (!val) return "Sans réponse";
-
-    // Cas 1 — lettre seule (A, B, C, D, E)
-    if (/^[A-Ea-e]$/.test(val)) {
-      const idx = val.toUpperCase().charCodeAt(0) - 65; // A=0, B=1...
-      const question = questions.find((q) => q.order === order);
-      const opts = question?.options || [];
-
-      // Chercher par index direct
-      const byIndex = normalizeOption(opts[idx]);
-      if (byIndex) return byIndex;
-
-      // Chercher par clé lettre dans les options
-      for (const opt of opts) {
-        if (opt && typeof opt === "object") {
-          if (opt.key === val.toUpperCase() || opt.key === val.toLowerCase()) {
-            return normalizeOption(opt) || val;
-          }
-          if (opt.label === val.toUpperCase()) {
-            return normalizeOption(opt) || val;
-          }
-        }
-      }
-    }
-
-    // Cas 2 — déjà du texte complet (plus d'une lettre)
-    return val;
-  }
-
-  return (
-    <div className="bg-white dark:bg-gray-800 rounded-3xl border border-gray-100 dark:border-gray-700 shadow-sm overflow-hidden">
-      {/* Header */}
-      <div className="bg-gradient-to-r from-violet-500 to-purple-600 px-6 py-5">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-white/20 flex items-center justify-center">
-              <Brain className="w-5 h-5 text-white" />
-            </div>
-            <div>
-              <h2 className="text-white font-extrabold text-lg">
-                Quiz Technique
-              </h2>
-              <p className="text-violet-200 text-sm">
-                Soumis le {formatDate(quiz.submittedAt)}
-              </p>
-            </div>
-          </div>
-          <ScoreLabel percentage={quiz.percentage} />
-        </div>
-      </div>
-
-      {/* Score stats */}
-      <div className="px-6 py-6 flex flex-col sm:flex-row items-center gap-8 border-b border-gray-100 dark:border-gray-700">
-        <ScoreRing percentage={quiz.percentage} size={130} />
-
-        <div className="flex-1 space-y-4 w-full">
-          {/* Barre */}
-          <div>
-            <div className="flex justify-between text-sm font-semibold mb-1.5">
-              <span className="text-green-600 dark:text-green-400">
-                ✓ {quiz.score} correctes
-              </span>
-              <span className="text-red-500 dark:text-red-400">
-                ✗ {quiz.totalQuestions - quiz.score} incorrectes
-              </span>
-            </div>
-            <div className="w-full h-3 bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden flex">
-              <div
-                className="h-full bg-green-400 rounded-l-full transition-all duration-1000"
-                style={{ width: `${quiz.percentage}%` }}
-              />
-              <div className="h-full flex-1 bg-red-200 dark:bg-red-900/30 rounded-r-full" />
-            </div>
-          </div>
-
-          {/* Stats cards */}
-          <div className="grid grid-cols-3 gap-3">
-            <div className="bg-green-50 dark:bg-green-900/20 rounded-2xl p-3 text-center">
-              <p className="text-2xl font-black text-green-600 dark:text-green-400">
-                {quiz.score}
-              </p>
-              <p className="text-xs text-green-700 dark:text-green-500 font-medium mt-0.5">
-                Correctes
-              </p>
-            </div>
-            <div className="bg-red-50 dark:bg-red-900/20 rounded-2xl p-3 text-center">
-              <p className="text-2xl font-black text-red-500 dark:text-red-400">
-                {quiz.totalQuestions - quiz.score}
-              </p>
-              <p className="text-xs text-red-600 dark:text-red-500 font-medium mt-0.5">
-                Incorrectes
-              </p>
-            </div>
-            <div className="bg-violet-50 dark:bg-violet-900/20 rounded-2xl p-3 text-center">
-              <p className="text-2xl font-black text-violet-600 dark:text-violet-400">
-                {quiz.totalQuestions}
-              </p>
-              <p className="text-xs text-violet-700 dark:text-violet-500 font-medium mt-0.5">
-                Total
-              </p>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Toggle réponses */}
-      <button
-        onClick={() => setExpanded((e) => !e)}
-        className="w-full flex items-center justify-between px-6 py-4 text-sm font-semibold text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors"
-      >
-        <span className="flex items-center gap-2">
-          <TrendingUp className="w-4 h-4 text-violet-500" />
-          Détail des {quiz.answers?.length || 0} réponses
-        </span>
-        <span
-          className={`text-xs px-2 py-0.5 rounded-full transition-all ${expanded ? "bg-violet-100 text-violet-600" : "bg-gray-100 text-gray-500"}`}
-        >
-          {expanded ? "Masquer" : "Afficher"}
-        </span>
-      </button>
-
-      {/* Réponses */}
-      {expanded && Array.isArray(quiz.answers) && quiz.answers.length > 0 && (
-        <div className="divide-y divide-gray-100 dark:divide-gray-700">
-          {quiz.answers.map((a, i) => (
-            <div
-              key={i}
-              className={`px-6 py-4 flex items-start gap-4 transition-colors ${
-                a.isCorrect
-                  ? "hover:bg-green-50/50 dark:hover:bg-green-900/10"
-                  : "hover:bg-red-50/50 dark:hover:bg-red-900/10"
-              }`}
-            >
-              {/* Numéro */}
-              <div
-                className={`shrink-0 w-8 h-8 rounded-xl flex items-center justify-center text-xs font-black ${
-                  a.isCorrect
-                    ? "bg-green-100 dark:bg-green-900/30 text-green-600"
-                    : "bg-red-100 dark:bg-red-900/30 text-red-500"
-                }`}
-              >
-                {a.order ?? i + 1}
-              </div>
-
-              {/* Contenu */}
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-gray-800 dark:text-gray-200 leading-snug mb-1.5">
-                  {a.question}
-                </p>
-                <div className="flex flex-wrap gap-2">
-                  <span
-                    className={`inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-full ${
-                      a.isCorrect
-                        ? "bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400"
-                        : "bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400"
-                    }`}
-                  >
-                    {a.isCorrect ? "✓" : "✗"}{" "}
-                    {resolveAnswer(a.selectedAnswer, a.order)}
-                  </span>
-                  {!a.isCorrect && a.correctAnswer && (
-                    <span className="inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-full bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400">
-                      ✓ {resolveAnswer(a.correctAnswer, a.order)}
-                    </span>
-                  )}
-                </div>
-              </div>
-
-              {/* Icône */}
-              <div className="shrink-0 mt-0.5">
-                {a.isCorrect ? (
-                  <CheckCircle className="w-5 h-5 text-green-500" />
-                ) : (
-                  <XCircle className="w-5 h-5 text-red-400" />
-                )}
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
-    </div>
-  );
-}
-
-/* ================================================================
-   SECTION FICHE
-================================================================ */
+// ── Bouton PDF ───────────────────────────────────────────────────────────────────
 function PdfDownloadButton({ submissionId }) {
   const [loading, setLoading] = useState(false);
 
-  async function handleDownload() {
-    if (loading) return;
+  const handleDownload = async () => {
     setLoading(true);
     try {
-      // ✅ api instance envoie automatiquement le JWT token
-      const response = await api.get(
-        `/fiche-submissions/${submissionId}/pdf`,
-        { responseType: "blob" }
-      );
-
-      const blob = new Blob([response.data], { type: "application/pdf" });
-      const url = URL.createObjectURL(blob);
+      const res = await api.get(`/fiche-submissions/${submissionId}/pdf`, { responseType: "blob" });
+      const url = URL.createObjectURL(res.data);
       const a = document.createElement("a");
       a.href = url;
-      a.download = `fiche_${submissionId}.pdf`;
-      document.body.appendChild(a);
+      a.download = `fiche_candidature.pdf`;
       a.click();
-      document.body.removeChild(a);
       URL.revokeObjectURL(url);
-    } catch (err) {
-      console.error("Erreur téléchargement PDF:", err);
+    } catch {
       alert("Erreur lors du téléchargement du PDF");
     } finally {
       setLoading(false);
     }
-  }
+  };
 
   return (
-    <button
-      onClick={handleDownload}
-      disabled={loading}
-      className="inline-flex items-center gap-2 px-4 py-2 bg-white text-green-700 hover:bg-green-50 rounded-xl text-sm font-bold transition-colors shadow-sm disabled:opacity-60"
-    >
-      {loading ? (
-        <Loader2 className="w-4 h-4 animate-spin" />
-      ) : (
-        <span>📄</span>
-      )}
-      {loading ? "Génération..." : "Télécharger PDF"}
-    </button>
+    <div className="flex justify-center">
+      <button
+        onClick={handleDownload}
+        disabled={loading}
+        className="
+        inline-flex items-center gap-2 px-6 py-3 
+        bg-green-600 hover:bg-green-600
+        text-white rounded-lg font-medium shadow-md 
+        disabled:opacity-60 transition-all transform hover:scale-105
+        dark:bg-green-700 dark:hover:bg-green-600
+      "
+      >
+        {loading ? (
+          <Loader2 className="w-5 h-5 animate-spin" />
+        ) : (
+          <Download className="w-5 h-5" />
+        )}
+        Télécharger le PDF
+      </button>
+    </div>
   );
 }
 
-function FicheSection({ fiche }) {
-  if (!fiche) return null;
-  const isSubmitted = fiche.status === "SUBMITTED";
-  const pdfUrl = fiche._id ? `/api` : null; // handled by PdfDownloadButton
+// ── Section Quiz avec affichage complet des réponses ─────────────────────────────
+function QuizSection({ quiz, questions = [] }) {
+  const [expanded, setExpanded] = useState(true);
+
+  const resolveAnswer = (val, order) => {
+    if (val === null || val === undefined) return "—";
+
+    const str = String(val).trim().toUpperCase();
+
+    // Si c'est une lettre (A, B, C, ...)
+    if (/^[A-E]$/.test(str)) {
+      const idx = str.charCodeAt(0) - 65;
+
+      const question = questions.find(q => q.order === order);
+      if (!question?.options) return str;
+
+      const opt = question.options[idx];
+      if (!opt) return str;
+
+      // Cas les plus courants
+      if (typeof opt === "string") return opt.trim();
+
+      if (typeof opt === "object" && opt !== null) {
+        return (
+          opt.text ||
+            opt.label ||
+            opt.value ||
+            opt.content ||
+            opt.option ||
+            opt[str] ||
+            opt[str.toLowerCase()] ||
+            opt.key === str ? opt.text || opt.label || str : str
+        );
+      }
+
+      return str;
+    }
+
+    // Sinon on retourne directement la valeur (déjà texte)
+    return String(val).trim();
+  };
 
   return (
-    <div className="bg-gradient-to-r from-green-500 to-emerald-600 rounded-3xl shadow-sm overflow-hidden">
-      <div className="px-6 py-5 flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center">
-            <ClipboardList className="w-5 h-5 text-white" />
+    <div className="bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl shadow-sm overflow-hidden">
+      <div className="px-6 py-5 border-b border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-900/50">
+        <div className="flex items-center justify-between">
+          <h3 className="text-lg font-semibold flex items-center gap-2.5 text-gray-900 dark:text-white">
+            <Brain className="w-5 h-5 text-violet-600 dark:text-violet-400" />
+            Résultats du Quiz Technique
+          </h3>
+          <span className="text-sm text-gray-500 dark:text-gray-400">
+            Terminé le {formatDate(quiz.submittedAt)}
+          </span>
+        </div>
+      </div>
+
+      <div className="p-6">
+        <div className="flex flex-col md:flex-row gap-8 md:gap-12 mb-8">
+          <div className="shrink-0">
+            <ScoreCircle percentage={quiz.percentage} />
           </div>
-          <div>
-            <h2 className="text-lg font-extrabold text-white">
-              {fiche.ficheTitle || "Fiche de renseignement"}
-            </h2>
-            <p className="text-green-100 text-sm mt-0.5">
-              {isSubmitted
-                ? `Complétée le ${formatDate(fiche.finishedAt || fiche.updatedAt)}`
-                : "En cours de remplissage"}
-            </p>
+
+          <div className="flex-1 grid grid-cols-3 gap-5">
+            <div className="text-center p-4 bg-green-50 dark:bg-green-900/30 rounded-xl border border-green-100 dark:border-green-800/40">
+              <p className="text-3xl font-bold text-green-700 dark:text-green-300">{quiz.score}</p>
+              <p className="text-sm text-green-600 dark:text-green-400 mt-1">CORRECTES</p>
+            </div>
+            <div className="text-center p-4 bg-red-50 dark:bg-red-900/30 rounded-xl border border-red-100 dark:border-red-800/40">
+              <p className="text-3xl font-bold text-red-700 dark:text-red-300">{quiz.totalQuestions - quiz.score}</p>
+              <p className="text-sm text-red-600 dark:text-red-400 mt-1">INCORRECTES</p>
+            </div>
+            <div className="text-center p-4 bg-gray-50 dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700">
+              <p className="text-3xl font-bold text-gray-800 dark:text-gray-200">{quiz.totalQuestions}</p>
+              <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">TOTAL</p>
+            </div>
           </div>
         </div>
-        <div className="flex items-center gap-2">
-          <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold bg-white/20 text-white">
-            {isSubmitted ? "✓ Complétée" : "⏳ En cours"}
-          </span>
-          {isSubmitted && fiche._id && (
-            <PdfDownloadButton submissionId={fiche._id} />
-          )}
+
+        <div className="space-y-5">
+          {quiz.answers?.map((a, i) => (
+            <div
+              key={i}
+              className={`p-5 rounded-xl border ${a.isCorrect
+                ? "bg-green-50 dark:bg-green-900/30 border-green-200 dark:border-green-800/40"
+                : "bg-red-50 dark:bg-red-900/30 border-red-200 dark:border-red-800/40"
+                }`}
+            >
+              <div className="flex items-start gap-4">
+                <div
+                  className={`w-9 h-9 rounded-lg flex items-center justify-center text-white font-bold shrink-0 ${a.isCorrect ? "bg-green-600" : "bg-red-600"
+                    }`}
+                >
+                  {a.order || i + 1}
+                </div>
+
+                <div className="flex-1 min-w-0">
+                  <p className="font-medium text-gray-900 dark:text-gray-100 mb-2.5 leading-snug">
+                    {a.question}
+                  </p>
+
+                  <div className="flex flex-wrap gap-3 mt-2">
+                    <div
+                      className={`inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-sm font-medium ${a.isCorrect
+                        ? "bg-green-100 dark:bg-green-800/30 text-green-800 dark:text-green-200"
+                        : "bg-red-100 dark:bg-red-800/30 text-red-800 dark:text-red-200"
+                        }`}
+                    >
+                      {a.isCorrect ? <CheckCircle className="w-4 h-4" /> : <XCircle className="w-4 h-4" />}
+                      {resolveAnswer(a.selectedAnswer, a.order)}
+                    </div>
+
+                    {!a.isCorrect && a.correctAnswer && (
+                      <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-sm font-medium bg-green-100 dark:bg-green-800/30 text-green-800 dark:text-green-200">
+                        <CheckCircle className="w-4 h-4" />
+                        {resolveAnswer(a.correctAnswer, a.order)}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+          ))}
         </div>
       </div>
     </div>
   );
 }
 
+// ── Fiche (simplifiée comme demandé) ─────────────────────────────────────────────
+function FicheSection({ fiche }) {
+  if (!fiche) return null;
 
+  return (
+    <div className="bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl shadow-sm overflow-hidden">
+      <div className="px-6 py-5 border-b border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-900/50">
+        <div className="flex items-center justify-between">
+          <h3 className="text-lg font-semibold flex items-center gap-2.5 text-gray-900 dark:text-white">
+            <ClipboardList className="w-5 h-5 text-green-600 dark:text-green-400" />
+            Fiche de Renseignements
+          </h3>
+          <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-300 rounded-full text-xs font-medium">
+            <CheckCircle className="w-3.5 h-3.5" />
+            Complétée
+          </span>
+        </div>
+      </div>
+      <div className="px-6 py-5 border-t border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-900/50 text-right">
+        <PdfDownloadButton submissionId={fiche._id} />
+      </div>
+    </div>
+  );
+}
+
+// ── Page principale ──────────────────────────────────────────────────────────────
 export default function CandidateResultsPage() {
   const params = useParams();
-  const router = useRouter();
   const candidatureId = params?.candidatureId;
 
-  const [quizResult, setQuizResult] = useState(null);
-  const [ficheResult, setFicheResult] = useState(null);
-  const [quizQuestions, setQuizQuestions] = useState([]); // pour mapper lettre → texte
+  const [quiz, setQuiz] = useState(null);
+  const [fiche, setFiche] = useState(null);
   const [candidature, setCandidature] = useState(null);
+  const [quizQuestions, setQuizQuestions] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
 
   useEffect(() => {
     if (!candidatureId) return;
-    async function load() {
+
+    async function fetchAll() {
       setLoading(true);
       try {
-        // Charger infos candidature
-        try {
-          const c = await api.get(`/candidatures/${candidatureId}`);
-          setCandidature(c?.data || null);
-        } catch {
-          setCandidature(null);
+        const [cRes, qRes, fRes] = await Promise.all([
+          api.get(`/candidatures/${candidatureId}`),
+          api.get(`/quiz-submissions/candidature/${candidatureId}`),
+          api.get(`/fiche-submissions/candidature/${candidatureId}`),
+        ]);
+
+        setCandidature(cRes.data);
+
+        const quizzes = Array.isArray(qRes.data) ? qRes.data : [];
+        const latestQuiz = quizzes[0] || null;
+        setQuiz(latestQuiz);
+
+        if (latestQuiz?.quizId) {
+          const qqRes = await api.get(`/quizzes/${latestQuiz.quizId}`);
+          setQuizQuestions(qqRes.data?.questions || []);
         }
 
-        // Quiz submissions
-        let quizSub = null;
-        try {
-          const r = await api.get(
-            `/quiz-submissions/candidature/${candidatureId}`,
-          );
-          const list = Array.isArray(r?.data) ? r.data : [];
-          quizSub = list[0] || null;
-          setQuizResult(quizSub);
-        } catch {
-          setQuizResult(null);
-        }
-
-        // Charger les questions du quiz pour mapper lettre → texte complet
-        if (quizSub?.quizId) {
-          try {
-            const qr = await api.get(`/quizzes/${quizSub.quizId}`);
-            setQuizQuestions(qr?.data?.questions || []);
-          } catch {
-            setQuizQuestions([]);
-          }
-        }
-
-        // Fiche submissions
-        try {
-          const ficheRes = await api.get(
-            `/fiche-submissions/candidature/${candidatureId}`,
-          );
-          const ficheList = Array.isArray(ficheRes?.data) ? ficheRes.data : [];
-          // Prendre la soumission la plus récente (dernier élément après sort desc)
-          setFicheResult(ficheList.length > 0 ? ficheList[0] : null);
-        } catch {
-          setFicheResult(null);
-        }
-      } catch (e) {
-        setError("Erreur lors du chargement des résultats.");
+        const fiches = Array.isArray(fRes.data) ? fRes.data : [];
+        setFiche(fiches[0] || null);
+      } catch (err) {
+        console.error(err);
       } finally {
         setLoading(false);
       }
     }
-    load();
+
+    fetchAll();
   }, [candidatureId]);
 
-  /* ── Nom du candidat ── */
-  const name = (() => {
-    if (!candidature) return "Candidat";
-    const full = safeStr(
-      candidature?.fullName || candidature?.extracted?.parsed?.full_name,
-    );
-    if (full) return full;
-    const combo =
-      `${safeStr(candidature?.prenom)} ${safeStr(candidature?.nom)}`.trim();
-    return combo || safeStr(candidature?.email) || "Candidat";
-  })();
-
-  const jobTitle = safeStr(candidature?.jobTitle) || "—";
-
-  /* ── Loading ── */
-  if (loading)
+  if (loading) {
     return (
-      <div className="min-h-screen bg-[#F0FAF0] dark:bg-gray-950 flex items-center justify-center">
-        <div className="text-center">
-          <div className="w-12 h-12 border-4 border-violet-200 border-t-violet-600 rounded-full animate-spin mx-auto mb-4" />
-          <p className="text-gray-500 dark:text-gray-400 font-medium">
-            Chargement des résultats...
-          </p>
-        </div>
+      <div className="min-h-screen bg-gray-50 dark:bg-slate-950 flex items-center justify-center">
+        <Loader2 className="w-10 h-10 animate-spin text-blue-600 dark:text-blue-400" />
       </div>
     );
+  }
 
-  /* ── Erreur ── */
-  if (error)
-    return (
-      <div className="min-h-screen bg-[#F0FAF0] dark:bg-gray-950 flex items-center justify-center p-4">
-        <div className="bg-white dark:bg-gray-800 rounded-3xl p-10 text-center shadow-lg">
-          <AlertCircle className="w-12 h-12 text-red-400 mx-auto mb-4" />
-          <p className="text-gray-700 dark:text-gray-300">{error}</p>
-          <button
-            onClick={() => router.back()}
-            className="mt-4 px-4 py-2 bg-violet-600 text-white rounded-xl text-sm font-semibold"
-          >
-            Retour
-          </button>
-        </div>
-      </div>
-    );
+  const name =
+    safeStr(candidature?.fullName) ||
+    `${safeStr(candidature?.prenom)} ${safeStr(candidature?.nom)}`.trim() ||
+    safeStr(candidature?.email) ||
+    "Candidat";
 
-  const hasNothing = !quizResult && !ficheResult;
+  const initials = name.charAt(0).toUpperCase();
 
   return (
-    <div className="min-h-screen bg-[#F0FAF0] dark:bg-gray-950 transition-colors duration-300">
-      <div className="max-w-4xl mx-auto px-4 py-8 space-y-6">
-        {/* ── HEADER ── */}
-        <div>
-          <Link
-            href="/recruiter/PreInterviewList"
-            className="inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 font-medium mb-4 transition-colors"
-          >
-            <ArrowLeft className="w-4 h-4" /> Retour à la liste
-          </Link>
+    <div className="min-h-screen bg-gray-50 dark:bg-slate-950 pb-12 transition-colors duration-300">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
 
-          <div className="bg-white dark:bg-gray-800 rounded-3xl border border-gray-100 dark:border-gray-700 shadow-sm p-6">
-            <div className="flex items-start gap-5">
-              {/* Avatar */}
-              <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-violet-400 to-purple-600 flex items-center justify-center text-white font-black text-2xl shrink-0">
-                {name?.[0]?.toUpperCase() || "C"}
+        {/* En-tête profil */}
+        <div className="bg-white dark:bg-slate-800 rounded-xl shadow border border-gray-200 dark:border-slate-700 p-6 mb-8">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+            <div className="flex items-center gap-5">
+              <div className="w-20 h-20 rounded-full bg-green-600 dark:green-600 dark:to-indigo-700 flex items-center justify-center text-white text-3xl font-bold shadow-md">
+                {initials}
               </div>
 
-              <div className="flex-1 min-w-0">
-                <h1 className="text-2xl font-black text-gray-900 dark:text-white">
-                  {name}
-                </h1>
-                <div className="flex flex-wrap gap-3 mt-2">
-                  {jobTitle !== "—" && (
-                    <span className="inline-flex items-center gap-1.5 text-sm text-gray-500 dark:text-gray-400">
-                      <Briefcase className="w-4 h-4" />
-                      {jobTitle}
-                    </span>
-                  )}
-                  <span className="inline-flex items-center gap-1.5 text-sm text-gray-500 dark:text-gray-400">
-                    <BarChart2 className="w-4 h-4" />
-                    {[
-                      quizResult && "Quiz complété",
-                      ficheResult && "Fiche complétée",
-                    ]
-                      .filter(Boolean)
-                      .join(" · ") || "Aucune soumission"}
-                  </span>
-                </div>
-              </div>
+              <div>
+                <h1 className="text-2xl font-bold text-gray-900 dark:text-white">{name}</h1>
 
-              {/* Score global si quiz */}
-              {quizResult && (
-                <div className="text-right shrink-0">
-                  <p className="text-xs font-bold text-gray-400 uppercase mb-1">
-                    Score Quiz
-                  </p>
-                  <div
-                    className={`text-2xl font-black px-4 py-1.5 rounded-2xl ${
-                      quizResult.percentage >= 75
-                        ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400"
-                        : quizResult.percentage >= 50
-                          ? "bg-yellow-100 text-yellow-700"
-                          : "bg-red-100 text-red-600"
-                    }`}
-                  >
-                    {quizResult.percentage}%
-                  </div>
-                </div>
-              )}
+             
+
+        
+              </div>
             </div>
           </div>
         </div>
 
-        {/* ── AUCUN RÉSULTAT ── */}
-        {hasNothing && (
-          <div className="bg-white dark:bg-gray-800 rounded-3xl border border-gray-100 dark:border-gray-700 p-16 text-center shadow-sm">
-            <div className="w-16 h-16 rounded-full bg-gray-100 dark:bg-gray-700 flex items-center justify-center mx-auto mb-4">
-              <BarChart2 className="w-8 h-8 text-gray-400" />
-            </div>
-            <h3 className="text-lg font-extrabold text-gray-900 dark:text-white mb-2">
-              Aucune soumission
-            </h3>
-            <p className="text-sm text-gray-400 dark:text-gray-500">
-              Ce candidat n'a pas encore soumis son quiz ou sa fiche de
-              renseignement.
-            </p>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8">
+
+          {/* Quiz – 2/3 largeur */}
+          <div className="lg:col-span-2">
+            {quiz ? (
+              <QuizSection quiz={quiz} questions={quizQuestions} />
+            ) : (
+              <div className="bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700 p-10 text-center text-gray-500 dark:text-gray-400">
+                Aucun quiz soumis
+              </div>
+            )}
           </div>
-        )}
 
-        {/* ── QUIZ RESULTS ── */}
-        {quizResult && (
-          <QuizSection quiz={quizResult} questions={quizQuestions} />
-        )}
-
-        {/* ── FICHE RESULTS ── */}
-        {ficheResult && <FicheSection fiche={ficheResult} />}
+          {/* Fiche */}
+          <div>
+            {fiche ? (
+              <FicheSection fiche={fiche} />
+            ) : (
+              <div className="bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700 p-10 text-center text-gray-500 dark:text-gray-400">
+                Fiche non complétée
+              </div>
+            )}
+          </div>
+        </div>
       </div>
     </div>
   );

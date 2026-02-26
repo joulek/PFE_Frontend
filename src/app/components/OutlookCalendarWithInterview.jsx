@@ -63,7 +63,7 @@ export default function OutlookCalendarWithInterview() {
       {/* Bannière violette si candidat en attente */}
       {candidateCtx && !showModal && (
         <div className="px-4 pt-3 pb-0">
-          <div className="flex items-center gap-3 px-4 py-3 bg-violet-600 text-white rounded-2xl shadow-lg">
+          <div className="flex items-center gap-3 px-4 py-3 bg-green-600 text-white rounded-2xl shadow-lg">
             <span className="relative flex-shrink-0 w-3 h-3">
               <span className="absolute inset-0 rounded-full bg-white animate-ping opacity-60"/>
               <span className="relative block w-3 h-3 rounded-full bg-white"/>

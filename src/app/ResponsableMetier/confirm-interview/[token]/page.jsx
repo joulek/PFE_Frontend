@@ -55,9 +55,11 @@ export default function ResponsableConfirmInterviewPage() {
         {/* Card */}
         <div className="overflow-hidden rounded-[32px] border border-emerald-100 dark:border-gray-800 bg-white dark:bg-gray-900 shadow-xl">
           {/* Header */}
-          <div className="px-8 py-7 bg-gradient-to-r from-emerald-700 to-emerald-500 text-white">
-            <div className="text-2xl font-extrabold leading-tight">Optylab</div>
-            <div className="mt-1 text-white/85 text-sm">
+          <div className="px-8 py-8 bg-[#22a06b] text-white text-center">
+            <div className="text-3xl font-extrabold tracking-tight">
+              Optylab
+            </div>
+            <div className="mt-2 text-sm text-white/90">
               Confirmation entretien RH + Technique
             </div>
           </div>
@@ -123,10 +125,7 @@ export default function ResponsableConfirmInterviewPage() {
             )}
           </div>
 
-          {/* Footer */}
-          <div className="px-8 py-4 bg-gray-50 dark:bg-gray-950 border-t border-gray-100 dark:border-gray-800 text-center text-xs text-gray-400">
-            Cet email est automatique — merci de ne pas répondre.
-          </div>
+
         </div>
       </div>
     </div>

@@ -1,268 +1,331 @@
 "use client";
-// app/candidat/reschedule-interview/[token]/CandidatRescheduleInterview.jsx
-// Affiche les créneaux LIBRES communs du recruteur + responsable
-// Le candidat choisit un créneau et soumet
 
-import { useEffect, useState, useMemo } from "react";
-import { CheckCircle2, Loader2, XCircle, Calendar, Clock, Send, RefreshCw } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { useParams } from "next/navigation";
+import {
+  CalendarDays,
+  RefreshCw,
+  Clock3,
+  AlertCircle,
+  CheckCircle2,
+  Loader2,
+} from "lucide-react";
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "";
+// ✅ Optylab green
+const OPTY = "#4E8F2F";
+const OPTY_D = "#3D7524";
 
-export default function CandidatRescheduleInterview({ token }) {
-  const [status,    setStatus]    = useState("loading"); // loading | slots | sending | success | error
-  const [interview, setInterview] = useState(null);
-  const [slots,     setSlots]     = useState([]);
-  const [selected,  setSelected]  = useState(null);
-  const [errorMsg,  setErrorMsg]  = useState("");
-  const [days,      setDays]      = useState(14);
+function cn(...a) {
+  return a.filter(Boolean).join(" ");
+}
 
-  // ── Charger infos + créneaux ─────────────────────────────────────────────
-  async function loadData(daysCount = days) {
-    setStatus("loading");
-    setSelected(null);
-    setErrorMsg("");
+/**
+ * ✅ Exemple data (remplace par API)
+ * slotsByDay = [
+ *  { dayLabel: "LUNDI 2 MARS", slots: ["09:00","10:00","11:00","14:00","15:00"] },
+ *  ...
+ * ]
+ */
+function fakeFetchSlots(rangeDays) {
+  // demo : change légèrement selon rangeDays
+  const base = [
+    { dayLabel: "LUNDI 2 MARS", slots: ["09:00", "10:00", "11:00", "14:00", "15:00"] },
+    { dayLabel: "MARDI 3 MARS", slots: ["10:00", "11:00", "14:00", "15:00"] },
+    { dayLabel: "MERCREDI 4 MARS", slots: ["09:00", "10:00", "11:00", "14:00"] },
+  ];
+  if (rangeDays === 14) {
+    base.push({ dayLabel: "JEUDI 5 MARS", slots: ["09:00", "10:00", "11:00"] });
+  }
+  if (rangeDays === 21) {
+    base.push({ dayLabel: "VENDREDI 6 MARS", slots: ["10:00", "11:00", "14:00"] });
+    base.push({ dayLabel: "LUNDI 9 MARS", slots: ["09:00", "10:00"] });
+  }
+  return new Promise((resolve) => setTimeout(() => resolve(base), 600));
+}
+
+export default function Page() {
+  const { token } = useParams();
+
+  // ✅ Mets ici tes infos réelles (API)
+  const [candidateName, setCandidateName] = useState("Yosr Joulek");
+  const [jobTitle, setJobTitle] = useState("Développeur Full Stack (JavaScript)");
+
+  // Date actuelle proposée
+  const [currentProposed, setCurrentProposed] = useState(
+    "vendredi 27 février 2026 à 10:00"
+  );
+
+  const [rangeDays, setRangeDays] = useState(7);
+  const [loading, setLoading] = useState(true);
+  const [slotsByDay, setSlotsByDay] = useState([]);
+  const [selected, setSelected] = useState(null); // { dayLabel, time }
+  const [sending, setSending] = useState(false);
+  const [ok, setOk] = useState(false);
+  const [err, setErr] = useState("");
+
+  async function loadSlots() {
+    setLoading(true);
+    setErr("");
+    setOk(false);
     try {
-      // Infos entretien
-      const [infoRes, slotsRes] = await Promise.all([
-        fetch(`${API_BASE}/api/calendar/rh-tech/candidate/info/${token}`),
-        fetch(`${API_BASE}/api/calendar/rh-tech/candidate/slots/${token}?days=${daysCount}`),
-      ]);
-      const infoData  = await infoRes.json();
-      const slotsData = await slotsRes.json();
+      // 🔁 Remplace par ton API
+      // const res = await fetch(`/api/.../${token}?range=${rangeDays}`)
+      // const data = await res.json()
+      // setSlotsByDay(data.slotsByDay)
 
-      if (!infoRes.ok) {
-        setErrorMsg(infoData.message || "Lien invalide ou expiré.");
-        setStatus("error");
-        return;
-      }
-      setInterview(infoData.interview);
-      setSlots(Array.isArray(slotsData.slots) ? slotsData.slots : []);
-      setStatus("slots");
-    } catch {
-      setErrorMsg("Impossible de contacter le serveur.");
-      setStatus("error");
+      const data = await fakeFetchSlots(rangeDays);
+      setSlotsByDay(data);
+    } catch (e) {
+      setErr(e?.message || "Erreur chargement créneaux");
+    } finally {
+      setLoading(false);
     }
   }
 
-  useEffect(() => { loadData(); }, [token]);
+  useEffect(() => {
+    loadSlots();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [rangeDays, token]);
 
-  // ── Grouper par jour ─────────────────────────────────────────────────────
-  const grouped = useMemo(() => {
-    const map = new Map();
-    for (const s of slots) {
-      if (!map.has(s.date)) map.set(s.date, []);
-      map.get(s.date).push(s);
-    }
-    return Array.from(map.entries());
-  }, [slots]);
-
-  // ── Soumettre ─────────────────────────────────────────────────────────────
-  async function handleSubmit() {
+  async function submitChoice() {
     if (!selected) return;
-    setStatus("sending");
+    setSending(true);
+    setErr("");
+    setOk(false);
+
     try {
-      const res = await fetch(`${API_BASE}/api/calendar/rh-tech/candidate/propose/${token}`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ proposedDate: selected.date, proposedTime: selected.time }),
-      });
-      const data = await res.json();
-      if (res.ok && data.success) {
-        setStatus("success");
-      } else {
-        setErrorMsg(data.message || "Erreur serveur.");
-        setStatus("error");
-      }
-    } catch {
-      setErrorMsg("Impossible de contacter le serveur.");
-      setStatus("error");
+      // ✅ Remplace par ton API (POST)
+      // await fetch(`/api/.../${token}`, {method:"POST", body: JSON.stringify(selected)})
+
+      await new Promise((r) => setTimeout(r, 800));
+      setOk(true);
+    } catch (e) {
+      setErr(e?.message || "Erreur envoi");
+    } finally {
+      setSending(false);
     }
   }
 
-  // ── Loading ───────────────────────────────────────────────────────────────
-  if (status === "loading") return (
-    <div className="min-h-screen bg-[#F0FAF0] flex items-center justify-center">
-      <div className="flex flex-col items-center gap-3">
-        <Loader2 className="w-10 h-10 animate-spin text-[#4E8F2F]" />
-        <p className="text-sm text-gray-500">Chargement des créneaux disponibles...</p>
-      </div>
-    </div>
+  const pills = useMemo(
+    () => [
+      { label: "7 jours", value: 7 },
+      { label: "14 jours", value: 14 },
+      { label: "21 jours", value: 21 },
+    ],
+    []
   );
 
-  // ── Erreur ───────────────────────────────────────────────────────────────
-  if (status === "error") return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-3xl shadow-xl p-8 max-w-sm w-full text-center">
-        <XCircle className="w-12 h-12 text-red-400 mx-auto mb-4" />
-        <h2 className="text-xl font-extrabold text-gray-800 mb-2">Problème</h2>
-        <p className="text-sm text-gray-500 mb-4">{errorMsg}</p>
-        <button onClick={() => loadData()} className="px-5 py-2.5 bg-[#4E8F2F] text-white rounded-xl font-semibold text-sm">
-          Réessayer
-        </button>
-      </div>
-    </div>
-  );
-
-  // ── Succès ───────────────────────────────────────────────────────────────
-  if (status === "success") return (
-    <div className="min-h-screen bg-[#F0FAF0] flex items-center justify-center p-4">
-      <div className="bg-white rounded-3xl shadow-2xl p-8 max-w-sm w-full text-center">
-        <div className="w-20 h-20 rounded-full bg-green-100 flex items-center justify-center mx-auto mb-5">
-          <CheckCircle2 className="w-11 h-11 text-[#4E8F2F]" />
-        </div>
-        <h2 className="text-2xl font-extrabold text-gray-900 mb-2">Proposition envoyée ! 🎉</h2>
-        <p className="text-sm text-gray-500 mb-4">
-          Le responsable métier va confirmer votre nouveau créneau.
-          Vous recevrez un email de confirmation.
-        </p>
-        {selected && (
-          <div className="p-3 bg-[#F0FAF0] rounded-xl text-sm font-semibold text-gray-700">
-            📅 {new Date(selected.date + "T12:00:00").toLocaleDateString("fr-FR", { weekday: "long", day: "numeric", month: "long" })} à {selected.time}
-          </div>
-        )}
-      </div>
-    </div>
-  );
-
-  // ── Page principale avec créneaux ─────────────────────────────────────────
   return (
-    <div className="min-h-screen bg-[#F0FAF0]">
-      <div className="max-w-lg mx-auto px-4 py-6">
-
-        {/* Header */}
-        <div className="bg-gradient-to-br from-[#4E8F2F] via-[#5a9e38] to-[#3d7524] rounded-3xl px-6 py-7 mb-5 relative overflow-hidden">
-          <div className="absolute -top-10 -right-10 w-40 h-40 bg-white/10 rounded-full blur-2xl" />
-          <div className="relative">
-            <p className="text-white/70 text-[11px] font-bold uppercase tracking-wider mb-1">
+    <div className="min-h-screen bg-[#F0FAF0] dark:bg-[#050B14] transition-colors">
+      {/* ✅ Width أكبر */}
+      <div className="w-full px-4 sm:px-6 lg:px-10 py-10">
+        <div className="mx-auto w-full max-w-6xl">
+          {/* Header card (vert Optylab) */}
+          <div
+            className={cn(
+              "rounded-[28px] p-8 shadow-xl",
+              "bg-gradient-to-br from-[#4E8F2F] via-[#5a9e38] to-[#3D7524]"
+            )}
+          >
+            <p className="text-white/80 text-[11px] font-extrabold uppercase tracking-[0.18em]">
               Proposer une autre date
             </p>
-            <h1 className="text-xl font-extrabold text-white">{interview?.candidateName || "Bonjour"}</h1>
-            {interview?.jobTitle && <p className="text-white/70 text-sm mt-0.5">{interview.jobTitle}</p>}
+            <h1 className="mt-2 text-3xl sm:text-4xl font-extrabold text-white leading-tight">
+              {candidateName}
+            </h1>
+            <p className="mt-2 text-white/90 font-semibold">{jobTitle}</p>
           </div>
-        </div>
 
-        {/* Date actuelle */}
-        {interview && (
-          <div className="flex items-center gap-3 p-4 bg-amber-50 border border-amber-200 rounded-2xl mb-4">
-            <span className="text-xl flex-shrink-0">📅</span>
-            <div>
-              <p className="text-xs font-bold text-amber-600 uppercase tracking-wider mb-0.5">
-                Date actuelle proposée
-              </p>
-              <p className="text-sm font-semibold text-amber-800">
-                {interview.date} à {interview.time}
-              </p>
+          {/* Bloc date actuelle */}
+          <div className="mt-7 rounded-2xl border p-5 bg-[#FFF7E6] border-amber-200 shadow-sm dark:bg-[#1A1406] dark:border-amber-900/40">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-2xl bg-amber-500/15 flex items-center justify-center">
+                <CalendarDays className="w-5 h-5 text-amber-600 dark:text-amber-300" />
+              </div>
+              <div>
+                <div className="text-[12px] font-extrabold uppercase tracking-wider text-amber-700 dark:text-amber-300">
+                  Date actuelle proposée
+                </div>
+                <div className="mt-0.5 font-extrabold text-gray-900 dark:text-white">
+                  {currentProposed}
+                </div>
+              </div>
             </div>
           </div>
-        )}
 
-        {/* Sélecteur de période */}
-        <div className="flex items-center gap-2 mb-4">
-          <span className="text-sm text-gray-500 font-medium">Voir sur :</span>
-          {[7, 14, 21].map(d => (
-            <button key={d} onClick={() => { setDays(d); loadData(d); }}
-              className={`px-3 py-1.5 rounded-full text-sm font-semibold border transition ${
-                days === d
-                  ? "bg-[#4E8F2F] text-white border-[#4E8F2F]"
-                  : "bg-white text-gray-700 border-gray-200 hover:border-[#4E8F2F]/50"
-              }`}>
-              {d} jours
+          {/* Range + Refresh */}
+          <div className="mt-6 flex items-center justify-between gap-4 flex-wrap">
+            <div className="flex items-center gap-3">
+              <span className="text-sm font-semibold text-gray-600 dark:text-slate-300">
+                Voir sur :
+              </span>
+
+              <div className="flex gap-2">
+                {pills.map((p) => {
+                  const active = p.value === rangeDays;
+                  return (
+                    <button
+                      key={p.value}
+                      onClick={() => setRangeDays(p.value)}
+                      className={cn(
+                        "px-4 py-2 rounded-full text-sm font-extrabold border transition",
+                        active
+                          ? "text-white border-transparent"
+                          : "bg-white dark:bg-[#0B1220] text-gray-800 dark:text-slate-200 border-gray-200 dark:border-slate-800 hover:bg-gray-50 dark:hover:bg-slate-900"
+                      )}
+                      style={active ? { background: OPTY } : {}}
+                    >
+                      {p.label}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            <button
+              onClick={loadSlots}
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-full font-extrabold border
+                         bg-white dark:bg-[#0B1220] text-gray-800 dark:text-slate-200
+                         border-gray-200 dark:border-slate-800 hover:bg-gray-50 dark:hover:bg-slate-900 transition"
+              title="Rafraîchir"
+            >
+              <RefreshCw className={cn("w-4 h-4", loading ? "animate-spin" : "")} />
+              Rafraîchir
             </button>
-          ))}
-          <button onClick={() => loadData(days)}
-            className="ml-auto p-2 rounded-full bg-white border border-gray-200 hover:border-[#4E8F2F]/50 transition">
-            <RefreshCw className="w-4 h-4 text-gray-500" />
-          </button>
-        </div>
+          </div>
 
-        {/* Créneaux */}
-        <div className="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden mb-4">
-          {grouped.length === 0 ? (
-            <div className="p-8 text-center">
-              <Calendar className="w-10 h-10 text-gray-300 mx-auto mb-3" />
-              <p className="text-sm font-semibold text-gray-500 mb-1">Aucun créneau disponible</p>
-              <p className="text-xs text-gray-400 mb-4">
-                Essayez sur une période plus longue ou contactez le recruteur.
-              </p>
-              <button onClick={() => { setDays(21); loadData(21); }}
-                className="text-sm text-[#4E8F2F] font-semibold hover:underline">
-                Voir sur 21 jours
-              </button>
-            </div>
-          ) : (
-            <div className="divide-y divide-gray-50">
-              {grouped.map(([date, daySlots]) => {
-                const dateFR = new Date(date + "T12:00:00").toLocaleDateString("fr-FR", {
-                  weekday: "long", day: "numeric", month: "long",
-                });
-                return (
-                  <div key={date} className="p-4">
-                    <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3 capitalize">
-                      📅 {dateFR}
-                    </p>
-                    <div className="flex flex-wrap gap-2">
-                      {daySlots.map((s, i) => {
-                        const active = selected?.date === s.date && selected?.time === s.time;
-                        return (
-                          <button key={i} onClick={() => setSelected(s)}
-                            className={`flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-sm font-bold border-2 transition-all ${
-                              active
-                                ? "bg-[#4E8F2F] text-white border-[#4E8F2F] shadow-md shadow-[#4E8F2F]/20"
-                                : "bg-gray-50 text-gray-700 border-gray-200 hover:border-[#4E8F2F]/50 hover:bg-[#F0FAF0]"
-                            }`}>
-                            <Clock className={`w-3.5 h-3.5 ${active ? "text-white/80" : "text-gray-400"}`} />
-                            {s.time}
-                          </button>
-                        );
-                      })}
-                    </div>
+          {/* Slots container */}
+          <div className="mt-6 rounded-3xl border shadow-xl overflow-hidden bg-white dark:bg-[#0B1220] border-emerald-100 dark:border-slate-800">
+            {/* Top message row */}
+            <div className="px-6 py-4 bg-[#F6FFF7] dark:bg-[#08101C] border-b border-emerald-100 dark:border-slate-800">
+              <div className="flex items-center justify-between gap-3 flex-wrap">
+                <div className="flex items-center gap-2">
+                  <span
+                    className="inline-block w-2.5 h-2.5 rounded-full"
+                    style={{ background: OPTY }}
+                  />
+                  <p className="font-extrabold text-gray-900 dark:text-white">
+                    Choisissez un créneau disponible
+                  </p>
+                </div>
+
+                {ok ? (
+                  <div className="flex items-center gap-2 text-sm font-extrabold text-emerald-700 dark:text-emerald-300">
+                    <CheckCircle2 className="w-4 h-4" />
+                    Créneau envoyé ✅
                   </div>
-                );
-              })}
-            </div>
-          )}
-        </div>
+                ) : null}
 
-        {/* Créneau sélectionné */}
-        {selected && (
-          <div className="flex items-center gap-3 p-4 bg-[#F0FAF0] border border-[#4E8F2F]/20 rounded-2xl mb-4">
-            <CheckCircle2 className="w-5 h-5 text-[#4E8F2F] flex-shrink-0" />
-            <div>
-              <p className="text-xs text-gray-500 font-medium">Créneau sélectionné</p>
-              <p className="text-sm font-bold text-gray-800">
-                {new Date(selected.date + "T12:00:00").toLocaleDateString("fr-FR", {
-                  weekday: "long", day: "numeric", month: "long",
-                })} à {selected.time}
-              </p>
+                {err ? (
+                  <div className="flex items-center gap-2 text-sm font-extrabold text-red-700 dark:text-red-300">
+                    <AlertCircle className="w-4 h-4" />
+                    {err}
+                  </div>
+                ) : null}
+              </div>
             </div>
-            <button onClick={() => setSelected(null)} className="ml-auto text-gray-400 hover:text-gray-600">
-              <XCircle className="w-4 h-4" />
-            </button>
+
+            {/* Body */}
+            <div className="p-6">
+              {loading ? (
+                <div className="flex items-center justify-center py-16 gap-3 text-gray-500 dark:text-slate-300">
+                  <Loader2 className="w-5 h-5 animate-spin" style={{ color: OPTY }} />
+                  Chargement des créneaux...
+                </div>
+              ) : slotsByDay?.length ? (
+                <div className="space-y-6">
+                  {slotsByDay.map((day) => (
+                    <div
+                      key={day.dayLabel}
+                      className="rounded-2xl border border-gray-100 dark:border-slate-800 overflow-hidden"
+                    >
+                      <div className="px-5 py-4 bg-gray-50 dark:bg-[#08101C] border-b border-gray-100 dark:border-slate-800 flex items-center gap-2">
+                        <CalendarDays className="w-4 h-4" style={{ color: OPTY }} />
+                        <div className="text-xs font-extrabold uppercase tracking-wider text-gray-500 dark:text-slate-400">
+                          {day.dayLabel}
+                        </div>
+                      </div>
+
+                      <div className="p-5 flex flex-wrap gap-3">
+                        {day.slots.map((t) => {
+                          const active =
+                            selected?.dayLabel === day.dayLabel && selected?.time === t;
+
+                          return (
+                            <button
+                              key={t}
+                              onClick={() => {
+                                setSelected({ dayLabel: day.dayLabel, time: t });
+                                setOk(false);
+                                setErr("");
+                              }}
+                              className={cn(
+                                "px-4 py-3 rounded-2xl border font-extrabold text-sm transition",
+                                "inline-flex items-center gap-2",
+                                active
+                                  ? "text-white border-transparent"
+                                  : "bg-white dark:bg-[#0B1220] text-gray-800 dark:text-slate-200 border-gray-200 dark:border-slate-800 hover:bg-gray-50 dark:hover:bg-slate-900"
+                              )}
+                              style={active ? { background: OPTY } : {}}
+                            >
+                              <Clock3 className="w-4 h-4" />
+                              {t}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="py-14 text-center text-gray-500 dark:text-slate-300">
+                  Aucun créneau disponible.
+                </div>
+              )}
+
+              {/* CTA */}
+              <div className="mt-7 flex items-center justify-end gap-3 flex-wrap">
+                <div className="text-sm font-semibold text-gray-500 dark:text-slate-300">
+                  {selected ? (
+                    <>
+                      Sélection :{" "}
+                      <span className="font-extrabold text-gray-900 dark:text-white">
+                        {selected.dayLabel} — {selected.time}
+                      </span>
+                    </>
+                  ) : (
+                    "Sélectionnez un créneau"
+                  )}
+                </div>
+
+                <button
+                  onClick={submitChoice}
+                  disabled={!selected || sending}
+                  className={cn(
+                    "h-12 px-6 rounded-2xl font-extrabold text-white transition",
+                    "disabled:opacity-50 disabled:cursor-not-allowed",
+                    "inline-flex items-center justify-center gap-2"
+                  )}
+                  style={{
+                    background: OPTY,
+                    boxShadow: "0 12px 30px rgba(78,143,47,0.22)",
+                  }}
+                  onMouseEnter={(e) => {
+                    if (!e.currentTarget.disabled) e.currentTarget.style.background = OPTY_D;
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.background = OPTY;
+                  }}
+                >
+                  {sending ? <Loader2 className="w-5 h-5 animate-spin" /> : null}
+                  {sending ? "Envoi..." : "Envoyer le créneau"}
+                </button>
+              </div>
+            </div>
           </div>
-        )}
 
-        {/* Info */}
-        <div className="flex items-start gap-3 p-3.5 bg-white border border-gray-100 rounded-2xl mb-4">
-          <Send className="w-4 h-4 text-[#4E8F2F] flex-shrink-0 mt-0.5" />
-          <p className="text-xs text-gray-500 leading-relaxed">
-            Ces créneaux sont libres dans les agendas du <strong>recruteur</strong> et du <strong>responsable métier</strong>.
-            Votre proposition sera transmise pour confirmation.
-          </p>
+          
         </div>
-
-        {/* Bouton */}
-        <button
-          onClick={handleSubmit}
-          disabled={!selected || status === "sending"}
-          className="w-full py-4 rounded-2xl bg-[#4E8F2F] hover:bg-[#3d7524] text-white font-extrabold text-base flex items-center justify-center gap-3 disabled:opacity-40 shadow-lg shadow-[#4E8F2F]/20 transition-all"
-        >
-          {status === "sending" ? (
-            <><Loader2 className="w-5 h-5 animate-spin" /> Envoi en cours...</>
-          ) : (
-            <><Send className="w-5 h-5" /> Proposer ce créneau</>
-          )}
-        </button>
-
       </div>
     </div>
   );

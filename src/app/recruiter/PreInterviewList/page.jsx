@@ -597,7 +597,7 @@ function RHFlow({ candidate, onBack, onClose }) {
 
       <div className="mb-6 p-3 bg-green-50/60 dark:bg-green-900/20 rounded-xl border border-green-100 dark:border-green-800">
         <p className="text-xs text-green-800 dark:text-green-200 leading-relaxed">
-          📅 Vous allez être redirigé vers votre <strong>calendrier Outlook</strong> pour créer l&apos;événement directement.
+           Vous allez être redirigé vers votre <strong>calendrier Outlook</strong> pour créer l&apos;événement directement.
           <span className="mt-1 block text-green-700/70 dark:text-green-300/70">
             Le formulaire sera pré-rempli avec les informations du candidat. Une fois l&apos;entretien créé, un email sera envoyé automatiquement.
           </span>
@@ -1112,12 +1112,6 @@ export default function PreInterviewListPage() {
         {/* Header */}
         <div className="flex items-start justify-between gap-4">
           <div>
-            <Link
-              href="/recruiter/CandidatureAnalysis"
-              className="inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 font-medium mb-3 transition-colors"
-            >
-              <ArrowLeft className="w-4 h-4" /> Retour à l&apos;analyse candidatures
-            </Link>
             <h1 className="text-3xl font-extrabold text-gray-900 dark:text-white flex items-center gap-3">
               <UserCheck className="w-8 h-8 text-green-500" />
               Candidats Pré-sélectionnés
@@ -1126,10 +1120,7 @@ export default function PreInterviewListPage() {
               {candidates.length} candidat{candidates.length > 1 ? "s" : ""} prêt{candidates.length > 1 ? "s" : ""} pour entretien
             </p>
           </div>
-          <div className="inline-flex items-center gap-2 px-4 py-2 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 rounded-full font-semibold text-sm shrink-0">
-            <UserCheck className="w-4 h-4" />
-            {candidates.length} pré-sélectionné{candidates.length > 1 ? "s" : ""}
-          </div>
+
         </div>
 
         {/* Search */}

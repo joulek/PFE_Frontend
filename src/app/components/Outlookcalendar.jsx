@@ -1295,7 +1295,7 @@ const OutlookCalendar = ({ onDateSelect } = {}) => {
 
   const handleDelete = async (id) => {
     const result = await deleteEvent(id);
-    if (result.success) showToast("🗑️ Supprimé");
+    if (result.success) showToast(" Supprimé");
     else showToast("Erreur", "error");
   };
 
