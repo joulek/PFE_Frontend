@@ -3,11 +3,7 @@
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { Timer, CheckCircle, Trash2, ArrowLeft } from "lucide-react";
-import {
-  createFiche,
-  updateFiche,
-  getFicheById,
-} from "@/app/services/fiche.api";
+import { createFiche, updateFiche, getFicheById } from "@/app/services/fiche.api";
 
 /* ================= HELPERS ================= */
 const uid = () =>
@@ -38,7 +34,6 @@ const createQuestion = () => ({
   scale: null,
 });
 
-// ✅ otherLabel et otherType ajoutés
 const createOption = () => ({
   id: uid(),
   label: "",
@@ -64,10 +59,7 @@ function ensureIds(questions = []) {
       ...it,
       id: it.id || uid(),
     })),
-    scale:
-      q.type === "scale_group"
-        ? { ...defaultScale, ...(q.scale || {}) }
-        : null,
+    scale: q.type === "scale_group" ? { ...defaultScale, ...(q.scale || {}) } : null,
   }));
 }
 
@@ -108,12 +100,9 @@ export default function FicheRenseignementBuilder() {
 
   /* ================= QUESTION CRUD ================= */
   const addQuestion = () => setQuestions((p) => [...p, createQuestion()]);
-  const removeQuestion = (qid) =>
-    setQuestions((p) => p.filter((q) => q.id !== qid));
+  const removeQuestion = (qid) => setQuestions((p) => p.filter((q) => q.id !== qid));
   const updateQuestion = (qid, patch) =>
-    setQuestions((p) =>
-      p.map((q) => (q.id === qid ? { ...q, ...patch } : q))
-    );
+    setQuestions((p) => p.map((q) => (q.id === qid ? { ...q, ...patch } : q)));
 
   function onTypeChange(qid, type) {
     updateQuestion(qid, {
@@ -127,11 +116,7 @@ export default function FicheRenseignementBuilder() {
   /* ================= OPTIONS ================= */
   const addOption = (qid) =>
     setQuestions((p) =>
-      p.map((q) =>
-        q.id === qid
-          ? { ...q, options: [...q.options, createOption()] }
-          : q
-      )
+      p.map((q) => (q.id === qid ? { ...q, options: [...q.options, createOption()] } : q))
     );
 
   const updateOption = (qid, oid, patch) =>
@@ -140,9 +125,7 @@ export default function FicheRenseignementBuilder() {
         q.id === qid
           ? {
               ...q,
-              options: q.options.map((o) =>
-                o.id === oid ? { ...o, ...patch } : o
-              ),
+              options: q.options.map((o) => (o.id === oid ? { ...o, ...patch } : o)),
             }
           : q
       )
@@ -151,41 +134,26 @@ export default function FicheRenseignementBuilder() {
   const removeOption = (qid, oid) =>
     setQuestions((p) =>
       p.map((q) =>
-        q.id === qid
-          ? { ...q, options: q.options.filter((o) => o.id !== oid) }
-          : q
+        q.id === qid ? { ...q, options: q.options.filter((o) => o.id !== oid) } : q
       )
     );
 
   /* ================= SCALE ITEMS ================= */
   const addItem = (qid) =>
-    setQuestions((p) =>
-      p.map((q) =>
-        q.id === qid ? { ...q, items: [...q.items, createItem()] } : q
-      )
-    );
+    setQuestions((p) => p.map((q) => (q.id === qid ? { ...q, items: [...q.items, createItem()] } : q)));
 
   const updateItem = (qid, iid, patch) =>
     setQuestions((p) =>
       p.map((q) =>
         q.id === qid
-          ? {
-              ...q,
-              items: q.items.map((it) =>
-                it.id === iid ? { ...it, ...patch } : it
-              ),
-            }
+          ? { ...q, items: q.items.map((it) => (it.id === iid ? { ...it, ...patch } : it)) }
           : q
       )
     );
 
   const removeItem = (qid, iid) =>
     setQuestions((p) =>
-      p.map((q) =>
-        q.id === qid
-          ? { ...q, items: q.items.filter((it) => it.id !== iid) }
-          : q
-      )
+      p.map((q) => (q.id === qid ? { ...q, items: q.items.filter((it) => it.id !== iid) } : q))
     );
 
   /* ================= SUBMIT ================= */
@@ -239,7 +207,6 @@ export default function FicheRenseignementBuilder() {
   return (
     <div className="min-h-screen bg-[#F0FAF0] dark:bg-gray-950 p-4 sm:p-6 lg:p-8 transition-colors duration-300">
       <div className="max-w-5xl mx-auto space-y-4 sm:space-y-6">
-
         {/* ===== HEADER ===== */}
         <div className="mb-4 sm:mb-6 flex flex-col sm:flex-row items-start justify-between gap-3 sm:gap-4">
           <div className="w-full sm:w-auto">
@@ -369,6 +336,7 @@ export default function FicheRenseignementBuilder() {
                   <label className="block text-xs sm:text-sm mb-1 font-medium text-gray-700 dark:text-gray-300">
                     Type de réponse
                   </label>
+
                   <select
                     value={q.type}
                     onChange={(e) => onTypeChange(q.id, e.target.value)}
@@ -381,11 +349,19 @@ export default function FicheRenseignementBuilder() {
                                outline-none transition-colors"
                   >
                     <option value="text">Texte</option>
+                    <option value="number8">Nombre (8 chiffres)</option>
                     <option value="textarea">Paragraphe</option>
                     <option value="radio">Choix unique</option>
                     <option value="checkbox">Choix multiple</option>
                     <option value="scale_group">Code de niveau</option>
                   </select>
+
+                  {/* Helper pour number8 */}
+                  {q.type === "number8" && (
+                    <div className="mt-2 text-xs text-gray-600 dark:text-gray-400">
+                      Ce type attend <span className="font-semibold">exactement 8 chiffres</span>.
+                    </div>
+                  )}
 
                   {q.type === "scale_group" && (
                     <div className="mt-2 text-xs text-gray-600 dark:text-gray-400">
@@ -402,9 +378,7 @@ export default function FicheRenseignementBuilder() {
                     <input
                       type="checkbox"
                       checked={q.required}
-                      onChange={(e) =>
-                        updateQuestion(q.id, { required: e.target.checked })
-                      }
+                      onChange={(e) => updateQuestion(q.id, { required: e.target.checked })}
                       className="w-4 h-4 text-green-600 dark:text-emerald-500 rounded"
                     />
                     <span className="text-xs sm:text-sm whitespace-nowrap text-gray-700 dark:text-gray-300">
@@ -436,6 +410,63 @@ export default function FicheRenseignementBuilder() {
                 </div>
               </div>
 
+              {/* ===== APERÇU CHAMP (TEXT, TEXTAREA, NUMBER8) ===== */}
+              {(q.type === "text" || q.type === "textarea" || q.type === "number8") && (
+                <div className="p-3 sm:p-4 bg-gray-50 dark:bg-gray-700/50 rounded-xl border border-gray-200 dark:border-gray-600">
+                  <label className="block text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Aperçu du champ
+                  </label>
+                  
+                  {q.type === "text" && (
+                    <input
+                      type="text"
+                      disabled
+                      placeholder="Réponse courte..."
+                      className="w-full border rounded-lg px-3 py-2 
+                                 border-gray-300 dark:border-gray-500 
+                                 bg-white dark:bg-gray-600 
+                                 text-gray-600 dark:text-gray-400 
+                                 placeholder-gray-400 dark:placeholder-gray-500
+                                 text-sm
+                                 opacity-60"
+                    />
+                  )}
+
+                  {q.type === "textarea" && (
+                    <textarea
+                      disabled
+                      placeholder="Réponse longue..."
+                      rows={3}
+                      className="w-full border rounded-lg px-3 py-2 
+                                 border-gray-300 dark:border-gray-500 
+                                 bg-white dark:bg-gray-600 
+                                 text-gray-600 dark:text-gray-400 
+                                 placeholder-gray-400 dark:placeholder-gray-500
+                                 text-sm
+                                 resize-none
+                                 opacity-60"
+                    />
+                  )}
+
+                  {q.type === "number8" && (
+                    <input
+                      type="text"
+                      disabled
+                      placeholder="00000000"
+                      maxLength="8"
+                      className="w-full border rounded-lg px-3 py-2 
+                                 border-gray-300 dark:border-gray-500 
+                                 bg-white dark:bg-gray-600 
+                                 text-gray-600 dark:text-gray-400 
+                                 placeholder-gray-400 dark:placeholder-gray-500
+                                 text-sm
+                                 font-mono
+                                 opacity-60"
+                    />
+                  )}
+                </div>
+              )}
+
               {/* ===== OPTIONS RADIO / CHECKBOX ===== */}
               {(q.type === "radio" || q.type === "checkbox") && (
                 <div className="space-y-3 sm:space-y-4">
@@ -457,9 +488,7 @@ export default function FicheRenseignementBuilder() {
                                      outline-none transition-colors"
                           placeholder="Option"
                           value={o.label}
-                          onChange={(e) =>
-                            updateOption(q.id, o.id, { label: e.target.value })
-                          }
+                          onChange={(e) => updateOption(q.id, o.id, { label: e.target.value })}
                         />
                         <button
                           onClick={() => removeOption(q.id, o.id)}
@@ -470,7 +499,7 @@ export default function FicheRenseignementBuilder() {
                         </button>
                       </div>
 
-                      {/* ✅ Checkbox "Ajouter un champ pour cette option" */}
+                      {/* Checkbox "Ajouter un champ pour cette option" */}
                       <div className="flex items-center gap-2 ml-1">
                         <input
                           type="checkbox"
@@ -479,7 +508,6 @@ export default function FicheRenseignementBuilder() {
                           onChange={(e) =>
                             updateOption(q.id, o.id, {
                               hasText: e.target.checked,
-                              // reset si décoché
                               otherLabel: e.target.checked ? o.otherLabel : "",
                               otherType: e.target.checked ? o.otherType : "text",
                             })
@@ -494,16 +522,14 @@ export default function FicheRenseignementBuilder() {
                         </label>
                       </div>
 
-                      {/* ✅ Champ conditionnel : label + type — visible uniquement si hasText coché */}
+                      {/* Champ conditionnel : label + type */}
                       {o.hasText && (
                         <div className="ml-6 mt-1 flex flex-col sm:flex-row gap-2 sm:gap-3 p-3 bg-white dark:bg-gray-700 border border-green-200 dark:border-emerald-700 rounded-xl">
-                          {/* Icône indicateur */}
                           <div className="flex items-center gap-1 text-green-600 dark:text-emerald-400 text-xs font-semibold shrink-0">
                             <span>↳</span>
                             <span>Champ lié</span>
                           </div>
 
-                          {/* Label du champ */}
                           <input
                             className="flex-1 border rounded-lg px-3 py-1.5 
                                        border-green-200 dark:border-gray-600 
@@ -515,17 +541,12 @@ export default function FicheRenseignementBuilder() {
                                        outline-none transition-colors"
                             placeholder='Ex: "Date d obtention", "Nombre d enfants"...'
                             value={o.otherLabel || ""}
-                            onChange={(e) =>
-                              updateOption(q.id, o.id, { otherLabel: e.target.value })
-                            }
+                            onChange={(e) => updateOption(q.id, o.id, { otherLabel: e.target.value })}
                           />
 
-                          {/* Type du champ */}
                           <select
                             value={o.otherType || "text"}
-                            onChange={(e) =>
-                              updateOption(q.id, o.id, { otherType: e.target.value })
-                            }
+                            onChange={(e) => updateOption(q.id, o.id, { otherType: e.target.value })}
                             className="border rounded-lg px-3 py-1.5 
                                        border-green-200 dark:border-gray-600 
                                        bg-white dark:bg-gray-600 
@@ -535,8 +556,7 @@ export default function FicheRenseignementBuilder() {
                                        outline-none transition-colors shrink-0"
                           >
                             <option value="text">Texte</option>
-                            <option value="number">Nombre</option>
-                            <option value="date">Date</option>
+                            <option value="number8">Nombre (8 chiffres)</option>
                           </select>
                         </div>
                       )}
@@ -568,9 +588,7 @@ export default function FicheRenseignementBuilder() {
                                    outline-none transition-colors"
                         placeholder="Ligne"
                         value={it.label}
-                        onChange={(e) =>
-                          updateItem(q.id, it.id, { label: e.target.value })
-                        }
+                        onChange={(e) => updateItem(q.id, it.id, { label: e.target.value })}
                       />
                       <button
                         onClick={() => removeItem(q.id, it.id)}
