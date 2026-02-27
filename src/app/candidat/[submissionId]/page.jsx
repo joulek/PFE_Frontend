@@ -27,6 +27,7 @@ function getFieldLabel(opt) {
   const label = opt.otherLabel?.trim();
   if (label) return label;
   if (opt.otherType === "date") return "Date d'obtention";
+  if (opt.otherType === "number8") return "Numéro (8 chiffres)";
   if (opt.otherType === "number") return "Nombre";
   return "Précisez...";
 }
@@ -63,7 +64,7 @@ function ensureQuestionIds(questions = []) {
 
 function defaultValueFor(q) {
   if (!q) return null;
-  if (q.type === "text" || q.type === "textarea") return "";
+  if (q.type === "text" || q.type === "textarea" || q.type === "number8") return "";
   if (q.type === "radio") return { selected: "", textValue: "" };
   if (q.type === "checkbox") return { selected: [], textValues: {} };
   if (q.type === "scale_group") {
@@ -204,7 +205,7 @@ export default function CandidatFicheWizardPage() {
     if (!question) return false;
     if (!question.required) return true;
 
-    if (question.type === "text" || question.type === "textarea")
+    if (question.type === "text" || question.type === "textarea" || question.type === "number8")
       return safeStr(value).trim().length > 0;
 
     if (question.type === "radio") {
@@ -376,7 +377,7 @@ export default function CandidatFicheWizardPage() {
     return (
       <AccessDeniedLikeQuiz
         title="Cette fiche a déjà été soumise"
-        subtitle="Vous avez déjà complété et soumis cette fiche. Il n’est pas possible de répondre une deuxième fois."
+        subtitle="Vous avez déjà complété et soumis cette fiche. Il n'est pas possible de répondre une deuxième fois."
         hint="Si vous pensez qu'il s'agit d'une erreur, contactez le recruteur."
         onHome={() => router.replace("/jobs")} // ✅ change to your home route if needed
       />
@@ -501,6 +502,24 @@ function QuestionRenderer({ q, value, setValue }) {
     );
   }
 
+  /* ── NUMBER8 ── */
+  if (q.type === "number8") {
+    return (
+      <input
+        type="text"
+        inputMode="numeric"
+        maxLength="8"
+        className="w-full rounded-xl border border-green-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 px-4 py-3 focus:border-green-500 dark:focus:border-emerald-500 focus:ring-1 outline-none transition-colors font-mono"
+        value={value ?? ""}
+        onChange={(e) => {
+          const filtered = e.target.value.replace(/[^0-9]/g, "").slice(0, 8);
+          setValue(filtered);
+        }}
+        placeholder="00000000"
+      />
+    );
+  }
+
   /* ── TEXTAREA ── */
   if (q.type === "textarea") {
     return (
@@ -542,13 +561,28 @@ function QuestionRenderer({ q, value, setValue }) {
                     <span>{fieldLabel}</span>
                     <span className="text-red-500 ml-0.5">*</span>
                   </label>
-                  <input
-                    type={fieldType}
-                    placeholder={fieldLabel}
-                    className="w-full sm:max-w-xs rounded-xl border border-green-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 px-4 py-2.5 focus:border-green-500 dark:focus:border-emerald-500 focus:ring-1 outline-none transition-colors"
-                    value={value?.textValue || ""}
-                    onChange={(e) => setValue({ ...value, textValue: e.target.value })}
-                  />
+                  {fieldType === "number8" ? (
+                    <input
+                      type="text"
+                      inputMode="numeric"
+                      maxLength="8"
+                      placeholder={fieldLabel}
+                      className="w-full sm:max-w-xs rounded-xl border border-green-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 px-4 py-2.5 focus:border-green-500 dark:focus:border-emerald-500 focus:ring-1 outline-none transition-colors font-mono"
+                      value={value?.textValue || ""}
+                      onChange={(e) => {
+                        const filtered = e.target.value.replace(/[^0-9]/g, "").slice(0, 8);
+                        setValue({ ...value, textValue: filtered });
+                      }}
+                    />
+                  ) : (
+                    <input
+                      type={fieldType}
+                      placeholder={fieldLabel}
+                      className="w-full sm:max-w-xs rounded-xl border border-green-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 px-4 py-2.5 focus:border-green-500 dark:focus:border-emerald-500 focus:ring-1 outline-none transition-colors"
+                      value={value?.textValue || ""}
+                      onChange={(e) => setValue({ ...value, textValue: e.target.value })}
+                    />
+                  )}
                 </div>
               )}
             </div>
@@ -596,18 +630,36 @@ function QuestionRenderer({ q, value, setValue }) {
                     <span>{fieldLabel}</span>
                     <span className="text-red-500 ml-0.5">*</span>
                   </label>
-                  <input
-                    type={fieldType}
-                    placeholder={fieldLabel}
-                    className="w-full sm:max-w-xs rounded-xl border border-green-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 px-4 py-2.5 focus:border-green-500 dark:focus:border-emerald-500 focus:ring-1 outline-none transition-colors"
-                    value={textValues[opt.label] || ""}
-                    onChange={(e) =>
-                      setValue({
-                        ...value,
-                        textValues: { ...textValues, [opt.label]: e.target.value },
-                      })
-                    }
-                  />
+                  {fieldType === "number8" ? (
+                    <input
+                      type="text"
+                      inputMode="numeric"
+                      maxLength="8"
+                      placeholder={fieldLabel}
+                      className="w-full sm:max-w-xs rounded-xl border border-green-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 px-4 py-2.5 focus:border-green-500 dark:focus:border-emerald-500 focus:ring-1 outline-none transition-colors font-mono"
+                      value={textValues[opt.label] || ""}
+                      onChange={(e) => {
+                        const filtered = e.target.value.replace(/[^0-9]/g, "").slice(0, 8);
+                        setValue({
+                          ...value,
+                          textValues: { ...textValues, [opt.label]: filtered },
+                        });
+                      }}
+                    />
+                  ) : (
+                    <input
+                      type={fieldType}
+                      placeholder={fieldLabel}
+                      className="w-full sm:max-w-xs rounded-xl border border-green-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 px-4 py-2.5 focus:border-green-500 dark:focus:border-emerald-500 focus:ring-1 outline-none transition-colors"
+                      value={textValues[opt.label] || ""}
+                      onChange={(e) =>
+                        setValue({
+                          ...value,
+                          textValues: { ...textValues, [opt.label]: e.target.value },
+                        })
+                      }
+                    />
+                  )}
                 </div>
               )}
             </div>
