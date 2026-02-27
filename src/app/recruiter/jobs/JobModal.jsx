@@ -3,6 +3,27 @@
 import { useState, useEffect, useMemo } from "react";
 import { BrainCircuit } from "lucide-react";
 
+const CONTRACT_OPTIONS = [
+  { value: "", label: "Type de contrat " },
+  { value: "CDD", label: "CDD" },
+  { value: "CDI", label: "CDI" },
+  { value: "CIVP", label: "CIVP" },
+];
+
+const MOTIF_OPTIONS = [
+  { value: "", label: "Motif" },
+  { value: "NOUVEAU", label: "Nouveau poste" },
+  { value: "REMPLACEMENT", label: "Remplacement" },
+  { value: "RENFORT", label: "Renfort" },
+];
+
+const SEXE_OPTIONS = [
+  { value: "", label: "Sexe " },
+  { value: "H", label: "H" },
+  { value: "F", label: "F" },
+  { value: "HF", label: "H/F" },
+];
+
 export default function JobModal({
   open,
   onClose,
@@ -17,6 +38,14 @@ export default function JobModal({
     hardSkills: "",
     dateCloture: "",
     lieu: "",
+
+    // ✅ nouveaux champs (optionnels)
+    salaire: "",
+    typeContrat: "",
+    motif: "",
+    sexe: "",
+    typeDiplome: "",
+
     scores: {
       skillsFit: 30,
       experienceFit: 30,
@@ -44,7 +73,7 @@ export default function JobModal({
       { key: "educationFit", label: "Education / Certifications" },
       { key: "communicationFit", label: "Communication / Clarity signals" },
     ],
-    [],
+    []
   );
 
   useEffect(() => {
@@ -65,6 +94,14 @@ export default function JobModal({
             ? String(initialData.dateCloture).slice(0, 10)
             : "",
           lieu: initialData.lieu || "",
+
+          // ✅ nouveaux champs
+          salaire: initialData.salaire ?? "",
+          typeContrat: initialData.typeContrat ?? "",
+          motif: initialData.motif ?? "",
+          sexe: initialData.sexe ?? "",
+          typeDiplome: initialData.typeDiplome ?? "",
+
           scores: {
             skillsFit: initialData?.scores?.skillsFit ?? 30,
             experienceFit: initialData?.scores?.experienceFit ?? 30,
@@ -76,10 +113,10 @@ export default function JobModal({
 
         const id =
           Array.isArray(initialData.assignedUserIds) &&
-            initialData.assignedUserIds.length > 0
-            ? (typeof initialData.assignedUserIds[0] === "string"
+          initialData.assignedUserIds.length > 0
+            ? typeof initialData.assignedUserIds[0] === "string"
               ? initialData.assignedUserIds[0]
-              : initialData.assignedUserIds[0]?._id)
+              : initialData.assignedUserIds[0]?._id
             : "";
         setAssignedUserId(id);
       } else {
@@ -91,6 +128,7 @@ export default function JobModal({
 
       setFormError("");
     });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, initialData]);
 
   if (!open) return null;
@@ -105,7 +143,8 @@ export default function JobModal({
   }
 
   const totalWeights = Object.values(form.scores || {}).reduce(
-    (sum, v) => sum + Number(v || 0), 0,
+    (sum, v) => sum + Number(v || 0),
+    0
   );
   const isValidTotal = totalWeights === 100;
 
@@ -159,6 +198,14 @@ export default function JobModal({
       lieu: form.lieu.trim(),
       scores: form.scores,
       assignedUserIds: assignedUserId ? [assignedUserId] : [],
+
+      // ✅ nouveaux champs (optionnels) — on envoie vide si vide (backend peut nettoyer)
+      salaire: String(form.salaire || "").trim(),
+      typeContrat: String(form.typeContrat || "").trim(),
+      motif: String(form.motif || "").trim(),
+      sexe: String(form.sexe || "").trim(),
+      typeDiplome: String(form.typeDiplome || "").trim(),
+
       // ✅ Transmis uniquement en mode création
       ...(!isEditMode && {
         generateQuiz,
@@ -177,16 +224,26 @@ export default function JobModal({
     "focus:ring-4 focus:ring-[#6CB33F]/15 dark:focus:ring-emerald-500/20 " +
     "outline-none transition-colors";
 
+  const selectBase =
+    "w-full h-11 sm:h-12 px-4 sm:px-5 rounded-xl sm:rounded-full " +
+    "border border-gray-200 dark:border-gray-600 " +
+    "bg-white dark:bg-gray-700 " +
+    "text-gray-800 dark:text-gray-100 " +
+    "focus:border-[#6CB33F] dark:focus:border-emerald-500 " +
+    "focus:ring-4 focus:ring-[#6CB33F]/15 dark:focus:ring-emerald-500/20 " +
+    "outline-none transition-colors";
+
   const labelBase =
     "block text-xs sm:text-sm font-semibold tracking-wide text-gray-700 dark:text-gray-300 mb-2 uppercase";
 
   return (
     <div
       className="fixed inset-0 z-50 bg-black/40 dark:bg-black/60 flex items-center justify-center p-4 sm:p-6"
-      onMouseDown={(e) => { if (e.target === e.currentTarget) onClose(); }}
+      onMouseDown={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
     >
       <div className="bg-white dark:bg-gray-800 w-full max-w-2xl rounded-2xl sm:rounded-3xl shadow-2xl overflow-hidden max-h-[90vh] flex flex-col transition-colors duration-300">
-
         {/* ===== HEADER ===== */}
         <div className="px-5 sm:px-8 pt-5 sm:pt-7 pb-4 sm:pb-5 border-b border-gray-200 dark:border-gray-700">
           <div className="flex items-start justify-between gap-4">
@@ -195,7 +252,8 @@ export default function JobModal({
                 {isEditMode ? "Modifier l'offre" : "Ajouter une offre"}
               </h2>
               <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                Tous les champs marqués <span className="text-red-500">*</span> sont obligatoires.
+                Tous les champs marqués <span className="text-red-500">*</span>{" "}
+                sont obligatoires.
               </p>
             </div>
             <button
@@ -215,9 +273,12 @@ export default function JobModal({
 
         {/* ===== BODY ===== */}
         <div className="overflow-y-auto">
-          <form onSubmit={handleSubmit} noValidate className="px-5 sm:px-8 py-5 sm:py-7">
+          <form
+            onSubmit={handleSubmit}
+            noValidate
+            className="px-5 sm:px-8 py-5 sm:py-7"
+          >
             <div className="space-y-5 sm:space-y-6">
-
               {/* ERROR */}
               {formError && (
                 <div className="rounded-xl border border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-900/30 p-3 text-sm font-semibold text-red-700 dark:text-red-400">
@@ -246,7 +307,9 @@ export default function JobModal({
                 <textarea
                   rows={5}
                   value={form.description}
-                  onChange={(e) => setForm({ ...form, description: e.target.value })}
+                  onChange={(e) =>
+                    setForm({ ...form, description: e.target.value })
+                  }
                   className="w-full px-4 sm:px-5 py-3 sm:py-4 rounded-2xl sm:rounded-3xl 
                              border border-gray-200 dark:border-gray-600 
                              bg-white dark:bg-gray-700 
@@ -293,23 +356,106 @@ export default function JobModal({
                 <input
                   type="date"
                   value={form.dateCloture}
-                  onChange={(e) => setForm({ ...form, dateCloture: e.target.value })}
+                  onChange={(e) =>
+                    setForm({ ...form, dateCloture: e.target.value })
+                  }
                   min={new Date().toISOString().slice(0, 10)}
                   className={inputBase}
                 />
               </div>
 
+              {/* ✅ NOUVEAUX CHAMPS (OPTIONNELS) */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-5 sm:gap-6">
+                {/* Salaire */}
+                <div>
+                  <label className={labelBase}>Salaire</label>
+                  <input
+                    value={form.salaire}
+                    onChange={(e) =>
+                      setForm({ ...form, salaire: e.target.value })
+                    }
+                    placeholder="Ex: 2000 TND / 2000-2500 / 2500"
+                    className={inputBase}
+                  />
+                 
+                </div>
+
+                {/* Type Diplôme */}
+                <div>
+                  <label className={labelBase}>Type de diplôme</label>
+                  <input
+                    value={form.typeDiplome}
+                    onChange={(e) =>
+                      setForm({ ...form, typeDiplome: e.target.value })
+                    }
+                    placeholder="Ex: Licence, Master, Ingénieur..."
+                    className={inputBase}
+                  />
+                 
+                </div>
+
+                {/* Type contrat */}
+                <div>
+                  <label className={labelBase}>Type de contrat</label>
+                  <select
+                    value={form.typeContrat}
+                    onChange={(e) =>
+                      setForm({ ...form, typeContrat: e.target.value })
+                    }
+                    className={selectBase}
+                  >
+                    {CONTRACT_OPTIONS.map((o) => (
+                      <option key={o.value} value={o.value}>
+                        {o.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Motif */}
+                <div>
+                  <label className={labelBase}>Motif</label>
+                  <select
+                    value={form.motif}
+                    onChange={(e) => setForm({ ...form, motif: e.target.value })}
+                    className={selectBase}
+                  >
+                    {MOTIF_OPTIONS.map((o) => (
+                      <option key={o.value} value={o.value}>
+                        {o.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Sexe */}
+                <div className="md:col-span-2">
+                  <label className={labelBase}>Sexe</label>
+                  <select
+                    value={form.sexe}
+                    onChange={(e) => setForm({ ...form, sexe: e.target.value })}
+                    className={selectBase}
+                  >
+                    {SEXE_OPTIONS.map((o) => (
+                      <option key={o.value} value={o.value}>
+                        {o.label}
+                      </option>
+                    ))}
+                  </select>
+                 
+                </div>
+              </div>
+
               {/* SKILLS GRID */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-5 sm:gap-6">
-
-                {/* HARD SKILLS * */}
+                {/* HARD SKILLS */}
                 <div>
-                  <label className={labelBase}>
-                    Hard Skills
-                  </label>
+                  <label className={labelBase}>Hard Skills</label>
                   <input
                     value={form.hardSkills}
-                    onChange={(e) => setForm({ ...form, hardSkills: e.target.value })}
+                    onChange={(e) =>
+                      setForm({ ...form, hardSkills: e.target.value })
+                    }
                     placeholder="React, Node.js, SQL, Docker..."
                     className={inputBase}
                   />
@@ -318,14 +464,14 @@ export default function JobModal({
                   </p>
                 </div>
 
-                {/* SOFT SKILLS * */}
+                {/* SOFT SKILLS */}
                 <div>
-                  <label className={labelBase}>
-                    Soft Skills
-                  </label>
+                  <label className={labelBase}>Soft Skills</label>
                   <input
                     value={form.softSkills}
-                    onChange={(e) => setForm({ ...form, softSkills: e.target.value })}
+                    onChange={(e) =>
+                      setForm({ ...form, softSkills: e.target.value })
+                    }
                     placeholder="Communication, Leadership, Esprit d'équipe..."
                     className={inputBase}
                   />
@@ -337,9 +483,7 @@ export default function JobModal({
 
               {/* SELECT USERS */}
               <div>
-                <label className={labelBase}>
-                  Affectation responsable métier
-                </label>
+                <label className={labelBase}>Affectation responsable métier</label>
                 <select
                   value={assignedUserId}
                   onChange={(e) => setAssignedUserId(e.target.value)}
@@ -373,14 +517,16 @@ export default function JobModal({
                         className="sr-only"
                       />
                       <div
-                        className={`w-11 h-6 rounded-full transition-colors duration-200 ${generateQuiz
+                        className={`w-11 h-6 rounded-full transition-colors duration-200 ${
+                          generateQuiz
                             ? "bg-[#6CB33F] dark:bg-emerald-500"
                             : "bg-gray-300 dark:bg-gray-600"
-                          }`}
+                        }`}
                       />
                       <div
-                        className={`absolute top-1 w-4 h-4 bg-white rounded-full shadow transition-transform duration-200 ${generateQuiz ? "translate-x-6" : "translate-x-1"
-                          }`}
+                        className={`absolute top-1 w-4 h-4 bg-white rounded-full shadow transition-transform duration-200 ${
+                          generateQuiz ? "translate-x-6" : "translate-x-1"
+                        }`}
                       />
                     </div>
                     <div>
@@ -391,7 +537,8 @@ export default function JobModal({
                         </span>
                       </div>
                       <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
-                        Un quiz IA sera créé automatiquement à la publication de l&apos;offre.
+                        Un quiz IA sera créé automatiquement à la publication de
+                        l&apos;offre.
                       </p>
                     </div>
                   </label>
@@ -452,7 +599,8 @@ export default function JobModal({
 
                   {!generateQuiz && (
                     <p className="pl-14 text-xs text-gray-400 dark:text-gray-500 italic">
-                      Aucun quiz ne sera généré. Vous pourrez en créer un manuellement plus tard.
+                      Aucun quiz ne sera généré. Vous pourrez en créer un
+                      manuellement plus tard.
                     </p>
                   )}
                 </div>
@@ -465,10 +613,11 @@ export default function JobModal({
                     Pondérations (0 – 100)
                   </h3>
                   <span
-                    className={`text-sm font-extrabold ${isValidTotal
+                    className={`text-sm font-extrabold ${
+                      isValidTotal
                         ? "text-green-600 dark:text-emerald-400"
                         : "text-red-600 dark:text-red-400"
-                      }`}
+                    }`}
                   >
                     Total : {totalWeights}%
                   </span>
@@ -511,7 +660,8 @@ export default function JobModal({
 
                 {!isValidTotal && (
                   <p className="mt-3 text-xs font-semibold text-red-600 dark:text-red-400">
-                    La somme des pondérations doit être égale à 100% pour pouvoir enregistrer.
+                    La somme des pondérations doit être égale à 100% pour pouvoir
+                    enregistrer.
                   </p>
                 )}
               </div>
@@ -523,9 +673,10 @@ export default function JobModal({
                 type="submit"
                 disabled={!isValidTotal}
                 className={`sm:flex-1 h-11 sm:h-12 rounded-xl sm:rounded-full font-semibold transition-colors shadow-sm
-                  ${isValidTotal
-                    ? "bg-[#6CB33F] hover:bg-[#5AA332] dark:bg-emerald-600 dark:hover:bg-emerald-500 text-white"
-                    : "bg-gray-300 dark:bg-gray-600 text-gray-500 dark:text-gray-400 cursor-not-allowed"
+                  ${
+                    isValidTotal
+                      ? "bg-[#6CB33F] hover:bg-[#5AA332] dark:bg-emerald-600 dark:hover:bg-emerald-500 text-white"
+                      : "bg-gray-300 dark:bg-gray-600 text-gray-500 dark:text-gray-400 cursor-not-allowed"
                   }`}
               >
                 {!isEditMode && generateQuiz

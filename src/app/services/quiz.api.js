@@ -59,3 +59,8 @@ export const submitQuiz = (payload) => api.post("/quiz-submissions", payload);
  * GET /quiz-submissions/:id
  */
 export const getQuizSubmission = (id) => api.get(`/quiz-submissions/${id}`);
+export function generateQuizForJob(jobId) {
+  return axios.post(`${API_URL}/quizzes/generate/${jobId}`, null, {
+    headers: authHeaders(),
+  });
+}
