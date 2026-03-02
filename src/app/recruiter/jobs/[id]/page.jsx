@@ -583,7 +583,7 @@ export default function RecruiterJobDetailsPage() {
     },
     hasValue(job?.sexe) && {
       icon: Users,
-      label: "Sexe",
+      label: "Genre",
       value: prettySexe(job.sexe),
     },
     hasValue(job?.typeDiplome) && {
@@ -601,10 +601,10 @@ export default function RecruiterJobDetailsPage() {
   // ✅ TOP CARDS = (Lieu/Créée/Clôture) + (Détails du poste)
   const topCards = [
     { icon: MapPin, label: "Lieu", value: job.lieu || "—" },
-    { icon: Calendar, label: "Créée", value: formatDate(job.createdAt) },
+    { icon: Calendar, label: "Date de création", value: formatDate(job.createdAt) },
     {
       icon: CalendarClock,
-      label: "Clôture",
+      label: "Date de clôture",
       value: formatDate(job.dateCloture),
     },
     ...detailsRows,

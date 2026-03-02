@@ -121,7 +121,7 @@ export default function JobDetailsPage() {
       },
       hasValue(job?.sexe) && {
         icon: Users,
-        label: "Sexe",
+        label: "Genre",
         value: prettySexe(job.sexe),
       },
     ].filter(Boolean);

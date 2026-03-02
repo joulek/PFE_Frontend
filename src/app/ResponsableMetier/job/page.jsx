@@ -483,11 +483,11 @@ export default function ResponsableJobsPage() {
                     )}
                     <div className="flex items-center gap-2">
                       <Calendar size={16} className="text-gray-500 dark:text-gray-400" />
-                      <span>Créée : {formatDate(job.createdAt)}</span>
+                      <span>Date de création : {formatDate(job.createdAt)}</span>
                     </div>
                     <div className="flex items-center gap-2">
                       <CalendarClock size={16} className="text-gray-500 dark:text-gray-400" />
-                      <span>Clôture : {formatDate(job.dateCloture)}</span>
+                      <span>Date de clôture : {formatDate(job.dateCloture)}</span>
                     </div>
                     {job.confirmedAt && (
                       <div className="flex items-center gap-2">

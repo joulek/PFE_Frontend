@@ -18,7 +18,7 @@ const MOTIF_OPTIONS = [
 ];
 
 const SEXE_OPTIONS = [
-  { value: "", label: "Sexe " },
+  { value: "", label: "Genre " },
   { value: "H", label: "H" },
   { value: "F", label: "F" },
   { value: "HF", label: "H/F" },
@@ -430,7 +430,7 @@ export default function JobModal({
 
                 {/* Sexe */}
                 <div className="md:col-span-2">
-                  <label className={labelBase}>Sexe</label>
+                  <label className={labelBase}>Genre</label>
                   <select
                     value={form.sexe}
                     onChange={(e) => setForm({ ...form, sexe: e.target.value })}

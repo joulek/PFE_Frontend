@@ -226,8 +226,8 @@ export default function ResponsableJobDetailsPage() {
             <h1 className="text-3xl sm:text-4xl font-extrabold text-gray-900 dark:text-white">{job.titre}</h1>
             <div className="mt-6 grid grid-cols-1 sm:grid-cols-3 gap-4">
               <InfoCard icon={MapPin} label="Lieu" value={job.lieu || "—"} />
-              <InfoCard icon={Calendar} label="Créée" value={formatDate(job.createdAt)} />
-              <InfoCard icon={CalendarClock} label="Clôture" value={formatDate(job.dateCloture)} />
+              <InfoCard icon={Calendar} label="Date de création" value={formatDate(job.createdAt)} />
+              <InfoCard icon={CalendarClock} label="Date de clôture" value={formatDate(job.dateCloture)} />
             </div>
             {status === "REJETEE" && job.rejectionReason && (
               <div className="mt-6 rounded-2xl border border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-900/20 p-4">
