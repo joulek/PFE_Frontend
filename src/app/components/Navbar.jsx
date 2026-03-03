@@ -548,6 +548,9 @@ export default function Navbar() {
                         <Link href="/recruiter/QuizTechnique" className={`${dropdownItemBase} ${isActive("/recruiter/QuizTechnique") ? dropdownActive : dropdownHover}`}>
                           Quiz Technique
                         </Link>
+                         <Link href="/recruiter/criteres-evaluation" className={`${dropdownItemBase} ${isActive("/recruiter/criteres-evaluation") ? dropdownActive : dropdownHover}`}>
+                          Critères d'évaluation
+                        </Link>
                       </div>
                     )}
                   </div>
@@ -671,6 +674,9 @@ export default function Navbar() {
                     <Link href="/recruiter/QuizTechnique" className={`block px-5 py-3.5 rounded-xl font-medium transition ${isActive("/recruiter/QuizTechnique") ? "bg-[#6CB33F] text-white" : "text-gray-700 dark:text-gray-200 hover:bg-gray-100/70 dark:hover:bg-gray-800/60"}`}>
                       Quiz Technique
                     </Link>
+                    <Link href="/recruiter/criteres-evaluation" className={`${dropdownItemBase} ${isActive("/recruiter/criteres-evaluation") ? dropdownActive : dropdownHover}`}>
+                          Critères d'évaluation
+                        </Link>
                     <Link href="/recruiter/roles" className="block px-5 py-3.5 rounded-xl text-gray-700 dark:text-gray-200 hover:bg-gray-100/70 dark:hover:bg-gray-800/60">Gestion des rôles</Link>
                     <Link href="/recruiter/ResponsableMetier" className="block px-5 py-3.5 rounded-xl text-gray-700 dark:text-gray-200 hover:bg-gray-100/70 dark:hover:bg-gray-800/60">Gestion des utilisateurs</Link>
                     <Link href="/recruiter/calendar" className="block px-5 py-3.5 rounded-xl text-gray-700 dark:text-gray-200 hover:bg-gray-100/70 dark:hover:bg-gray-800/60">Mon Calendirer</Link>
