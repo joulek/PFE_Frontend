@@ -56,6 +56,8 @@ export default function LoginPage() {
       // ✅ navigation الصحيح
       if (role === "ADMIN") {
         router.replace("/recruiter/dashboard");
+      } else if (role === "ASSISTANTE_RH") {
+        router.replace("/employees");
       } else {
         router.replace("/ResponsableMetier/candidatures");
       }

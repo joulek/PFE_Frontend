@@ -1,39 +1,13 @@
-import axios from "axios";
+import api from "./api";
 
-const API_BASE = "http://localhost:5000";
+export const startSubmission = ({ ficheId, candidatureId }) =>
+  api.post("/fiche-submissions/start", { ficheId, candidatureId });
 
-function getAuthHeaders() {
-  const token = localStorage.getItem("token");
-  return token ? { Authorization: `Bearer ${token}` } : {};
-}
+export const addAnswer = (submissionId, payload) =>
+  api.post(`/fiche-submissions/${submissionId}/answer`, payload);
 
-export async function startSubmission({ ficheId, candidatureId }) {
-  return axios.post(
-    `${API_BASE}/fiche-submissions/start`,
-    { ficheId, candidatureId },
-    { headers: { "Content-Type": "application/json", ...getAuthHeaders() } }
-  );
-}
+export const submitSubmission = (submissionId) =>
+  api.post(`/fiche-submissions/${submissionId}/submit`, {});
 
-export async function addAnswer(submissionId, payload) {
-  return axios.post(
-    `${API_BASE}/fiche-submissions/${submissionId}/answer`,
-    payload,
-    { headers: { "Content-Type": "application/json", ...getAuthHeaders() } }
-  );
-}
-
-export async function submitSubmission(submissionId) {
-  return axios.post(
-    `${API_BASE}/fiche-submissions/${submissionId}/submit`,
-    {},
-    { headers: { ...getAuthHeaders() } }
-  );
-}
-export async function getSubmissionById(submissionId) {
-  return axios.get(
-    `${API_BASE}/fiche-submissions/${submissionId}`,
-    { headers: { ...getAuthHeaders() } }
-  );
-}
-
+export const getSubmissionById = (submissionId) =>
+  api.get(`/fiche-submissions/${submissionId}`);

@@ -19,7 +19,7 @@ import {
 } from "lucide-react";
 import { getApplicationById, updateApplicationStatus } from "../../../services/application.api";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
+const API_URL = process.env.NEXT_PUBLIC_API_URL ;
 
 function getCvUrl(cvUrl) {
   if (!cvUrl) return null;

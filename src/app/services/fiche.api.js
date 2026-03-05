@@ -1,102 +1,20 @@
-import axios from "axios";
-
-const API_URL = "http://localhost:5000/fiches";
-
-function getAuthHeaders() {
-  const token = localStorage.getItem("token");
-  return token ? { Authorization: `Bearer ${token}` } : {};
-}
+import api from "./api";
 
 /* CREATE */
-export async function createFiche(payload) {
-  try {
-    const response = await axios.post(API_URL, payload, {
-      headers: { "Content-Type": "application/json", ...getAuthHeaders() },
-    });
-    return response;
-  } catch (error) {
-    console.error("Erreur createFiche:", error);
-    throw error;
-  }
-}
+export const createFiche = (payload) => api.post("/fiches", payload);
 
 /* UPDATE */
-export async function updateFiche(id, payload) {
-  try {
-    const response = await axios.put(`${API_URL}/${id}`, payload, {
-      headers: { "Content-Type": "application/json", ...getAuthHeaders() },
-    });
-    return response;
-  } catch (error) {
-    console.error("Erreur updateFiche:", error);
-    // Si l'erreur est 404 mais que les données semblent avoir été sauvegardées,
-    // on peut retourner un succès artificiel
-    if (error.response?.status === 404) {
-      console.warn("404 reçu mais la mise à jour peut avoir réussi");
-      // Retourner un objet de succès factice
-      return { status: 200, data: { success: true } };
-    }
-    throw error;
-  }
-}
+export const updateFiche = (id, payload) => api.put(`/fiches/${id}`, payload);
 
 /* GET ONE */
-export async function getFicheById(id) {
-  try {
-    const response = await axios.get(`${API_URL}/${id}`, {
-      headers: getAuthHeaders(),
-    });
-    return response;
-  } catch (error) {
-    console.error("Erreur getFicheById:", error);
-    throw error;
-  }
-}
+export const getFicheById = (id) => api.get(`/fiches/${id}`);
 
 /* SAVE (CREATE OR UPDATE) */
-export async function saveFiche(payload, id = null) {
-  const headers = {
-    "Content-Type": "application/json",
-    ...getAuthHeaders(),
-  };
-
-  try {
-    if (id) {
-      // UPDATE
-      return await axios.put(`${API_URL}/${id}`, payload, { headers });
-    }
-    // CREATE
-    return await axios.post(API_URL, payload, { headers });
-  } catch (error) {
-    console.error("Erreur saveFiche:", error);
-    throw error;
-  }
-}
+export const saveFiche = (payload, id = null) =>
+  id ? api.put(`/fiches/${id}`, payload) : api.post("/fiches", payload);
 
 /* DELETE */
-export async function deleteFiche(id) {
-  try {
-    const response = await axios.delete(`${API_URL}/${id}`, {
-      headers: getAuthHeaders(),
-    });
-    return response;
-  } catch (error) {
-    console.error("Erreur deleteFiche:", error);
-    throw error;
-  }
-}
+export const deleteFiche = (id) => api.delete(`/fiches/${id}`);
 
 /* GET ALL */
-export async function getFiches() {
-  try {
-    const response = await axios.get(API_URL, {
-      headers: {
-        ...getAuthHeaders(),
-      },
-    });
-    return response;
-  } catch (error) {
-    console.error("Erreur getFiches:", error);
-    throw error;
-  }
-}
+export const getFiches = () => api.get("/fiches");

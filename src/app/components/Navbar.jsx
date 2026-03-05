@@ -400,15 +400,16 @@ export default function Navbar() {
   }, []);
 
   const isActive = (path) => pathname === path;
-  const isAdmin = user?.role === "ADMIN";
+  const isAdmin        = user?.role === "ADMIN";
+  const isAssistanteRH = user?.role === "ASSISTANTE_RH";
 
   const isInCandidatures =
     pathname.startsWith("/recruiter/candidatures") ||
     pathname.startsWith("/recruiter/CandidatureAnalysis");
 
   const isInAdmin =
-    pathname.startsWith("/recruiter/roles") ||
-    pathname.startsWith("/recruiter/ResponsableMetier");
+    pathname.startsWith("/roles") ||
+    pathname.startsWith("/utilisateurs");
 
   const isInFormulaires =
     pathname.startsWith("/recruiter/fiche-renseignement") ||
@@ -476,7 +477,8 @@ export default function Navbar() {
 
             {/* DESKTOP MENU */}
             <div className="hidden md:flex items-center bg-[#F4F7F5] dark:bg-gray-800/60 rounded-full p-1 gap-1 transition-colors duration-200">
-              {!isAdmin && (
+              {/* ── RESPONSABLE METIER ── */}
+              {!isAdmin && !isAssistanteRH && (
                 <>
                   <Link href="/jobs" className={`${linkBase} ${isActive("/jobs") ? activeLink : inactiveLink}`}>
                     Offres d'emploi
@@ -497,6 +499,22 @@ export default function Navbar() {
                       </Link>
                     </>
                   )}
+                </>
+              )}
+
+              {/* ── ASSISTANTE RH ── */}
+              {isAssistanteRH && (
+                <>
+                  <Link href="/employees" className={`${linkBase} ${isActive("/employees") ? activeLink : inactiveLink}`}>
+                    Gestion Employés
+                  </Link>
+                  <Link href="/utilisateurs" className={`${linkBase} ${isActive("/utilisateurs") ? activeLink : inactiveLink}`}>
+                    Gestion Responsables
+                  </Link>
+                  <Link href="/roles" className={`${linkBase} ${isActive("/roles") ? activeLink : inactiveLink}`}>
+                    Gestion Rôles
+                  </Link>
+                  
                 </>
               )}
 
@@ -521,6 +539,9 @@ export default function Navbar() {
                       <div className={`${dropdownBase} ${dropdownLight} ${dropdownDark}`}>
                         <Link href="/recruiter/candidatures" className={`${dropdownItemBase} ${isActive("/recruiter/candidatures") ? dropdownActive : dropdownHover}`}>
                           Liste des candidatures
+                        </Link>
+                         <Link href="/recruiter/candidatures_spontanees" className={`${dropdownItemBase} ${isActive("/recruiter/candidatures_spontanees") ? dropdownActive : dropdownHover}`}>
+                          Liste des candidatures spontanées
                         </Link>
                         <Link href="/recruiter/CandidatureAnalysis" className={`${dropdownItemBase} ${isActive("/recruiter/CandidatureAnalysis") ? dropdownActive : dropdownHover}`}>
                           Analyse des candidatures
@@ -565,10 +586,10 @@ export default function Navbar() {
                     </button>
                     {openAdmin && (
                       <div className={`${dropdownBase} ${dropdownLight} ${dropdownDark}`}>
-                        <Link href="/recruiter/roles" className={`${dropdownItemBase} ${isActive("/recruiter/roles") ? dropdownActive : dropdownHover}`}>
+                        <Link href="/roles" className={`${dropdownItemBase} ${isActive("/roles") ? dropdownActive : dropdownHover}`}>
                           Gestion des rôles
                         </Link>
-                        <Link href="/recruiter/ResponsableMetier" className={`${dropdownItemBase} ${isActive("/recruiter/ResponsableMetier") ? dropdownActive : dropdownHover}`}>
+                        <Link href="/utilisateurs" className={`${dropdownItemBase} ${isActive("/utilisateurs") ? dropdownActive : dropdownHover}`}>
                           Gestion des utilisateurs
                         </Link>
                          <Link href="/employees" className={`${dropdownItemBase} ${isActive("/employees") ? dropdownActive : dropdownHover}`}>
@@ -637,7 +658,8 @@ export default function Navbar() {
           {openMobile && (
             <div className="md:hidden pb-5 pt-2">
               <div className="rounded-2xl bg-white/95 dark:bg-gray-900/85 shadow-xl border border-gray-200/70 dark:border-gray-700/60 p-4 space-y-2 backdrop-blur-sm transition-colors duration-200">
-                {!isAdmin && (
+                {/* ── RESPONSABLE METIER ── */}
+                {!isAdmin && !isAssistanteRH && (
                   <>
                     <Link href="/jobs" className={`block px-5 py-3.5 rounded-xl font-medium transition ${isActive("/jobs") ? "bg-[#6CB33F] text-white" : "text-gray-700 dark:text-gray-200 hover:bg-gray-100/70 dark:hover:bg-gray-800/60"}`}>
                       Offres d'emploi
@@ -661,11 +683,27 @@ export default function Navbar() {
                   </>
                 )}
 
+                {/* ── ASSISTANTE RH ── */}
+                {isAssistanteRH && (
+                  <>
+                    <Link href="/employees" className={`block px-5 py-3.5 rounded-xl font-medium transition ${isActive("/employees") ? "bg-[#6CB33F] text-white" : "text-gray-700 dark:text-gray-200 hover:bg-gray-100/70 dark:hover:bg-gray-800/60"}`}>
+                      Gestion Employés
+                    </Link>
+                    <Link href="/utilisateur" className={`block px-5 py-3.5 rounded-xl font-medium transition ${isActive("/utilisateur") ? "bg-[#6CB33F] text-white" : "text-gray-700 dark:text-gray-200 hover:bg-gray-100/70 dark:hover:bg-gray-800/60"}`}>
+                      Gestion Responsable RH
+                    </Link>
+                    <Link href="/roles" className={`block px-5 py-3.5 rounded-xl font-medium transition ${isActive("/roles") ? "bg-[#6CB33F] text-white" : "text-gray-700 dark:text-gray-200 hover:bg-gray-100/70 dark:hover:bg-gray-800/60"}`}>
+                      Gestion Rôles
+                    </Link>
+                  </>
+                )}
+
                 {isAdmin && (
                   <>
                     <Link href="/recruiter/dashboard" className="block px-5 py-3.5 rounded-xl text-gray-700 dark:text-gray-200 hover:bg-gray-100/70 dark:hover:bg-gray-800/60">Tableau de bord</Link>
                     <Link href="/recruiter/jobs" className="block px-5 py-3.5 rounded-xl text-gray-700 dark:text-gray-200 hover:bg-gray-100/70 dark:hover:bg-gray-800/60">Gestion offres</Link>
                     <Link href="/recruiter/candidatures" className="block px-5 py-3.5 rounded-xl text-gray-700 dark:text-gray-200 hover:bg-gray-100/70 dark:hover:bg-gray-800/60">Liste des candidatures</Link>
+                                 <Link href="/recruiter/candidatures_spontanees" className="block px-5 py-3.5 rounded-xl text-gray-700 dark:text-gray-200 hover:bg-gray-100/70 dark:hover:bg-gray-800/60">Liste des candidatures spontanées</Link>
                     <Link href="/recruiter/CandidatureAnalysis" className="block px-5 py-3.5 rounded-xl text-gray-700 dark:text-gray-200 hover:bg-gray-100/70 dark:hover:bg-gray-800/60">Analyse des candidatures</Link>
                     <Link href="/recruiter/PreInterviewList" className="block px-5 py-3.5 rounded-xl text-gray-700 dark:text-gray-200 hover:bg-gray-100/70 dark:hover:bg-gray-800/60">Liste des pré-sélections</Link>
 
@@ -681,9 +719,8 @@ export default function Navbar() {
                     <Link href="/recruiter/criteres-evaluation" className={`${dropdownItemBase} ${isActive("/recruiter/criteres-evaluation") ? dropdownActive : dropdownHover}`}>
                           Critères d'évaluation
                         </Link>
-                    <Link href="/recruiter/roles" className="block px-5 py-3.5 rounded-xl text-gray-700 dark:text-gray-200 hover:bg-gray-100/70 dark:hover:bg-gray-800/60">Gestion des rôles</Link>
-                    <Link href="/recruiter/ResponsableMetier" className="block px-5 py-3.5 rounded-xl text-gray-700 dark:text-gray-200 hover:bg-gray-100/70 dark:hover:bg-gray-800/60">Gestion des utilisateurs</Link>
-                     <Link href="/employees" className="block px-5 py-3.5 rounded-xl text-gray-700 dark:text-gray-200 hover:bg-gray-100/70 dark:hover:bg-gray-800/60">Gestion des Employees</Link>
+                    <Link href="/roles" className="block px-5 py-3.5 rounded-xl text-gray-700 dark:text-gray-200 hover:bg-gray-100/70 dark:hover:bg-gray-800/60">Gestion des rôles</Link>
+                    <Link href="/employees" className="block px-5 py-3.5 rounded-xl text-gray-700 dark:text-gray-200 hover:bg-gray-100/70 dark:hover:bg-gray-800/60">Gestion des utilisateurs</Link>
                     <Link href="/recruiter/calendar" className="block px-5 py-3.5 rounded-xl text-gray-700 dark:text-gray-200 hover:bg-gray-100/70 dark:hover:bg-gray-800/60">Mon Calendirer</Link>
 
                   </>

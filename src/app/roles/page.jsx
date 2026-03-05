@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import { Search, X, Trash2, Edit2 } from "lucide-react";
 
 import {
@@ -8,7 +9,7 @@ import {
   createRole,
   updateRole,
   deleteRole,
-} from "../../services/role.api";
+} from "../services/role.api";
 
 /* ================= HELPERS ================= */
 function safeStr(v) {
@@ -23,6 +24,7 @@ function normalizeRoleName(name) {
 
 /* ================= PAGE ================= */
 export default function GestionRolesPage() {
+  const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [roles, setRoles] = useState([]);
 
@@ -47,6 +49,15 @@ export default function GestionRolesPage() {
   const [success, setSuccess] = useState("");
 
   useEffect(() => {
+    // ✅ Guard : vérifier le token avant tout appel API
+    const token = localStorage.getItem("token");
+    const user  = JSON.parse(localStorage.getItem("user") || "null");
+    const role  = String(user?.role || "").toUpperCase();
+
+    if (!token || (role !== "ADMIN" && role !== "ASSISTANTE_RH")) {
+      router.replace("/login");
+      return;
+    }
     fetchRoles();
   }, []);
 

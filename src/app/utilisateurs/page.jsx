@@ -1,16 +1,17 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import {
   getUsers,
   createUser,
   updateUser,
   deleteUser,
-} from "../../services/ResponsableMetier.api";
-import { getRoles } from "../../services/role.api";
-import { getEmployees } from "../../services/employee.api";
+} from "../services/ResponsableMetier.api";
+import { getRoles } from "../services/role.api";
+import { getEmployees } from "../services/employee.api";
 
-import Pagination from "../../components/Pagination";
+import Pagination from "../components/Pagination";
 import { Trash2, Edit2 } from "lucide-react";
 import {
   User,
@@ -202,6 +203,7 @@ function EmployeeCombobox({
 }
 
 export default function GestionResponsableMetierPage() {
+  const router = useRouter();
   const [loading, setLoading] = useState(false);
 
   const [users, setUsers] = useState([]);
@@ -317,6 +319,15 @@ export default function GestionResponsableMetierPage() {
   }
 
   useEffect(() => {
+    // ✅ Guard : vérifier le token avant tout appel API
+    const token = localStorage.getItem("token");
+    const user  = JSON.parse(localStorage.getItem("user") || "null");
+    const role  = String(user?.role || "").toUpperCase();
+
+    if (!token || (role !== "ADMIN" && role !== "ASSISTANTE_RH")) {
+      router.replace("/login");
+      return;
+    }
     fetchRoles();
     fetchEmployees();
     fetchUsers();
