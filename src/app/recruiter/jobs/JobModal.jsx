@@ -1,13 +1,21 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
-import { BrainCircuit } from "lucide-react";
+import { BrainCircuit, Briefcase, GraduationCap } from "lucide-react";
 
 const CONTRACT_OPTIONS = [
-  { value: "", label: "Type de contrat " },
+  { value: "", label: "Type de contrat" },
   { value: "CDD", label: "CDD" },
   { value: "CDI", label: "CDI" },
   { value: "CIVP", label: "CIVP" },
+];
+
+const STAGE_CONTRAT_OPTIONS = [
+  { value: "", label: "Type de stage" },
+  { value: "STAGE_PFE", label: "Stage PFE" },
+  { value: "STAGE_ETE", label: "Stage d'été" },
+  { value: "STAGE_INITIATION", label: "Stage d'initiation" },
+  { value: "ALTERNANCE", label: "Alternance" },
 ];
 
 const MOTIF_OPTIONS = [
@@ -18,10 +26,20 @@ const MOTIF_OPTIONS = [
 ];
 
 const SEXE_OPTIONS = [
-  { value: "", label: "Genre " },
+  { value: "", label: "Genre" },
   { value: "H", label: "H" },
   { value: "F", label: "F" },
   { value: "HF", label: "H/F" },
+];
+
+const DUREE_STAGE_OPTIONS = [
+  { value: "", label: "Durée du stage" },
+  { value: "1_MOIS", label: "1 mois" },
+  { value: "2_MOIS", label: "2 mois" },
+  { value: "3_MOIS", label: "3 mois" },
+  { value: "4_MOIS", label: "4 mois" },
+  { value: "5_MOIS", label: "5 mois" },
+  { value: "6_MOIS", label: "6 mois" },
 ];
 
 export default function JobModal({
@@ -32,20 +50,19 @@ export default function JobModal({
   users = [],
 }) {
   const emptyForm = {
+    typeOffre: "EMPLOI", // EMPLOI | STAGE
     titre: "",
     description: "",
     softSkills: "",
     hardSkills: "",
     dateCloture: "",
     lieu: "",
-
-    // ✅ nouveaux champs (optionnels)
     salaire: "",
     typeContrat: "",
     motif: "",
     sexe: "",
     typeDiplome: "",
-
+    dureeStage: "",
     scores: {
       skillsFit: 30,
       experienceFit: 30,
@@ -58,12 +75,11 @@ export default function JobModal({
   const [form, setForm] = useState(emptyForm);
   const [formError, setFormError] = useState("");
   const [assignedUserId, setAssignedUserId] = useState("");
-
-  // ✅ Quiz options — uniquement en mode création
   const [generateQuiz, setGenerateQuiz] = useState(true);
   const [numQuestions, setNumQuestions] = useState(25);
 
   const isEditMode = !!initialData;
+  const isStage = form.typeOffre === "STAGE";
 
   const items = useMemo(
     () => [
@@ -78,10 +94,10 @@ export default function JobModal({
 
   useEffect(() => {
     if (!open) return;
-
     Promise.resolve().then(() => {
       if (initialData) {
         setForm({
+          typeOffre: initialData.typeOffre || "EMPLOI",
           titre: initialData.titre || "",
           description: initialData.description || "",
           softSkills: Array.isArray(initialData.softSkills)
@@ -94,14 +110,12 @@ export default function JobModal({
             ? String(initialData.dateCloture).slice(0, 10)
             : "",
           lieu: initialData.lieu || "",
-
-          // ✅ nouveaux champs
           salaire: initialData.salaire ?? "",
           typeContrat: initialData.typeContrat ?? "",
           motif: initialData.motif ?? "",
           sexe: initialData.sexe ?? "",
           typeDiplome: initialData.typeDiplome ?? "",
-
+          dureeStage: initialData.dureeStage ?? "",
           scores: {
             skillsFit: initialData?.scores?.skillsFit ?? 30,
             experienceFit: initialData?.scores?.experienceFit ?? 30,
@@ -110,7 +124,6 @@ export default function JobModal({
             communicationFit: initialData?.scores?.communicationFit ?? 10,
           },
         });
-
         const id =
           Array.isArray(initialData.assignedUserIds) &&
           initialData.assignedUserIds.length > 0
@@ -125,7 +138,6 @@ export default function JobModal({
         setGenerateQuiz(true);
         setNumQuestions(25);
       }
-
       setFormError("");
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -166,9 +178,8 @@ export default function JobModal({
     e.preventDefault();
     setFormError("");
 
-    // ✅ Validation champs obligatoires
     if (!form.titre.trim()) {
-      setFormError("❌ Le titre du poste est obligatoire.");
+      setFormError("❌ Le titre est obligatoire.");
       return;
     }
     if (!form.description.trim()) {
@@ -176,20 +187,22 @@ export default function JobModal({
       return;
     }
     if (!form.lieu.trim()) {
-      setFormError("❌ Le lieu du poste est obligatoire.");
+      setFormError("❌ Le lieu est obligatoire.");
       return;
     }
     if (!form.dateCloture) {
       setFormError("❌ La date de clôture est obligatoire.");
       return;
     }
-
     if (!isValidTotal) {
       setFormError("❌ La somme des pondérations doit être égale à 100%");
       return;
     }
 
     onSubmit({
+      typeOffre: form.typeOffre,
+      // ✅ Stage publié automatiquement, offre d'emploi passe par validation
+      ...(form.typeOffre === "STAGE" && !isEditMode && { status: "CONFIRMEE" }),
       titre: form.titre.trim(),
       description: form.description.trim(),
       dateCloture: form.dateCloture,
@@ -198,15 +211,12 @@ export default function JobModal({
       lieu: form.lieu.trim(),
       scores: form.scores,
       assignedUserIds: assignedUserId ? [assignedUserId] : [],
-
-      // ✅ nouveaux champs (optionnels) — on envoie vide si vide (backend peut nettoyer)
       salaire: String(form.salaire || "").trim(),
       typeContrat: String(form.typeContrat || "").trim(),
       motif: String(form.motif || "").trim(),
       sexe: String(form.sexe || "").trim(),
       typeDiplome: String(form.typeDiplome || "").trim(),
-
-      // ✅ Transmis uniquement en mode création
+      dureeStage: String(form.dureeStage || "").trim(),
       ...(!isEditMode && {
         generateQuiz,
         numQuestions: generateQuiz ? numQuestions : 0,
@@ -244,7 +254,7 @@ export default function JobModal({
       }}
     >
       <div className="bg-white dark:bg-gray-800 w-full max-w-2xl rounded-2xl sm:rounded-3xl shadow-2xl overflow-hidden max-h-[90vh] flex flex-col transition-colors duration-300">
-        {/* ===== HEADER ===== */}
+        {/* HEADER */}
         <div className="px-5 sm:px-8 pt-5 sm:pt-7 pb-4 sm:pb-5 border-b border-gray-200 dark:border-gray-700">
           <div className="flex items-start justify-between gap-4">
             <div>
@@ -252,8 +262,7 @@ export default function JobModal({
                 {isEditMode ? "Modifier l'offre" : "Ajouter une offre"}
               </h2>
               <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                Tous les champs marqués <span className="text-red-500">*</span>{" "}
-                sont obligatoires.
+                Tous les champs marqués <span className="text-red-500">*</span> sont obligatoires.
               </p>
             </div>
             <button
@@ -271,14 +280,11 @@ export default function JobModal({
           </div>
         </div>
 
-        {/* ===== BODY ===== */}
+        {/* BODY */}
         <div className="overflow-y-auto">
-          <form
-            onSubmit={handleSubmit}
-            noValidate
-            className="px-5 sm:px-8 py-5 sm:py-7"
-          >
+          <form onSubmit={handleSubmit} noValidate className="px-5 sm:px-8 py-5 sm:py-7">
             <div className="space-y-5 sm:space-y-6">
+
               {/* ERROR */}
               {formError && (
                 <div className="rounded-xl border border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-900/30 p-3 text-sm font-semibold text-red-700 dark:text-red-400">
@@ -286,7 +292,40 @@ export default function JobModal({
                 </div>
               )}
 
-              {/* TITRE * */}
+              {/* ✅ TYPE D'OFFRE TOGGLE */}
+              <div>
+                <label className={labelBase}>
+                  Type d&apos;offre <span className="text-red-500">*</span>
+                </label>
+                <div className="flex gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setForm({ ...form, typeOffre: "EMPLOI", typeContrat: "", dureeStage: "" })}
+                    className={`flex-1 h-12 rounded-xl flex items-center justify-center gap-2 font-semibold text-sm border-2 transition-all duration-200
+                      ${form.typeOffre === "EMPLOI"
+                        ? "bg-[#6CB33F] border-[#6CB33F] text-white shadow-md"
+                        : "bg-white dark:bg-gray-700 border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:border-[#6CB33F]"
+                      }`}
+                  >
+                    <Briefcase size={16} />
+                    Offre d&apos;emploi
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setForm({ ...form, typeOffre: "STAGE", typeContrat: "", dureeStage: "" })}
+                    className={`flex-1 h-12 rounded-xl flex items-center justify-center gap-2 font-semibold text-sm border-2 transition-all duration-200
+                      ${form.typeOffre === "STAGE"
+                        ? "bg-blue-500 border-blue-500 text-white shadow-md"
+                        : "bg-white dark:bg-gray-700 border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:border-blue-400"
+                      }`}
+                  >
+                    <GraduationCap size={16} />
+                    Stage
+                  </button>
+                </div>
+              </div>
+
+              {/* TITRE */}
               <div>
                 <label className={labelBase}>
                   Titre du poste <span className="text-red-500">*</span>
@@ -295,11 +334,11 @@ export default function JobModal({
                   value={form.titre}
                   onChange={(e) => setForm({ ...form, titre: e.target.value })}
                   className={inputBase}
-                  placeholder="Ex: Fullstack Developer (React/Node)"
+                  placeholder={isStage ? "Ex: Stage PFE Développeur React" : "Ex: Fullstack Developer (React/Node)"}
                 />
               </div>
 
-              {/* DESCRIPTION * */}
+              {/* DESCRIPTION */}
               <div>
                 <label className={labelBase}>
                   Description <span className="text-red-500">*</span>
@@ -307,9 +346,7 @@ export default function JobModal({
                 <textarea
                   rows={5}
                   value={form.description}
-                  onChange={(e) =>
-                    setForm({ ...form, description: e.target.value })
-                  }
+                  onChange={(e) => setForm({ ...form, description: e.target.value })}
                   className="w-full px-4 sm:px-5 py-3 sm:py-4 rounded-2xl sm:rounded-3xl 
                              border border-gray-200 dark:border-gray-600 
                              bg-white dark:bg-gray-700 
@@ -319,11 +356,11 @@ export default function JobModal({
                              focus:border-[#6CB33F] dark:focus:border-emerald-500 
                              focus:ring-4 focus:ring-[#6CB33F]/15 dark:focus:ring-emerald-500/20 
                              outline-none transition-colors"
-                  placeholder="Décrivez la mission, le profil recherché, responsabilités..."
+                  placeholder={isStage ? "Décrivez le sujet du stage, les missions, technologies utilisées..." : "Décrivez la mission, le profil recherché, responsabilités..."}
                 />
               </div>
 
-              {/* LIEU * */}
+              {/* LIEU */}
               <div>
                 <label className={labelBase}>
                   Lieu du poste <span className="text-red-500">*</span>
@@ -335,7 +372,7 @@ export default function JobModal({
                   <input
                     value={form.lieu}
                     onChange={(e) => setForm({ ...form, lieu: e.target.value })}
-                    placeholder="Ex: Alger, Oran, Télétravail, Hybride..."
+                    placeholder="Ex: Tunis, Sfax, Télétravail, Hybride..."
                     className="w-full h-11 sm:h-12 pl-10 pr-4 rounded-xl sm:rounded-full 
                                border border-gray-200 dark:border-gray-600 
                                bg-white dark:bg-gray-700 
@@ -348,7 +385,7 @@ export default function JobModal({
                 </div>
               </div>
 
-              {/* DATE DE CLÔTURE * */}
+              {/* DATE DE CLÔTURE */}
               <div>
                 <label className={labelBase}>
                   Date de clôture <span className="text-red-500">*</span>
@@ -356,55 +393,47 @@ export default function JobModal({
                 <input
                   type="date"
                   value={form.dateCloture}
-                  onChange={(e) =>
-                    setForm({ ...form, dateCloture: e.target.value })
-                  }
+                  onChange={(e) => setForm({ ...form, dateCloture: e.target.value })}
                   min={new Date().toISOString().slice(0, 10)}
                   className={inputBase}
                 />
               </div>
 
-              {/* ✅ NOUVEAUX CHAMPS (OPTIONNELS) */}
+              {/* CHAMPS OPTIONNELS — ADAPTÉS AU TYPE */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-5 sm:gap-6">
-                {/* Salaire */}
-                <div>
-                  <label className={labelBase}>Salaire</label>
-                  <input
-                    value={form.salaire}
-                    onChange={(e) =>
-                      setForm({ ...form, salaire: e.target.value })
-                    }
-                    placeholder="Ex: 2000 TND / 2000-2500 / 2500"
-                    className={inputBase}
-                  />
-                 
-                </div>
+                {/* Salaire — emploi seulement */}
+                {!isStage && (
+                  <div>
+                    <label className={labelBase}>Salaire</label>
+                    <input
+                      value={form.salaire}
+                      onChange={(e) => setForm({ ...form, salaire: e.target.value })}
+                      placeholder="Ex: 2000 TND / 2000-2500"
+                      className={inputBase}
+                    />
+                  </div>
+                )}
 
                 {/* Type Diplôme */}
                 <div>
                   <label className={labelBase}>Type de diplôme</label>
                   <input
                     value={form.typeDiplome}
-                    onChange={(e) =>
-                      setForm({ ...form, typeDiplome: e.target.value })
-                    }
+                    onChange={(e) => setForm({ ...form, typeDiplome: e.target.value })}
                     placeholder="Ex: Licence, Master, Ingénieur..."
                     className={inputBase}
                   />
-                 
                 </div>
 
-                {/* Type contrat */}
+                {/* Type contrat emploi OU type stage */}
                 <div>
-                  <label className={labelBase}>Type de contrat</label>
+                  <label className={labelBase}>{isStage ? "Type de stage" : "Type de contrat"}</label>
                   <select
                     value={form.typeContrat}
-                    onChange={(e) =>
-                      setForm({ ...form, typeContrat: e.target.value })
-                    }
+                    onChange={(e) => setForm({ ...form, typeContrat: e.target.value })}
                     className={selectBase}
                   >
-                    {CONTRACT_OPTIONS.map((o) => (
+                    {(isStage ? STAGE_CONTRAT_OPTIONS : CONTRACT_OPTIONS).map((o) => (
                       <option key={o.value} value={o.value}>
                         {o.label}
                       </option>
@@ -412,21 +441,38 @@ export default function JobModal({
                   </select>
                 </div>
 
-                {/* Motif */}
-                <div>
-                  <label className={labelBase}>Motif</label>
-                  <select
-                    value={form.motif}
-                    onChange={(e) => setForm({ ...form, motif: e.target.value })}
-                    className={selectBase}
-                  >
-                    {MOTIF_OPTIONS.map((o) => (
-                      <option key={o.value} value={o.value}>
-                        {o.label}
-                      </option>
-                    ))}
-                  </select>
-                </div>
+                {/* Durée stage OU Motif emploi */}
+                {isStage ? (
+                  <div>
+                    <label className={labelBase}>Durée du stage</label>
+                    <select
+                      value={form.dureeStage}
+                      onChange={(e) => setForm({ ...form, dureeStage: e.target.value })}
+                      className={selectBase}
+                    >
+                      {DUREE_STAGE_OPTIONS.map((o) => (
+                        <option key={o.value} value={o.value}>
+                          {o.label}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                ) : (
+                  <div>
+                    <label className={labelBase}>Motif</label>
+                    <select
+                      value={form.motif}
+                      onChange={(e) => setForm({ ...form, motif: e.target.value })}
+                      className={selectBase}
+                    >
+                      {MOTIF_OPTIONS.map((o) => (
+                        <option key={o.value} value={o.value}>
+                          {o.label}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                )}
 
                 {/* Sexe */}
                 <div className="md:col-span-2">
@@ -442,20 +488,16 @@ export default function JobModal({
                       </option>
                     ))}
                   </select>
-                 
                 </div>
               </div>
 
               {/* SKILLS GRID */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-5 sm:gap-6">
-                {/* HARD SKILLS */}
                 <div>
                   <label className={labelBase}>Hard Skills</label>
                   <input
                     value={form.hardSkills}
-                    onChange={(e) =>
-                      setForm({ ...form, hardSkills: e.target.value })
-                    }
+                    onChange={(e) => setForm({ ...form, hardSkills: e.target.value })}
                     placeholder="React, Node.js, SQL, Docker..."
                     className={inputBase}
                   />
@@ -463,15 +505,11 @@ export default function JobModal({
                     Compétences techniques — séparées par une virgule.
                   </p>
                 </div>
-
-                {/* SOFT SKILLS */}
                 <div>
                   <label className={labelBase}>Soft Skills</label>
                   <input
                     value={form.softSkills}
-                    onChange={(e) =>
-                      setForm({ ...form, softSkills: e.target.value })
-                    }
+                    onChange={(e) => setForm({ ...form, softSkills: e.target.value })}
                     placeholder="Communication, Leadership, Esprit d'équipe..."
                     className={inputBase}
                   />
@@ -504,10 +542,9 @@ export default function JobModal({
                 </select>
               </div>
 
-              {/* ✅ QUIZ — uniquement en mode création */}
+              {/* QUIZ — uniquement en mode création */}
               {!isEditMode && (
                 <div className="border border-gray-200 dark:border-gray-700 rounded-2xl p-5 space-y-4">
-                  {/* Checkbox header */}
                   <label className="flex items-center gap-3 cursor-pointer select-none">
                     <div className="relative">
                       <input
@@ -518,9 +555,7 @@ export default function JobModal({
                       />
                       <div
                         className={`w-11 h-6 rounded-full transition-colors duration-200 ${
-                          generateQuiz
-                            ? "bg-[#6CB33F] dark:bg-emerald-500"
-                            : "bg-gray-300 dark:bg-gray-600"
+                          generateQuiz ? "bg-[#6CB33F] dark:bg-emerald-500" : "bg-gray-300 dark:bg-gray-600"
                         }`}
                       />
                       <div
@@ -537,32 +572,28 @@ export default function JobModal({
                         </span>
                       </div>
                       <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
-                        Un quiz IA sera créé automatiquement à la publication de
-                        l&apos;offre.
+                        Un quiz IA sera créé automatiquement à la publication de l&apos;offre.
                       </p>
                     </div>
                   </label>
 
-                  {/* Nombre de questions — visible seulement si cochée */}
                   {generateQuiz && (
                     <div className="pl-14 space-y-2 sm:space-y-0">
                       <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
                         <label className="text-sm font-semibold text-gray-700 dark:text-gray-300 sm:whitespace-nowrap">
                           Nombre de questions
                         </label>
-
                         <div className="flex flex-wrap items-center gap-2">
                           <button
                             type="button"
                             onClick={() => handleNumQuestions(numQuestions - 1)}
                             className="w-8 h-8 rounded-full border border-gray-200 dark:border-gray-600 
-                     text-gray-700 dark:text-gray-300 font-bold
-                     hover:bg-gray-100 dark:hover:bg-gray-700
-                     transition-colors flex items-center justify-center"
+                                       text-gray-700 dark:text-gray-300 font-bold
+                                       hover:bg-gray-100 dark:hover:bg-gray-700
+                                       transition-colors flex items-center justify-center"
                           >
                             −
                           </button>
-
                           <input
                             type="number"
                             min={1}
@@ -570,28 +601,24 @@ export default function JobModal({
                             value={numQuestions}
                             onChange={(e) => handleNumQuestions(e.target.value)}
                             className="w-16 h-9 text-center rounded-xl 
-                     border border-gray-200 dark:border-gray-600 
-                     bg-white dark:bg-gray-700 
-                     text-gray-800 dark:text-gray-100 font-bold
-                     focus:border-[#6CB33F] dark:focus:border-emerald-500
-                     focus:ring-2 focus:ring-[#6CB33F]/20 dark:focus:ring-emerald-500/20
-                     outline-none transition-colors"
+                                       border border-gray-200 dark:border-gray-600 
+                                       bg-white dark:bg-gray-700 
+                                       text-gray-800 dark:text-gray-100 font-bold
+                                       focus:border-[#6CB33F] dark:focus:border-emerald-500
+                                       focus:ring-2 focus:ring-[#6CB33F]/20 dark:focus:ring-emerald-500/20
+                                       outline-none transition-colors"
                           />
-
                           <button
                             type="button"
                             onClick={() => handleNumQuestions(numQuestions + 1)}
                             className="w-8 h-8 rounded-full border border-gray-200 dark:border-gray-600 
-                     text-gray-700 dark:text-gray-300 font-bold
-                     hover:bg-gray-100 dark:hover:bg-gray-700
-                     transition-colors flex items-center justify-center"
+                                       text-gray-700 dark:text-gray-300 font-bold
+                                       hover:bg-gray-100 dark:hover:bg-gray-700
+                                       transition-colors flex items-center justify-center"
                           >
                             +
                           </button>
-
-                          <span className="text-xs text-gray-500 dark:text-gray-400 whitespace-nowrap">
-                            (max 30)
-                          </span>
+                          <span className="text-xs text-gray-500 dark:text-gray-400 whitespace-nowrap">(max 30)</span>
                         </div>
                       </div>
                     </div>
@@ -599,8 +626,7 @@ export default function JobModal({
 
                   {!generateQuiz && (
                     <p className="pl-14 text-xs text-gray-400 dark:text-gray-500 italic">
-                      Aucun quiz ne sera généré. Vous pourrez en créer un
-                      manuellement plus tard.
+                      Aucun quiz ne sera généré. Vous pourrez en créer un manuellement plus tard.
                     </p>
                   )}
                 </div>
@@ -614,9 +640,7 @@ export default function JobModal({
                   </h3>
                   <span
                     className={`text-sm font-extrabold ${
-                      isValidTotal
-                        ? "text-green-600 dark:text-emerald-400"
-                        : "text-red-600 dark:text-red-400"
+                      isValidTotal ? "text-green-600 dark:text-emerald-400" : "text-red-600 dark:text-red-400"
                     }`}
                   >
                     Total : {totalWeights}%
@@ -627,10 +651,7 @@ export default function JobModal({
                   {items.map((it) => {
                     const v = form.scores[it.key] ?? 0;
                     return (
-                      <div
-                        key={it.key}
-                        className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4"
-                      >
+                      <div key={it.key} className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4">
                         <p className="sm:flex-1 text-sm font-semibold text-gray-700 dark:text-gray-300">
                           {it.label}
                         </p>
@@ -649,9 +670,7 @@ export default function JobModal({
                                        focus:ring-4 focus:ring-[#6CB33F]/15 dark:focus:ring-emerald-500/20 
                                        outline-none transition-colors"
                           />
-                          <span className="text-sm font-extrabold text-[#4E8F2F] dark:text-emerald-400 w-10">
-                            %
-                          </span>
+                          <span className="text-sm font-extrabold text-[#4E8F2F] dark:text-emerald-400 w-10">%</span>
                         </div>
                       </div>
                     );
@@ -660,8 +679,7 @@ export default function JobModal({
 
                 {!isValidTotal && (
                   <p className="mt-3 text-xs font-semibold text-red-600 dark:text-red-400">
-                    La somme des pondérations doit être égale à 100% pour pouvoir
-                    enregistrer.
+                    La somme des pondérations doit être égale à 100% pour pouvoir enregistrer.
                   </p>
                 )}
               </div>

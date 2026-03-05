@@ -20,9 +20,9 @@ import {
   CalendarClock,
   MapPin,
   Send,
+  GraduationCap,
 } from "lucide-react";
 
-/* ================= UTILS ================= */
 function formatDate(date) {
   if (!date) return "—";
   return new Date(date).toLocaleDateString("fr-FR");
@@ -42,14 +42,9 @@ function isExpired(job) {
   return end < new Date();
 }
 
-function isInactive(job) {
-  return isExpired(job);
-}
-
-/* ================= STATUS CONFIG ================= */
 const STATUS_CONFIG = {
   CONFIRMEE: {
-    label: "Publiée", // 👈 IMPORTANT
+    label: "Publiée",
     bg: "bg-emerald-100 dark:bg-emerald-900/30",
     text: "text-emerald-700 dark:text-emerald-400",
     border: "border-emerald-200 dark:border-emerald-800",
@@ -89,17 +84,35 @@ const EXPIRED_BADGE = {
   border: "border-gray-300 dark:border-gray-600",
 };
 
-function StatusBadges({ status, expired }) {
+function StatusBadges({ status, expired, typeOffre }) {
   const config = STATUS_CONFIG[status] || STATUS_CONFIG.EN_ATTENTE;
   const Icon = config.icon;
+  const isStage = typeOffre === "STAGE";
   return (
     <div className="flex flex-wrap items-center justify-end gap-2">
-      <span className={`inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1 rounded-full border ${config.bg} ${config.text} ${config.border}`}>
+      {/* Badge type offre */}
+      {isStage ? (
+        <span className="inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-300 border border-blue-200 dark:border-blue-700">
+          <GraduationCap size={11} />
+          Stage
+        </span>
+      ) : (
+        <span className="inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-full bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 border border-gray-200 dark:border-gray-600">
+          <Briefcase size={11} />
+          Emploi
+        </span>
+      )}
+      {/* Badge statut */}
+      <span
+        className={`inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1 rounded-full border ${config.bg} ${config.text} ${config.border}`}
+      >
         <Icon size={13} />
         {config.label}
       </span>
       {expired && (
-        <span className={`inline-flex items-center text-xs font-semibold px-3 py-1 rounded-full border ${EXPIRED_BADGE.bg} ${EXPIRED_BADGE.text} ${EXPIRED_BADGE.border}`}>
+        <span
+          className={`inline-flex items-center text-xs font-semibold px-3 py-1 rounded-full border ${EXPIRED_BADGE.bg} ${EXPIRED_BADGE.text} ${EXPIRED_BADGE.border}`}
+        >
           {EXPIRED_BADGE.label}
         </span>
       )}
@@ -107,7 +120,6 @@ function StatusBadges({ status, expired }) {
   );
 }
 
-/* ================= TABS ================= */
 const STATUS_TABS = [
   { key: "EN_ATTENTE", label: "En attente" },
   { key: "VALIDEE", label: "Validées" },
@@ -116,13 +128,19 @@ const STATUS_TABS = [
   { key: "INACTIVE", label: "Inactives" },
 ];
 
-/* ================= PAGE ================= */
+const TYPE_TABS = [
+  { key: "all", label: "Tous", icon: null },
+  { key: "EMPLOI", label: "Recrutement", icon: Briefcase },
+  { key: "STAGE", label: "Stages", icon: GraduationCap },
+];
+
 export default function JobsPage() {
   const [jobs, setJobs] = useState([]);
   const [modalOpen, setModalOpen] = useState(false);
   const [editingJob, setEditingJob] = useState(null);
   const [users, setUsers] = useState([]);
   const [activeTab, setActiveTab] = useState("all");
+  const [typeTab, setTypeTab] = useState("all"); // all | EMPLOI | STAGE
   const [page, setPage] = useState(1);
   const pageSize = 6;
 
@@ -144,11 +162,11 @@ export default function JobsPage() {
   async function loadUsers() {
     try {
       const res = await getUsers();
-      const list = Array.isArray(res?.data) ? res.data
-        : Array.isArray(res?.data?.users) ? res.data.users
-          : Array.isArray(res?.data?.data) ? res.data.data
-            : Array.isArray(res?.data?.data?.users) ? res.data.data.users
-              : [];
+      const list = Array.isArray(res?.data)
+        ? res.data
+        : Array.isArray(res?.data?.users)
+        ? res.data.users
+        : [];
       setUsers(list);
     } catch {
       setUsers([]);
@@ -179,29 +197,39 @@ export default function JobsPage() {
       ...j,
       _normalizedStatus: getJobStatus(j),
       _expired: isExpired(j),
+      _typeOffre: j.typeOffre || "EMPLOI",
     }));
   }, [jobs]);
 
   const filteredJobs = useMemo(() => {
-    if (activeTab === "all") return normalizedJobs;
-    if (activeTab === "INACTIVE") return normalizedJobs.filter((j) => isInactive(j));
-    return normalizedJobs.filter((j) => j._normalizedStatus === activeTab);
-  }, [normalizedJobs, activeTab]);
+    let list = normalizedJobs;
+
+    // Filter by typeOffre
+    if (typeTab !== "all") {
+      list = list.filter((j) => j._typeOffre === typeTab);
+    }
+
+    // Filter by status
+    if (activeTab === "all") return list;
+    if (activeTab === "INACTIVE") return list.filter((j) => isExpired(j));
+    return list.filter((j) => j._normalizedStatus === activeTab);
+  }, [normalizedJobs, activeTab, typeTab]);
 
   const counts = useMemo(() => {
-    const c = {
-      all: normalizedJobs.length,
-      EN_ATTENTE: 0,
-      VALIDEE: 0,
-      CONFIRMEE: 0, // = Publiées
-      REJETEE: 0,
-      INACTIVE: 0
-    }; normalizedJobs.forEach((j) => {
+    const byType = typeTab === "all" ? normalizedJobs : normalizedJobs.filter((j) => j._typeOffre === typeTab);
+    const c = { all: byType.length, EN_ATTENTE: 0, VALIDEE: 0, CONFIRMEE: 0, REJETEE: 0, INACTIVE: 0 };
+    byType.forEach((j) => {
       if (c[j._normalizedStatus] !== undefined) c[j._normalizedStatus]++;
-      if (isInactive(j)) c.INACTIVE++;
+      if (isExpired(j)) c.INACTIVE++;
     });
     return c;
-  }, [normalizedJobs]);
+  }, [normalizedJobs, typeTab]);
+
+  const typeCounts = useMemo(() => ({
+    all: normalizedJobs.length,
+    EMPLOI: normalizedJobs.filter((j) => j._typeOffre === "EMPLOI").length,
+    STAGE: normalizedJobs.filter((j) => j._typeOffre === "STAGE").length,
+  }), [normalizedJobs]);
 
   const totalPages = Math.max(1, Math.ceil(filteredJobs.length / pageSize));
   const paginatedJobs = useMemo(() => {
@@ -210,9 +238,8 @@ export default function JobsPage() {
   }, [filteredJobs, page]);
 
   useEffect(() => { if (page > totalPages) setPage(totalPages || 1); }, [totalPages, page]);
-  useEffect(() => { setPage(1); }, [activeTab]);
+  useEffect(() => { setPage(1); }, [activeTab, typeTab]);
 
-  /* Color helpers */
   function colorMap(key, active) {
     return {
       EN_ATTENTE: active ? "bg-amber-500 text-white" : "text-amber-600 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-900/20",
@@ -256,33 +283,67 @@ export default function JobsPage() {
           </button>
         </div>
 
+        {/* TYPE TABS (Recrutement / Stage) */}
+        <div className="flex items-center gap-2 mb-4">
+          {TYPE_TABS.map((tab) => {
+            const active = typeTab === tab.key;
+            const Icon = tab.icon;
+            return (
+              <button
+                key={tab.key}
+                onClick={() => setTypeTab(tab.key)}
+                className={`inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold transition-all border-2 ${
+                  active
+                    ? tab.key === "STAGE"
+                      ? "bg-blue-500 border-blue-500 text-white"
+                      : "bg-[#6CB33F] border-[#6CB33F] text-white"
+                    : tab.key === "STAGE"
+                    ? "border-gray-200 dark:border-gray-700 text-blue-600 dark:text-blue-400 hover:border-blue-300 dark:hover:border-blue-600"
+                    : "border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:border-[#6CB33F] dark:hover:border-emerald-500"
+                }`}
+              >
+                {Icon && <Icon size={15} />}
+                {tab.label}
+                <span
+                  className={`text-xs px-1.5 py-0.5 rounded-full font-bold ${
+                    active
+                      ? "bg-white/25 text-white"
+                      : "bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400"
+                  }`}
+                >
+                  {typeCounts[tab.key]}
+                </span>
+              </button>
+            );
+          })}
+        </div>
 
-
-        {/* FILTER BAR — organisée */}
+        {/* STATUS FILTER BAR */}
         <div className="bg-white dark:bg-gray-900/60 border border-gray-200 dark:border-gray-700 rounded-2xl mb-8 overflow-hidden shadow-sm">
           <div className="flex items-center">
-            {/* Label */}
             <div className="px-5 py-3.5 border-r border-gray-100 dark:border-gray-700/60 shrink-0">
               <span className="text-xs font-bold uppercase tracking-widest text-gray-400 dark:text-gray-500 whitespace-nowrap">
                 Statut
               </span>
             </div>
-            {/* Buttons */}
             <div className="flex items-center gap-1 px-4 py-2.5 flex-wrap">
-              {/* Tous */}
               <button
                 type="button"
                 onClick={() => setActiveTab("all")}
-                className={`inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-sm font-bold transition-all duration-150 ${activeTab === "all"
-                  ? "bg-[#6CB33F] dark:bg-emerald-600 text-white"
-                  : "text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
-                  }`}
+                className={`inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-sm font-bold transition-all duration-150 ${
+                  activeTab === "all"
+                    ? "bg-[#6CB33F] dark:bg-emerald-600 text-white"
+                    : "text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
+                }`}
               >
                 Tous
-                <span className={`text-xs px-1.5 py-0.5 rounded-full font-bold ${activeTab === "all"
-                  ? "bg-white/25 text-white"
-                  : "bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400"
-                  }`}>
+                <span
+                  className={`text-xs px-1.5 py-0.5 rounded-full font-bold ${
+                    activeTab === "all"
+                      ? "bg-white/25 text-white"
+                      : "bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400"
+                  }`}
+                >
                   {counts.all}
                 </span>
               </button>
@@ -320,22 +381,23 @@ export default function JobsPage() {
                 key={job._id}
                 className={`bg-white dark:bg-gray-800 rounded-2xl shadow p-6 flex flex-col hover:shadow-lg transition-all duration-300 border ${cfg.cardBorder}`}
               >
-                {/* title + badges */}
                 <div className="flex items-start justify-between gap-3 mb-2">
                   <h3 className="text-xl font-semibold text-gray-800 dark:text-white">
                     {job.titre}
                   </h3>
-                  <StatusBadges status={status} expired={expired} />
+                  <StatusBadges
+                    status={status}
+                    expired={expired}
+                    typeOffre={job._typeOffre}
+                  />
                 </div>
 
-                {/* description */}
                 <p className="text-gray-600 dark:text-gray-300 text-sm mb-4 line-clamp-3 whitespace-pre-line">
                   {job.description || "—"}
                 </p>
 
                 <div className="border-t border-gray-100 dark:border-gray-700 my-4" />
 
-                {/* meta + button */}
                 <div className="mt-1 flex items-end justify-between gap-4">
                   <div className="text-sm text-gray-500 dark:text-gray-400 space-y-2">
                     {job.lieu && (
@@ -346,11 +408,11 @@ export default function JobsPage() {
                     )}
                     <div className="flex items-center gap-2">
                       <Calendar className="w-4 h-4 text-gray-400 dark:text-gray-500" />
-                      <span> Date de Création : {formatDate(job.createdAt)}</span>
+                      <span>Création : {formatDate(job.createdAt)}</span>
                     </div>
                     <div className="flex items-center gap-2">
                       <CalendarClock className="w-4 h-4 text-gray-400 dark:text-gray-500" />
-                      <span> Date de Clôture : {formatDate(job.dateCloture)}</span>
+                      <span>Clôture : {formatDate(job.dateCloture)}</span>
                     </div>
                   </div>
 
@@ -377,7 +439,7 @@ export default function JobsPage() {
           )}
         </div>
 
-        {/* Pagination */}
+        {/* PAGINATION */}
         {filteredJobs.length > 0 && (
           <div className="mt-10 flex items-center justify-between text-sm text-gray-500 dark:text-gray-400">
             <p>Total: {filteredJobs.length} offre(s) — Page {page} / {totalPages}</p>

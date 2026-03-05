@@ -568,9 +568,13 @@ export default function Navbar() {
                         <Link href="/recruiter/ResponsableMetier" className={`${dropdownItemBase} ${isActive("/recruiter/ResponsableMetier") ? dropdownActive : dropdownHover}`}>
                           Gestion des utilisateurs
                         </Link>
+                         <Link href="/employees" className={`${dropdownItemBase} ${isActive("/employees") ? dropdownActive : dropdownHover}`}>
+                         Gestion Employees
+                        </Link>
                         <Link href="/recruiter/calendar" className={`${dropdownItemBase} ${isActive("/recruiter/calendar") ? dropdownActive : dropdownHover}`}>
                           Mon Calendirer
                         </Link>
+                       
                       </div>
                     )}
                   </div>
@@ -673,6 +677,7 @@ export default function Navbar() {
                     </Link>
                     <Link href="/recruiter/roles" className="block px-5 py-3.5 rounded-xl text-gray-700 dark:text-gray-200 hover:bg-gray-100/70 dark:hover:bg-gray-800/60">Gestion des rôles</Link>
                     <Link href="/recruiter/ResponsableMetier" className="block px-5 py-3.5 rounded-xl text-gray-700 dark:text-gray-200 hover:bg-gray-100/70 dark:hover:bg-gray-800/60">Gestion des utilisateurs</Link>
+                     <Link href="/employees" className="block px-5 py-3.5 rounded-xl text-gray-700 dark:text-gray-200 hover:bg-gray-100/70 dark:hover:bg-gray-800/60">Gestion des Employees</Link>
                     <Link href="/recruiter/calendar" className="block px-5 py-3.5 rounded-xl text-gray-700 dark:text-gray-200 hover:bg-gray-100/70 dark:hover:bg-gray-800/60">Mon Calendirer</Link>
 
                   </>

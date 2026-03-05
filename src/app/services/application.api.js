@@ -1,73 +1,27 @@
-// src/app/services/application.api.js
+// =====================================================
+// FRONTEND: services/application.api.js
+// =====================================================
+import api from "./api"; // votre instance axios
 
-export const uploadCvToJob = async (jobId, file) => {
-  const form = new FormData();
-  form.append("cv", file);
+/** Candidature spontanée (FormData avec CV optionnel) */
+export const createSpontaneousApplication = (formData) =>
+  api.post("/applications/spontaneous", formData, {
+    headers: { "Content-Type": "multipart/form-data" },
+  });
 
-  const res = await fetch(
-    `http://localhost:5000/api/applications/${jobId}/cv`,
-    {
-      method: "POST",
-      body: form,
-    }
-  );
+/** Liste toutes les candidatures spontanées + stagiaires (recruiter) */
+export const getSpontaneousApplications = () =>
+  api.get("/applications/spontaneous");
 
-  const data = await res.json();
+/** Détail d'une candidature */
+export const getApplicationById = (id) =>
+  api.get(`/applications/${id}`);
 
-  if (!res.ok) {
-    throw new Error(data.message || "Upload échoué");
-  }
-
-  return data;
-};
-
-export const confirmCandidature = async (
-  candidatureId,
-  parsed,
-  manual,
-  personalInfoForm
-) => {
-  const res = await fetch(
-    `http://localhost:5000/api/applications/${candidatureId}/confirm`,
-    {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ parsed, manual, personalInfoForm }),
-    }
-  );
-
-  const data = await res.json();
-
-  if (!res.ok) {
-    // ✅ FIX: on attache status + data à l'erreur pour que StepManual
-    // puisse détecter le code ALREADY_SUBMITTED et afficher le bon message
-    const err = new Error(data.message || "Submit failed");
-    err.status = res.status;   // ← 409
-    err.data   = data;         // ← { code: "ALREADY_SUBMITTED", message: "..." }
-    throw err;
-  }
-
-  return data;
-};
-
-// ✅ update infos personnelles du candidat
-export const updatePersonalInfo = async (candidatureId, personalInfoForm) => {
-  const res = await fetch(
-    `http://localhost:5000/candidatures/${candidatureId}/personal-info`,
-    {
-      method: "PATCH",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(personalInfoForm),
-    }
-  );
-
-  const data = await res.json();
-
-  if (!res.ok) {
-    throw new Error(data.message || "Update personal info failed");
-  }
-
-  return data;
-};
+/** Mettre à jour le statut */
+export const updateApplicationStatus = (id, status) =>
+  api.put(`/applications/${id}/status`, { status });
+/** Mettre à jour le statut */
+export const confirmCandidature = (id, status) =>
+  api.put(`/applications/${id}/status`, { status });
+export const uploadCvToJob  = (id, status) =>
+  api.put(`/applications/${id}/status`, { status });
