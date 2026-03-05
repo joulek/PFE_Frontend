@@ -130,7 +130,9 @@ export default function StepManual({ parsedCV, cvFileUrl, onBack, onSubmit }) {
         level: safeStr(l?.niveau),
       })),
 
-      interests: safeArr(p.activites).map((x) => safeStr(x)),
+      // 🆕 Séparation en deux champs
+      activites: safeArr(p.activites).map((x) => safeStr(x)),
+      centres_interet: safeArr(p.centres_interet || []).map((x) => safeStr(x)),
     };
   }, [parsedCV]);
 
@@ -140,8 +142,29 @@ export default function StepManual({ parsedCV, cvFileUrl, onBack, onSubmit }) {
   const [loadingSubmit, setLoadingSubmit] = useState(false);
   const [successMsg, setSuccessMsg] = useState("");
   const [errorMsg, setErrorMsg] = useState("");
+  const [validationErrors, setValidationErrors] = useState({}); // 🆕 Pour les validations
 
   const [newSkill, setNewSkill] = useState("");
+
+  /* =======================
+     VALIDATIONS OBLIGATOIRES
+  ======================= */
+  const validateRequired = () => {
+    const errors = {};
+    
+    if (!safeStr(form.personal_info.address).trim()) {
+      errors.address = "Adresse requise";
+    }
+    if (!safeStr(form.personal_info.date_naissance).trim()) {
+      errors.date_naissance = "Date de naissance requise";
+    }
+    if (!safeStr(form.personal_info.lieu_naissance).trim()) {
+      errors.lieu_naissance = "Lieu de naissance requis";
+    }
+    
+    setValidationErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
 
   /* =======================
      CRUD FUNCTIONS
@@ -298,6 +321,12 @@ export default function StepManual({ parsedCV, cvFileUrl, onBack, onSubmit }) {
      SUBMIT FINAL
   ======================= */
   async function handleSubmitFinal() {
+    // 🆕 Validation des champs obligatoires
+    if (!validateRequired()) {
+      setErrorMsg("❌ Veuillez remplir tous les champs obligatoires (marqués avec *)");
+      return;
+    }
+
     const payload = {
       nom: safeStr(form.personal_info.full_name),
       email: cleanEmail(safeStr(form.personal_info.email)),
@@ -354,7 +383,11 @@ export default function StepManual({ parsedCV, cvFileUrl, onBack, onSubmit }) {
         niveau: safeStr(l.level),
       })),
 
-      activites: safeArr(form.interests),
+      // 🆕 Fusionner les deux champs d'activités et centres d'intérêt
+      activites: [
+        ...safeArr(form.activites),
+        ...safeArr(form.centres_interet),
+      ],
     };
 
     try {
@@ -438,51 +471,63 @@ export default function StepManual({ parsedCV, cvFileUrl, onBack, onSubmit }) {
             />
           </div>
 
+          {/* 🆕 CHAMP OBLIGATOIRE */}
           <InputField
             label="Adresse actuelle"
             placeholder="123 Rue de la République, 75001 Paris"
             value={form.personal_info.address}
             dataCy="address"
-            onChange={(v) =>
+            required
+            error={validationErrors.address}
+            onChange={(v) => {
               setForm((prev) => ({
                 ...prev,
                 personal_info: { ...prev.personal_info, address: v },
-              }))
-            }
+              }));
+              if (validationErrors.address) {
+                setValidationErrors((prev) => ({ ...prev, address: "" }));
+              }
+            }}
           />
 
+          {/* 🆕 DEUX CHAMPS OBLIGATOIRES */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <InputField
-              label="Date de naissance"
+              label="Date de naissance "
               placeholder="JJ/MM/AAAA"
               value={form.personal_info.date_naissance}
               dataCy="date-naissance"
-              onChange={(v) =>
+              required
+              error={validationErrors.date_naissance}
+              onChange={(v) => {
                 setForm((prev) => ({
                   ...prev,
                   personal_info: { ...prev.personal_info, date_naissance: v },
-                }))
-              }
+                }));
+                if (validationErrors.date_naissance) {
+                  setValidationErrors((prev) => ({ ...prev, date_naissance: "" }));
+                }
+              }}
             />
 
             <InputField
-              label="Lieu de naissance"
+              label="Lieu de naissance "
               placeholder="Ex : Tunis"
               value={form.personal_info.lieu_naissance}
               dataCy="lieu-naissance"
-              onChange={(v) =>
+              required
+              error={validationErrors.lieu_naissance}
+              onChange={(v) => {
                 setForm((prev) => ({
                   ...prev,
                   personal_info: { ...prev.personal_info, lieu_naissance: v },
-                }))
-              }
+                }));
+                if (validationErrors.lieu_naissance) {
+                  setValidationErrors((prev) => ({ ...prev, lieu_naissance: "" }));
+                }
+              }}
             />
           </div>
-
-
-
-
-
 
           <InputField
             label="Poste actuel"
@@ -1022,38 +1067,73 @@ export default function StepManual({ parsedCV, cvFileUrl, onBack, onSubmit }) {
       ),
     },
 
+    // 🆕 SECTION DIVISÉE EN 2 CHAMPS
     {
       key: "interests",
-      title: "Centres d’intérêt",
+      title: "Centres d'intérêt & Activités",
       rightAction: null,
       render: () => (
-        <div className="space-y-4">
-          <p className="text-sm font-semibold text-gray-700 dark:text-gray-300">
-            Activités / Intérêts (une ligne = un intérêt)
-          </p>
+        <div className="space-y-6">
+          {/* CHAMP 1: ACTIVITÉS / VIE ASSOCIATIVE */}
+          <div className="space-y-3">
+            <p className="text-sm font-semibold text-gray-700 dark:text-gray-300">
+              Activités / Vie associative (une ligne = une activité)
+            </p>
+            <textarea
+              data-cy="activites"
+              className="
+                w-full min-h-[140px]
+                px-5 py-3 sm:px-6 sm:py-4
+                border border-gray-200 dark:border-gray-600 rounded-2xl sm:rounded-3xl bg-white dark:bg-gray-800
+                focus:ring-2 focus:ring-green-500 dark:focus:ring-emerald-500 focus:border-green-500 dark:focus:border-emerald-500 outline-none transition
+                placeholder:text-gray-400 dark:placeholder:text-gray-500
+                text-gray-900 dark:text-gray-100
+              "
+              placeholder={`Ex :\nBénévolat\nClub de programmation\nHackathons`}
+              value={safeArr(form.activites).join("\n")}
+              onChange={(e) =>
+                setForm((prev) => ({
+                  ...prev,
+                  activites: e.target.value
+                    .split("\n")
+                    .map((x) => x.trim())
+                    .filter(Boolean),
+                }))
+              }
+            />
+          </div>
 
-          <textarea
-            data-cy="interests"
-            className="
-              w-full min-h-[160px]
-              px-5 py-3 sm:px-6 sm:py-4
-              border border-gray-200 dark:border-gray-600 rounded-2xl sm:rounded-3xl bg-white dark:bg-gray-800
-              focus:ring-2 focus:ring-green-500 dark:focus:ring-emerald-500 focus:border-green-500 dark:focus:border-emerald-500 outline-none transition
-              placeholder:text-gray-400 dark:placeholder:text-gray-500
-              text-gray-900 dark:text-gray-100
-            "
-            placeholder={`Ex :\nSport\nLecture\nHackathons`}
-            value={safeArr(form.interests).join("\n")}
-            onChange={(e) =>
-              setForm((prev) => ({
-                ...prev,
-                interests: e.target.value
-                  .split("\n")
-                  .map((x) => x.trim())
-                  .filter(Boolean),
-              }))
-            }
-          />
+          {/* LIGNE DE SÉPARATION */}
+          <div className="h-px bg-gray-200 dark:bg-gray-700" />
+
+          {/* CHAMP 2: CENTRES D'INTÉRÊT */}
+          <div className="space-y-3">
+            <p className="text-sm font-semibold text-gray-700 dark:text-gray-300">
+              Centres d'intérêt (une ligne = un centre d'intérêt)
+            </p>
+            <textarea
+              data-cy="centres-interet"
+              className="
+                w-full min-h-[140px]
+                px-5 py-3 sm:px-6 sm:py-4
+                border border-gray-200 dark:border-gray-600 rounded-2xl sm:rounded-3xl bg-white dark:bg-gray-800
+                focus:ring-2 focus:ring-green-500 dark:focus:ring-emerald-500 focus:border-green-500 dark:focus:border-emerald-500 outline-none transition
+                placeholder:text-gray-400 dark:placeholder:text-gray-500
+                text-gray-900 dark:text-gray-100
+              "
+              placeholder={`Ex :\nSport\nLecture\nVoyages`}
+              value={safeArr(form.centres_interet).join("\n")}
+              onChange={(e) =>
+                setForm((prev) => ({
+                  ...prev,
+                  centres_interet: e.target.value
+                    .split("\n")
+                    .map((x) => x.trim())
+                    .filter(Boolean),
+                }))
+              }
+            />
+          </div>
         </div>
       ),
     },
@@ -1067,7 +1147,7 @@ export default function StepManual({ parsedCV, cvFileUrl, onBack, onSubmit }) {
   const goToTop = () => {
     window.scrollTo({
       top: 0,
-      behavior: "smooth", // animation fluide
+      behavior: "smooth",
     });
   };
 
@@ -1122,6 +1202,7 @@ export default function StepManual({ parsedCV, cvFileUrl, onBack, onSubmit }) {
                 if (sectionIndex === 0) onBack?.();
                 else {
                   setSectionIndex((p) => Math.max(0, p - 1));
+                  setErrorMsg(""); // 🆕 Effacer les erreurs au retour
                   goToTop();
                 }
               }}
@@ -1138,15 +1219,22 @@ export default function StepManual({ parsedCV, cvFileUrl, onBack, onSubmit }) {
             {!isLast ? (
               <button
                 onClick={() => {
+                  // 🆕 Validation AVANT de changer de section
+                  if (!validateRequired()) {
+                    setErrorMsg("❌ Veuillez remplir tous les champs obligatoires (marqués avec *)");
+                    return; // Bloquer le changement de section
+                  }
+                  // Si validation OK, continuer
+                  setErrorMsg(""); // Effacer les erreurs
                   setSectionIndex((p) => Math.min(sections.length - 1, p + 1));
                   goToTop();
                 }}
                 className="
-    w-full sm:w-auto
-    px-6 sm:px-10 py-3 sm:py-4
-    rounded-full bg-green-600 dark:bg-emerald-600 text-white font-semibold
-    hover:bg-green-700 dark:hover:bg-emerald-500 transition shadow-lg
-  "
+                  w-full sm:w-auto
+                  px-6 sm:px-10 py-3 sm:py-4
+                  rounded-full bg-green-600 dark:bg-emerald-600 text-white font-semibold
+                  hover:bg-green-700 dark:hover:bg-emerald-500 transition shadow-lg
+                "
               >
                 Continuer →
               </button>
@@ -1203,24 +1291,30 @@ function Card({ title, rightAction, children, className = "" }) {
   );
 }
 
-function InputField({ label, value, onChange, placeholder, dataCy }) {
+// 🆕 COMPOSANT MODIFIÉ POUR AFFICHER LES ERREURS
+function InputField({ label, value, onChange, placeholder, dataCy, required, error }) {
   return (
     <div className="space-y-2">
-      <p className="text-sm font-semibold text-gray-700 dark:text-gray-300">{label}</p>
+      <p className="text-sm font-semibold text-gray-700 dark:text-gray-300">
+        {label}
+        {required && <span className="text-red-500 ml-1">*</span>}
+      </p>
       <input
         data-cy={dataCy}
-        className="
+        className={`
           w-full
           px-5 py-3 sm:px-6 sm:py-4
-          border border-gray-200 dark:border-gray-600 rounded-full bg-white dark:bg-gray-800
+          border rounded-full bg-white dark:bg-gray-800
           focus:ring-2 focus:ring-green-500 dark:focus:ring-emerald-500 focus:border-green-500 dark:focus:border-emerald-500 outline-none transition
           placeholder:text-gray-400 dark:placeholder:text-gray-500
           text-gray-900 dark:text-gray-100
-        "
+          ${error ? "border-red-500" : "border-gray-200 dark:border-gray-600"}
+        `}
         value={value}
         placeholder={placeholder}
         onChange={(e) => onChange(e.target.value)}
       />
+      {error && <p className="text-xs text-red-500 font-semibold">{error}</p>}
     </div>
   );
 }
