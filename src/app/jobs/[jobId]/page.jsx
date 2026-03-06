@@ -44,8 +44,16 @@ function prettyContrat(v) {
 function prettySexe(v) {
   const s = String(v || "").toUpperCase().trim();
   if (!s) return "";
-  const map = { H: "H", F: "F", HF: "HF" };
+  const map = { H: "H", F: "F", HF: "H/F" };
   return map[s] || v;
+}
+
+// ✅ NOUVEAU - Formatter nombrePostes
+function getFormattedNombrePostes(n) {
+  if (!n) return null;
+  const num = Number(n);
+  if (Number.isNaN(num) || num < 1) return null;
+  return num === 1 ? "1 poste" : `${num} postes`;
 }
 
 function DetailCard({ icon: Icon, label, value, isStage }) {
@@ -123,6 +131,12 @@ export default function JobDetailsPage() {
         label: "Genre",
         value: prettySexe(job.sexe),
       },
+      // ✅ NOUVEAU - Ajouter nombrePostes
+      getFormattedNombrePostes(job?.nombrePostes) && {
+        icon: Users,
+        label: "Postes disponibles",
+        value: getFormattedNombrePostes(job?.nombrePostes),
+      },
     ].filter(Boolean);
   }, [job]);
 
@@ -150,9 +164,16 @@ export default function JobDetailsPage() {
 
         <div className="bg-white dark:bg-gray-800 rounded-2xl shadow p-8">
 
-          {/* BADGE TYPE */}
-          <div className="mb-4">
-            <span className={`inline-flex items-center gap-1.5 text-xs font-bold px-3 py-1 rounded-full ${
+          {/* ✅ TITRE + BADGE TYPE (MÊME LIGNE) */}
+          <div className="flex items-start justify-between gap-4 mb-3">
+            {hasValue(job?.titre) && (
+              <h1 className="text-3xl font-extrabold text-gray-900 dark:text-white flex-1">
+                {job.titre}
+              </h1>
+            )}
+            
+            {/* ✅ BADGE TYPE - À DROITE */}
+            <span className={`inline-flex items-center gap-1.5 text-xs font-bold px-3 py-2 rounded-full flex-shrink-0 ${
               isStage
                 ? "bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-300 border border-blue-200 dark:border-blue-800"
                 : "bg-[#E9F5E3] dark:bg-emerald-950/40 text-[#4E8F2F] dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800"
@@ -161,13 +182,6 @@ export default function JobDetailsPage() {
               {isStage ? "Stage" : "Emploi"}
             </span>
           </div>
-
-          {/* TITRE */}
-          {hasValue(job?.titre) && (
-            <h1 className="text-3xl font-extrabold text-gray-900 dark:text-white mb-3">
-              {job.titre}
-            </h1>
-          )}
 
           {/* LIEU + DATE */}
           {(hasValue(job?.lieu) || hasValue(cloture)) && (

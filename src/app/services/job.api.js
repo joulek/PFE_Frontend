@@ -1,82 +1,147 @@
-import axios from "axios";
+import api from "./api";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL ;
+/* =========================
+   JOBS PUBLIC
+========================= */
 
-function authHeaders() {
-  const token =
-    typeof window !== "undefined" ? localStorage.getItem("token") : null;
-  return token ? { Authorization: `Bearer ${token}` } : {};
+export function getJobs() {
+  return api.get("/jobs");
 }
 
-export function getJobs() { return axios.get(`${API_URL}/jobs`); }
-export function getActiveJobs() { return axios.get(`${API_URL}/jobs/active`); }
-export function getJobById(id) { return axios.get(`${API_URL}/jobs/${id}`); }
-export function createJob(data) { return axios.post(`${API_URL}/jobs`, data, { headers: authHeaders() }); }
-export function getMyOffers() { return axios.get(`${API_URL}/jobs/my-offers`, { headers: authHeaders() }); }
-export function updateMyJob(id, data) { return axios.put(`${API_URL}/jobs/my-offers/${id}`, data, { headers: authHeaders() }); }
-export function getAllJobs() { return axios.get(`${API_URL}/jobs/all`, { headers: authHeaders() }); }
-export function getPendingJobs() { return axios.get(`${API_URL}/jobs/pending`, { headers: authHeaders() }); }
-export function getJobCount() { return axios.get(`${API_URL}/jobs/count`, { headers: authHeaders() }); }
-export function getJobsWithCandidatureCount() { return axios.get(`${API_URL}/jobs/with-candidatures-count`, { headers: authHeaders() }); }
-export function updateJob(id, data) { return axios.put(`${API_URL}/jobs/${id}`, data, { headers: authHeaders() }); }
-export function deleteJob(id) { return axios.delete(`${API_URL}/jobs/${id}`, { headers: authHeaders() }); }
-export function confirmJob(id) { return axios.put(`${API_URL}/jobs/${id}/confirm`, {}, { headers: authHeaders() }); }
-export function rejectJob(id, reason) { return axios.put(`${API_URL}/jobs/${id}/reject`, reason ? { reason } : {}, { headers: authHeaders() }); }
-export function checkJobClosed(id) { return axios.get(`${API_URL}/jobs/${id}/is-closed`); }
-export function getJobsByUser(userId) { return axios.get(`${API_URL}/jobs/user/${userId}`, { headers: authHeaders() }); }
-export function reactivateJob(id, newDateCloture) { return axios.put(`${API_URL}/jobs/${id}/reactivate`, { newDateCloture }, { headers: authHeaders() }); }
-
-// LINKEDIN
-export function publishJobOnLinkedIn(jobId, formData) {
-  return axios.post(
-    `${API_URL}/jobs/${jobId}/publish-linkedin`,
-    formData,
-    {
-      headers: {
-        ...authHeaders(),
-        "Content-Type": "multipart/form-data",
-      },
-    }
-  );
+export function getActiveJobs() {
+  return api.get("/jobs/active");
 }
 
-export function checkLinkedInStatus() {
-  return axios.get(`${API_URL}/linkedin/status`, { headers: authHeaders() });
-}
-// ✅ FIX: passer returnJobId pour que le callback redirige vers la bonne page
-export function getLinkedInAuthUrl(returnJobId = null) {
-  const params = returnJobId ? `?returnJobId=${returnJobId}` : "";
-  return axios.get(`${API_URL}/linkedin/auth-url${params}`, { headers: authHeaders() });
-}
-// ✅ CRUCIAL: Lier le token LinkedIn au user connecté après OAuth callback
-export function confirmLinkedInToken(memberId) {
-  return axios.post(`${API_URL}/linkedin/confirm-token`, { memberId }, { headers: authHeaders() });
+export function getJobById(id) {
+  return api.get(`/jobs/${id}`);
 }
 
-/**
- * ✅ NOUVEAU: Envoyer le code OAuth reçu de LinkedIn au backend pour échange
- * POST /linkedin/exchange-code
- * Body: { code, state }
- * Retourne: { connected: true, memberId, returnJobId }
- */
-export function exchangeLinkedInCode(code, state) {
-  return axios.post(
-    `${API_URL}/linkedin/exchange-code`,
-    { code, state },
-    { headers: authHeaders() }
-  );
+/* =========================
+   JOBS AUTH
+========================= */
+
+export function createJob(data) {
+  return api.post("/jobs", data);
+}
+
+export function getMyOffers() {
+  return api.get("/jobs/my-offers");
+}
+
+export function updateMyJob(id, data) {
+  return api.put(`/jobs/my-offers/${id}`, data);
 }
 
 export function getMyAssignedJobs() {
-  return axios.get(`${API_URL}/jobs/my-assigned`, { headers: authHeaders() });
-}
-
-
-export function validateJob(id) {
-  // step 1: EN_ATTENTE -> VALIDEE
-  return axios.put(`${API_URL}/jobs/${id}/validate`, {}, { headers: authHeaders() });
+  return api.get("/jobs/my-assigned");
 }
 
 export function getMyJobsWithoutQuiz() {
-  return axios.get(`${API_URL}/jobs/without-quiz`, { headers: authHeaders() });
+  return api.get("/jobs/without-quiz");
+}
+
+/* =========================
+   ADMIN JOBS
+========================= */
+
+export function getAllJobs() {
+  return api.get("/jobs/all");
+}
+
+export function getPendingJobs() {
+  return api.get("/jobs/pending");
+}
+
+export function getJobCount() {
+  return api.get("/jobs/count");
+}
+
+export function getJobsWithCandidatureCount() {
+  return api.get("/jobs/with-candidatures-count");
+}
+
+export function getJobsByUser(userId) {
+  return api.get(`/jobs/user/${userId}`);
+}
+
+export function updateJob(id, data) {
+  return api.put(`/jobs/${id}`, data);
+}
+
+export function deleteJob(id) {
+  return api.delete(`/jobs/${id}`);
+}
+
+/* =========================
+   JOB STATUS
+========================= */
+
+export function confirmJob(id) {
+  return api.put(`/jobs/${id}/confirm`, {});
+}
+
+export function rejectJob(id, reason) {
+  return api.put(`/jobs/${id}/reject`, reason ? { reason } : {});
+}
+
+export function validateJob(id) {
+  return api.put(`/jobs/${id}/validate`, {});
+}
+
+export function reactivateJob(id, newDateCloture) {
+  return api.put(`/jobs/${id}/reactivate`, { newDateCloture });
+}
+
+export function checkJobClosed(id) {
+  return api.get(`/jobs/${id}/is-closed`);
+}
+
+/* =========================
+   LINKEDIN
+========================= */
+
+export function publishJobOnLinkedIn(jobId, formData) {
+  return api.post(`/jobs/${jobId}/publish-linkedin`, formData, {
+    headers: {
+      "Content-Type": "multipart/form-data",
+    },
+  });
+}
+
+export function checkLinkedInStatus() {
+  return api.get("/linkedin/status");
+}
+
+export function getLinkedInAuthUrl(returnJobId = null) {
+  const params = returnJobId ? `?returnJobId=${returnJobId}` : "";
+  return api.get(`/linkedin/auth-url${params}`);
+}
+
+export function confirmLinkedInToken(memberId) {
+  return api.post("/linkedin/confirm-token", { memberId });
+}
+
+export function exchangeLinkedInCode(code, state) {
+  return api.post("/linkedin/exchange-code", { code, state });
+}
+
+/* =========================
+   RECRUITMENT TRACKING
+========================= */
+
+export function getRecruitmentTracking() {
+  return api.get("/jobs/tracking");
+}
+
+export function getRecruitmentTrackingPaginated(page = 1, limit = 20) {
+  return api.get(`/jobs/tracking/paginated?page=${page}&limit=${limit}`);
+}
+
+export function getRecruitmentTrackingFiltered(filters = {}) {
+  const params = new URLSearchParams(filters).toString();
+  return api.get(`/jobs/tracking/filtered?${params}`);
+}
+
+export function getRecruitmentStats() {
+  return api.get("/jobs/tracking/stats");
 }

@@ -88,6 +88,7 @@ function StatusBadges({ status, expired, typeOffre }) {
   const config = STATUS_CONFIG[status] || STATUS_CONFIG.EN_ATTENTE;
   const Icon = config.icon;
   const isStage = typeOffre === "STAGE";
+
   return (
     <div className="flex flex-wrap items-center justify-end gap-2">
       {/* Badge type offre */}
@@ -102,6 +103,7 @@ function StatusBadges({ status, expired, typeOffre }) {
           Emploi
         </span>
       )}
+
       {/* Badge statut */}
       <span
         className={`inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1 rounded-full border ${config.bg} ${config.text} ${config.border}`}
@@ -109,6 +111,8 @@ function StatusBadges({ status, expired, typeOffre }) {
         <Icon size={13} />
         {config.label}
       </span>
+
+      {/* Badge expirée */}
       {expired && (
         <span
           className={`inline-flex items-center text-xs font-semibold px-3 py-1 rounded-full border ${EXPIRED_BADGE.bg} ${EXPIRED_BADGE.text} ${EXPIRED_BADGE.border}`}
@@ -185,6 +189,7 @@ export default function JobsPage() {
     setModalOpen(false);
     loadJobs();
   }
+
   async function handleUpdate(data) {
     await updateJob(editingJob._id, data);
     setEditingJob(null);
@@ -216,20 +221,36 @@ export default function JobsPage() {
   }, [normalizedJobs, activeTab, typeTab]);
 
   const counts = useMemo(() => {
-    const byType = typeTab === "all" ? normalizedJobs : normalizedJobs.filter((j) => j._typeOffre === typeTab);
-    const c = { all: byType.length, EN_ATTENTE: 0, VALIDEE: 0, CONFIRMEE: 0, REJETEE: 0, INACTIVE: 0 };
+    const byType =
+      typeTab === "all"
+        ? normalizedJobs
+        : normalizedJobs.filter((j) => j._typeOffre === typeTab);
+
+    const c = {
+      all: byType.length,
+      EN_ATTENTE: 0,
+      VALIDEE: 0,
+      CONFIRMEE: 0,
+      REJETEE: 0,
+      INACTIVE: 0,
+    };
+
     byType.forEach((j) => {
       if (c[j._normalizedStatus] !== undefined) c[j._normalizedStatus]++;
       if (isExpired(j)) c.INACTIVE++;
     });
+
     return c;
   }, [normalizedJobs, typeTab]);
 
-  const typeCounts = useMemo(() => ({
-    all: normalizedJobs.length,
-    EMPLOI: normalizedJobs.filter((j) => j._typeOffre === "EMPLOI").length,
-    STAGE: normalizedJobs.filter((j) => j._typeOffre === "STAGE").length,
-  }), [normalizedJobs]);
+  const typeCounts = useMemo(
+    () => ({
+      all: normalizedJobs.length,
+      EMPLOI: normalizedJobs.filter((j) => j._typeOffre === "EMPLOI").length,
+      STAGE: normalizedJobs.filter((j) => j._typeOffre === "STAGE").length,
+    }),
+    [normalizedJobs]
+  );
 
   const totalPages = Math.max(1, Math.ceil(filteredJobs.length / pageSize));
   const paginatedJobs = useMemo(() => {
@@ -237,95 +258,128 @@ export default function JobsPage() {
     return filteredJobs.slice(start, start + pageSize);
   }, [filteredJobs, page]);
 
-  useEffect(() => { if (page > totalPages) setPage(totalPages || 1); }, [totalPages, page]);
-  useEffect(() => { setPage(1); }, [activeTab, typeTab]);
+  useEffect(() => {
+    if (page > totalPages) setPage(totalPages || 1);
+  }, [totalPages, page]);
+
+  useEffect(() => {
+    setPage(1);
+  }, [activeTab, typeTab]);
 
   function colorMap(key, active) {
     return {
-      EN_ATTENTE: active ? "bg-amber-500 text-white" : "text-amber-600 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-900/20",
-      VALIDEE: active ? "bg-blue-500 text-white" : "text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20",
-      CONFIRMEE: active ? "bg-green-600 text-white" : "text-green-700 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/20",
-      REJETEE: active ? "bg-red-500 text-white" : "text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20",
-      INACTIVE: active ? "bg-gray-600 text-white" : "text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800",
+      EN_ATTENTE: active
+        ? "bg-amber-500 text-white"
+        : "text-amber-600 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-900/20",
+      VALIDEE: active
+        ? "bg-blue-500 text-white"
+        : "text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20",
+      CONFIRMEE: active
+        ? "bg-green-600 text-white"
+        : "text-green-700 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/20",
+      REJETEE: active
+        ? "bg-red-500 text-white"
+        : "text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20",
+      INACTIVE: active
+        ? "bg-gray-600 text-white"
+        : "text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800",
     }[key];
   }
 
   function badgeMap(key, active) {
     return {
-      EN_ATTENTE: active ? "bg-white/25 text-white" : "bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300",
-      VALIDEE: active ? "bg-white/25 text-white" : "bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300",
-      CONFIRMEE: active ? "bg-white/25 text-white" : "bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300",
-      REJETEE: active ? "bg-white/25 text-white" : "bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300",
-      INACTIVE: active ? "bg-white/25 text-white" : "bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400",
+      EN_ATTENTE: active
+        ? "bg-white/25 text-white"
+        : "bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300",
+      VALIDEE: active
+        ? "bg-white/25 text-white"
+        : "bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300",
+      CONFIRMEE: active
+        ? "bg-white/25 text-white"
+        : "bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300",
+      REJETEE: active
+        ? "bg-white/25 text-white"
+        : "bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300",
+      INACTIVE: active
+        ? "bg-white/25 text-white"
+        : "bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400",
     }[key];
   }
 
   return (
     <div className="min-h-screen bg-[#F0FAF0] dark:bg-gray-950 transition-colors duration-300">
-      <div className="max-w-6xl mx-auto px-6 pt-10 pb-16">
-
-        {/* HEADER */}
-        <div className="flex justify-between items-center mb-8">
-          <div>
-            <h1 className="text-4xl font-extrabold text-gray-900 dark:text-white">
+      {/* ✅ responsive padding */}
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 pt-8 sm:pt-10 pb-14 sm:pb-16">
+        {/* ✅ HEADER responsive */}
+        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-6 sm:mb-8">
+          <div className="min-w-0">
+            <h1 className="text-3xl sm:text-4xl font-extrabold text-gray-900 dark:text-white leading-tight">
               Offres d&apos;emploi
             </h1>
             <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
               Gérez toutes les offres et confirmez celles en attente
             </p>
           </div>
+
           <button
-            onClick={() => { setEditingJob(null); setModalOpen(true); }}
-            className="bg-[#6CB33F] hover:bg-[#4E8F2F] dark:bg-emerald-600 dark:hover:bg-emerald-500
+            onClick={() => {
+              setEditingJob(null);
+              setModalOpen(true);
+            }}
+            className="w-full sm:w-auto bg-[#6CB33F] hover:bg-[#4E8F2F] dark:bg-emerald-600 dark:hover:bg-emerald-500
                        text-white px-6 py-3 rounded-xl font-semibold shadow transition-colors"
           >
             Nouvelle offre
           </button>
         </div>
 
-        {/* TYPE TABS (Recrutement / Stage) */}
-        <div className="flex items-center gap-2 mb-4">
-          {TYPE_TABS.map((tab) => {
-            const active = typeTab === tab.key;
-            const Icon = tab.icon;
-            return (
-              <button
-                key={tab.key}
-                onClick={() => setTypeTab(tab.key)}
-                className={`inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold transition-all border-2 ${
-                  active
-                    ? tab.key === "STAGE"
-                      ? "bg-blue-500 border-blue-500 text-white"
-                      : "bg-[#6CB33F] border-[#6CB33F] text-white"
-                    : tab.key === "STAGE"
-                    ? "border-gray-200 dark:border-gray-700 text-blue-600 dark:text-blue-400 hover:border-blue-300 dark:hover:border-blue-600"
-                    : "border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:border-[#6CB33F] dark:hover:border-emerald-500"
-                }`}
-              >
-                {Icon && <Icon size={15} />}
-                {tab.label}
-                <span
-                  className={`text-xs px-1.5 py-0.5 rounded-full font-bold ${
+        {/* ✅ TYPE TABS responsive (scroll horizontal mobile) */}
+        <div className="-mx-4 sm:mx-0 mb-4">
+          <div className="px-4 sm:px-0 flex items-center gap-2 overflow-x-auto whitespace-nowrap">
+            {TYPE_TABS.map((tab) => {
+              const active = typeTab === tab.key;
+              const Icon = tab.icon;
+
+              return (
+                <button
+                  key={tab.key}
+                  onClick={() => setTypeTab(tab.key)}
+                  className={`shrink-0 inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold transition-all border-2 ${
                     active
-                      ? "bg-white/25 text-white"
-                      : "bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400"
+                      ? tab.key === "STAGE"
+                        ? "bg-blue-500 border-blue-500 text-white"
+                        : "bg-[#6CB33F] border-[#6CB33F] text-white"
+                      : tab.key === "STAGE"
+                      ? "border-gray-200 dark:border-gray-700 text-blue-600 dark:text-blue-400 hover:border-blue-300 dark:hover:border-blue-600"
+                      : "border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:border-[#6CB33F] dark:hover:border-emerald-500"
                   }`}
                 >
-                  {typeCounts[tab.key]}
-                </span>
-              </button>
-            );
-          })}
+                  {Icon && <Icon size={15} />}
+                  {tab.label}
+                  <span
+                    className={`text-xs px-1.5 py-0.5 rounded-full font-bold ${
+                      active
+                        ? "bg-white/25 text-white"
+                        : "bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400"
+                    }`}
+                  >
+                    {typeCounts[tab.key]}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
         </div>
 
-        {/* STATUS FILTER BAR */}
-        <div className="bg-white dark:bg-gray-900/60 border border-gray-200 dark:border-gray-700 rounded-2xl mb-8 overflow-hidden shadow-sm">
-          <div className="flex items-center">
-            <div className="px-5 py-3.5 border-r border-gray-100 dark:border-gray-700/60 shrink-0">
+        {/* ✅ STATUS FILTER BAR responsive */}
+        <div className="bg-white dark:bg-gray-900/60 border border-gray-200 dark:border-gray-700 rounded-2xl mb-6 sm:mb-8 overflow-hidden shadow-sm">
+          <div className="flex flex-col sm:flex-row sm:items-center">
+            <div className="px-5 py-3.5 sm:border-r border-b sm:border-b-0 border-gray-100 dark:border-gray-700/60 shrink-0">
               <span className="text-xs font-bold uppercase tracking-widest text-gray-400 dark:text-gray-500 whitespace-nowrap">
                 Statut
               </span>
             </div>
+
             <div className="flex items-center gap-1 px-4 py-2.5 flex-wrap">
               <button
                 type="button"
@@ -348,7 +402,8 @@ export default function JobsPage() {
                 </span>
               </button>
 
-              <span className="mx-1 h-5 w-px bg-gray-200 dark:bg-gray-700" />
+              {/* separator hidden on mobile */}
+              <span className="hidden sm:inline mx-1 h-5 w-px bg-gray-200 dark:bg-gray-700" />
 
               {STATUS_TABS.map((tab) => {
                 const active = activeTab === tab.key;
@@ -356,10 +411,18 @@ export default function JobsPage() {
                   <button
                     key={tab.key}
                     onClick={() => setActiveTab(tab.key)}
-                    className={`inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-sm font-bold transition-all duration-150 ${colorMap(tab.key, active)}`}
+                    className={`inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-sm font-bold transition-all duration-150 ${colorMap(
+                      tab.key,
+                      active
+                    )}`}
                   >
                     {tab.label}
-                    <span className={`text-xs px-1.5 py-0.5 rounded-full font-bold ${badgeMap(tab.key, active)}`}>
+                    <span
+                      className={`text-xs px-1.5 py-0.5 rounded-full font-bold ${badgeMap(
+                        tab.key,
+                        active
+                      )}`}
+                    >
                       {counts[tab.key] || 0}
                     </span>
                   </button>
@@ -369,8 +432,8 @@ export default function JobsPage() {
           </div>
         </div>
 
-        {/* JOBS GRID */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {/* ✅ JOBS GRID (cards already responsive) */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-5 sm:gap-6">
           {paginatedJobs.map((job) => {
             const status = job._normalizedStatus;
             const expired = job._expired;
@@ -379,10 +442,11 @@ export default function JobsPage() {
             return (
               <div
                 key={job._id}
-                className={`bg-white dark:bg-gray-800 rounded-2xl shadow p-6 flex flex-col hover:shadow-lg transition-all duration-300 border ${cfg.cardBorder}`}
+                className={`bg-white dark:bg-gray-800 rounded-2xl shadow p-5 sm:p-6 flex flex-col hover:shadow-lg transition-all duration-300 border ${cfg.cardBorder}`}
               >
-                <div className="flex items-start justify-between gap-3 mb-2">
-                  <h3 className="text-xl font-semibold text-gray-800 dark:text-white">
+                {/* ✅ responsive header inside card */}
+                <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2 mb-2">
+                  <h3 className="text-lg sm:text-xl font-semibold text-gray-800 dark:text-white">
                     {job.titre}
                   </h3>
                   <StatusBadges
@@ -398,12 +462,13 @@ export default function JobsPage() {
 
                 <div className="border-t border-gray-100 dark:border-gray-700 my-4" />
 
-                <div className="mt-1 flex items-end justify-between gap-4">
+                {/* ✅ responsive footer inside card */}
+                <div className="mt-1 flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
                   <div className="text-sm text-gray-500 dark:text-gray-400 space-y-2">
                     {job.lieu && (
                       <div className="flex items-center gap-2">
                         <MapPin className="w-4 h-4 text-gray-400 dark:text-gray-500" />
-                        <span>{job.lieu}</span>
+                        <span className="break-words">{job.lieu}</span>
                       </div>
                     )}
                     <div className="flex items-center gap-2">
@@ -418,7 +483,7 @@ export default function JobsPage() {
 
                   <Link
                     href={`/recruiter/jobs/${job._id}`}
-                    className="h-10 px-6 rounded-full font-semibold text-sm
+                    className="h-11 sm:h-10 w-full sm:w-auto px-6 rounded-full font-semibold text-sm
                                inline-flex items-center justify-center shrink-0
                                bg-[#6CB33F] hover:bg-[#4E8F2F]
                                dark:bg-emerald-600 dark:hover:bg-emerald-500
@@ -432,18 +497,28 @@ export default function JobsPage() {
           })}
 
           {filteredJobs.length === 0 && (
-            <div className="col-span-full bg-white dark:bg-gray-800 border-2 border-dashed border-[#6CB33F] dark:border-emerald-600 rounded-2xl p-12 text-center">
+            <div className="col-span-full bg-white dark:bg-gray-800 border-2 border-dashed border-[#6CB33F] dark:border-emerald-600 rounded-2xl p-10 sm:p-12 text-center">
               <Briefcase className="mx-auto w-10 h-10 text-gray-400 dark:text-gray-500" />
-              <p className="mt-4 text-gray-600 dark:text-gray-300">Aucune offre dans cette catégorie.</p>
+              <p className="mt-4 text-gray-600 dark:text-gray-300">
+                Aucune offre dans cette catégorie.
+              </p>
             </div>
           )}
         </div>
 
-        {/* PAGINATION */}
+        {/* ✅ PAGINATION responsive */}
         {filteredJobs.length > 0 && (
-          <div className="mt-10 flex items-center justify-between text-sm text-gray-500 dark:text-gray-400">
-            <p>Total: {filteredJobs.length} offre(s) — Page {page} / {totalPages}</p>
-            <Pagination currentPage={page} totalPages={totalPages} onPageChange={setPage} />
+          <div className="mt-8 sm:mt-10 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 text-sm text-gray-500 dark:text-gray-400">
+            <p>
+              Total: {filteredJobs.length} offre(s) — Page {page} / {totalPages}
+            </p>
+            <div className="w-full sm:w-auto">
+              <Pagination
+                currentPage={page}
+                totalPages={totalPages}
+                onPageChange={setPage}
+              />
+            </div>
           </div>
         )}
       </div>

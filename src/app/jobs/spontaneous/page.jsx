@@ -108,14 +108,7 @@ export default function SpontaneousApplicationPage() {
     <div className="min-h-screen bg-[#F0FAF0] dark:bg-gray-950 transition-colors">
       <div className="max-w-2xl mx-auto px-6 py-12">
         {/* BACK */}
-        <button
-          onClick={() => router.back()}
-          className="mb-8 flex items-center gap-2 text-sm text-gray-500 hover:text-gray-800 dark:text-gray-400 dark:hover:text-white transition-colors"
-        >
-          <ArrowLeft size={16} />
-          Retour
-        </button>
-
+      
         <div className="bg-white dark:bg-gray-800 rounded-3xl shadow-lg p-8">
           {/* HEADER */}
           <div className="flex items-center gap-4 mb-8">

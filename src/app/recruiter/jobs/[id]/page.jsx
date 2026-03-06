@@ -110,6 +110,13 @@ function prettySexe(v) {
   return map[s] || v;
 }
 
+function getFormattedNombrePostes(n) {
+  if (!n) return null;
+  const num = Number(n);
+  if (Number.isNaN(num) || num < 1) return null;
+  return num === 1 ? "1 poste" : `${num} postes`;
+}
+
 /* ================= UI CONFIG ================= */
 const STATUS_UI = {
   EN_ATTENTE: {
@@ -485,7 +492,6 @@ export default function RecruiterJobDetailsPage() {
       setLiError(null);
       setLiSuccess(null);
 
-      // ✅ Construire texte enrichi
       let finalText = liText.trim();
 
       const extraDetails = [];
@@ -504,7 +510,6 @@ export default function RecruiterJobDetailsPage() {
         extraDetails.push(`👤 Sexe : ${prettySexe(job.sexe)}`);
       }
 
-      // Ajouter les détails seulement s'il y en a
       if (extraDetails.length > 0) {
         finalText += `\n\n📌 Détails supplémentaires\n`;
         finalText += extraDetails.join("\n");
@@ -569,7 +574,6 @@ export default function RecruiterJobDetailsPage() {
     );
   }
 
-  // ✅ Détails optionnels (n’affiche que si valeur)
   const detailsRows = [
     hasValue(job?.typeContrat) && {
       icon: FileText,
@@ -596,9 +600,13 @@ export default function RecruiterJobDetailsPage() {
       label: "Salaire",
       value: String(job.salaire),
     },
+    getFormattedNombrePostes(job?.nombrePostes) && {
+      icon: Users,
+      label: "Postes disponibles",
+      value: getFormattedNombrePostes(job?.nombrePostes),
+    },
   ].filter(Boolean);
 
-  // ✅ TOP CARDS = (Lieu/Créée/Clôture) + (Détails du poste)
   const topCards = [
     { icon: MapPin, label: "Lieu", value: job.lieu || "—" },
     { icon: Calendar, label: "Date de création", value: formatDate(job.createdAt) },
@@ -613,7 +621,6 @@ export default function RecruiterJobDetailsPage() {
   return (
     <div className="min-h-screen bg-[#F0FAF0] dark:bg-gray-950 transition-colors duration-300">
       <div className="max-w-6xl mx-auto px-6 pt-10 pb-16">
-        {/* ✅ TOAST: LinkedIn connecté avec succès */}
         {liJustConnected && (
           <div className="fixed top-6 right-6 z-[100] bg-white dark:bg-gray-800 border border-[#0A66C2]/30 rounded-2xl shadow-2xl p-4 flex items-center gap-3">
             <div className="h-10 w-10 rounded-xl bg-[#0A66C2]/10 grid place-items-center flex-shrink-0">
@@ -630,7 +637,6 @@ export default function RecruiterJobDetailsPage() {
           </div>
         )}
 
-        {/* ======= TOP HEADER ======= */}
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <Link
             href="/recruiter/jobs"
@@ -648,14 +654,12 @@ export default function RecruiterJobDetailsPage() {
           </div>
         </div>
 
-        {/* ======= HERO CARD (TOP) ======= */}
         <div className="mt-6 rounded-[32px] border border-gray-100 dark:border-gray-700 bg-white/70 dark:bg-gray-800/60 backdrop-blur shadow-lg overflow-hidden">
           <div className="p-8">
             <h1 className="text-3xl sm:text-4xl font-extrabold text-gray-900 dark:text-white">
               {job.titre}
             </h1>
 
-            {/* ✅ Details poste moved here */}
             <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               {topCards.map((c, idx) => (
                 <InfoCard
@@ -669,11 +673,8 @@ export default function RecruiterJobDetailsPage() {
           </div>
         </div>
 
-        {/* ======= DESCRIPTION + ACTIONS ======= */}
         <div className="mt-6 grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Col gauche */}
           <div className="lg:col-span-2 space-y-6">
-            {/* Description */}
             <div className="rounded-[28px] border border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-sm p-7">
               <h2 className="text-sm font-extrabold uppercase tracking-wide text-gray-500 dark:text-gray-400">
                 Description
@@ -684,10 +685,8 @@ export default function RecruiterJobDetailsPage() {
             </div>
           </div>
 
-          {/* ======= ACTIONS CARD ======= */}
           <div>
             <div className="rounded-[28px] border border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-sm p-7 flex flex-col gap-5">
-              {/* Header */}
               <div className="flex items-center justify-between">
                 <h3 className="text-sm font-extrabold uppercase tracking-wide text-gray-500 dark:text-gray-400">
                   Actions
@@ -757,7 +756,6 @@ export default function RecruiterJobDetailsPage() {
                 </button>
               )}
 
-              {/* LINKEDIN */}
               <div className="border-t border-gray-100 dark:border-gray-700 pt-4">
                 <div className="flex items-center justify-between mb-3">
                   <div className="flex items-center gap-2">
@@ -833,11 +831,8 @@ export default function RecruiterJobDetailsPage() {
           </div>
         </div>
 
-        {/* ======= SKILLS ======= */}
-
         {(hard.length > 0 || soft.length > 0) && (
           <div className="mt-6 grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* HARD SKILLS (تظهر كان فما عناصر) */}
             {hard.length > 0 && (
               <div className="rounded-[28px] border border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-sm p-7">
                 <h3 className="text-sm font-extrabold uppercase tracking-wide text-gray-500 dark:text-gray-400">
@@ -856,7 +851,6 @@ export default function RecruiterJobDetailsPage() {
               </div>
             )}
 
-            {/* SOFT SKILLS (تظهر كان فما عناصر) */}
             {soft.length > 0 && (
               <div className="rounded-[28px] border border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-sm p-7">
                 <h3 className="text-sm font-extrabold uppercase tracking-wide text-gray-500 dark:text-gray-400">
@@ -877,7 +871,6 @@ export default function RecruiterJobDetailsPage() {
           </div>
         )}
 
-        {/* ================= MODALS ================= */}
         <JobModal
           open={editOpen}
           onClose={() => setEditOpen(false)}
@@ -892,7 +885,6 @@ export default function RecruiterJobDetailsPage() {
           onConfirm={handleDeleteConfirmed}
         />
 
-        {/* REJECT MODAL */}
         {rejectOpen && (
           <div
             className="fixed inset-0 z-50 bg-black/40 dark:bg-black/60 flex items-center justify-center px-4"
@@ -948,7 +940,6 @@ export default function RecruiterJobDetailsPage() {
           </div>
         )}
 
-        {/* REACTIVATE MODAL */}
         {reactivateOpen && (
           <div
             className="fixed inset-0 z-50 bg-black/40 dark:bg-black/60 flex items-center justify-center px-4"
@@ -1005,7 +996,6 @@ export default function RecruiterJobDetailsPage() {
           </div>
         )}
 
-        {/* LINKEDIN MODAL */}
         {liOpen && (
           <div
             className="fixed inset-0 z-50 bg-black/40 dark:bg-black/60 flex items-center justify-center px-4"
