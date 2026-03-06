@@ -1,11 +1,11 @@
 "use client";
-// components/OutlookCalendarWithInterview.jsx — v4 FINAL
+// components/GoogleCalendarWithInterview.jsx — remplace OutlookCalendarWithInterview.jsx
 import { useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import OutlookCalendar from "./Outlookcalendar";
+import GoogleCalendar from "./Googlecalendar";
 import InterviewEventModal from "./InterviewEventModal";
 
-export default function OutlookCalendarWithInterview() {
+export default function GoogleCalendarWithInterview() {
   const searchParams = useSearchParams();
 
   const [candidateCtx, setCandidateCtx] = useState(null);
@@ -33,8 +33,7 @@ export default function OutlookCalendarWithInterview() {
     }
   }, [searchParams]);
 
-  // Appelé par OutlookCalendar quand une date est cliquée (via prop onDateSelect)
-  // Seulement actif quand candidateCtx est présent
+  // Appelé par GoogleCalendar quand une date est cliquée
   function handleDateSelect(date) {
     const dateStr = date instanceof Date
       ? `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,"0")}-${String(date.getDate()).padStart(2,"0")}`
@@ -60,7 +59,7 @@ export default function OutlookCalendarWithInterview() {
   return (
     <div className="relative">
 
-      {/* Bannière violette si candidat en attente */}
+      {/* Bannière verte si candidat en attente */}
       {candidateCtx && !showModal && (
         <div className="px-4 pt-3 pb-0">
           <div className="flex items-center gap-3 px-4 py-3 bg-green-600 text-white rounded-2xl shadow-lg">
@@ -70,7 +69,7 @@ export default function OutlookCalendarWithInterview() {
             </span>
             <div className="flex-1 min-w-0">
               <p className="text-sm font-bold">Cliquez sur une date pour planifier l&apos;entretien</p>
-              <p className="text-xs text-violet-200 truncate">
+              <p className="text-xs text-green-200 truncate">
                 {candidateCtx.candidateName}
                 {candidateCtx.jobTitle ? ` · ${candidateCtx.jobTitle}` : ""}
               </p>
@@ -85,12 +84,12 @@ export default function OutlookCalendarWithInterview() {
         </div>
       )}
 
-      {/* OutlookCalendar — onDateSelect actif seulement si candidat présent */}
-      <OutlookCalendar
+      {/* GoogleCalendar — onDateSelect actif seulement si candidat présent */}
+      <GoogleCalendar
         onDateSelect={candidateCtx ? handleDateSelect : undefined}
       />
 
-      {/* Modal entretien RH */}
+      {/* Modal entretien */}
       {showModal && candidateCtx && (
         <InterviewEventModal
           candidateData={candidateCtx}
@@ -109,7 +108,7 @@ export default function OutlookCalendarWithInterview() {
             </svg>
           </div>
           <div>
-            <p className="font-bold text-sm">Entretien créé dans Outlook !</p>
+            <p className="font-bold text-sm">Entretien créé dans Google Calendar !</p>
             <p className="text-xs text-green-100">✉️ Email envoyé au candidat</p>
           </div>
           <button onClick={() => setCreated(false)} className="ml-2 text-green-200 hover:text-white">
