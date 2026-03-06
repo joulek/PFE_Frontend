@@ -11,6 +11,7 @@ const API_BASE = process.env.NEXT_PUBLIC_API_URL;
  *  3. Candidat confirme           → candidateConfirmInterview()
  *  3b. Candidat propose date      → candidateReschedule()
  *  4. Admin approuve/rejette      → adminApprove() / adminReject()
+ *  5. Admin liste & stats         → getAllInterviewsAdmin() / getInterviewsStats()
  *
  * ============================================================ */
 
@@ -24,6 +25,15 @@ async function request(url, options = {}) {
   });
   const data = await response.json();
   return data;
+}
+
+// Helper pour récupérer le token auth
+function getAuthHeaders() {
+  const token =
+    (typeof localStorage !== "undefined" && localStorage.getItem("token")) ||
+    (typeof sessionStorage !== "undefined" && sessionStorage.getItem("token")) ||
+    "";
+  return token ? { Authorization: `Bearer ${token}` } : {};
 }
 
 // ══════════════════════════════════════════════
@@ -119,6 +129,52 @@ export async function adminRejectModification(interviewId, reason) {
   return request(`/api/interviews/admin/reject/${interviewId}`, {
     method: "POST",
     body: JSON.stringify({ reason }),
+  });
+}
+
+// ══════════════════════════════════════════════
+//  ADMIN : Liste complète des entretiens
+// ══════════════════════════════════════════════
+
+/**
+ * GET /api/interviews/admin/all
+ * ADMIN ONLY — Liste paginée et enrichie de tous les entretiens
+ *
+ * @param {object} params
+ * @param {number}  params.page        - Numéro de page (défaut : 1)
+ * @param {number}  params.limit       - Résultats par page (défaut : 20, max : 200)
+ * @param {string}  params.status      - Filtrer par statut, ex: "CONFIRMED" | "ALL"
+ * @param {string}  params.search      - Recherche par nom / email / poste
+ *
+ * @returns {{ success, interviews, total, page, totalPages }}
+ */
+export async function getAllInterviewsAdmin({
+  page = 1,
+  limit = 20,
+  status = "ALL",
+  search = "",
+} = {}) {
+  const params = new URLSearchParams({
+    page: String(page),
+    limit: String(limit),
+    status,
+    ...(search.trim() ? { search: search.trim() } : {}),
+  });
+
+  return request(`/api/interviews/admin/all?${params}`, {
+    headers: getAuthHeaders(),
+  });
+}
+
+/**
+ * GET /api/interviews/admin/stats
+ * ADMIN ONLY — Compteurs par statut pour le dashboard
+ *
+ * @returns {{ success, data: { TOTAL, CONFIRMED, PENDING_CONFIRMATION, ... } }}
+ */
+export async function getInterviewsStats() {
+  return request("/api/interviews/admin/stats", {
+    headers: getAuthHeaders(),
   });
 }
 

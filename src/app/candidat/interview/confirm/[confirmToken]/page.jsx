@@ -50,7 +50,7 @@ export default function ConfirmInterviewPage() {
         const res = await getConfirmInfo(confirmToken);
 
         if (!mounted) return;
-        setIv(res?.data || null);
+        setIv(res?.data?.data || res?.data || null); // axios: res.data = {success,data:{...}}
       } catch (e) {
         if (!mounted) return;
         setError(e?.response?.data?.error || "Lien invalide ou expiré.");
@@ -84,7 +84,7 @@ export default function ConfirmInterviewPage() {
       // ✅ Refresh data (pour récupérer status updated)
       try {
         const ref = await getConfirmInfo(confirmToken);
-        setIv(ref?.data || null);
+        setIv(ref?.data?.data || ref?.data || null);
       } catch {}
     } catch (e) {
       setError(e?.response?.data?.error || "Impossible de confirmer. Réessaie.");

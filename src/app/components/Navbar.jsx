@@ -549,6 +549,9 @@ export default function Navbar() {
                         <Link href="/recruiter/PreInterviewList" className={`${dropdownItemBase} ${isActive("/recruiter/PreInterviewList") ? dropdownActive : dropdownHover}`}>
                           Liste des pré-sélections
                         </Link>
+                          <Link href="/recruiter/list_interview" className={`${dropdownItemBase} ${isActive("/recruiter/list_interview") ? dropdownActive : dropdownHover}`}>
+                          Liste d'entretiens
+                        </Link>
                         <Link href="/recruiter/tracking" className={`${dropdownItemBase} ${isActive("/recruiter/tracking") ? dropdownActive : dropdownHover}`}>
                           Suivi de recrutement
                         </Link>
@@ -706,7 +709,9 @@ export default function Navbar() {
                     <Link href="/recruiter/dashboard" className="block px-5 py-3.5 rounded-xl text-gray-700 dark:text-gray-200 hover:bg-gray-100/70 dark:hover:bg-gray-800/60">Tableau de bord</Link>
                     <Link href="/recruiter/jobs" className="block px-5 py-3.5 rounded-xl text-gray-700 dark:text-gray-200 hover:bg-gray-100/70 dark:hover:bg-gray-800/60">Gestion offres</Link>
                     <Link href="/recruiter/candidatures" className="block px-5 py-3.5 rounded-xl text-gray-700 dark:text-gray-200 hover:bg-gray-100/70 dark:hover:bg-gray-800/60">Liste des candidatures</Link>
-                                 <Link href="/recruiter/candidatures_spontanees" className="block px-5 py-3.5 rounded-xl text-gray-700 dark:text-gray-200 hover:bg-gray-100/70 dark:hover:bg-gray-800/60">Liste des candidatures spontanées</Link>
+                   
+                    <Link href="/recruiter/candidatures_spontanees" className="block px-5 py-3.5 rounded-xl text-gray-700 dark:text-gray-200 hover:bg-gray-100/70 dark:hover:bg-gray-800/60">Liste des candidatures spontanées</Link>
+                     <Link href="/recruiter/list_interview" className="block px-5 py-3.5 rounded-xl text-gray-700 dark:text-gray-200 hover:bg-gray-100/70 dark:hover:bg-gray-800/60">Liste des entretiens</Link>
                     <Link href="/recruiter/CandidatureAnalysis" className="block px-5 py-3.5 rounded-xl text-gray-700 dark:text-gray-200 hover:bg-gray-100/70 dark:hover:bg-gray-800/60">Analyse des candidatures</Link>
                     <Link href="/recruiter/PreInterviewList" className="block px-5 py-3.5 rounded-xl text-gray-700 dark:text-gray-200 hover:bg-gray-100/70 dark:hover:bg-gray-800/60">Liste des pré-sélections</Link>
                     <Link href="/recruiter/tracking" className="block px-5 py-3.5 rounded-xl text-gray-700 dark:text-gray-200 hover:bg-gray-100/70 dark:hover:bg-gray-800/60">Suivi de recrutement</Link>
