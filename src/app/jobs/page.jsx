@@ -114,13 +114,13 @@ export default function JobsPublicPage() {
     </Link>
   );
 
-  // ✅ HERO list (emploi / stage) - corrigé: plus de "ligne" (pas de overflow-hidden)
+  // ✅ HERO list (emploi / stage) - bouton change de couleur (VERT emploi / BLEU stage)
   const ListHero = ({ variant }) => {
     const isStage = variant === "stage";
 
     const title = isStage
       ? "Trouvez le stage qui vous correspond"
-      : "Trouvez l’offre qui vous correspond";
+      : "Trouvez l'offre qui vous correspond";
 
     const subtitle = isStage
       ? "Explorez nos opportunités de stage (PFE, été, alternance) et postulez en quelques minutes."
@@ -128,8 +128,6 @@ export default function JobsPublicPage() {
 
     return (
       <div className="relative">
-        {/* accents (pas de gradient) */}
-        {/* ✅ important: on étend l'inset + on n'utilise pas overflow-hidden => pas de coupure/ligne */}
         <div aria-hidden className="pointer-events-none absolute -inset-24">
           <div className="absolute -top-24 left-1/2 -translate-x-1/2 h-56 w-[42rem] rounded-full bg-[#6CB33F]/10 blur-3xl dark:bg-emerald-500/10" />
           <div className="absolute top-10 left-10 h-32 w-32 rounded-full bg-emerald-400/10 blur-2xl dark:bg-emerald-400/10" />
@@ -148,7 +146,8 @@ export default function JobsPublicPage() {
               </p>
 
               <div className="mt-6 flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
-                <PrimaryButton
+                {/* ✅ BOUTON DYNAMIQUE - Change de couleur (emploi VERT / stage BLEU) */}
+                <button
                   onClick={() => {
                     const el = document.getElementById("jobs-grid");
                     if (el)
@@ -157,10 +156,16 @@ export default function JobsPublicPage() {
                         block: "start",
                       });
                   }}
-                  className="w-full sm:w-auto"
+                  className={`inline-flex items-center justify-center gap-2 rounded-full px-6 py-3 text-sm font-semibold transition-all w-full sm:w-auto text-white shadow-md
+                  focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-[#F0FAF0]
+                  dark:focus-visible:ring-offset-gray-950 ${
+                    isStage
+                      ? "bg-blue-600 hover:bg-blue-700 dark:bg-blue-600 dark:hover:bg-blue-500 focus-visible:ring-blue-500"
+                      : "bg-[#6CB33F] hover:bg-[#4E8F2F] dark:bg-emerald-600 dark:hover:bg-emerald-500 shadow-emerald-500/15 focus-visible:ring-[#6CB33F]"
+                  }`}
                 >
                   Explorer les offres <ArrowRight size={16} />
-                </PrimaryButton>
+                </button>
               </div>
             </div>
           </div>
@@ -238,7 +243,7 @@ export default function JobsPublicPage() {
                     </div>
 
                     <p className="mt-4 text-xs text-gray-500 dark:text-gray-400">
-                      Conseil : choisissez d’abord une catégorie (Emploi / Stage)
+                      Conseil : choisissez d'abord une catégorie (Emploi / Stage)
                       puis filtrez facilement.
                     </p>
                   </div>
@@ -314,13 +319,11 @@ export default function JobsPublicPage() {
   }
 
   // =========================
-  // OFFRES SELECTION SCREEN (choix recrutement/stage)
-  // ✅ FIX: supprimer le défilement ici
+  // OFFRES SELECTION SCREEN
   // =========================
   if (activeTab === "offres") {
     return (
       <PageShell>
-        {/* ✅ hauteur visible + pas de scroll */}
         <div className="h-[calc(100vh-96px)] overflow-hidden">
           <Container className="h-full py-8">
             <div className="h-full flex items-center">
@@ -392,7 +395,7 @@ export default function JobsPublicPage() {
                   >
                     <SoftCard className="p-7 hover:shadow-[0_18px_55px_-35px_rgba(0,0,0,0.35)] transition-all">
                       <div className="flex items-start justify-between gap-4">
-                        <div className="h-14 w-14 rounded-2xl bg-blue-50 dark:bg-blue-950/40 grid place-items-center">
+                        <div className="h-14 w-14 rounded-2xl bg-blue-100 dark:bg-blue-950/40 grid place-items-center">
                           <GraduationCap
                             size={26}
                             className="text-blue-600 dark:text-blue-300"
@@ -441,7 +444,6 @@ export default function JobsPublicPage() {
   return (
     <PageShell>
       <Container className="py-10">
-        {/* ✅ HERO corrigé */}
         <ListHero variant={isStageTab ? "stage" : "emploi"} />
 
         {/* GRID */}

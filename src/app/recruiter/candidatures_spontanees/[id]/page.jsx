@@ -101,7 +101,7 @@ export default function ApplicationDetailPage() {
     <div className="min-h-screen bg-[#F0FAF0] dark:bg-gray-950 px-6 py-10">
       <div className="max-w-6xl mx-auto space-y-8">
 
-        
+
 
         <div className="bg-[#E9F5E3] dark:bg-emerald-950/20 rounded-3xl p-8 shadow flex items-center justify-between">
 
@@ -121,7 +121,7 @@ export default function ApplicationDetailPage() {
                 {app.posteRecherche}
               </p>
 
-             
+
             </div>
           </div>
 
@@ -142,25 +142,25 @@ export default function ApplicationDetailPage() {
 
               <InfoCard
                 icon={<Mail size={16} />}
-                label="E-mail"
+                label={<span className="font-bold text-gray-900 dark:text-white">E-mail</span>}
                 value={app.email}
               />
 
               <InfoCard
                 icon={<Phone size={16} />}
-                label="Téléphone"
+                label={<span className="font-bold text-gray-900 dark:text-white">Téléphone</span>}
                 value={app.telephone}
               />
 
               <InfoCard
                 icon={<Calendar size={16} />}
-                label="Date"
+                label={<span className="font-bold text-gray-900 dark:text-white">Date</span>}
                 value={formatDate(app.createdAt)}
               />
 
               <InfoCard
                 icon={<User size={16} />}
-                label="Type"
+                label={<span className="font-bold text-gray-900 dark:text-white">Type</span>}
                 value={
                   app.type === "STAGIAIRE"
                     ? "Stage de fin d'études"

@@ -549,6 +549,9 @@ export default function Navbar() {
                         <Link href="/recruiter/PreInterviewList" className={`${dropdownItemBase} ${isActive("/recruiter/PreInterviewList") ? dropdownActive : dropdownHover}`}>
                           Liste des pré-sélections
                         </Link>
+                        <Link href="/recruiter/tracking" className={`${dropdownItemBase} ${isActive("/recruiter/tracking") ? dropdownActive : dropdownHover}`}>
+                          Suivi de recrutement
+                        </Link>
                       </div>
                     )}
                   </div>
@@ -689,8 +692,8 @@ export default function Navbar() {
                     <Link href="/employees" className={`block px-5 py-3.5 rounded-xl font-medium transition ${isActive("/employees") ? "bg-[#6CB33F] text-white" : "text-gray-700 dark:text-gray-200 hover:bg-gray-100/70 dark:hover:bg-gray-800/60"}`}>
                       Gestion Employés
                     </Link>
-                    <Link href="/utilisateur" className={`block px-5 py-3.5 rounded-xl font-medium transition ${isActive("/utilisateur") ? "bg-[#6CB33F] text-white" : "text-gray-700 dark:text-gray-200 hover:bg-gray-100/70 dark:hover:bg-gray-800/60"}`}>
-                      Gestion Responsable RH
+                    <Link href="/utilisateurs" className={`block px-5 py-3.5 rounded-xl font-medium transition ${isActive("/utilisateur") ? "bg-[#6CB33F] text-white" : "text-gray-700 dark:text-gray-200 hover:bg-gray-100/70 dark:hover:bg-gray-800/60"}`}>
+                      Gestion Responsables
                     </Link>
                     <Link href="/roles" className={`block px-5 py-3.5 rounded-xl font-medium transition ${isActive("/roles") ? "bg-[#6CB33F] text-white" : "text-gray-700 dark:text-gray-200 hover:bg-gray-100/70 dark:hover:bg-gray-800/60"}`}>
                       Gestion Rôles
@@ -706,6 +709,8 @@ export default function Navbar() {
                                  <Link href="/recruiter/candidatures_spontanees" className="block px-5 py-3.5 rounded-xl text-gray-700 dark:text-gray-200 hover:bg-gray-100/70 dark:hover:bg-gray-800/60">Liste des candidatures spontanées</Link>
                     <Link href="/recruiter/CandidatureAnalysis" className="block px-5 py-3.5 rounded-xl text-gray-700 dark:text-gray-200 hover:bg-gray-100/70 dark:hover:bg-gray-800/60">Analyse des candidatures</Link>
                     <Link href="/recruiter/PreInterviewList" className="block px-5 py-3.5 rounded-xl text-gray-700 dark:text-gray-200 hover:bg-gray-100/70 dark:hover:bg-gray-800/60">Liste des pré-sélections</Link>
+                    <Link href="/recruiter/tracking" className="block px-5 py-3.5 rounded-xl text-gray-700 dark:text-gray-200 hover:bg-gray-100/70 dark:hover:bg-gray-800/60">Suivi de recrutement</Link>
+
 
                     <div className="px-5 py-1">
                       <p className="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-1">Formulaires</p>

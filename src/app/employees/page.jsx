@@ -18,6 +18,9 @@ import {
   AlertTriangle,
   CheckCircle2,
   Loader2,
+  Eye,
+  EyeOff,
+  GripVertical,
 } from "lucide-react";
 
 /* ========================= LISTES ========================= */
@@ -68,6 +71,24 @@ const AGENCES_TUNISIE = [
   "Zaghouan",
 ].map((v) => ({ value: v, label: v }));
 
+// Ordre initial des colonnes
+const INITIAL_COLUMNS_ORDER = [
+  "cin",
+  "matricule",
+  "fullName",
+  "agence",
+  "societe",
+  "poste",
+  "departement",
+  "contratSociete",
+  "typeContrat",
+  "dateDebutContrat",
+  "genre",
+  "situation",
+  "cnss",
+  "dateFinContrat",
+];
+
 const FIELDS = [
   { key: "cin", label: "N°CIN", type: "text" },
   { key: "matricule", label: "Matricule", type: "text" },
@@ -93,6 +114,20 @@ const FIELDS = [
   { key: "situation", label: "Situation", type: "text" },
   { key: "cnss", label: "N°CNSS", type: "text" },
   { key: "dateFinContrat", label: "Date fin contrat", type: "date" },
+];
+
+// Créer une map pour accès rapide aux FIELDS
+const FIELDS_MAP = Object.fromEntries(FIELDS.map((f) => [f.key, f]));
+
+// Colonnes visibles par défaut
+const DEFAULT_VISIBLE_COLUMNS = [
+  "fullName",
+  "cin",
+  "matricule",
+  "agence",
+  "societe",
+  "poste",
+  "typeContrat",
 ];
 
 const CONTRACT_COLORS = {
@@ -303,6 +338,12 @@ export default function EmployeesPage() {
   // ✅ success toast/message in modal (optional)
   const [successMsg, setSuccessMsg] = useState("");
 
+  // ✅ column management
+  const [columnsOrder, setColumnsOrder] = useState(INITIAL_COLUMNS_ORDER);
+  const [visibleColumns, setVisibleColumns] = useState(DEFAULT_VISIBLE_COLUMNS);
+  const [draggedColumn, setDraggedColumn] = useState(null);
+  const [columnMenuOpen, setColumnMenuOpen] = useState(false);
+
   async function fetchData(search = "") {
     setLoading(true);
     setError("");
@@ -326,9 +367,39 @@ export default function EmployeesPage() {
       router.replace("/login");
       return;
     }
+
+    // Charger les colonnes depuis localStorage
+    const savedOrder = localStorage.getItem("columnsOrder");
+    const savedVisible = localStorage.getItem("visibleColumns");
+
+    if (savedOrder) {
+      try {
+        setColumnsOrder(JSON.parse(savedOrder));
+      } catch (e) {
+        setColumnsOrder(INITIAL_COLUMNS_ORDER);
+      }
+    }
+
+    if (savedVisible) {
+      try {
+        setVisibleColumns(JSON.parse(savedVisible));
+      } catch (e) {
+        setVisibleColumns(DEFAULT_VISIBLE_COLUMNS);
+      }
+    }
+
     fetchData("");
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Sauvegarder l'ordre et la visibilité
+  useEffect(() => {
+    localStorage.setItem("columnsOrder", JSON.stringify(columnsOrder));
+  }, [columnsOrder]);
+
+  useEffect(() => {
+    localStorage.setItem("visibleColumns", JSON.stringify(visibleColumns));
+  }, [visibleColumns]);
 
   const totalPages = Math.max(1, Math.ceil(rows.length / PAGE_SIZE));
   const paginated = useMemo(
@@ -418,6 +489,55 @@ export default function EmployeesPage() {
     }
   }
 
+  function toggleColumnVisibility(key) {
+    setVisibleColumns((prev) => {
+      if (prev.includes(key)) {
+        return prev.filter((k) => k !== key);
+      } else {
+        return [...prev, key];
+      }
+    });
+  }
+
+  function handleDragStart(e, columnKey) {
+    setDraggedColumn(columnKey);
+    e.dataTransfer.effectAllowed = "move";
+  }
+
+  function handleDragOver(e) {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = "move";
+  }
+
+  function handleDrop(e, targetColumnKey) {
+    e.preventDefault();
+    if (!draggedColumn || draggedColumn === targetColumnKey) {
+      setDraggedColumn(null);
+      return;
+    }
+
+    const draggedIndex = columnsOrder.indexOf(draggedColumn);
+    const targetIndex = columnsOrder.indexOf(targetColumnKey);
+
+    if (draggedIndex === -1 || targetIndex === -1) {
+      setDraggedColumn(null);
+      return;
+    }
+
+    const newOrder = [...columnsOrder];
+    newOrder.splice(draggedIndex, 1);
+    newOrder.splice(targetIndex, 0, draggedColumn);
+
+    setColumnsOrder(newOrder);
+    setDraggedColumn(null);
+  }
+
+  // Filtrer les colonnes à afficher dans l'ordre
+  const visibleFields = columnsOrder
+    .filter((key) => visibleColumns.includes(key))
+    .map((key) => FIELDS_MAP[key])
+    .filter(Boolean);
+
   const inputCls =
     "w-full h-11 rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-4 text-sm text-gray-800 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 outline-none focus:border-[#6CB33F] dark:focus:border-emerald-500 focus:ring-4 focus:ring-[#6CB33F]/15 dark:focus:ring-emerald-500/15 transition-colors";
   const selectCls = inputCls + " appearance-none cursor-pointer pr-10";
@@ -430,7 +550,7 @@ export default function EmployeesPage() {
           Liste des employés
         </h1>
 
-        {/* ✅ TOOLBAR (même style que ton image) */}
+        {/* ✅ TOOLBAR */}
         <div className="flex flex-col lg:flex-row lg:items-center gap-5 mb-8">
           <div className="relative flex-1">
             <Search className="absolute left-6 top-1/2 -translate-y-1/2 h-5 w-5 text-[#4E8F2F] dark:text-emerald-400" />
@@ -450,20 +570,86 @@ export default function EmployeesPage() {
             />
           </div>
 
-          <button
-            onClick={openCreate}
-            className="h-[56px] w-full lg:w-auto px-8 rounded-full
-              bg-[#6CB33F] hover:bg-[#4E8F2F]
-              dark:bg-emerald-600 dark:hover:bg-emerald-500
-              text-white font-extrabold text-[15px]
-              shadow-md transition
-              inline-flex items-center justify-center gap-3 whitespace-nowrap"
-          >
-            <span className="h-9 w-9 rounded-full bg-white/20 flex items-center justify-center">
-              <UserPlus className="h-5 w-5" />
-            </span>
-            Ajouter un employé
-          </button>
+          <div className="flex gap-3 w-full lg:w-auto">
+            {/* Bouton Afficher colonnes cachées (si y en a) */}
+            {columnsOrder.filter((k) => !visibleColumns.includes(k)).length > 0 && (
+              <div className="relative">
+                <button
+                  onClick={() => setColumnMenuOpen(!columnMenuOpen)}
+                  className="h-[56px] px-6 rounded-full
+                    bg-orange-50 dark:bg-orange-900/20
+                    border border-orange-200 dark:border-orange-900/50
+                    text-orange-700 dark:text-orange-400
+                    font-semibold text-[15px]
+                    shadow-sm hover:bg-orange-100 dark:hover:bg-orange-900/30
+                    transition
+                    inline-flex items-center justify-center gap-2 whitespace-nowrap"
+                >
+                  <EyeOff className="h-5 w-5" />
+                  {columnsOrder.filter((k) => !visibleColumns.includes(k)).length} masquée(s)
+                </button>
+
+                {/* Menu déroulant des colonnes cachées */}
+                {columnMenuOpen && (
+                  <div className="fixed inset-0 z-50">
+                    <div
+                      className="absolute inset-0 bg-black/20 dark:bg-black/40"
+                      onClick={() => setColumnMenuOpen(false)}
+                    />
+                    <div className="absolute top-0 right-0 mt-12 mr-4 bg-white dark:bg-gray-900 rounded-2xl shadow-lg border border-orange-200 dark:border-orange-900/50 overflow-hidden z-50 min-w-[300px]">
+                      <div className="px-4 py-3 border-b border-orange-100 dark:border-orange-900/50 bg-gradient-to-r from-orange-50 to-white dark:from-orange-900/20 dark:to-gray-900">
+                        <p className="text-sm font-extrabold text-orange-700 dark:text-orange-400">
+                          Colonnes masquées
+                        </p>
+                        <p className="text-xs text-orange-600 dark:text-orange-500 mt-1">
+                          Cliquez pour réafficher
+                        </p>
+                      </div>
+
+                      <div className="max-h-[400px] overflow-y-auto">
+                        {columnsOrder
+                          .filter((k) => !visibleColumns.includes(k))
+                          .map((key) => {
+                            const field = FIELDS_MAP[key];
+                            if (!field) return null;
+                            return (
+                              <button
+                                key={key}
+                                onClick={() => {
+                                  toggleColumnVisibility(key);
+                                  setColumnMenuOpen(false);
+                                }}
+                                className="w-full text-left px-4 py-3 hover:bg-orange-50 dark:hover:bg-orange-900/20 transition-colors border-b border-orange-50 dark:border-orange-900/30 last:border-b-0 flex items-center gap-3"
+                              >
+                                <Eye className="h-4 w-4 text-orange-600 dark:text-orange-400 flex-shrink-0" />
+                                <span className="text-sm font-medium text-gray-700 dark:text-gray-200">
+                                  {field.label}
+                                </span>
+                              </button>
+                            );
+                          })}
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            <button
+              onClick={openCreate}
+              className="h-[56px] flex-1 lg:flex-none px-8 rounded-full
+                bg-[#6CB33F] hover:bg-[#4E8F2F]
+                dark:bg-emerald-600 dark:hover:bg-emerald-500
+                text-white font-extrabold text-[15px]
+                shadow-md transition
+                inline-flex items-center justify-center gap-3 whitespace-nowrap"
+            >
+              <span className="h-9 w-9 rounded-full bg-white/20 flex items-center justify-center">
+                <UserPlus className="h-5 w-5" />
+              </span>
+              Ajouter un employé
+            </button>
+          </div>
         </div>
 
         {/* ERROR (global) */}
@@ -479,29 +665,38 @@ export default function EmployeesPage() {
             <table className="w-full min-w-[1200px]">
               <thead>
                 <tr className="bg-[#E9F5E3] dark:bg-gray-800 border-b border-[#D7EBCF] dark:border-gray-700">
-                  {[
-                    "Employé",
-                    "N°CIN",
-                    "Matricule",
-                    "Agence",
-                    "Société",
-                    "Poste",
-                    "Département",
-                    "Contrat / Sté",
-                    "Type contrat",
-                    "Genre",
-                    "N°CNSS",
-                    "Date début",
-                    "Date fin",
-                    "Actions",
-                  ].map((h) => (
+                  {visibleFields.map((f) => (
                     <th
-                      key={h}
-                      className="px-6 py-4 text-left text-xs font-extrabold uppercase tracking-wider text-[#3d7a1a] dark:text-emerald-400 whitespace-nowrap"
+                      key={f.key}
+                      draggable
+                      onDragStart={(e) => handleDragStart(e, f.key)}
+                      onDragOver={handleDragOver}
+                      onDrop={(e) => handleDrop(e, f.key)}
+                      className={`px-6 py-4 text-left text-xs font-extrabold uppercase tracking-wider text-[#3d7a1a] dark:text-emerald-400 whitespace-nowrap cursor-move select-none transition-all ${
+                        draggedColumn === f.key
+                          ? "opacity-50 bg-yellow-100 dark:bg-yellow-900/30"
+                          : "hover:bg-[#d9f0cd] dark:hover:bg-gray-700/50"
+                      }`}
                     >
-                      {h}
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="flex items-center gap-2">
+                          <GripVertical className="h-4 w-4 opacity-60" />
+                          {f.label}
+                        </span>
+                        <button
+                          onClick={() => toggleColumnVisibility(f.key)}
+                          title="Masquer cette colonne"
+                          className="p-1 rounded hover:bg-white/60 dark:hover:bg-gray-600/60 transition-colors flex-shrink-0"
+                        >
+                          <Eye className="h-4 w-4 text-[#4E8F2F] dark:text-emerald-400" />
+                        </button>
+                      </div>
                     </th>
                   ))}
+
+                  <th className="px-6 py-4 text-left text-xs font-extrabold uppercase tracking-wider text-[#3d7a1a] dark:text-emerald-400 whitespace-nowrap">
+                    Actions
+                  </th>
                 </tr>
               </thead>
 
@@ -509,7 +704,7 @@ export default function EmployeesPage() {
                 {loading ? (
                   <tr>
                     <td
-                      colSpan={14}
+                      colSpan={visibleFields.length + 1}
                       className="py-20 text-center text-sm text-gray-400 dark:text-gray-500"
                     >
                       Chargement…
@@ -518,7 +713,7 @@ export default function EmployeesPage() {
                 ) : paginated.length === 0 ? (
                   <tr>
                     <td
-                      colSpan={14}
+                      colSpan={visibleFields.length + 1}
                       className="py-20 text-center text-sm text-gray-400 dark:text-gray-500"
                     >
                       Aucun employé trouvé.
@@ -530,96 +725,111 @@ export default function EmployeesPage() {
                       key={r._id}
                       className="hover:bg-[#f0faef] dark:hover:bg-gray-800/60 transition-colors"
                     >
-                      <td className="px-6 py-5 whitespace-nowrap">
-                        <div className="flex items-center gap-3">
-                          <Avatar name={r.fullName} />
-                          <span className="text-sm font-semibold text-gray-900 dark:text-white">
-                            {r.fullName || "—"}
-                          </span>
-                        </div>
-                      </td>
+                      {/* Cellules de données visibles */}
+                      {visibleFields.map((f) => {
+                        // Case spéciale: fullName avec Avatar
+                        if (f.key === "fullName") {
+                          return (
+                            <td
+                              key={f.key}
+                              className="px-6 py-5 whitespace-nowrap"
+                            >
+                              <div className="flex items-center gap-3">
+                                <Avatar name={r.fullName} />
+                                <span className="text-sm font-semibold text-gray-900 dark:text-white">
+                                  {r.fullName || "—"}
+                                </span>
+                              </div>
+                            </td>
+                          );
+                        }
 
-                      <td className="px-6 py-5 text-sm font-mono text-gray-500 dark:text-gray-400 whitespace-nowrap">
-                        {r.cin || "—"}
-                      </td>
+                        // Case spéciale: societe (badge)
+                        if (f.key === "societe") {
+                          return (
+                            <td
+                              key={f.key}
+                              className="px-6 py-5 whitespace-nowrap"
+                            >
+                              {r.societe ? (
+                                <span
+                                  className={`inline-flex text-xs font-semibold px-3 py-1 rounded-full ${
+                                    SOCIETE_COLORS[r.societe] ||
+                                    "bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 border border-gray-200 dark:border-gray-700"
+                                  }`}
+                                >
+                                  {r.societe}
+                                </span>
+                              ) : (
+                                <span className="text-sm text-gray-400 dark:text-gray-500">
+                                  —
+                                </span>
+                              )}
+                            </td>
+                          );
+                        }
 
-                      <td className="px-6 py-5 text-sm font-mono text-gray-500 dark:text-gray-400 whitespace-nowrap">
-                        {r.matricule || "—"}
-                      </td>
+                        // Case spéciale: typeContrat (badge)
+                        if (f.key === "typeContrat") {
+                          return (
+                            <td
+                              key={f.key}
+                              className="px-6 py-5 whitespace-nowrap"
+                            >
+                              {r.typeContrat ? (
+                                <span
+                                  className={`inline-flex text-xs font-semibold px-3 py-1 rounded-full ${
+                                    CONTRACT_COLORS[r.typeContrat] ||
+                                    "bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 border border-gray-200 dark:border-gray-700"
+                                  }`}
+                                >
+                                  {r.typeContrat}
+                                </span>
+                              ) : (
+                                <span className="text-sm text-gray-400 dark:text-gray-500">
+                                  —
+                                </span>
+                              )}
+                            </td>
+                          );
+                        }
 
-                      <td className="px-6 py-5 text-sm text-gray-600 dark:text-gray-300 whitespace-nowrap">
-                        {r.agence || "—"}
-                      </td>
+                        // Case spéciale: dates
+                        if (f.key === "dateDebutContrat" || f.key === "dateFinContrat") {
+                          return (
+                            <td
+                              key={f.key}
+                              className="px-6 py-5 text-sm text-gray-500 dark:text-gray-400 whitespace-nowrap"
+                            >
+                              {r[f.key]
+                                ? new Date(r[f.key]).toLocaleDateString("fr-FR")
+                                : "—"}
+                            </td>
+                          );
+                        }
 
-                      <td className="px-6 py-5 whitespace-nowrap">
-                        {r.societe ? (
-                          <span
-                            className={`inline-flex text-xs font-semibold px-3 py-1 rounded-full ${
-                              SOCIETE_COLORS[r.societe] ||
-                              "bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 border border-gray-200 dark:border-gray-700"
-                            }`}
+                        // Colonnes numéros (monospace)
+                        if (f.key === "cin" || f.key === "matricule" || f.key === "cnss") {
+                          return (
+                            <td
+                              key={f.key}
+                              className="px-6 py-5 text-sm font-mono text-gray-500 dark:text-gray-400 whitespace-nowrap"
+                            >
+                              {r[f.key] || "—"}
+                            </td>
+                          );
+                        }
+
+                        // Colonnes texte normales
+                        return (
+                          <td
+                            key={f.key}
+                            className="px-6 py-5 text-sm text-gray-600 dark:text-gray-300 whitespace-nowrap"
                           >
-                            {r.societe}
-                          </span>
-                        ) : (
-                          <span className="text-sm text-gray-400 dark:text-gray-500">
-                            —
-                          </span>
-                        )}
-                      </td>
-
-                      <td className="px-6 py-5 text-sm text-gray-600 dark:text-gray-300 whitespace-nowrap">
-                        {r.poste || "—"}
-                      </td>
-
-                      <td className="px-6 py-5 text-sm text-gray-500 dark:text-gray-400 whitespace-nowrap">
-                        {r.departement || "—"}
-                      </td>
-
-                      <td className="px-6 py-5 text-sm text-gray-600 dark:text-gray-300 whitespace-nowrap">
-                        {r.contratSociete || "—"}
-                      </td>
-
-                      <td className="px-6 py-5 whitespace-nowrap">
-                        {r.typeContrat ? (
-                          <span
-                            className={`inline-flex text-xs font-semibold px-3 py-1 rounded-full ${
-                              CONTRACT_COLORS[r.typeContrat] ||
-                              "bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 border border-gray-200 dark:border-gray-700"
-                            }`}
-                          >
-                            {r.typeContrat}
-                          </span>
-                        ) : (
-                          <span className="text-sm text-gray-400 dark:text-gray-500">
-                            —
-                          </span>
-                        )}
-                      </td>
-
-                      <td className="px-6 py-5 text-sm text-gray-500 dark:text-gray-400 whitespace-nowrap">
-                        {r.genre || "—"}
-                      </td>
-
-                      <td className="px-6 py-5 text-sm font-mono text-gray-500 dark:text-gray-400 whitespace-nowrap">
-                        {r.cnss || "—"}
-                      </td>
-
-                      <td className="px-6 py-5 text-sm text-gray-500 dark:text-gray-400 whitespace-nowrap">
-                        {r.dateDebutContrat
-                          ? new Date(r.dateDebutContrat).toLocaleDateString(
-                              "fr-FR"
-                            )
-                          : "—"}
-                      </td>
-
-                      <td className="px-6 py-5 text-sm text-gray-500 dark:text-gray-400 whitespace-nowrap">
-                        {r.dateFinContrat
-                          ? new Date(r.dateFinContrat).toLocaleDateString(
-                              "fr-FR"
-                            )
-                          : "—"}
-                      </td>
+                            {r[f.key] || "—"}
+                          </td>
+                        );
+                      })}
 
                       <td className="px-6 py-5 whitespace-nowrap">
                         <div className="flex items-center gap-3">
@@ -648,7 +858,7 @@ export default function EmployeesPage() {
           </div>
 
           <div className="sm:hidden px-5 py-3 text-xs text-gray-500 dark:text-gray-400 border-t border-gray-100 dark:border-gray-800">
-            Astuce : glisser horizontalement pour voir toutes les colonnes.
+            Astuce : glissez les en-têtes pour réorganiser, cliquez l'oeil pour masquer.
           </div>
         </div>
 
@@ -675,7 +885,7 @@ export default function EmployeesPage() {
         )}
       </div>
 
-      {/* ADD/EDIT MODAL — improved design */}
+      {/* ADD/EDIT MODAL */}
       <BaseModal
         open={open}
         onClose={() => {
@@ -686,7 +896,7 @@ export default function EmployeesPage() {
         title={mode === "create" ? "Ajouter un employé" : "Modifier l'employé"}
         subtitle={
           mode === "create"
-            ? "Complétez les informations de l’employé puis enregistrez."
+            ? "Complétez les informations de l'employé puis enregistrez."
             : "Mettez à jour les informations puis enregistrez."
         }
         headerIcon={
@@ -811,7 +1021,7 @@ export default function EmployeesPage() {
         )}
       </BaseModal>
 
-      {/* DELETE MODAL (no alert/confirm) */}
+      {/* DELETE MODAL */}
       <ConfirmDeleteModal
         open={deleteOpen}
         onClose={() => {

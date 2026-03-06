@@ -63,6 +63,7 @@ export default function JobModal({
     sexe: "",
     typeDiplome: "",
     dureeStage: "",
+    nombrePostes: "",  // ✅ NOUVEAU
     scores: {
       skillsFit: 30,
       experienceFit: 30,
@@ -116,6 +117,7 @@ export default function JobModal({
           sexe: initialData.sexe ?? "",
           typeDiplome: initialData.typeDiplome ?? "",
           dureeStage: initialData.dureeStage ?? "",
+          nombrePostes: initialData?.nombrePostes ? String(initialData.nombrePostes) : "",  // ✅ NOUVEAU
           scores: {
             skillsFit: initialData?.scores?.skillsFit ?? 30,
             experienceFit: initialData?.scores?.experienceFit ?? 30,
@@ -217,6 +219,7 @@ export default function JobModal({
       sexe: String(form.sexe || "").trim(),
       typeDiplome: String(form.typeDiplome || "").trim(),
       dureeStage: String(form.dureeStage || "").trim(),
+      nombrePostes: form.nombrePostes ? parseInt(form.nombrePostes, 10) : undefined,  // ✅ NOUVEAU
       ...(!isEditMode && {
         generateQuiz,
         numQuestions: generateQuiz ? numQuestions : 0,
@@ -413,6 +416,20 @@ export default function JobModal({
                     />
                   </div>
                 )}
+
+                {/* ✅ NOUVEAU - Nombre de postes */}
+                <div>
+                  <label className={labelBase}>Nombre de postes</label>
+                  <input
+                    type="number"
+                    min="1"
+                    max="999"
+                    value={form.nombrePostes}
+                    onChange={(e) => setForm({ ...form, nombrePostes: e.target.value })}
+                    placeholder="Ex: 2, 5, 10..."
+                    className={inputBase}
+                  />
+                </div>
 
                 {/* Type Diplôme */}
                 <div>
