@@ -39,10 +39,16 @@ const createOption = () => ({
   label: "",
   hasText: false,
   otherLabel: "",
-  otherType: "text",
+  otherType: "text", // ✅ toujours texte (champ lié)
 });
 
-const createItem = () => ({ id: uid(), label: "" });
+const createItem = () => ({
+  id: uid(),
+  label: "",
+  hasText: false,
+  otherLabel: "",
+  otherType: "text", // ✅ toujours texte (champ lié)
+});
 
 function ensureIds(questions = []) {
   return questions.map((q) => ({
@@ -53,11 +59,13 @@ function ensureIds(questions = []) {
       ...createOption(),
       ...o,
       id: o.id || uid(),
+      otherType: "text", // ✅ force texte même si ancien payload
     })),
     items: (q.items || []).map((it) => ({
       ...createItem(),
       ...it,
       id: it.id || uid(),
+      otherType: "text", // ✅ force texte même si ancien payload
     })),
     scale: q.type === "scale_group" ? { ...defaultScale, ...(q.scale || {}) } : null,
   }));
@@ -107,7 +115,10 @@ export default function FicheRenseignementBuilder() {
   function onTypeChange(qid, type) {
     updateQuestion(qid, {
       type,
-      options: type === "radio" || type === "checkbox" ? [createOption()] : [],
+      options:
+        type === "radio" || type === "checkbox" || type === "ranking"
+          ? [createOption()]
+          : [],
       items: type === "scale_group" ? [createItem()] : [],
       scale: type === "scale_group" ? { ...defaultScale } : null,
     });
@@ -125,7 +136,16 @@ export default function FicheRenseignementBuilder() {
         q.id === qid
           ? {
               ...q,
-              options: q.options.map((o) => (o.id === oid ? { ...o, ...patch } : o)),
+              options: q.options.map((o) =>
+                o.id === oid
+                  ? {
+                      ...o,
+                      ...patch,
+                      // ✅ verrouille toujours texte si champ lié activé
+                      otherType: patch?.hasText ? "text" : o.otherType || "text",
+                    }
+                  : o
+              ),
             }
           : q
       )
@@ -140,13 +160,27 @@ export default function FicheRenseignementBuilder() {
 
   /* ================= SCALE ITEMS ================= */
   const addItem = (qid) =>
-    setQuestions((p) => p.map((q) => (q.id === qid ? { ...q, items: [...q.items, createItem()] } : q)));
+    setQuestions((p) =>
+      p.map((q) => (q.id === qid ? { ...q, items: [...q.items, createItem()] } : q))
+    );
 
   const updateItem = (qid, iid, patch) =>
     setQuestions((p) =>
       p.map((q) =>
         q.id === qid
-          ? { ...q, items: q.items.map((it) => (it.id === iid ? { ...it, ...patch } : it)) }
+          ? {
+              ...q,
+              items: q.items.map((it) =>
+                it.id === iid
+                  ? {
+                      ...it,
+                      ...patch,
+                      // ✅ verrouille toujours texte si champ lié activé
+                      otherType: patch?.hasText ? "text" : it.otherType || "text",
+                    }
+                  : it
+              ),
+            }
           : q
       )
     );
@@ -353,6 +387,7 @@ export default function FicheRenseignementBuilder() {
                     <option value="textarea">Paragraphe</option>
                     <option value="radio">Choix unique</option>
                     <option value="checkbox">Choix multiple</option>
+                    <option value="ranking">Classement/Ordre</option>
                     <option value="scale_group">Code de niveau</option>
                   </select>
 
@@ -360,6 +395,12 @@ export default function FicheRenseignementBuilder() {
                   {q.type === "number8" && (
                     <div className="mt-2 text-xs text-gray-600 dark:text-gray-400">
                       Ce type attend <span className="font-semibold">exactement 8 chiffres</span>.
+                    </div>
+                  )}
+
+                  {q.type === "ranking" && (
+                    <div className="mt-2 text-xs text-gray-600 dark:text-gray-400">
+                      Les candidats pourront <span className="font-semibold">réordonner</span> les éléments par glisser-déposer.
                     </div>
                   )}
 
@@ -416,7 +457,7 @@ export default function FicheRenseignementBuilder() {
                   <label className="block text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                     Aperçu du champ
                   </label>
-                  
+
                   {q.type === "text" && (
                     <input
                       type="text"
@@ -509,7 +550,7 @@ export default function FicheRenseignementBuilder() {
                             updateOption(q.id, o.id, {
                               hasText: e.target.checked,
                               otherLabel: e.target.checked ? o.otherLabel : "",
-                              otherType: e.target.checked ? o.otherType : "text",
+                              otherType: "text", // ✅ toujours texte
                             })
                           }
                           className="w-4 h-4 text-green-600 dark:text-emerald-500 bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 rounded"
@@ -522,16 +563,16 @@ export default function FicheRenseignementBuilder() {
                         </label>
                       </div>
 
-                      {/* Champ conditionnel : label + type */}
+                      {/* Champ conditionnel : label uniquement (type supprimé) */}
                       {o.hasText && (
-                        <div className="ml-6 mt-1 flex flex-col sm:flex-row gap-2 sm:gap-3 p-3 bg-white dark:bg-gray-700 border border-green-200 dark:border-emerald-700 rounded-xl">
+                        <div className="ml-6 mt-1 flex flex-col gap-2 p-3 bg-white dark:bg-gray-700 border border-green-200 dark:border-emerald-700 rounded-xl">
                           <div className="flex items-center gap-1 text-green-600 dark:text-emerald-400 text-xs font-semibold shrink-0">
                             <span>↳</span>
                             <span>Champ lié</span>
                           </div>
 
                           <input
-                            className="flex-1 border rounded-lg px-3 py-1.5 
+                            className="w-full border rounded-lg px-3 py-1.5 
                                        border-green-200 dark:border-gray-600 
                                        bg-white dark:bg-gray-600 
                                        text-gray-800 dark:text-white 
@@ -539,25 +580,10 @@ export default function FicheRenseignementBuilder() {
                                        text-xs sm:text-sm
                                        focus:border-green-500 dark:focus:border-emerald-500 
                                        outline-none transition-colors"
-                            placeholder='Ex: "Date d obtention", "Nombre d enfants"...'
+                            placeholder='Ex: "Précisez", "Détails"...'
                             value={o.otherLabel || ""}
-                            onChange={(e) => updateOption(q.id, o.id, { otherLabel: e.target.value })}
+                            onChange={(e) => updateOption(q.id, o.id, { otherLabel: e.target.value, otherType: "text" })}
                           />
-
-                          <select
-                            value={o.otherType || "text"}
-                            onChange={(e) => updateOption(q.id, o.id, { otherType: e.target.value })}
-                            className="border rounded-lg px-3 py-1.5 
-                                       border-green-200 dark:border-gray-600 
-                                       bg-white dark:bg-gray-600 
-                                       text-gray-800 dark:text-white 
-                                       text-xs sm:text-sm
-                                       focus:border-green-500 dark:focus:border-emerald-500 
-                                       outline-none transition-colors shrink-0"
-                          >
-                            <option value="text">Texte</option>
-                            <option value="number8">Nombre (8 chiffres)</option>
-                          </select>
                         </div>
                       )}
                     </div>
@@ -572,36 +598,185 @@ export default function FicheRenseignementBuilder() {
                 </div>
               )}
 
+              {/* ===== OPTIONS RANKING (CLASSEMENT) ===== */}
+              {q.type === "ranking" && (
+                <div className="space-y-3 sm:space-y-4">
+                  {q.options.map((o, index) => (
+                    <div
+                      key={o.id}
+                      className="border border-gray-100 dark:border-gray-700 rounded-xl p-3 space-y-2 bg-gray-50 dark:bg-gray-700/30 hover:border-green-200 dark:hover:border-green-800 transition-colors"
+                    >
+                      <div className="flex gap-2 sm:gap-3 items-center">
+                        {/* Indicateur de position */}
+                        <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-green-100 dark:bg-green-900 text-green-600 dark:text-green-400 font-semibold text-sm shrink-0">
+                          {index + 1}
+                        </div>
+
+                        {/* Icône de déplacement */}
+                        <span className="text-gray-400 dark:text-gray-600 text-lg select-none">⋮⋮</span>
+
+                        {/* Champ de l'option */}
+                        <input
+                          className="flex-1 border rounded-xl px-3 py-2 
+                                     border-green-200 dark:border-gray-600 
+                                     bg-white dark:bg-gray-700 
+                                     text-gray-800 dark:text-white 
+                                     placeholder-gray-400 dark:placeholder-gray-500
+                                     text-sm sm:text-base
+                                     focus:border-green-500 dark:focus:border-emerald-500 
+                                     outline-none transition-colors"
+                          placeholder="Élément à classer"
+                          value={o.label}
+                          onChange={(e) => updateOption(q.id, o.id, { label: e.target.value })}
+                        />
+
+                        {/* Bouton supprimer */}
+                        <button
+                          onClick={() => removeOption(q.id, o.id)}
+                          className="text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 transition-colors p-1"
+                          aria-label="Supprimer l'option"
+                        >
+                          ✕
+                        </button>
+                      </div>
+
+                      {/* Checkbox "Ajouter un champ pour cette option" */}
+                      <div className="flex items-center gap-2 ml-1">
+                        <input
+                          type="checkbox"
+                          id={`hasText-ranking-${o.id}`}
+                          checked={o.hasText || false}
+                          onChange={(e) =>
+                            updateOption(q.id, o.id, {
+                              hasText: e.target.checked,
+                              otherLabel: e.target.checked ? o.otherLabel : "",
+                              otherType: "text", // ✅ toujours texte
+                            })
+                          }
+                          className="w-4 h-4 text-green-600 dark:text-emerald-500 bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 rounded"
+                        />
+                        <label
+                          htmlFor={`hasText-ranking-${o.id}`}
+                          className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 cursor-pointer"
+                        >
+                          Ajouter un champ pour cette option
+                        </label>
+                      </div>
+
+                      {/* Champ conditionnel pour ranking : label uniquement (type supprimé) */}
+                      {o.hasText && (
+                        <div className="ml-6 mt-1 flex flex-col gap-2 p-3 bg-white dark:bg-gray-700 border border-green-200 dark:border-emerald-700 rounded-xl">
+                          <div className="flex items-center gap-1 text-green-600 dark:text-emerald-400 text-xs font-semibold shrink-0">
+                            <span>↳</span>
+                            <span>Champ lié</span>
+                          </div>
+
+                          <input
+                            className="w-full border rounded-lg px-3 py-1.5 
+                                       border-green-200 dark:border-gray-600 
+                                       bg-white dark:bg-gray-600 
+                                       text-gray-800 dark:text-white 
+                                       placeholder-gray-400 dark:placeholder-gray-400
+                                       text-xs sm:text-sm
+                                       focus:border-green-500 dark:focus:border-emerald-500 
+                                       outline-none transition-colors"
+                            placeholder='Ex: "Précisez"...'
+                            value={o.otherLabel || ""}
+                            onChange={(e) => updateOption(q.id, o.id, { otherLabel: e.target.value, otherType: "text" })}
+                          />
+                        </div>
+                      )}
+                    </div>
+                  ))}
+
+                  <button
+                    onClick={() => addOption(q.id)}
+                    className="text-green-600 dark:text-emerald-400 text-xs sm:text-sm hover:text-green-700 dark:hover:text-emerald-300 transition-colors font-medium"
+                  >
+                    + Ajouter un élément
+                  </button>
+                </div>
+              )}
+
               {/* ===== ITEMS SCALE GROUP ===== */}
               {q.type === "scale_group" && (
                 <div className="space-y-2 sm:space-y-3">
                   {q.items.map((it) => (
-                    <div key={it.id} className="flex gap-2 sm:gap-3 items-center">
-                      <input
-                        className="flex-1 border rounded-xl px-3 py-2 
-                                   border-green-200 dark:border-gray-600 
-                                   bg-white dark:bg-gray-700 
-                                   text-gray-800 dark:text-white 
-                                   placeholder-gray-400 dark:placeholder-gray-500
-                                   text-sm sm:text-base
-                                   focus:border-green-500 dark:focus:border-emerald-500 
-                                   outline-none transition-colors"
-                        placeholder="Ligne"
-                        value={it.label}
-                        onChange={(e) => updateItem(q.id, it.id, { label: e.target.value })}
-                      />
-                      <button
-                        onClick={() => removeItem(q.id, it.id)}
-                        className="text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 transition-colors"
-                        aria-label="Supprimer la ligne"
-                      >
-                        <Trash2 className="w-4 h-4 sm:w-5 sm:h-5" />
-                      </button>
+                    <div key={it.id} className="space-y-2">
+                      <div className="flex gap-2 sm:gap-3 items-center">
+                        <input
+                          className="flex-1 border rounded-xl px-3 py-2 
+                                     border-green-200 dark:border-gray-600 
+                                     bg-white dark:bg-gray-700 
+                                     text-gray-800 dark:text-white 
+                                     placeholder-gray-400 dark:placeholder-gray-500
+                                     text-sm sm:text-base
+                                     focus:border-green-500 dark:focus:border-emerald-500 
+                                     outline-none transition-colors"
+                          placeholder="Ligne"
+                          value={it.label}
+                          onChange={(e) => updateItem(q.id, it.id, { label: e.target.value })}
+                        />
+                        <button
+                          onClick={() => removeItem(q.id, it.id)}
+                          className="text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 transition-colors"
+                          aria-label="Supprimer la ligne"
+                        >
+                          <Trash2 className="w-4 h-4 sm:w-5 sm:h-5" />
+                        </button>
+                      </div>
+
+                      {/* Checkbox "Ajouter un champ pour cet item" */}
+                      <div className="flex items-center gap-2 ml-1">
+                        <input
+                          type="checkbox"
+                          id={`hasText-scale-${it.id}`}
+                          checked={it.hasText || false}
+                          onChange={(e) =>
+                            updateItem(q.id, it.id, {
+                              hasText: e.target.checked,
+                              otherLabel: e.target.checked ? it.otherLabel : "",
+                              otherType: "text", // ✅ toujours texte
+                            })
+                          }
+                          className="w-4 h-4 text-green-600 dark:text-emerald-500 bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 rounded"
+                        />
+                        <label
+                          htmlFor={`hasText-scale-${it.id}`}
+                          className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 cursor-pointer"
+                        >
+                          Ajouter un champ pour ce critère
+                        </label>
+                      </div>
+
+                      {/* Champ conditionnel pour scale_group : label uniquement (type supprimé) */}
+                      {it.hasText && (
+                        <div className="ml-6 mt-1 flex flex-col gap-2 p-3 bg-white dark:bg-gray-700 border border-green-200 dark:border-emerald-700 rounded-xl">
+                          <div className="flex items-center gap-1 text-green-600 dark:text-emerald-400 text-xs font-semibold shrink-0">
+                            <span>↳</span>
+                            <span>Champ lié</span>
+                          </div>
+
+                          <input
+                            className="w-full border rounded-lg px-3 py-1.5 
+                                       border-green-200 dark:border-gray-600 
+                                       bg-white dark:bg-gray-600 
+                                       text-gray-800 dark:text-white 
+                                       placeholder-gray-400 dark:placeholder-gray-400
+                                       text-xs sm:text-sm
+                                       focus:border-green-500 dark:focus:border-emerald-500 
+                                       outline-none transition-colors"
+                            placeholder='Ex: "Précisez"...'
+                            value={it.otherLabel || ""}
+                            onChange={(e) => updateItem(q.id, it.id, { otherLabel: e.target.value, otherType: "text" })}
+                          />
+                        </div>
+                      )}
                     </div>
                   ))}
                   <button
                     onClick={() => addItem(q.id)}
-                    className="text-green-600 dark:text-emerald-400 text-xs sm:text-sm hover:text-green-700 dark:hover:text-emerald-300 transition-colors"
+                    className="text-green-600 dark:text-emerald-400 text-xs sm:text-sm hover:text-green-700 dark:hover:text-emerald-300 transition-colors font-medium"
                   >
                     + Ajouter une ligne
                   </button>

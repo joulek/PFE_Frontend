@@ -44,7 +44,7 @@ function prettyContrat(v) {
 function prettySexe(v) {
   const s = String(v || "").toUpperCase().trim();
   if (!s) return "";
-  const map = { H: "H", F: "F", HF: "HF" };
+  const map = { H: "H", F: "F", HF: "H/F" };
   return map[s] || v;
 }
 

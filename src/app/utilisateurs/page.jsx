@@ -12,8 +12,9 @@ import { getRoles } from "../services/role.api";
 import { getEmployees } from "../services/employee.api";
 
 import Pagination from "../components/Pagination";
-import { Trash2, Edit2 } from "lucide-react";
 import {
+  Trash2,
+  Edit2,
   User,
   Mail,
   Users,
@@ -23,6 +24,9 @@ import {
   Search,
   Send,
   Check,
+  Phone,
+  Linkedin,
+  Calendar,
 } from "lucide-react";
 
 /* ================= HELPERS ================= */
@@ -31,11 +35,9 @@ function safeStr(v) {
   if (typeof v === "string") return v.trim();
   return String(v).trim();
 }
-
 function normalizeRole(role) {
   return safeStr(role).toUpperCase();
 }
-
 function splitFullName(fullName) {
   const s = safeStr(fullName);
   if (!s) return { prenom: "", nom: "" };
@@ -44,21 +46,33 @@ function splitFullName(fullName) {
   const nom = parts.join(" ");
   return { prenom, nom };
 }
-
-const getRoleBadgeStyle = () => {
-  return "bg-[#E9F5E3] dark:bg-gray-700 text-[#4E8F2F] dark:text-emerald-400 border border-[#d7ebcf] dark:border-gray-600";
-};
+function getInitials(prenom, nom, fallback = "U") {
+  const p = safeStr(prenom);
+  const n = safeStr(nom);
+  const a = (p[0] || "").toUpperCase();
+  const b = (n[0] || "").toUpperCase();
+  return (a + b).trim() || fallback.toUpperCase();
+}
+function formatDate(date) {
+  if (!date) return "—";
+  try {
+    return new Date(date).toLocaleDateString("fr-FR");
+  } catch {
+    return "—";
+  }
+}
+const getRoleBadgeStyle = () =>
+  "bg-[#E9F5E3] dark:bg-gray-700 text-[#4E8F2F] dark:text-emerald-400 border border-[#d7ebcf] dark:border-gray-600";
 
 /* ================= COMBOBOX EMPLOYEE ================= */
 function EmployeeCombobox({
   employees,
   value,
   onChange,
-  placeholder = "Choisir un employé...",
+  placeholder = "Choisir un responsable...",
 }) {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
-
   const wrapRef = useRef(null);
   const inputRef = useRef(null);
 
@@ -72,16 +86,14 @@ function EmployeeCombobox({
   }, []);
 
   useEffect(() => {
-    if (open) {
-      setTimeout(() => inputRef.current?.focus(), 0);
-    } else {
-      setQuery("");
-    }
+    if (open) setTimeout(() => inputRef.current?.focus(), 0);
+    else setQuery("");
   }, [open]);
 
-  const selected = useMemo(() => {
-    return employees.find((e) => String(e?._id) === String(value)) || null;
-  }, [employees, value]);
+  const selected = useMemo(
+    () => employees.find((e) => String(e?._id) === String(value)) || null,
+    [employees, value]
+  );
 
   const filtered = useMemo(() => {
     const q = safeStr(query).toLowerCase();
@@ -107,7 +119,6 @@ function EmployeeCombobox({
 
   return (
     <div ref={wrapRef} className="relative">
-      {/* Trigger */}
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
@@ -124,13 +135,11 @@ function EmployeeCombobox({
         <ChevronDown className="h-5 w-5 text-gray-400 dark:text-gray-500 shrink-0" />
       </button>
 
-      {/* Panel */}
       {open && (
         <div
           className="absolute z-50 mt-2 w-full rounded-2xl border border-[#D7EBCF] dark:border-gray-600
             bg-white dark:bg-gray-800 shadow-xl overflow-hidden"
         >
-          {/* Search inside dropdown */}
           <div className="p-3 border-b border-gray-100 dark:border-gray-700">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
@@ -149,7 +158,6 @@ function EmployeeCombobox({
             </div>
           </div>
 
-          {/* Options */}
           <div className="max-h-64 overflow-auto py-1">
             {filtered.length === 0 ? (
               <div className="px-4 py-3 text-sm text-gray-500 dark:text-gray-400">
@@ -178,7 +186,9 @@ function EmployeeCombobox({
                       </div>
                       <div className="text-xs text-gray-500 dark:text-gray-400 truncate">
                         {safeStr(emp?.poste) || "—"}
-                        {safeStr(emp?.matricule) ? ` • ${safeStr(emp?.matricule)}` : ""}
+                        {safeStr(emp?.matricule)
+                          ? ` • ${safeStr(emp?.matricule)}`
+                          : ""}
                         {safeStr(emp?.cin) ? ` • CIN: ${safeStr(emp?.cin)}` : ""}
                       </div>
                     </div>
@@ -192,12 +202,103 @@ function EmployeeCombobox({
             )}
           </div>
 
-          {/* Footer */}
           <div className="px-4 py-2 border-t border-gray-100 dark:border-gray-700 text-xs text-gray-500 dark:text-gray-400">
-            {filtered.length} employé(s)
+            {filtered.length} responsable(s)
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+/* ================= MOBILE CARD ================= */
+function ResponsableCard({ u, onEdit, onDelete }) {
+  const prenom = safeStr(u?.prenom);
+  const nom = safeStr(u?.nom);
+  const email = safeStr(u?.email);
+  const poste = safeStr(u?.poste);
+  const role = safeStr(u?.role);
+  const actif = Boolean(u?.passwordSet);
+
+  const initials = getInitials(prenom, nom, email?.[0] || "U");
+
+  return (
+    <div className="rounded-2xl bg-white dark:bg-gray-800 shadow-lg border border-[#E9F5E3] dark:border-gray-700 overflow-hidden">
+      <div className="p-5">
+        <div className="flex items-start justify-between gap-3">
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="h-11 w-11 rounded-full bg-[#E9F5E3] dark:bg-gray-700 flex items-center justify-center font-extrabold text-[#4E8F2F] dark:text-emerald-400 shrink-0">
+              {initials}
+            </div>
+
+            <div className="min-w-0">
+              <div className="font-extrabold text-gray-900 dark:text-white text-lg truncate">
+                {[prenom, nom].filter(Boolean).join(" ") || "—"}
+              </div>
+              <div className="mt-1 flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300 min-w-0">
+                <Mail className="h-4 w-4 text-[#6CB33F] dark:text-emerald-400 shrink-0" />
+                <span className="truncate">{email || "—"}</span>
+              </div>
+
+              {poste ? (
+                <div className="mt-1 flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300 min-w-0">
+                  <Users className="h-4 w-4 text-[#6CB33F] dark:text-emerald-400 shrink-0" />
+                  <span className="truncate">{poste}</span>
+                </div>
+              ) : null}
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2 shrink-0">
+            <button
+              onClick={() => onEdit(u)}
+              className="h-9 w-9 rounded-full flex items-center justify-center hover:bg-[#E9F5E3] dark:hover:bg-gray-700 transition-colors"
+              aria-label="Modifier"
+              title="Modifier"
+            >
+              <Edit2 className="h-4 w-4 text-[#4E8F2F] dark:text-emerald-400" />
+            </button>
+
+            <button
+              onClick={() => onDelete(u)}
+              className="h-9 w-9 rounded-full flex items-center justify-center hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+              aria-label="Supprimer"
+              title="Supprimer"
+            >
+              <Trash2 className="h-4 w-4 text-red-500 dark:text-red-400" />
+            </button>
+          </div>
+        </div>
+
+        <div className="mt-4 flex flex-wrap items-center gap-3">
+          <span
+            className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold whitespace-nowrap ${getRoleBadgeStyle()}`}
+          >
+            {role || "—"}
+          </span>
+
+          {actif ? (
+            <span className="inline-flex items-center gap-1 rounded-full bg-green-100 dark:bg-green-900/30 px-3 py-1 text-xs font-semibold text-green-700 dark:text-green-400 whitespace-nowrap">
+              Actif
+            </span>
+          ) : (
+            <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 dark:bg-amber-900/30 px-3 py-1 text-xs font-semibold text-amber-700 dark:text-amber-400 whitespace-nowrap">
+              En attente
+            </span>
+          )}
+        </div>
+
+        {u?.createdAt || u?.updatedAt ? (
+          <div className="mt-4 flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
+            <Calendar className="h-4 w-4 text-gray-400" />
+            <span>
+              {u?.updatedAt
+                ? `Mis à jour le ${formatDate(u.updatedAt)}`
+                : `Créé le ${formatDate(u.createdAt)}`}
+            </span>
+          </div>
+        ) : null}
+      </div>
     </div>
   );
 }
@@ -208,7 +309,6 @@ export default function GestionResponsableMetierPage() {
 
   const [users, setUsers] = useState([]);
   const [roles, setRoles] = useState([]);
-
   const [employees, setEmployees] = useState([]);
 
   const [openDeleteModal, setOpenDeleteModal] = useState(false);
@@ -259,7 +359,9 @@ export default function GestionResponsableMetierPage() {
         .map((r) => ({ ...r, name: normalizeRole(r?.name) }))
         .filter((r) => r.name);
 
-      const unique = Array.from(new Map(cleaned.map((r) => [r.name, r])).values());
+      const unique = Array.from(
+        new Map(cleaned.map((r) => [r.name, r])).values()
+      );
 
       setRoles(unique);
       if (!role && unique.length > 0) setRole(unique[0].name);
@@ -274,9 +376,7 @@ export default function GestionResponsableMetierPage() {
     try {
       const res = await getEmployees("");
       const arr = res.data?.employees || [];
-      arr.sort((a, b) =>
-        safeStr(a?.fullName).localeCompare(safeStr(b?.fullName))
-      );
+      arr.sort((a, b) => safeStr(a?.fullName).localeCompare(safeStr(b?.fullName)));
       setEmployees(arr);
       return arr;
     } catch (e) {
@@ -298,11 +398,9 @@ export default function GestionResponsableMetierPage() {
     if (msg.includes("E11000") || msg.toLowerCase().includes("duplicate")) {
       return "Cet email est déjà utilisé. Essayez un autre email.";
     }
-
     if (err?.response?.status === 409) {
       return "Cet email est déjà utilisé. Essayez un autre email.";
     }
-
     return "Une erreur est survenue. Veuillez réessayer.";
   }
 
@@ -319,10 +417,9 @@ export default function GestionResponsableMetierPage() {
   }
 
   useEffect(() => {
-    // ✅ Guard : vérifier le token avant tout appel API
     const token = localStorage.getItem("token");
-    const user  = JSON.parse(localStorage.getItem("user") || "null");
-    const role  = String(user?.role || "").toUpperCase();
+    const user = JSON.parse(localStorage.getItem("user") || "null");
+    const role = String(user?.role || "").toUpperCase();
 
     if (!token || (role !== "ADMIN" && role !== "ASSISTANTE_RH")) {
       router.replace("/login");
@@ -368,7 +465,6 @@ export default function GestionResponsableMetierPage() {
 
     setPoste(safeStr(emp?.poste));
 
-    // Auto-fill nom/prenom depuis fullName (si champs vides)
     const { prenom: p, nom: n } = splitFullName(emp?.fullName);
     if (!safeStr(prenom)) setPrenom(p);
     if (!safeStr(nom)) setNom(n);
@@ -393,7 +489,8 @@ export default function GestionResponsableMetierPage() {
         });
 
         setSuccessMessage(
-          `✅ Compte créé ! Un email d'activation a été envoyé à ${safeStr(email).toLowerCase()}.`
+          `✅ Compte créé ! Un email d'activation a été envoyé à ${safeStr(email)
+            .toLowerCase()}.`
         );
 
         await fetchUsers();
@@ -464,7 +561,7 @@ export default function GestionResponsableMetierPage() {
   }, [q]);
 
   return (
-    <div className="min-h-screen bg-[#F0FAF0] dark:bg-gray-950 px-6 py-10 transition-colors duration-300">
+    <div className="min-h-screen bg-[#F0FAF0] dark:bg-gray-950 px-4 sm:px-6 py-10 transition-colors duration-300">
       <div className="mx-auto max-w-6xl">
         <h1 className="text-4xl font-extrabold text-gray-900 dark:text-white mb-6">
           Liste des responsables métier
@@ -490,7 +587,7 @@ export default function GestionResponsableMetierPage() {
 
           <button
             onClick={openAddModal}
-            className="flex items-center gap-2 rounded-full bg-[#6CB33F] dark:bg-emerald-600 
+            className="flex items-center justify-center gap-2 rounded-full bg-[#6CB33F] dark:bg-emerald-600 
               px-6 py-3 text-sm font-semibold text-white 
               hover:bg-[#4E8F2F] dark:hover:bg-emerald-500 
               shadow-md transition-colors whitespace-nowrap"
@@ -500,121 +597,159 @@ export default function GestionResponsableMetierPage() {
           </button>
         </div>
 
-        {/* TABLE */}
-        <div className="rounded-2xl bg-white dark:bg-gray-800 shadow-lg overflow-hidden transition-colors duration-300">
+        {/* ✅ MOBILE: Cards like "Liste des candidatures" */}
+        <div className="sm:hidden space-y-5">
+          {loading ? (
+            <div className="rounded-2xl bg-white dark:bg-gray-800 shadow-lg p-10 flex items-center justify-center">
+              <div className="h-8 w-8 animate-spin rounded-full border-4 border-[#6CB33F] border-t-transparent" />
+            </div>
+          ) : paginatedUsers.length === 0 ? (
+            <div className="rounded-2xl bg-white dark:bg-gray-800 shadow-lg p-10 text-center text-gray-400 dark:text-gray-500">
+              Aucun responsable trouvé.
+            </div>
+          ) : (
+            paginatedUsers.map((u) => (
+              <ResponsableCard
+                key={u._id || u.id}
+                u={u}
+                onEdit={openEditModal}
+                onDelete={(user) => {
+                  setUserToDelete(user);
+                  setOpenDeleteModal(true);
+                }}
+              />
+            ))
+          )}
+        </div>
+
+        {/* ✅ DESKTOP/TABLET: Table */}
+        <div className="hidden sm:block rounded-2xl bg-white dark:bg-gray-800 shadow-lg overflow-hidden transition-colors duration-300">
           {loading ? (
             <div className="flex items-center justify-center py-20">
               <div className="h-8 w-8 animate-spin rounded-full border-4 border-[#6CB33F] border-t-transparent" />
             </div>
           ) : (
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="bg-[#F0FAF0] dark:bg-gray-700 text-left">
-                  <th className="px-6 py-4 font-semibold text-gray-600 dark:text-gray-300">
-                    Utilisateur
-                  </th>
-                  <th className="px-6 py-4 font-semibold text-gray-600 dark:text-gray-300">
-                    Email
-                  </th>
-                  <th className="px-6 py-4 font-semibold text-gray-600 dark:text-gray-300">
-                    Poste
-                  </th>
-                  <th className="px-6 py-4 font-semibold text-gray-600 dark:text-gray-300">
-                    Rôle
-                  </th>
-                  <th className="px-6 py-4 font-semibold text-gray-600 dark:text-gray-300">
-                    Statut
-                  </th>
-                  <th className="px-6 py-4 font-semibold text-gray-600 dark:text-gray-300 text-right">
-                    Actions
-                  </th>
-                </tr>
-              </thead>
-
-              <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
-                {paginatedUsers.length === 0 ? (
-                  <tr>
-                    <td
-                      colSpan={6}
-                      className="py-12 text-center text-gray-400 dark:text-gray-500"
-                    >
-                      Aucun utilisateur trouvé.
-                    </td>
+            <div className="w-full overflow-x-auto">
+              <table className="w-full text-sm min-w-[980px]">
+                <thead>
+                  <tr className="bg-[#F0FAF0] dark:bg-gray-700 text-left">
+                    <th className="px-6 py-4 font-semibold text-gray-600 dark:text-gray-300 whitespace-nowrap">
+                      Responsable
+                    </th>
+                    <th className="px-6 py-4 font-semibold text-gray-600 dark:text-gray-300 whitespace-nowrap">
+                      Email
+                    </th>
+                    <th className="px-6 py-4 font-semibold text-gray-600 dark:text-gray-300 whitespace-nowrap">
+                      Poste
+                    </th>
+                    <th className="px-6 py-4 font-semibold text-gray-600 dark:text-gray-300 whitespace-nowrap">
+                      Rôle
+                    </th>
+                    <th className="px-6 py-4 font-semibold text-gray-600 dark:text-gray-300 whitespace-nowrap">
+                      Statut
+                    </th>
+                    <th className="px-6 py-4 font-semibold text-gray-600 dark:text-gray-300 text-right whitespace-nowrap">
+                      Actions
+                    </th>
                   </tr>
-                ) : (
-                  paginatedUsers.map((u) => (
-                    <tr
-                      key={u._id || u.id}
-                      className="hover:bg-[#F9FFF6] dark:hover:bg-transparent transition-colors"
-                    >
-                      <td className="px-6 py-4">
-                        <div className="flex items-center gap-3">
-                          <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[#E9F5E3] dark:bg-gray-700 text-[#4E8F2F] dark:text-emerald-400 font-bold text-sm">
-                            {safeStr(u?.prenom).charAt(0).toUpperCase() ||
-                              safeStr(u?.email).charAt(0).toUpperCase()}
-                          </div>
-                          <div>
-                            <p className="font-semibold text-gray-900 dark:text-white">
-                              {[safeStr(u?.prenom), safeStr(u?.nom)]
-                                .filter(Boolean)
-                                .join(" ") || "—"}
-                            </p>
-                          </div>
-                        </div>
-                      </td>
+                </thead>
 
-                      <td className="px-6 py-4 text-gray-600 dark:text-gray-300">
-                        {safeStr(u?.email)}
-                      </td>
-
-                      <td className="px-6 py-4 text-gray-600 dark:text-gray-300">
-                        {safeStr(u?.poste) || "—"}
-                      </td>
-
-                      <td className="px-6 py-4">
-                        <span
-                          className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${getRoleBadgeStyle()}`}
-                        >
-                          {safeStr(u?.role)}
-                        </span>
-                      </td>
-
-                      <td className="px-6 py-4">
-                        {u?.passwordSet ? (
-                          <span className="inline-flex items-center gap-1 rounded-full bg-green-100 dark:bg-green-900/30 px-3 py-1 text-xs font-semibold text-green-700 dark:text-green-400">
-                            Actif
-                          </span>
-                        ) : (
-                          <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 dark:bg-amber-900/30 px-3 py-1 text-xs font-semibold text-amber-700 dark:text-amber-400">
-                            En attente
-                          </span>
-                        )}
-                      </td>
-
-                      <td className="px-6 py-4 text-right">
-                        <div className="flex items-center justify-end gap-2">
-                          <button
-                            onClick={() => openEditModal(u)}
-                            className="flex h-8 w-8 items-center justify-center rounded-full hover:bg-[#E9F5E3] dark:hover:bg-gray-700 transition-colors"
-                          >
-                            <Edit2 className="h-4 w-4 text-[#4E8F2F] dark:text-emerald-400" />
-                          </button>
-                          <button
-                            onClick={() => {
-                              setUserToDelete(u);
-                              setOpenDeleteModal(true);
-                            }}
-                            className="flex h-8 w-8 items-center justify-center rounded-full hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
-                          >
-                            <Trash2 className="h-4 w-4 text-red-500 dark:text-red-400" />
-                          </button>
-                        </div>
+                <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
+                  {paginatedUsers.length === 0 ? (
+                    <tr>
+                      <td
+                        colSpan={6}
+                        className="py-12 text-center text-gray-400 dark:text-gray-500"
+                      >
+                        Aucun responsable trouvé.
                       </td>
                     </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
+                  ) : (
+                    paginatedUsers.map((u) => (
+                      <tr
+                        key={u._id || u.id}
+                        className="hover:bg-[#F9FFF6] dark:hover:bg-transparent transition-colors"
+                      >
+                        <td className="px-6 py-4">
+                          <div className="flex items-center gap-3">
+                            <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[#E9F5E3] dark:bg-gray-700 text-[#4E8F2F] dark:text-emerald-400 font-bold text-sm shrink-0">
+                              {getInitials(
+                                u?.prenom,
+                                u?.nom,
+                                safeStr(u?.email)?.[0] || "U"
+                              )}
+                            </div>
+                            <div className="min-w-0">
+                              <p className="font-semibold text-gray-900 dark:text-white truncate max-w-[240px]">
+                                {[safeStr(u?.prenom), safeStr(u?.nom)]
+                                  .filter(Boolean)
+                                  .join(" ") || "—"}
+                              </p>
+                            </div>
+                          </div>
+                        </td>
+
+                        <td className="px-6 py-4 text-gray-600 dark:text-gray-300">
+                          <span className="block truncate max-w-[280px]">
+                            {safeStr(u?.email)}
+                          </span>
+                        </td>
+
+                        <td className="px-6 py-4 text-gray-600 dark:text-gray-300">
+                          <span className="block truncate max-w-[240px]">
+                            {safeStr(u?.poste) || "—"}
+                          </span>
+                        </td>
+
+                        <td className="px-6 py-4">
+                          <span
+                            className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold whitespace-nowrap ${getRoleBadgeStyle()}`}
+                          >
+                            {safeStr(u?.role)}
+                          </span>
+                        </td>
+
+                        <td className="px-6 py-4">
+                          {u?.passwordSet ? (
+                            <span className="inline-flex items-center gap-1 rounded-full bg-green-100 dark:bg-green-900/30 px-3 py-1 text-xs font-semibold text-green-700 dark:text-green-400 whitespace-nowrap">
+                              Actif
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 dark:bg-amber-900/30 px-3 py-1 text-xs font-semibold text-amber-700 dark:text-amber-400 whitespace-nowrap">
+                              En attente
+                            </span>
+                          )}
+                        </td>
+
+                        <td className="px-6 py-4 text-right">
+                          <div className="flex items-center justify-end gap-2">
+                            <button
+                              onClick={() => openEditModal(u)}
+                              className="flex h-8 w-8 items-center justify-center rounded-full hover:bg-[#E9F5E3] dark:hover:bg-gray-700 transition-colors"
+                              aria-label="Modifier"
+                              title="Modifier"
+                            >
+                              <Edit2 className="h-4 w-4 text-[#4E8F2F] dark:text-emerald-400" />
+                            </button>
+                            <button
+                              onClick={() => {
+                                setUserToDelete(u);
+                                setOpenDeleteModal(true);
+                              }}
+                              className="flex h-8 w-8 items-center justify-center rounded-full hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+                              aria-label="Supprimer"
+                              title="Supprimer"
+                            >
+                              <Trash2 className="h-4 w-4 text-red-500 dark:text-red-400" />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
           )}
         </div>
 
@@ -627,6 +762,8 @@ export default function GestionResponsableMetierPage() {
             />
           </div>
         )}
+
+     
       </div>
 
       {/* ================= MODAL ADD / EDIT ================= */}
@@ -646,7 +783,7 @@ export default function GestionResponsableMetierPage() {
                 <h2 className="text-xl font-extrabold text-gray-900 dark:text-white">
                   {modalMode === "add"
                     ? "Ajouter un responsable métier"
-                    : "Modifier l'utilisateur"}
+                    : "Modifier le responsable"}
                 </h2>
                 {modalMode === "add" && (
                   <p className="mt-1 flex items-center gap-1 text-sm text-[#4E8F2F] dark:text-emerald-400 font-medium">
@@ -679,21 +816,19 @@ export default function GestionResponsableMetierPage() {
 
             {!successMessage && (
               <form onSubmit={handleSubmit} className="mt-6 space-y-4">
-                {/* ✅ EMPLOYEE DROPDOWN WITH SEARCH INSIDE */}
                 <div>
                   <label className="mb-1 block text-sm font-semibold text-gray-900 dark:text-white">
-                    Employé
+                    Responsables
                   </label>
 
                   <EmployeeCombobox
                     employees={employees}
                     value={employeeId}
                     onChange={(id) => onSelectEmployee(id)}
-                    placeholder="Choisir un employé..."
+                    placeholder="Choisir un responsable..."
                   />
                 </div>
 
-                {/* POSTE (readonly) */}
                 <div>
                   <label className="mb-1 block text-sm font-semibold text-gray-900 dark:text-white">
                     Poste
@@ -706,11 +841,10 @@ export default function GestionResponsableMetierPage() {
                       bg-gray-50 dark:bg-gray-700/60 py-3 px-4
                       text-sm text-gray-700 dark:text-gray-200 
                       outline-none"
-                    placeholder="Auto depuis l'employé sélectionné"
+                    placeholder="Auto depuis le responsable sélectionné"
                   />
                 </div>
 
-                {/* PRENOM */}
                 <div>
                   <label className="mb-1 block text-sm font-semibold text-gray-900 dark:text-white">
                     Prénom
@@ -729,7 +863,6 @@ export default function GestionResponsableMetierPage() {
                   />
                 </div>
 
-                {/* NOM */}
                 <div>
                   <label className="mb-1 block text-sm font-semibold text-gray-900 dark:text-white">
                     Nom
@@ -748,7 +881,6 @@ export default function GestionResponsableMetierPage() {
                   />
                 </div>
 
-                {/* EMAIL */}
                 <div>
                   <label className="mb-1 block text-sm font-semibold text-gray-900 dark:text-white">
                     Email professionnel
@@ -770,10 +902,9 @@ export default function GestionResponsableMetierPage() {
                   </div>
                 </div>
 
-                {/* ROLE */}
                 <div>
                   <label className="mb-1 block text-sm font-semibold text-gray-900 dark:text-white">
-                    Rôle de l&apos;utilisateur
+                    Rôle de l&apos;responsable métier
                   </label>
                   <div className="relative">
                     <Users className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-[#6CB33F] dark:text-emerald-400" />
@@ -797,7 +928,6 @@ export default function GestionResponsableMetierPage() {
                   </div>
                 </div>
 
-                {/* ACTIONS */}
                 <div className="pt-2 flex items-center justify-end gap-3">
                   <button
                     type="button"
@@ -843,9 +973,7 @@ export default function GestionResponsableMetierPage() {
             </h3>
             <p className="mt-2 text-sm text-gray-600 dark:text-gray-300">
               Supprimer{" "}
-              <span className="font-semibold">
-                {safeStr(userToDelete?.email)}
-              </span>{" "}
+              <span className="font-semibold">{safeStr(userToDelete?.email)}</span>{" "}
               ?
             </p>
 

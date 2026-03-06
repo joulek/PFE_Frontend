@@ -590,10 +590,10 @@ export default function Navbar() {
                           Gestion des rôles
                         </Link>
                         <Link href="/utilisateurs" className={`${dropdownItemBase} ${isActive("/utilisateurs") ? dropdownActive : dropdownHover}`}>
-                          Gestion des utilisateurs
+                          Gestion Responsables
                         </Link>
                          <Link href="/employees" className={`${dropdownItemBase} ${isActive("/employees") ? dropdownActive : dropdownHover}`}>
-                         Gestion Employees
+                         Gestion Employés
                         </Link>
                         <Link href="/recruiter/calendar" className={`${dropdownItemBase} ${isActive("/recruiter/calendar") ? dropdownActive : dropdownHover}`}>
                           Mon Calendirer
@@ -720,7 +720,8 @@ export default function Navbar() {
                           Critères d'évaluation
                         </Link>
                     <Link href="/roles" className="block px-5 py-3.5 rounded-xl text-gray-700 dark:text-gray-200 hover:bg-gray-100/70 dark:hover:bg-gray-800/60">Gestion des rôles</Link>
-                    <Link href="/employees" className="block px-5 py-3.5 rounded-xl text-gray-700 dark:text-gray-200 hover:bg-gray-100/70 dark:hover:bg-gray-800/60">Gestion des utilisateurs</Link>
+                    <Link href="/employees" className="block px-5 py-3.5 rounded-xl text-gray-700 dark:text-gray-200 hover:bg-gray-100/70 dark:hover:bg-gray-800/60">Gestion des employés</Link>
+                    <Link href="/utilisateurs" className="block px-5 py-3.5 rounded-xl text-gray-700 dark:text-gray-200 hover:bg-gray-100/70 dark:hover:bg-gray-800/60">Gestion des responsables</Link>
                     <Link href="/recruiter/calendar" className="block px-5 py-3.5 rounded-xl text-gray-700 dark:text-gray-200 hover:bg-gray-100/70 dark:hover:bg-gray-800/60">Mon Calendirer</Link>
 
                   </>

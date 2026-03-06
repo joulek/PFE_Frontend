@@ -22,14 +22,15 @@ function safeStr(v) {
   return String(v);
 }
 
-// ✅ Fallback intelligent : si otherLabel est vide, on déduit depuis otherType
-function getFieldLabel(opt) {
-  const label = opt.otherLabel?.trim();
-  if (label) return label;
-  if (opt.otherType === "date") return "Date d'obtention";
-  if (opt.otherType === "number8") return "Numéro (8 chiffres)";
-  if (opt.otherType === "number") return "Nombre";
-  return "Précisez...";
+/**
+ * ✅ IMPORTANT (règle métier demandée) :
+ * - Le champ lié (otherType) est SUPPRIMÉ côté UI candidat
+ * - Il doit être TOUJOURS TEXTE
+ * - Donc on ignore otherType (même s'il existe dans d'anciens documents)
+ */
+function getFieldLabel(optOrItem) {
+  const label = safeStr(optOrItem?.otherLabel).trim();
+  return label || "Précisez...";
 }
 
 function ensureQuestionIds(questions = []) {
@@ -38,15 +39,21 @@ function ensureQuestionIds(questions = []) {
     id: q.id || uid(),
     options: Array.isArray(q.options)
       ? q.options.map((opt) => ({
-        ...opt,
-        id: opt.id || uid(),
-        hasText: opt.hasText || false,
-        otherLabel: opt.otherLabel || "",
-        otherType: opt.otherType || "text",
-      }))
+          ...opt,
+          id: opt.id || uid(),
+          hasText: Boolean(opt.hasText),
+          otherLabel: safeStr(opt.otherLabel || ""),
+          otherType: "text", // ✅ force (même si payload ancien)
+        }))
       : [],
     items: Array.isArray(q.items)
-      ? q.items.map((it) => ({ ...it, id: it.id || uid() }))
+      ? q.items.map((it) => ({
+          ...it,
+          id: it.id || uid(),
+          hasText: Boolean(it.hasText),
+          otherLabel: safeStr(it.otherLabel || ""),
+          otherType: "text", // ✅ force (même si payload ancien)
+        }))
       : [],
     scale: q.scale || {
       min: 0,
@@ -67,10 +74,20 @@ function defaultValueFor(q) {
   if (q.type === "text" || q.type === "textarea" || q.type === "number8") return "";
   if (q.type === "radio") return { selected: "", textValue: "" };
   if (q.type === "checkbox") return { selected: [], textValues: {} };
+  if (q.type === "ranking") {
+    return {
+      items: (q.options || []).map((opt) => opt.label),
+      textValues: {},
+    };
+  }
   if (q.type === "scale_group") {
-    const obj = {};
-    (q.items || []).forEach((it) => (obj[it.id] = String(q.scale?.min ?? 0)));
-    return obj;
+    const scales = {};
+    const textValues = {};
+    (q.items || []).forEach((it) => {
+      scales[it.id] = String(q.scale?.min ?? 0);
+      textValues[it.id] = "";
+    });
+    return { scales, textValues };
   }
   return "";
 }
@@ -88,13 +105,10 @@ function AccessDeniedLikeQuiz({ title, subtitle, hint, onHome }) {
         transition-colors duration-300
       "
     >
-      {/* background glow (light + dark) */}
       <div className="pointer-events-none fixed inset-0">
-        {/* light glow */}
         <div className="absolute -top-24 -left-24 h-80 w-80 rounded-full bg-emerald-500/10 blur-3xl dark:hidden" />
         <div className="absolute -bottom-24 -right-24 h-96 w-96 rounded-full bg-emerald-500/10 blur-3xl dark:hidden" />
 
-        {/* dark glow */}
         <div className="absolute -top-24 -left-24 h-80 w-80 rounded-full bg-emerald-500/10 blur-3xl hidden dark:block" />
         <div className="absolute -bottom-24 -right-24 h-96 w-96 rounded-full bg-emerald-500/10 blur-3xl hidden dark:block" />
       </div>
@@ -114,7 +128,6 @@ function AccessDeniedLikeQuiz({ title, subtitle, hint, onHome }) {
             transition-colors duration-300
           "
         >
-          {/* top icon */}
           <div className="flex justify-center">
             <div className="h-20 w-20 rounded-full bg-emerald-500/15 grid place-items-center">
               <div className="h-14 w-14 rounded-full bg-emerald-500 grid place-items-center shadow-[0_0_0_10px_rgba(16,185,129,0.18)]">
@@ -125,7 +138,6 @@ function AccessDeniedLikeQuiz({ title, subtitle, hint, onHome }) {
             </div>
           </div>
 
-          {/* pill */}
           <div className="mt-6 flex justify-center">
             <span
               className="
@@ -138,7 +150,6 @@ function AccessDeniedLikeQuiz({ title, subtitle, hint, onHome }) {
             </span>
           </div>
 
-          {/* text */}
           <h1 className="mt-6 text-center text-3xl sm:text-4xl font-extrabold">
             {title}
           </h1>
@@ -149,7 +160,6 @@ function AccessDeniedLikeQuiz({ title, subtitle, hint, onHome }) {
 
           <div className="mt-8 h-px w-full bg-gray-200 dark:bg-white/10" />
 
-          {/* button */}
           <div className="mt-8 flex justify-center">
             <button
               onClick={onHome}
@@ -166,7 +176,6 @@ function AccessDeniedLikeQuiz({ title, subtitle, hint, onHome }) {
             </button>
           </div>
 
-          {/* hint */}
           {hint ? (
             <p className="mt-6 text-center text-sm text-gray-500 dark:text-slate-400">
               {hint}
@@ -216,19 +225,33 @@ export default function CandidatFicheWizardPage() {
     }
 
     if (question.type === "checkbox") {
-      if (!Array.isArray(value?.selected) || value.selected.length === 0)
-        return false;
+      if (!Array.isArray(value?.selected) || value.selected.length === 0) return false;
       for (const label of value.selected) {
         const opt = question.options.find((o) => o.label === label);
-        if (opt?.hasText && !safeStr(value.textValues?.[label]).trim())
-          return false;
+        if (opt?.hasText && !safeStr(value.textValues?.[label]).trim()) return false;
       }
       return true;
     }
 
+    if (question.type === "ranking") {
+      if (!value?.items || !Array.isArray(value.items) || value.items.length === 0) return false;
+
+      for (const item of value.items) {
+        const opt = question.options.find((o) => o.label === item);
+        if (opt?.hasText && !safeStr(value.textValues?.[item]).trim()) return false;
+      }
+      return value.items.length === question.options.length;
+    }
+
     if (question.type === "scale_group") {
       if (!value || typeof value !== "object") return false;
-      return question.items.every((it) => safeStr(value[it.id]).length > 0);
+
+      if (!question.items.every((it) => safeStr(value.scales?.[it.id]).length > 0)) return false;
+
+      for (const it of question.items) {
+        if (it.hasText && !safeStr(value.textValues?.[it.id]).trim()) return false;
+      }
+      return true;
     }
 
     return true;
@@ -327,6 +350,23 @@ export default function CandidatFicheWizardPage() {
           return `${label} — ${getFieldLabel(opt)} : ${value.textValues[label].trim()}`;
         return label;
       });
+    } else if (question.type === "ranking" && value?.items) {
+      finalValue = value.items.map((item) => {
+        const opt = question.options.find((o) => o.label === item);
+        if (opt?.hasText && value.textValues?.[item])
+          return `${item} — ${getFieldLabel(opt)} : ${value.textValues[item].trim()}`;
+        return item;
+      });
+    } else if (question.type === "scale_group" && value?.scales) {
+      finalValue = {};
+      for (const it of question.items) {
+        const level = value.scales[it.id];
+        if (it.hasText && value.textValues?.[it.id]) {
+          finalValue[it.label] = `${level} — ${getFieldLabel(it)} : ${value.textValues[it.id].trim()}`;
+        } else {
+          finalValue[it.label] = level;
+        }
+      }
     }
 
     try {
@@ -372,14 +412,13 @@ export default function CandidatFicheWizardPage() {
       </div>
     );
 
-  // ✅ NEW DESIGN HERE (same style as quiz)
   if (blocked)
     return (
       <AccessDeniedLikeQuiz
         title="Cette fiche a déjà été soumise"
         subtitle="Vous avez déjà complété et soumis cette fiche. Il n'est pas possible de répondre une deuxième fois."
         hint="Si vous pensez qu'il s'agit d'une erreur, contactez le recruteur."
-        onHome={() => router.replace("/jobs")} // ✅ change to your home route if needed
+        onHome={() => router.replace("/jobs")}
       />
     );
 
@@ -540,7 +579,6 @@ function QuestionRenderer({ q, value, setValue }) {
         {q.options.map((opt) => {
           const isSelected = value?.selected === opt.label;
           const fieldLabel = getFieldLabel(opt);
-          const fieldType = opt.otherType || "text";
 
           return (
             <div key={opt.id} className="space-y-2">
@@ -554,6 +592,7 @@ function QuestionRenderer({ q, value, setValue }) {
                 <span className="text-gray-700 dark:text-gray-200">{opt.label}</span>
               </label>
 
+              {/* ✅ Champ lié TOUJOURS TEXTE */}
               {opt.hasText && isSelected && (
                 <div className="ml-10 p-3 bg-green-50 dark:bg-gray-700/50 border border-green-200 dark:border-emerald-800 rounded-xl flex flex-col gap-1.5">
                   <label className="text-xs font-semibold text-green-700 dark:text-emerald-400 uppercase tracking-wide flex items-center gap-1">
@@ -561,28 +600,14 @@ function QuestionRenderer({ q, value, setValue }) {
                     <span>{fieldLabel}</span>
                     <span className="text-red-500 ml-0.5">*</span>
                   </label>
-                  {fieldType === "number8" ? (
-                    <input
-                      type="text"
-                      inputMode="numeric"
-                      maxLength="8"
-                      placeholder={fieldLabel}
-                      className="w-full sm:max-w-xs rounded-xl border border-green-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 px-4 py-2.5 focus:border-green-500 dark:focus:border-emerald-500 focus:ring-1 outline-none transition-colors font-mono"
-                      value={value?.textValue || ""}
-                      onChange={(e) => {
-                        const filtered = e.target.value.replace(/[^0-9]/g, "").slice(0, 8);
-                        setValue({ ...value, textValue: filtered });
-                      }}
-                    />
-                  ) : (
-                    <input
-                      type={fieldType}
-                      placeholder={fieldLabel}
-                      className="w-full sm:max-w-xs rounded-xl border border-green-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 px-4 py-2.5 focus:border-green-500 dark:focus:border-emerald-500 focus:ring-1 outline-none transition-colors"
-                      value={value?.textValue || ""}
-                      onChange={(e) => setValue({ ...value, textValue: e.target.value })}
-                    />
-                  )}
+
+                  <input
+                    type="text"
+                    placeholder={fieldLabel}
+                    className="w-full sm:max-w-xs rounded-xl border border-green-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 px-4 py-2.5 focus:border-green-500 dark:focus:border-emerald-500 focus:ring-1 outline-none transition-colors"
+                    value={value?.textValue || ""}
+                    onChange={(e) => setValue({ ...value, textValue: e.target.value })}
+                  />
                 </div>
               )}
             </div>
@@ -602,7 +627,6 @@ function QuestionRenderer({ q, value, setValue }) {
         {q.options.map((opt) => {
           const isChecked = selected.includes(opt.label);
           const fieldLabel = getFieldLabel(opt);
-          const fieldType = opt.otherType || "text";
 
           return (
             <div key={opt.id} className="space-y-2">
@@ -623,6 +647,7 @@ function QuestionRenderer({ q, value, setValue }) {
                 <span className="text-gray-700 dark:text-gray-200">{opt.label}</span>
               </label>
 
+              {/* ✅ Champ lié TOUJOURS TEXTE */}
               {opt.hasText && isChecked && (
                 <div className="ml-10 p-3 bg-green-50 dark:bg-gray-700/50 border border-green-200 dark:border-emerald-800 rounded-xl flex flex-col gap-1.5">
                   <label className="text-xs font-semibold text-green-700 dark:text-emerald-400 uppercase tracking-wide flex items-center gap-1">
@@ -630,36 +655,19 @@ function QuestionRenderer({ q, value, setValue }) {
                     <span>{fieldLabel}</span>
                     <span className="text-red-500 ml-0.5">*</span>
                   </label>
-                  {fieldType === "number8" ? (
-                    <input
-                      type="text"
-                      inputMode="numeric"
-                      maxLength="8"
-                      placeholder={fieldLabel}
-                      className="w-full sm:max-w-xs rounded-xl border border-green-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 px-4 py-2.5 focus:border-green-500 dark:focus:border-emerald-500 focus:ring-1 outline-none transition-colors font-mono"
-                      value={textValues[opt.label] || ""}
-                      onChange={(e) => {
-                        const filtered = e.target.value.replace(/[^0-9]/g, "").slice(0, 8);
-                        setValue({
-                          ...value,
-                          textValues: { ...textValues, [opt.label]: filtered },
-                        });
-                      }}
-                    />
-                  ) : (
-                    <input
-                      type={fieldType}
-                      placeholder={fieldLabel}
-                      className="w-full sm:max-w-xs rounded-xl border border-green-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 px-4 py-2.5 focus:border-green-500 dark:focus:border-emerald-500 focus:ring-1 outline-none transition-colors"
-                      value={textValues[opt.label] || ""}
-                      onChange={(e) =>
-                        setValue({
-                          ...value,
-                          textValues: { ...textValues, [opt.label]: e.target.value },
-                        })
-                      }
-                    />
-                  )}
+
+                  <input
+                    type="text"
+                    placeholder={fieldLabel}
+                    className="w-full sm:max-w-xs rounded-xl border border-green-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 px-4 py-2.5 focus:border-green-500 dark:focus:border-emerald-500 focus:ring-1 outline-none transition-colors"
+                    value={textValues[opt.label] || ""}
+                    onChange={(e) =>
+                      setValue({
+                        ...value,
+                        textValues: { ...textValues, [opt.label]: e.target.value },
+                      })
+                    }
+                  />
                 </div>
               )}
             </div>
@@ -669,44 +677,211 @@ function QuestionRenderer({ q, value, setValue }) {
     );
   }
 
+  /* ── RANKING (CLASSEMENT) ── */
+  if (q.type === "ranking") {
+    return (
+      <RankingRenderer
+        q={q}
+        items={value?.items || []}
+        textValues={value?.textValues || {}}
+        setItems={(items) => setValue({ ...value, items })}
+        setTextValues={(textValues) => setValue({ ...value, textValues })}
+      />
+    );
+  }
+
   /* ── SCALE GROUP ── */
   if (q.type === "scale_group") {
-    const obj = value || {};
+    const scales = value?.scales || {};
+    const textValues = value?.textValues || {};
     const min = q.scale?.min ?? 0;
     const max = q.scale?.max ?? 4;
     const levels = Array.from({ length: max - min + 1 }, (_, i) => min + i);
 
     return (
       <div className="space-y-4">
-        {q.items.map((it) => (
-          <div
-            key={it.id}
-            className="grid grid-cols-1 sm:grid-cols-2 gap-4 items-center py-3 border-b border-gray-200 dark:border-gray-700"
-          >
-            <div className="font-medium text-gray-800 dark:text-gray-100 text-base">
-              {it.label}
+        {q.items.map((it) => {
+          const fieldLabel = getFieldLabel(it);
+          const isTextVisible = it.hasText;
+
+          return (
+            <div key={it.id} className="space-y-2">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 items-center py-3 border-b border-gray-200 dark:border-gray-700">
+                <div className="font-medium text-gray-800 dark:text-gray-100 text-base">
+                  {it.label}
+                </div>
+                <div>
+                  <select
+                    className="w-full sm:max-w-xs rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 px-4 py-2.5 text-sm sm:text-base focus:border-green-500 focus:ring-2 focus:ring-green-400/30 outline-none transition-all cursor-pointer shadow-sm"
+                    value={scales[it.id] ?? ""}
+                    onChange={(e) =>
+                      setValue({ ...value, scales: { ...scales, [it.id]: e.target.value } })
+                    }
+                  >
+                    <option value="" disabled>
+                      — Choisir un niveau —
+                    </option>
+                    {levels.map((lvl) => (
+                      <option key={lvl} value={String(lvl)}>
+                        {lvl} – {q.scale?.labels?.[lvl] ?? `Niveau ${lvl}`}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              {/* ✅ Champ texte lié TOUJOURS TEXTE */}
+              {isTextVisible && (
+                <div className="ml-4 p-3 bg-green-50 dark:bg-gray-700/50 border border-green-200 dark:border-emerald-800 rounded-xl flex flex-col gap-1.5">
+                  <label className="text-xs font-semibold text-green-700 dark:text-emerald-400 uppercase tracking-wide flex items-center gap-1">
+                    <span>↳</span>
+                    <span>{fieldLabel}</span>
+                    <span className="text-red-500 ml-0.5">*</span>
+                  </label>
+
+                  <input
+                    type="text"
+                    placeholder={fieldLabel}
+                    className="w-full sm:max-w-xs rounded-xl border border-green-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 px-4 py-2.5 focus:border-green-500 dark:focus:border-emerald-500 focus:ring-1 outline-none transition-colors"
+                    value={textValues[it.id] || ""}
+                    onChange={(e) =>
+                      setValue({
+                        ...value,
+                        textValues: { ...textValues, [it.id]: e.target.value },
+                      })
+                    }
+                  />
+                </div>
+              )}
             </div>
-            <div>
-              <select
-                className="w-full sm:max-w-xs rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 px-4 py-2.5 text-sm sm:text-base focus:border-green-500 focus:ring-2 focus:ring-green-400/30 outline-none transition-all cursor-pointer shadow-sm"
-                value={obj[it.id] ?? ""}
-                onChange={(e) => setValue({ ...obj, [it.id]: e.target.value })}
-              >
-                <option value="" disabled>
-                  — Choisir un niveau —
-                </option>
-                {levels.map((lvl) => (
-                  <option key={lvl} value={String(lvl)}>
-                    {lvl} – {q.scale?.labels?.[lvl] ?? `Niveau ${lvl}`}
-                  </option>
-                ))}
-              </select>
-            </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
     );
   }
 
   return null;
+}
+
+/* =======================
+   RankingRenderer (Drag & Drop)
+======================= */
+function RankingRenderer({ q, items, textValues, setItems, setTextValues }) {
+  const [draggedIndex, setDraggedIndex] = useState(null);
+
+  const handleDragStart = (index) => setDraggedIndex(index);
+  const handleDragOver = (e) => e.preventDefault();
+
+  const handleDrop = (index) => {
+    if (draggedIndex === null || draggedIndex === index) {
+      setDraggedIndex(null);
+      return;
+    }
+    const newItems = [...items];
+    const draggedItem = newItems[draggedIndex];
+    newItems.splice(draggedIndex, 1);
+    newItems.splice(index, 0, draggedItem);
+    setItems(newItems);
+    setDraggedIndex(null);
+  };
+
+  const handleMoveUp = (index) => {
+    if (index === 0) return;
+    const newItems = [...items];
+    [newItems[index - 1], newItems[index]] = [newItems[index], newItems[index - 1]];
+    setItems(newItems);
+  };
+
+  const handleMoveDown = (index) => {
+    if (index === items.length - 1) return;
+    const newItems = [...items];
+    [newItems[index], newItems[index + 1]] = [newItems[index + 1], newItems[index]];
+    setItems(newItems);
+  };
+
+  return (
+    <div className="space-y-3">
+      <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-3 text-sm text-green-700 dark:text-green-300 flex items-start gap-2">
+        <span className="text-lg mt-0.5">💡</span>
+        <span>Glissez les éléments pour les réordonner, ou utilisez les flèches ↑↓</span>
+      </div>
+
+      <div className="space-y-2">
+        {items.map((item, index) => {
+          const opt = q.options.find((o) => o.label === item);
+          const fieldLabel = opt ? getFieldLabel(opt) : "Précisez...";
+          const isTextVisible = opt?.hasText;
+
+          return (
+            <div key={index} className="space-y-2">
+              <div
+                draggable
+                onDragStart={() => handleDragStart(index)}
+                onDragOver={handleDragOver}
+                onDrop={() => handleDrop(index)}
+                className={`
+                  flex items-center gap-3 p-4 rounded-xl border-2 transition-all
+                  ${
+                    draggedIndex === index
+                      ? "border-green-400 dark:border-green-500 bg-green-100 dark:bg-green-900/30 opacity-60"
+                      : "border-green-200 dark:border-gray-600 bg-white dark:bg-gray-700 hover:border-green-300 dark:hover:border-green-700 cursor-grab active:cursor-grabbing"
+                  }
+                `}
+              >
+                <div className="flex items-center justify-center w-9 h-9 rounded-lg bg-green-100 dark:bg-green-900 text-green-600 dark:text-green-400 font-bold text-sm shrink-0">
+                  {index + 1}
+                </div>
+
+                <span className="text-gray-400 dark:text-gray-600 text-xl select-none cursor-grab active:cursor-grabbing">
+                  ⋮⋮
+                </span>
+
+                <span className="flex-1 text-gray-800 dark:text-gray-100 font-medium">
+                  {item}
+                </span>
+
+                <div className="flex gap-1 shrink-0">
+                  <button
+                    onClick={() => handleMoveUp(index)}
+                    disabled={index === 0}
+                    className="p-2 rounded-lg border border-gray-300 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-600 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                    title="Monter"
+                  >
+                    ↑
+                  </button>
+                  <button
+                    onClick={() => handleMoveDown(index)}
+                    disabled={index === items.length - 1}
+                    className="p-2 rounded-lg border border-gray-300 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-600 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                    title="Descendre"
+                  >
+                    ↓
+                  </button>
+                </div>
+              </div>
+
+              {/* ✅ Champ texte lié TOUJOURS TEXTE */}
+              {isTextVisible && (
+                <div className="ml-10 p-3 bg-green-50 dark:bg-gray-700/50 border border-green-200 dark:border-emerald-800 rounded-xl flex flex-col gap-1.5">
+                  <label className="text-xs font-semibold text-green-700 dark:text-emerald-400 uppercase tracking-wide flex items-center gap-1">
+                    <span>↳</span>
+                    <span>{fieldLabel}</span>
+                    <span className="text-red-500 ml-0.5">*</span>
+                  </label>
+
+                  <input
+                    type="text"
+                    placeholder={fieldLabel}
+                    className="w-full sm:max-w-xs rounded-xl border border-green-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 px-4 py-2.5 focus:border-green-500 dark:focus:border-emerald-500 focus:ring-1 outline-none transition-colors"
+                    value={textValues[item] || ""}
+                    onChange={(e) => setTextValues({ ...textValues, [item]: e.target.value })}
+                  />
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
 }
