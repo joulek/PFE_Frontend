@@ -489,6 +489,12 @@ export default function Navbar() {
                       <Link href="/ResponsableMetier/candidatures" className={`${linkBase} ${isActive("/ResponsableMetier/candidatures") ? activeLink : inactiveLink}`}>
                         Mes candidatures
                       </Link>
+                      <Link href="/ResponsableMetier/list-entretien" className={`${linkBase} ${isActive("/ResponsableMetier/list-entretien") ? activeLink : inactiveLink}`}>
+                        Liste des entretiens
+                      </Link>
+                        <Link href="/ResponsableMetier/candidatures_Analysis" className={`${linkBase} ${isActive("/ResponsableMetier/candidatures_Analysis") ? activeLink : inactiveLink}`}>
+                        Analyse des candidatures
+                      </Link>
                       <Link href="/ResponsableMetier/job" className={`${linkBase} ${isActive("/ResponsableMetier/job") ? activeLink : inactiveLink}`}>
                         Mes offres d&apos;emploi
                       </Link>

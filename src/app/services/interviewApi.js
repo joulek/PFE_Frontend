@@ -12,6 +12,7 @@ const API_BASE = process.env.NEXT_PUBLIC_API_URL;
  *  3b. Candidat propose date      → candidateReschedule()
  *  4. Admin approuve/rejette      → adminApprove() / adminReject()
  *  5. Admin liste & stats         → getAllInterviewsAdmin() / getInterviewsStats()
+ *  6. ResponsableMetier liste     → getMyInterviews() / getMyInterviewsStats()
  *
  * ============================================================ */
 
@@ -174,6 +175,52 @@ export async function getAllInterviewsAdmin({
  */
 export async function getInterviewsStats() {
   return request("/api/interviews/admin/stats", {
+    headers: getAuthHeaders(),
+  });
+}
+
+// ══════════════════════════════════════════════
+//  RESPONSABLE METIER : Ses propres entretiens
+// ══════════════════════════════════════════════
+
+/**
+ * GET /api/interviews/responsable/my-interviews
+ * RESPONSABLE_METIER ONLY — Liste paginée de ses entretiens assignés
+ *
+ * @param {object} params
+ * @param {number}  params.page    - Numéro de page (défaut : 1)
+ * @param {number}  params.limit   - Résultats par page (défaut : 10)
+ * @param {string}  params.status  - Filtrer par statut, ex: "CONFIRMED" | "ALL"
+ * @param {string}  params.search  - Recherche par nom / email / poste
+ *
+ * @returns {{ success, interviews, total, page, totalPages }}
+ */
+export async function getMyInterviews({
+  page = 1,
+  limit = 10,
+  status = "ALL",
+  search = "",
+} = {}) {
+  const params = new URLSearchParams({
+    page: String(page),
+    limit: String(limit),
+    status,
+    ...(search.trim() ? { search: search.trim() } : {}),
+  });
+
+  return request(`/api/interviews/responsable/my-interviews?${params}`, {
+    headers: getAuthHeaders(),
+  });
+}
+
+/**
+ * GET /api/interviews/responsable/my-stats
+ * RESPONSABLE_METIER ONLY — Compteurs par statut de ses entretiens
+ *
+ * @returns {{ success, data: { TOTAL, CONFIRMED, PENDING_CONFIRMATION, ... } }}
+ */
+export async function getMyInterviewsStats() {
+  return request("/api/interviews/responsable/my-stats", {
     headers: getAuthHeaders(),
   });
 }

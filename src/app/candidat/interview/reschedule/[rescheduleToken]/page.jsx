@@ -1,8 +1,7 @@
-// app/candidat/interview/reschedule/[rescheduleToken]/page.jsx
-// ✅ Le dossier s'appelle [rescheduleToken] → params.rescheduleToken
-import CandidatRescheduleInterview from "./CandidatRescheduleInterview";
+// app/candidat/reschedule-interview/[token]/page.jsx
+import CandidatRescheduleRhTechInterview from "./CandidatRescheduleRhTechInterview";
 
 export default async function Page({ params }) {
-  const { rescheduleToken } = await params;
-  return <CandidatRescheduleInterview token={rescheduleToken} />;
+  const { token } = await params;
+  return <CandidatRescheduleRhTechInterview token={token} />;
 }
