@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import OutlookCalendar from "../Outlookcalendar";
+import GoogleCalendar from "../Googlecalendar";
 import api from "../../services/api";
 import {
   CalendarClock,
@@ -210,7 +210,7 @@ export default function ResponsableRescheduleCalendar({ token }) {
 
       {/* Calendrier */}
       <div className="w-full" style={{ height: "calc(100vh - 220px)" }}>
-        <OutlookCalendar onDateSelect={handleDateSelect} />
+        <GoogleCalendar  onDateSelect={handleDateSelect} />
       </div>
 
       <TimePickModal

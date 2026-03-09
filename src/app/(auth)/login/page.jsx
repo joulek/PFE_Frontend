@@ -50,7 +50,7 @@ export default function LoginPage() {
 
       // ✅ localStorage (للـ UI)
       localStorage.setItem("token", token);
-      localStorage.setItem("user", JSON.stringify({ ...user, role }));
+      localStorage.setItem("user", JSON.stringify({ ...user, role, poste: user?.poste || "" }));
       window.dispatchEvent(new Event("user-updated"));
 
       // ✅ navigation الصحيح
@@ -58,6 +58,8 @@ export default function LoginPage() {
         router.replace("/recruiter/dashboard");
       } else if (role === "ASSISTANTE_RH") {
         router.replace("/employees");
+      } else if (role === "ASSISTANCE_DIRECTION") {
+        router.replace("/entretiens-confirmes");
       } else {
         router.replace("/ResponsableMetier/candidatures");
       }

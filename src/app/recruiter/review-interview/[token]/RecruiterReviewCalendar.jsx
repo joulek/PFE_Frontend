@@ -9,7 +9,7 @@
 import { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { CheckCircle2, Loader2, Calendar, Clock, User, Briefcase, XCircle } from "lucide-react";
-import OutlookCalendar from "../../../components/Outlookcalendar";
+import OutlookCalendar from "../../../components/Googlecalendar";
 import api from "../../../services/api";
 
 /* ── Modal choix heure après clic sur date ─────────────────────────────── */
@@ -109,7 +109,17 @@ export default function RecruiterReviewCalendar({ token }) {
   useEffect(() => {
     async function load() {
       try {
-        const { data } = await api.get(`/api/calendar/rh-tech/recruiter/review/${token}`);
+        // ✅ Essaye d'abord RH-tech, puis fallback RH (recruiterActionToken)
+        let data;
+        try {
+          const res = await api.get(`/api/calendar/rh-tech/recruiter/review/${token}`);
+          data = res.data;
+        } catch (e) {
+          if (e?.response?.status === 404) {
+            const res2 = await api.get(`/api/calendar/interview/recruiter-review/${token}`);
+            data = res2.data;
+          } else throw e;
+        }
         setInterview(data.interview);
       } catch (e) {
         setInfoError(e?.response?.data?.message || "Lien invalide ou expiré");
@@ -133,7 +143,14 @@ export default function RecruiterReviewCalendar({ token }) {
     setAccepting(true);
     setAcceptErr(null);
     try {
-      await api.post(`/api/calendar/rh-tech/recruiter/accept/${token}`);
+      // ✅ Essaye RH-tech d'abord, puis fallback RH
+      try {
+        await api.post(`/api/calendar/rh-tech/recruiter/accept/${token}`);
+      } catch (e) {
+        if (e?.response?.status === 404) {
+          await api.get(`/api/calendar/interview/recruiter-confirm-slot/${token}?redirect=/recruiter/calendar`);
+        } else throw e;
+      }
       setAcceptOk(true);
       setTimeout(() => router.push("/recruiter/calendar?accepted=1"), 3000);
     } catch (e) {
@@ -159,10 +176,18 @@ export default function RecruiterReviewCalendar({ token }) {
     setProposing(true);
     setProposeErr(null);
     try {
-      await api.post(`/api/calendar/rh-tech/recruiter/propose/${token}`, {
-        proposedDate: clickedDate,
-        proposedTime: time,
-      });
+      // ✅ Essaye RH-tech d'abord, puis fallback RH
+      try {
+        await api.post(`/api/calendar/rh-tech/recruiter/propose/${token}`, {
+          proposedDate: clickedDate,
+          proposedTime: time,
+        });
+      } catch (e) {
+        if (e?.response?.status === 404) {
+          const startISO = `${clickedDate}T${time}:00`;
+          await api.post(`/api/calendar/interview/recruiter-propose-from-review/${token}`, { startISO });
+        } else throw e;
+      }
       setProposeOk(true);
       setTimeout(() => { setModalOpen(false); router.push("/recruiter/calendar?proposed=1"); }, 2500);
     } catch (e) {

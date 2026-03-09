@@ -13,25 +13,30 @@ export function middleware(req) {
       ? decodedToken
       : null;
 
-  const role          = (req.cookies.get("role")?.value || "").trim().toUpperCase();
-  const isAdmin       = role === "ADMIN";
-  const isAssistanteRH = role === "ASSISTANTE_RH";
+  const role                  = (req.cookies.get("role")?.value || "").trim().toUpperCase();
+  const isAdmin               = role === "ADMIN";
+  const isAssistanteRH        = role === "ASSISTANTE_RH";
+  const isAssistanceDirection = role === "ASSISTANCE_DIRECTION";
 
   const isRecruiterPath   = pathname.startsWith("/recruiter");
   const isResponsablePath =
     pathname.startsWith("/ResponsableMetier") ||
     pathname.startsWith("/responsableMetier");
 
+  const isAssistanceDirPath = pathname.startsWith("/entretiens-confirmes");
+
   // Pages partagées ADMIN + ASSISTANTE_RH (hors /recruiter)
   const isSharedRHPath =
     pathname.startsWith("/employees") ||
     pathname.startsWith("/roles") ||
     pathname.startsWith("/utilisateur");
-    pathname.startsWith("/calendar");
+
+  // /calendar → ADMIN + ASSISTANTE_RH + ASSISTANCE_DIRECTION
+  const isCalendarPath = pathname.startsWith("/calendar");
 
   const isLoginPage    = pathname.startsWith("/login");
   const isUnauthorized = pathname.startsWith("/unauthorized");
-  const isProtected    = isRecruiterPath || isResponsablePath || isSharedRHPath;
+  const isProtected    = isRecruiterPath || isResponsablePath || isSharedRHPath || isAssistanceDirPath || isCalendarPath;
 
   const redirect = (to) => {
     const url = req.nextUrl.clone();
@@ -53,13 +58,20 @@ export function middleware(req) {
   // /ResponsableMetier/* → RESPONSABLE_METIER + ASSISTANTE_RH (pas ADMIN)
   if (isResponsablePath && token && isAdmin) return redirect("/unauthorized");
 
-  // /employees + /roles → ADMIN + ASSISTANTE_RH uniquement (pas RESPONSABLE_METIER)
+  // /employees + /roles → ADMIN + ASSISTANTE_RH uniquement
   if (isSharedRHPath && token && !isAdmin && !isAssistanteRH) return redirect("/unauthorized");
+
+  // /calendar → ADMIN + ASSISTANTE_RH + ASSISTANCE_DIRECTION
+  if (isCalendarPath && token && !isAdmin && !isAssistanteRH && !isAssistanceDirection) return redirect("/unauthorized");
+
+  // /entretiens-confirmes/* → ASSISTANCE_DIRECTION + ADMIN uniquement
+  if (isAssistanceDirPath && token && !isAdmin && !isAssistanceDirection) return redirect("/unauthorized");
 
   // 3) Connecté et va /login => redirection selon rôle
   if (isLoginPage && token) {
-    if (isAdmin)         return redirect("/recruiter/dashboard");
-    if (isAssistanteRH)  return redirect("/employees");
+    if (isAdmin)               return redirect("/recruiter/dashboard");
+    if (isAssistanteRH)        return redirect("/employees");
+    if (isAssistanceDirection) return redirect("/entretiens-confirmes");
     return redirect("/ResponsableMetier/candidatures");
   }
 

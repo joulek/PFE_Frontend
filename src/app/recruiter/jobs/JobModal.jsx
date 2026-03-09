@@ -196,7 +196,7 @@ export default function JobModal({
       setFormError("❌ La date de clôture est obligatoire.");
       return;
     }
-    if (!isValidTotal) {
+    if (!isValidTotal && !isStage) {
       setFormError("❌ La somme des pondérations doit être égale à 100%");
       return;
     }
@@ -536,8 +536,8 @@ export default function JobModal({
                 </div>
               </div>
 
-              {/* SELECT USERS */}
-              <div>
+              {/* SELECT USERS — emploi seulement */}
+              {!isStage && <div>
                 <label className={labelBase}>Affectation responsable métier</label>
                 <select
                   value={assignedUserId}
@@ -551,16 +551,16 @@ export default function JobModal({
                              outline-none transition-colors"
                 >
                   <option value="">-- Choisir un utilisateur --</option>
-                  {users.map((u) => (
+                  {users.filter(u => u.role === "RESPONSABLE_METIER").map((u) => (
                     <option key={u._id} value={u._id}>
-                      [{u.role}] {u.prenom} {u.nom}
+                      {u.prenom} {u.nom}{u.poste ? ` — ${u.poste}` : ""}
                     </option>
                   ))}
                 </select>
-              </div>
+              </div>}
 
-              {/* QUIZ — uniquement en mode création */}
-              {!isEditMode && (
+              {/* QUIZ — uniquement en mode création et emploi */}
+              {!isStage && !isEditMode && (
                 <div className="border border-gray-200 dark:border-gray-700 rounded-2xl p-5 space-y-4">
                   <label className="flex items-center gap-3 cursor-pointer select-none">
                     <div className="relative">
@@ -649,8 +649,8 @@ export default function JobModal({
                 </div>
               )}
 
-              {/* WEIGHTS */}
-              <div className="border-t border-gray-200 dark:border-gray-700 pt-6">
+              {/* WEIGHTS — emploi seulement */}
+              {!isStage && <div className="border-t border-gray-200 dark:border-gray-700 pt-6">
                 <div className="flex items-center justify-between mb-4">
                   <h3 className="text-sm font-extrabold text-gray-900 dark:text-white uppercase tracking-wide">
                     Pondérations (0 – 100)
@@ -699,22 +699,22 @@ export default function JobModal({
                     La somme des pondérations doit être égale à 100% pour pouvoir enregistrer.
                   </p>
                 )}
-              </div>
+              </div>}
             </div>
 
             {/* FOOTER */}
             <div className="mt-7 sm:mt-8 pt-5 sm:pt-6 border-t border-gray-200 dark:border-gray-700 flex flex-col sm:flex-row gap-3 sm:gap-4">
               <button
                 type="submit"
-                disabled={!isValidTotal}
+                disabled={!isStage && !isValidTotal}
                 className={`sm:flex-1 h-11 sm:h-12 rounded-xl sm:rounded-full font-semibold transition-colors shadow-sm
                   ${
-                    isValidTotal
+                    isStage || isValidTotal
                       ? "bg-[#6CB33F] hover:bg-[#5AA332] dark:bg-emerald-600 dark:hover:bg-emerald-500 text-white"
                       : "bg-gray-300 dark:bg-gray-600 text-gray-500 dark:text-gray-400 cursor-not-allowed"
                   }`}
               >
-                {!isEditMode && generateQuiz
+                {!isStage && !isEditMode && generateQuiz
                   ? `Enregistrer + Générer ${numQuestions} questions`
                   : "Enregistrer"}
               </button>

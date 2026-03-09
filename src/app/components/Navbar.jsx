@@ -400,8 +400,9 @@ export default function Navbar() {
   }, []);
 
   const isActive = (path) => pathname === path;
-  const isAdmin        = user?.role === "ADMIN";
-  const isAssistanteRH = user?.role === "ASSISTANTE_RH";
+  const isAdmin              = user?.role === "ADMIN";
+  const isAssistanteRH       = user?.role === "ASSISTANTE_RH";
+  const isAssistanceDirection = user?.role === "ASSISTANCE_DIRECTION";
 
   const isInCandidatures =
     pathname.startsWith("/recruiter/candidatures") ||
@@ -478,7 +479,7 @@ export default function Navbar() {
             {/* DESKTOP MENU */}
             <div className="hidden md:flex items-center bg-[#F4F7F5] dark:bg-gray-800/60 rounded-full p-1 gap-1 transition-colors duration-200">
               {/* ── RESPONSABLE METIER ── */}
-              {!isAdmin && !isAssistanteRH && (
+              {!isAdmin && !isAssistanteRH && !isAssistanceDirection && (
                 <>
                   <Link href="/jobs" className={`${linkBase} ${isActive("/jobs") ? activeLink : inactiveLink}`}>
                     Offres d'emploi
@@ -514,7 +515,21 @@ export default function Navbar() {
                   <Link href="/roles" className={`${linkBase} ${isActive("/roles") ? activeLink : inactiveLink}`}>
                     Gestion Rôles
                   </Link>
-                  
+                  <Link href="/calendar" className={`${linkBase} ${isActive("/calendar") ? activeLink : inactiveLink}`}>
+                    Mon calendrier
+                  </Link>
+                </>
+              )}
+
+              {/* ── ASSISTANCE DIRECTION ── */}
+              {isAssistanceDirection && (
+                <>
+                  <Link href="/entretiens-confirmes" className={`${linkBase} ${isActive("/entretiens-confirmes") ? activeLink : inactiveLink}`}>
+                    Entretiens confirmés
+                  </Link>
+                  <Link href="/calendar" className={`${linkBase} ${isActive("/calendar") ? activeLink : inactiveLink}`}>
+                    Mon calendrier
+                  </Link>
                 </>
               )}
 
@@ -540,9 +555,7 @@ export default function Navbar() {
                         <Link href="/recruiter/candidatures" className={`${dropdownItemBase} ${isActive("/recruiter/candidatures") ? dropdownActive : dropdownHover}`}>
                           Liste des candidatures
                         </Link>
-                         <Link href="/recruiter/candidatures_spontanees" className={`${dropdownItemBase} ${isActive("/recruiter/candidatures_spontanees") ? dropdownActive : dropdownHover}`}>
-                          Liste des candidatures spontanées
-                        </Link>
+                       
                         <Link href="/recruiter/CandidatureAnalysis" className={`${dropdownItemBase} ${isActive("/recruiter/CandidatureAnalysis") ? dropdownActive : dropdownHover}`}>
                           Analyse des candidatures
                         </Link>
@@ -665,7 +678,7 @@ export default function Navbar() {
             <div className="md:hidden pb-5 pt-2">
               <div className="rounded-2xl bg-white/95 dark:bg-gray-900/85 shadow-xl border border-gray-200/70 dark:border-gray-700/60 p-4 space-y-2 backdrop-blur-sm transition-colors duration-200">
                 {/* ── RESPONSABLE METIER ── */}
-                {!isAdmin && !isAssistanteRH && (
+                {!isAdmin && !isAssistanteRH && !isAssistanceDirection && (
                   <>
                     <Link href="/jobs" className={`block px-5 py-3.5 rounded-xl font-medium transition ${isActive("/jobs") ? "bg-[#6CB33F] text-white" : "text-gray-700 dark:text-gray-200 hover:bg-gray-100/70 dark:hover:bg-gray-800/60"}`}>
                       Offres d'emploi
@@ -701,6 +714,21 @@ export default function Navbar() {
                     <Link href="/roles" className={`block px-5 py-3.5 rounded-xl font-medium transition ${isActive("/roles") ? "bg-[#6CB33F] text-white" : "text-gray-700 dark:text-gray-200 hover:bg-gray-100/70 dark:hover:bg-gray-800/60"}`}>
                       Gestion Rôles
                     </Link>
+                    <Link href="/calendar" className={`block px-5 py-3.5 rounded-xl font-medium transition ${isActive("/calendar") ? "bg-[#6CB33F] text-white" : "text-gray-700 dark:text-gray-200 hover:bg-gray-100/70 dark:hover:bg-gray-800/60"}`}>
+                      Mon calendrier
+                    </Link>
+                  </>
+                )}
+
+                {/* ── ASSISTANCE DIRECTION ── */}
+                {isAssistanceDirection && (
+                  <>
+                    <Link href="/entretiens-confirmes" className={`block px-5 py-3.5 rounded-xl font-medium transition ${isActive("/entretiens-confirmes") ? "bg-[#6CB33F] text-white" : "text-gray-700 dark:text-gray-200 hover:bg-gray-100/70 dark:hover:bg-gray-800/60"}`}>
+                      Entretiens confirmés
+                    </Link>
+                    <Link href="/calendar" className={`block px-5 py-3.5 rounded-xl font-medium transition ${isActive("/calendar") ? "bg-[#6CB33F] text-white" : "text-gray-700 dark:text-gray-200 hover:bg-gray-100/70 dark:hover:bg-gray-800/60"}`}>
+                      Mon calendrier
+                    </Link>
                   </>
                 )}
 
@@ -710,7 +738,7 @@ export default function Navbar() {
                     <Link href="/recruiter/jobs" className="block px-5 py-3.5 rounded-xl text-gray-700 dark:text-gray-200 hover:bg-gray-100/70 dark:hover:bg-gray-800/60">Gestion offres</Link>
                     <Link href="/recruiter/candidatures" className="block px-5 py-3.5 rounded-xl text-gray-700 dark:text-gray-200 hover:bg-gray-100/70 dark:hover:bg-gray-800/60">Liste des candidatures</Link>
                    
-                    <Link href="/recruiter/candidatures_spontanees" className="block px-5 py-3.5 rounded-xl text-gray-700 dark:text-gray-200 hover:bg-gray-100/70 dark:hover:bg-gray-800/60">Liste des candidatures spontanées</Link>
+                   
                      <Link href="/recruiter/list_interview" className="block px-5 py-3.5 rounded-xl text-gray-700 dark:text-gray-200 hover:bg-gray-100/70 dark:hover:bg-gray-800/60">Liste des entretiens</Link>
                     <Link href="/recruiter/CandidatureAnalysis" className="block px-5 py-3.5 rounded-xl text-gray-700 dark:text-gray-200 hover:bg-gray-100/70 dark:hover:bg-gray-800/60">Analyse des candidatures</Link>
                     <Link href="/recruiter/PreInterviewList" className="block px-5 py-3.5 rounded-xl text-gray-700 dark:text-gray-200 hover:bg-gray-100/70 dark:hover:bg-gray-800/60">Liste des pré-sélections</Link>
