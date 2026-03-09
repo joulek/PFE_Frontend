@@ -219,27 +219,19 @@ export default function CandidatFicheWizardPage() {
 
     if (question.type === "radio") {
       if (!value?.selected) return false;
-      const opt = question.options.find((o) => o.label === value.selected);
-      if (opt?.hasText) return safeStr(value.textValue).trim().length > 0;
+      // ✅ Le champ lié est maintenant OPTIONNEL
       return true;
     }
 
     if (question.type === "checkbox") {
       if (!Array.isArray(value?.selected) || value.selected.length === 0) return false;
-      for (const label of value.selected) {
-        const opt = question.options.find((o) => o.label === label);
-        if (opt?.hasText && !safeStr(value.textValues?.[label]).trim()) return false;
-      }
+      // ✅ Les champs liés sont maintenant OPTIONNELS
       return true;
     }
 
     if (question.type === "ranking") {
       if (!value?.items || !Array.isArray(value.items) || value.items.length === 0) return false;
-
-      for (const item of value.items) {
-        const opt = question.options.find((o) => o.label === item);
-        if (opt?.hasText && !safeStr(value.textValues?.[item]).trim()) return false;
-      }
+      // ✅ Les champs liés sont maintenant OPTIONNELS
       return value.items.length === question.options.length;
     }
 
@@ -248,9 +240,7 @@ export default function CandidatFicheWizardPage() {
 
       if (!question.items.every((it) => safeStr(value.scales?.[it.id]).length > 0)) return false;
 
-      for (const it of question.items) {
-        if (it.hasText && !safeStr(value.textValues?.[it.id]).trim()) return false;
-      }
+      // ✅ Les champs liés sont maintenant OPTIONNELS
       return true;
     }
 
@@ -592,13 +582,12 @@ function QuestionRenderer({ q, value, setValue }) {
                 <span className="text-gray-700 dark:text-gray-200">{opt.label}</span>
               </label>
 
-              {/* ✅ Champ lié TOUJOURS TEXTE */}
+              {/* ✅ Champ lié OPTIONNEL (astérisque retiré) */}
               {opt.hasText && isSelected && (
                 <div className="ml-10 p-3 bg-green-50 dark:bg-gray-700/50 border border-green-200 dark:border-emerald-800 rounded-xl flex flex-col gap-1.5">
                   <label className="text-xs font-semibold text-green-700 dark:text-emerald-400 uppercase tracking-wide flex items-center gap-1">
                     <span>↳</span>
                     <span>{fieldLabel}</span>
-                    <span className="text-red-500 ml-0.5">*</span>
                   </label>
 
                   <input
@@ -647,13 +636,12 @@ function QuestionRenderer({ q, value, setValue }) {
                 <span className="text-gray-700 dark:text-gray-200">{opt.label}</span>
               </label>
 
-              {/* ✅ Champ lié TOUJOURS TEXTE */}
+              {/* ✅ Champ lié OPTIONNEL (astérisque retiré) */}
               {opt.hasText && isChecked && (
                 <div className="ml-10 p-3 bg-green-50 dark:bg-gray-700/50 border border-green-200 dark:border-emerald-800 rounded-xl flex flex-col gap-1.5">
                   <label className="text-xs font-semibold text-green-700 dark:text-emerald-400 uppercase tracking-wide flex items-center gap-1">
                     <span>↳</span>
                     <span>{fieldLabel}</span>
-                    <span className="text-red-500 ml-0.5">*</span>
                   </label>
 
                   <input
@@ -730,13 +718,12 @@ function QuestionRenderer({ q, value, setValue }) {
                 </div>
               </div>
 
-              {/* ✅ Champ texte lié TOUJOURS TEXTE */}
+              {/* ✅ Champ texte lié OPTIONNEL (astérisque retiré) */}
               {isTextVisible && (
                 <div className="ml-4 p-3 bg-green-50 dark:bg-gray-700/50 border border-green-200 dark:border-emerald-800 rounded-xl flex flex-col gap-1.5">
                   <label className="text-xs font-semibold text-green-700 dark:text-emerald-400 uppercase tracking-wide flex items-center gap-1">
                     <span>↳</span>
                     <span>{fieldLabel}</span>
-                    <span className="text-red-500 ml-0.5">*</span>
                   </label>
 
                   <input
@@ -860,13 +847,12 @@ function RankingRenderer({ q, items, textValues, setItems, setTextValues }) {
                 </div>
               </div>
 
-              {/* ✅ Champ texte lié TOUJOURS TEXTE */}
+              {/* ✅ Champ texte lié OPTIONNEL (astérisque retiré) */}
               {isTextVisible && (
                 <div className="ml-10 p-3 bg-green-50 dark:bg-gray-700/50 border border-green-200 dark:border-emerald-800 rounded-xl flex flex-col gap-1.5">
                   <label className="text-xs font-semibold text-green-700 dark:text-emerald-400 uppercase tracking-wide flex items-center gap-1">
                     <span>↳</span>
                     <span>{fieldLabel}</span>
-                    <span className="text-red-500 ml-0.5">*</span>
                   </label>
 
                   <input

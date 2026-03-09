@@ -23,7 +23,9 @@ export const getSpontaneousApplications = () =>
 export const getApplicationById = (id) =>
   api.get(`/applications/${id}`);
 
-// src/app/services/application.api.js
+/** ✅ Mettre à jour le statut d'une candidature */
+export const updateApplicationStatus = (id, status) =>
+  api.patch(`/applications/${id}/status`, { status });
 
 export const uploadCvToJob = async (jobId, file) => {
   const form = new FormData();

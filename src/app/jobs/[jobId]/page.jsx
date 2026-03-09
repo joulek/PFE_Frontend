@@ -195,7 +195,7 @@ export default function JobDetailsPage() {
               {hasValue(cloture) && (
                 <div className="flex items-center gap-2">
                   <Calendar className="w-4 h-4 text-gray-400" />
-                  <span>Clôture : {cloture}</span>
+                  <span>Date de clôture : {cloture}</span>
                 </div>
               )}
             </div>

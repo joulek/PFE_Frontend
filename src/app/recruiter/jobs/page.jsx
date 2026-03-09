@@ -473,11 +473,11 @@ export default function JobsPage() {
                     )}
                     <div className="flex items-center gap-2">
                       <Calendar className="w-4 h-4 text-gray-400 dark:text-gray-500" />
-                      <span>Création : {formatDate(job.createdAt)}</span>
+                      <span>Date de réation : {formatDate(job.createdAt)}</span>
                     </div>
                     <div className="flex items-center gap-2">
                       <CalendarClock className="w-4 h-4 text-gray-400 dark:text-gray-500" />
-                      <span>Clôture : {formatDate(job.dateCloture)}</span>
+                      <span>Date de clôture : {formatDate(job.dateCloture)}</span>
                     </div>
                   </div>
 
