@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { getCandidaturesWithJob } from "../../services/candidature.api";
-import { getSpontaneousApplications } from "../../services/application.api"; // ← adapter selon votre API
+import { getSpontaneousApplications } from "../../services/application.api";
 import Pagination from "../../components/Pagination";
 import {
   Search,
@@ -131,7 +131,7 @@ function StatusBadge({ status }) {
 const TABS = [
   { key: "TOUS", label: "Tous", Icon: Users },
   { key: "OFFRES", label: "Offres", Icon: Briefcase },
-  { key: "RECRUTEMENT", label: "Recrutement spontané", Icon: Briefcase },
+  { key: "RECRUTEMENT", label: "Candidature spontané", Icon: Briefcase },
   { key: "STAGE", label: "Stages", Icon: GraduationCap },
 ];
 
@@ -191,8 +191,8 @@ export default function CandidaturesUnifiedPage() {
       activeTab === "TOUS"
         ? allCandidatures
         : activeTab === "OFFRES"
-        ? candidaturesOffres
-        : candidaturesSpontanees.filter((c) => c._source === activeTab);
+          ? candidaturesOffres
+          : candidaturesSpontanees.filter((c) => c._source === activeTab);
 
     const query = q.toLowerCase().trim();
     if (!query) return base;
@@ -338,13 +338,12 @@ export default function CandidaturesUnifiedPage() {
                     {getPoste(c)}
                   </span>
                   {showSource && (
-                    <span className={`text-xs font-medium px-2 py-1 rounded-full ${
-                      c._source === "OFFRES"
+                    <span className={`text-xs font-medium px-2 py-1 rounded-full ${c._source === "OFFRES"
                         ? "bg-blue-50 text-blue-600 dark:bg-blue-900/20 dark:text-blue-300"
                         : c._source === "STAGE"
-                        ? "bg-purple-50 text-purple-600 dark:bg-purple-900/20 dark:text-purple-300"
-                        : "bg-gray-100 text-gray-500 dark:bg-gray-700 dark:text-gray-400"
-                    }`}>
+                          ? "bg-purple-50 text-purple-600 dark:bg-purple-900/20 dark:text-purple-300"
+                          : "bg-gray-100 text-gray-500 dark:bg-gray-700 dark:text-gray-400"
+                      }`}>
                       {c._source === "OFFRES" ? "Offre" : c._source === "STAGE" ? "Stage" : "Spontanée"}
                     </span>
                   )}
@@ -439,13 +438,12 @@ export default function CandidaturesUnifiedPage() {
                       </td>
                       {showSource && (
                         <td className="px-6 py-5">
-                          <span className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold ${
-                            c._source === "OFFRES"
+                          <span className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold ${c._source === "OFFRES"
                               ? "bg-blue-50 text-blue-600 dark:bg-blue-900/20 dark:text-blue-300"
                               : c._source === "STAGE"
-                              ? "bg-purple-50 text-purple-600 dark:bg-purple-900/20 dark:text-purple-300"
-                              : "bg-gray-100 text-gray-500 dark:bg-gray-700 dark:text-gray-400"
-                          }`}>
+                                ? "bg-purple-50 text-purple-600 dark:bg-purple-900/20 dark:text-purple-300"
+                                : "bg-gray-100 text-gray-500 dark:bg-gray-700 dark:text-gray-400"
+                            }`}>
                             {c._source === "OFFRES" ? <><Briefcase size={11} /> Offre</> : c._source === "STAGE" ? <><GraduationCap size={11} /> Stage</> : "Spontanée"}
                           </span>
                         </td>
@@ -471,13 +469,17 @@ export default function CandidaturesUnifiedPage() {
                       </td>
                       {showAction && (
                         <td className="px-6 py-5 text-center">
-                          <button
-                            onClick={() => router.push(`/recruiter/candidatures/${c._id}`)}
-                            className="h-9 w-9 inline-flex items-center justify-center rounded-full bg-gray-100 dark:bg-gray-700 hover:bg-[#E9F5E3] dark:hover:bg-gray-600 text-gray-500 dark:text-gray-400 hover:text-[#4E8F2F] transition-colors"
-                            title="Voir le détail"
-                          >
-                            <Eye size={15} />
-                          </button>
+                          {c._source !== "OFFRES" ? (
+                            <button
+                              onClick={() => router.push(`/recruiter/candidatures/${c._id}`)}
+                              className="h-9 w-9 inline-flex items-center justify-center rounded-full bg-gray-100 dark:bg-gray-700 hover:bg-[#E9F5E3] dark:hover:bg-gray-600 text-gray-500 dark:text-gray-400 hover:text-[#4E8F2F] transition-colors"
+                              title="Voir le détail"
+                            >
+                              <Eye size={15} />
+                            </button>
+                          ) : (
+                            <span className="text-gray-300">—</span>
+                          )}
                         </td>
                       )}
                     </tr>

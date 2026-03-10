@@ -273,7 +273,7 @@ export default function ResponsableJobsPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#F0FAF0] dark:bg-gray-950 p-10">
+      <div className="min-h-screen bg-[#F0FAF0] dark:bg-gray-950 p-4 md:p-10">
         <div className="max-w-6xl mx-auto space-y-6 animate-pulse">
           {[1, 2, 3].map((i) => (
             <div key={i} className="h-44 bg-white dark:bg-gray-800 rounded-2xl shadow-sm" />
@@ -285,22 +285,23 @@ export default function ResponsableJobsPage() {
 
   return (
     <div className="min-h-screen bg-[#F0FAF0] dark:bg-gray-950 transition-colors duration-300">
-      <div className="max-w-6xl mx-auto px-6 pt-10 pb-16">
+      <div className="max-w-6xl mx-auto px-4 md:px-6 pt-6 md:pt-10 pb-16">
 
         {/* HEADER */}
-        <div className="flex justify-between items-start gap-6 mb-8">
-          <div>
-            <h1 className="text-4xl font-extrabold text-gray-900 dark:text-white">
-              Offres Responsable Métier
+        <div className="flex flex-col md:flex-row md:justify-between md:items-start gap-4 md:gap-6 mb-6 md:mb-8">
+          <div className="flex-1">
+            <h1 className="text-2xl md:text-4xl font-extrabold text-gray-900 dark:text-white leading-tight">
+              Offres Responsable<br className="md:hidden" /> Métier
             </h1>
-            <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-              Tes offres créées + celles assignées par l'administrateur
+            <p className="text-xs md:text-sm text-gray-500 dark:text-gray-400 mt-2">
+              Tes offres créées + celles assignées
             </p>
-            <div className="mt-3 text-sm text-gray-600 dark:text-gray-300 space-y-1">
-              <p>Total : <span className="font-extrabold">{jobs.length}</span> offre(s)</p>
-              <p>
-                <span className="font-semibold">Créées :</span> {originCounts.CREATED} —{" "}
-                <span className="font-semibold">Assignées :</span> {originCounts.ASSIGNED}
+            <div className="mt-3 text-xs md:text-sm text-gray-600 dark:text-gray-300 space-y-1">
+              <p>Total : <span className="font-extrabold text-[#6CB33F]">{jobs.length}</span> offre(s)</p>
+              <p className="flex flex-wrap gap-1 md:gap-2">
+                <span><span className="font-semibold">Créées :</span> <span className="font-extrabold">{originCounts.CREATED}</span></span>
+                <span>—</span>
+                <span><span className="font-semibold">Assignées :</span> <span className="font-extrabold">{originCounts.ASSIGNED}</span></span>
               </p>
             </div>
           </div>
@@ -308,28 +309,26 @@ export default function ResponsableJobsPage() {
           <button
             onClick={() => { setEditingJob(null); setModalOpen(true); }}
             className="bg-[#6CB33F] hover:bg-[#4E8F2F] dark:bg-emerald-600 dark:hover:bg-emerald-500
-                       text-white px-6 py-3 rounded-xl font-extrabold shadow transition-colors
-                       flex items-center gap-2"
+                       text-white px-4 md:px-6 py-2.5 md:py-3 rounded-lg md:rounded-xl font-extrabold shadow transition-colors
+                       flex items-center justify-center gap-2 text-sm md:text-base whitespace-nowrap"
           >
-            <Plus size={18} /> Nouvelle offre
+            <Plus size={16} /> Nouvelle offre
           </button>
         </div>
 
-
-
-        {/* FILTER BAR — redesigned */}
+        {/* FILTER BAR — redesigned responsive */}
         <div className="bg-white dark:bg-gray-900/60 border border-gray-200 dark:border-gray-700 rounded-2xl mb-8 overflow-hidden shadow-sm">
 
           {/* ROW 1 — Origine */}
-          <div className="flex items-center gap-0 border-b border-gray-100 dark:border-gray-700/60">
+          <div className="flex flex-col md:flex-row md:items-center gap-2 md:gap-0 border-b border-gray-100 dark:border-gray-700/60 px-3 md:px-0">
             {/* Label */}
-            <div className="px-5 py-3.5 border-r border-gray-100 dark:border-gray-700/60 shrink-0">
+            <div className="md:px-5 md:py-3.5 md:border-r border-gray-100 dark:border-gray-700/60 md:shrink-0">
               <span className="text-xs font-bold uppercase tracking-widest text-gray-400 dark:text-gray-500 whitespace-nowrap">
                 Origine
               </span>
             </div>
             {/* Buttons */}
-            <div className="flex items-center gap-1 px-4 py-2.5 flex-wrap">
+            <div className="flex items-center gap-1.5 px-0 md:px-4 py-3 md:py-2.5 flex-wrap">
               {ORIGIN_FILTERS.map((f) => {
                 const active = originFilter === f.key;
                 const badgeCount = f.key === "all" ? originCounts.all : originCounts[f.key] || 0;
@@ -337,7 +336,7 @@ export default function ResponsableJobsPage() {
                   <button
                     key={f.key}
                     onClick={() => setOriginFilter(f.key)}
-                    className={`inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-sm font-bold transition-all duration-150 ${
+                    className={`inline-flex items-center gap-1.5 px-3 md:px-4 py-1 md:py-1.5 rounded-full text-xs md:text-sm font-bold transition-all duration-150 ${
                       active
                         ? "bg-gray-900 dark:bg-white text-white dark:text-gray-900"
                         : "text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
@@ -358,20 +357,20 @@ export default function ResponsableJobsPage() {
           </div>
 
           {/* ROW 2 — Statut */}
-          <div className="flex items-center gap-0">
+          <div className="flex flex-col md:flex-row md:items-center gap-2 md:gap-0 px-3 md:px-0">
             {/* Label */}
-            <div className="px-5 py-3.5 border-r border-gray-100 dark:border-gray-700/60 shrink-0">
+            <div className="md:px-5 md:py-3.5 md:border-r border-gray-100 dark:border-gray-700/60 md:shrink-0">
               <span className="text-xs font-bold uppercase tracking-widest text-gray-400 dark:text-gray-500 whitespace-nowrap">
                 Statut
               </span>
             </div>
             {/* Buttons */}
-            <div className="flex items-center gap-1 px-4 py-2.5 flex-wrap">
+            <div className="flex items-center gap-1 md:gap-1 px-0 md:px-4 py-3 md:py-2.5 flex-wrap overflow-x-auto">
               {/* Tous */}
               <button
                 type="button"
                 onClick={() => setActiveTab("all")}
-                className={`inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-sm font-bold transition-all duration-150 ${
+                className={`inline-flex items-center gap-1.5 px-3 md:px-4 py-1 md:py-1.5 rounded-full text-xs md:text-sm font-bold transition-all duration-150 flex-shrink-0 ${
                   activeTab === "all"
                     ? "bg-[#6CB33F] dark:bg-emerald-600 text-white"
                     : "text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
@@ -388,7 +387,7 @@ export default function ResponsableJobsPage() {
               </button>
 
               {/* Separator */}
-              <span className="mx-1 h-5 w-px bg-gray-200 dark:bg-gray-700" />
+              <span className="mx-0.5 h-4 w-px bg-gray-200 dark:bg-gray-700 flex-shrink-0" />
 
               {STATUS_TABS.map((tab) => {
                 const active = activeTab === tab.key;
@@ -408,9 +407,10 @@ export default function ResponsableJobsPage() {
                   <button
                     key={tab.key}
                     onClick={() => setActiveTab(tab.key)}
-                    className={`inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-sm font-bold transition-all duration-150 ${colorMap[tab.key]}`}
+                    className={`inline-flex items-center gap-1.5 px-3 md:px-4 py-1 md:py-1.5 rounded-full text-xs md:text-sm font-bold transition-all duration-150 flex-shrink-0 ${colorMap[tab.key]}`}
                   >
-                    {tab.label}
+                    <span className="hidden sm:inline">{tab.label}</span>
+                    <span className="sm:hidden text-xs">{tab.label.split(" ")[0]}</span>
                     <span className={`text-xs px-1.5 py-0.5 rounded-full font-bold ${badgeColor[tab.key]}`}>
                       {counts[tab.key] || 0}
                     </span>
@@ -421,8 +421,8 @@ export default function ResponsableJobsPage() {
           </div>
         </div>
 
-        {/* JOBS GRID — ✅ pas de bouton edit dans les cartes */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {/* JOBS GRID */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
           {paginatedJobs.map((job) => {
             const status = job._status || getJobStatus(job);
             const cfg = STATUS_CONFIG[status] || STATUS_CONFIG.EN_ATTENTE;
@@ -432,15 +432,15 @@ export default function ResponsableJobsPage() {
             return (
               <div
                 key={job._id}
-                className={`bg-white dark:bg-gray-800 rounded-2xl shadow p-6 flex flex-col hover:shadow-lg transition-all duration-300 border ${cfg.cardBorder}`}
+                className={`bg-white dark:bg-gray-800 rounded-2xl shadow p-4 md:p-6 flex flex-col hover:shadow-lg transition-all duration-300 border ${cfg.cardBorder}`}
               >
                 {/* Header */}
-                <div className="flex items-start justify-between gap-3 mb-3">
-                  <div className="min-w-0">
-                    <h3 className="text-xl font-extrabold text-gray-900 dark:text-white truncate">
+                <div className="flex items-start justify-between gap-2 md:gap-3 mb-3">
+                  <div className="min-w-0 flex-1">
+                    <h3 className="text-lg md:text-xl font-extrabold text-gray-900 dark:text-white truncate">
                       {job.titre || "Sans titre"}
                     </h3>
-                    <div className="mt-2 flex flex-wrap gap-2">
+                    <div className="mt-2 flex flex-wrap gap-1.5 md:gap-2">
                       <OriginBadge origin={job._origin || "CREATED"} />
                       <StatusBadge status={status} />
                     </div>
@@ -449,14 +449,14 @@ export default function ResponsableJobsPage() {
 
                 {/* rejection reason */}
                 {status === "REJETEE" && job.rejectionReason && (
-                  <div className="rounded-xl border border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-900/20 p-3 mb-3">
+                  <div className="rounded-lg md:rounded-xl border border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-900/20 p-2 md:p-3 mb-3">
                     <p className="text-xs font-extrabold text-red-600 dark:text-red-400 uppercase mb-1">Motif du rejet</p>
-                    <p className="text-sm text-red-700 dark:text-red-300">{job.rejectionReason}</p>
+                    <p className="text-xs md:text-sm text-red-700 dark:text-red-300 line-clamp-2">{job.rejectionReason}</p>
                   </div>
                 )}
 
                 {/* Description */}
-                <p className={`text-gray-700 dark:text-gray-200 text-sm mb-2 whitespace-pre-line ${!isExpanded ? "line-clamp-3" : ""}`}>
+                <p className={`text-gray-700 dark:text-gray-200 text-xs md:text-sm mb-2 whitespace-pre-line ${!isExpanded ? "line-clamp-3" : ""}`}>
                   {job.description || "—"}
                 </p>
 
@@ -464,35 +464,35 @@ export default function ResponsableJobsPage() {
                   <button
                     type="button"
                     onClick={() => toggleReadMore(job._id)}
-                    className="text-sm text-[#4E8F2F] dark:text-emerald-400 font-extrabold hover:underline self-start mb-2"
+                    className="text-xs md:text-sm text-[#4E8F2F] dark:text-emerald-400 font-extrabold hover:underline self-start mb-2"
                   >
                     {isExpanded ? "Réduire ↑" : "Lire la suite →"}
                   </button>
                 )}
 
-                <div className="border-t border-gray-100 dark:border-gray-700 my-4" />
+                <div className="border-t border-gray-100 dark:border-gray-700 my-3 md:my-4" />
 
-                {/* Meta + actions — ✅ UNIQUEMENT bouton Détails, pas d'edit */}
+                {/* Meta */}
                 <div className="mt-auto relative">
-                  <div className="text-sm text-gray-600 dark:text-gray-300 space-y-1 pr-32">
+                  <div className="text-xs md:text-sm text-gray-600 dark:text-gray-300 space-y-1 pr-28 md:pr-32">
                     {job.lieu && (
-                      <div className="flex items-center gap-2">
-                        <MapPin className="w-4 h-4 text-gray-500 dark:text-gray-400" />
-                        <span>{job.lieu}</span>
+                      <div className="flex items-center gap-2 truncate">
+                        <MapPin className="w-3.5 h-3.5 md:w-4 md:h-4 text-gray-500 dark:text-gray-400 flex-shrink-0" />
+                        <span className="truncate">{job.lieu}</span>
                       </div>
                     )}
                     <div className="flex items-center gap-2">
-                      <Calendar size={16} className="text-gray-500 dark:text-gray-400" />
-                      <span>Date de création : {formatDate(job.createdAt)}</span>
+                      <Calendar size={14} className="text-gray-500 dark:text-gray-400 flex-shrink-0 md:w-4 md:h-4" />
+                      <span className="truncate">Créé : {formatDate(job.createdAt)}</span>
                     </div>
                     <div className="flex items-center gap-2">
-                      <CalendarClock size={16} className="text-gray-500 dark:text-gray-400" />
-                      <span>Date de clôture : {formatDate(job.dateCloture)}</span>
+                      <CalendarClock size={14} className="text-gray-500 dark:text-gray-400 flex-shrink-0 md:w-4 md:h-4" />
+                      <span className="truncate">Clôture : {formatDate(job.dateCloture)}</span>
                     </div>
                     {job.confirmedAt && (
                       <div className="flex items-center gap-2">
-                        <CalendarCheck size={16} className="text-gray-500 dark:text-gray-400" />
-                        <span>Confirmée : {formatDate(job.confirmedAt)}</span>
+                        <CalendarCheck size={14} className="text-gray-500 dark:text-gray-400 flex-shrink-0 md:w-4 md:h-4" />
+                        <span className="truncate">Confirmée : {formatDate(job.confirmedAt)}</span>
                       </div>
                     )}
                   </div>
@@ -500,10 +500,10 @@ export default function ResponsableJobsPage() {
                   <div className="absolute right-0 top-1/2 -translate-y-1/2">
                     <Link
                       href={`${detailsBase}/${job._id}`}
-                      className="h-11 px-7 rounded-full font-extrabold text-sm inline-flex items-center justify-center
+                      className="h-9 md:h-11 px-4 md:px-7 rounded-full font-extrabold text-xs md:text-sm inline-flex items-center justify-center
                                  bg-[#6CB33F] hover:bg-[#4E8F2F]
                                  dark:bg-emerald-600 dark:hover:bg-emerald-500
-                                 text-white shadow-md shadow-green-500/20 transition-colors"
+                                 text-white shadow-md shadow-green-500/20 transition-colors whitespace-nowrap"
                     >
                       Détails
                     </Link>
@@ -514,15 +514,15 @@ export default function ResponsableJobsPage() {
           })}
 
           {filteredJobs.length === 0 && (
-            <div className="col-span-full bg-white dark:bg-gray-800 border-2 border-dashed border-[#6CB33F] dark:border-emerald-600 rounded-2xl p-12 text-center">
-              <Briefcase className="mx-auto w-10 h-10 text-gray-400 dark:text-gray-500" />
-              <p className="mt-4 text-gray-700 dark:text-gray-200 font-semibold">Aucune offre pour ce filtre.</p>
+            <div className="col-span-full bg-white dark:bg-gray-800 border-2 border-dashed border-[#6CB33F] dark:border-emerald-600 rounded-2xl p-8 md:p-12 text-center">
+              <Briefcase className="mx-auto w-8 md:w-10 h-8 md:h-10 text-gray-400 dark:text-gray-500" />
+              <p className="mt-4 text-gray-700 dark:text-gray-200 font-semibold text-sm md:text-base">Aucune offre pour ce filtre.</p>
               <button
                 onClick={() => { setEditingJob(null); setModalOpen(true); }}
-                className="mt-4 inline-flex items-center gap-2 px-5 py-2.5 rounded-full
+                className="mt-4 inline-flex items-center gap-2 px-4 md:px-5 py-2 md:py-2.5 rounded-full text-xs md:text-sm
                            bg-[#6CB33F] hover:bg-[#4E8F2F]
                            dark:bg-emerald-600 dark:hover:bg-emerald-500
-                           text-white text-sm font-extrabold transition-colors"
+                           text-white font-extrabold transition-colors"
               >
                 <Plus size={16} /> Proposer une offre
               </button>
@@ -532,7 +532,7 @@ export default function ResponsableJobsPage() {
 
         {/* Pagination */}
         {filteredJobs.length > 0 && (
-          <div className="mt-10 flex items-center justify-between text-sm text-gray-600 dark:text-gray-300">
+          <div className="mt-8 md:mt-10 flex flex-col md:flex-row md:items-center md:justify-between gap-4 text-xs md:text-sm text-gray-600 dark:text-gray-300">
             <p>Total : {filteredJobs.length} — Page {page} / {totalPages}</p>
             <Pagination currentPage={page} totalPages={totalPages} onPageChange={setPage} />
           </div>
@@ -552,7 +552,7 @@ export default function ResponsableJobsPage() {
 
 
 /* =================================================================
-   MODAL — Create / Edit Job Offer (design identique au JobModal admin)
+   MODAL — Create / Edit Job Offer
 ================================================================= */
 function JobOfferModal({ open, onClose, onSubmit, initialData }) {
   const isEditing = !!initialData;
@@ -677,10 +677,10 @@ function JobOfferModal({ open, onClose, onSubmit, initialData }) {
   }
 
   const inputBase =
-    "w-full h-11 sm:h-12 px-4 sm:px-5 rounded-xl sm:rounded-full " +
+    "w-full h-10 sm:h-11 md:h-12 px-3 sm:px-4 md:px-5 rounded-lg sm:rounded-xl md:rounded-full " +
     "border border-gray-200 dark:border-gray-600 " +
     "bg-white dark:bg-gray-700 " +
-    "text-gray-800 dark:text-gray-100 " +
+    "text-gray-800 dark:text-gray-100 text-sm " +
     "placeholder-gray-400 dark:placeholder-gray-500 " +
     "focus:border-[#6CB33F] dark:focus:border-emerald-500 " +
     "focus:ring-4 focus:ring-[#6CB33F]/15 dark:focus:ring-emerald-500/20 " +
@@ -691,30 +691,30 @@ function JobOfferModal({ open, onClose, onSubmit, initialData }) {
 
   return (
     <div
-      className="fixed inset-0 z-50 bg-black/40 dark:bg-black/60 flex items-center justify-center p-4 sm:p-6"
+      className="fixed inset-0 z-50 bg-black/40 dark:bg-black/60 flex items-center justify-center p-3 sm:p-4 md:p-6"
       onMouseDown={(e) => { if (e.target === e.currentTarget) onClose(); }}
     >
-      <div className="bg-white dark:bg-gray-800 w-full max-w-2xl rounded-2xl sm:rounded-3xl shadow-2xl overflow-hidden max-h-[90vh] flex flex-col transition-colors duration-300">
+      <div className="bg-white dark:bg-gray-800 w-full max-w-2xl rounded-2xl sm:rounded-3xl shadow-2xl overflow-hidden max-h-[95vh] flex flex-col transition-colors duration-300">
 
         {/* HEADER */}
-        <div className="px-5 sm:px-8 pt-5 sm:pt-7 pb-4 sm:pb-5 border-b border-gray-200 dark:border-gray-700 flex-shrink-0">
-          <div className="flex items-start justify-between gap-4">
-            <div>
+        <div className="px-4 sm:px-6 md:px-8 pt-4 sm:pt-5 md:pt-7 pb-3 sm:pb-4 md:pb-5 border-b border-gray-200 dark:border-gray-700 flex-shrink-0">
+          <div className="flex items-start justify-between gap-3 sm:gap-4">
+            <div className="flex-1">
               <h2 className="text-xl sm:text-2xl font-extrabold text-gray-900 dark:text-white">
                 {isEditing ? "Modifier l'offre" : "Nouvelle offre"}
               </h2>
-              <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+              <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 mt-1">
                 Tous les champs marqués <span className="text-red-500">*</span> sont obligatoires.
               </p>
             </div>
             <button
               type="button"
               onClick={onClose}
-              className="shrink-0 h-10 w-10 rounded-full grid place-items-center
+              className="shrink-0 h-9 w-9 sm:h-10 sm:w-10 rounded-full grid place-items-center
                          text-gray-500 dark:text-gray-400
                          hover:text-gray-800 dark:hover:text-white
                          hover:bg-gray-100 dark:hover:bg-gray-700
-                         transition-colors"
+                         transition-colors text-lg"
               aria-label="Fermer"
             >
               ✕
@@ -724,12 +724,12 @@ function JobOfferModal({ open, onClose, onSubmit, initialData }) {
 
         {/* BODY */}
         <div className="overflow-y-auto">
-          <form onSubmit={handleSubmit} noValidate className="px-5 sm:px-8 py-5 sm:py-7">
-            <div className="space-y-5 sm:space-y-6">
+          <form onSubmit={handleSubmit} noValidate className="px-4 sm:px-6 md:px-8 py-4 sm:py-5 md:py-7">
+            <div className="space-y-4 sm:space-y-5 md:space-y-6">
 
               {/* ERROR */}
               {formError && (
-                <div className="rounded-xl border border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-900/30 p-3 text-sm font-semibold text-red-700 dark:text-red-400">
+                <div className="rounded-lg md:rounded-xl border border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-900/30 p-3 text-xs sm:text-sm font-semibold text-red-700 dark:text-red-400">
                   {formError}
                 </div>
               )}
@@ -749,10 +749,10 @@ function JobOfferModal({ open, onClose, onSubmit, initialData }) {
               <div>
                 <label className={labelBase}>Description <span className="text-red-500">*</span></label>
                 <textarea
-                  rows={5}
+                  rows={4}
                   value={form.description}
                   onChange={(e) => setForm({ ...form, description: e.target.value })}
-                  className="w-full px-4 sm:px-5 py-3 sm:py-4 rounded-2xl sm:rounded-3xl
+                  className="w-full px-3 sm:px-4 md:px-5 py-2 sm:py-3 md:py-4 rounded-lg sm:rounded-2xl md:rounded-3xl text-sm
                              border border-gray-200 dark:border-gray-600
                              bg-white dark:bg-gray-700
                              text-gray-800 dark:text-gray-100
@@ -769,14 +769,14 @@ function JobOfferModal({ open, onClose, onSubmit, initialData }) {
               <div>
                 <label className={labelBase}>Lieu du poste <span className="text-red-500">*</span></label>
                 <div className="relative">
-                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500 pointer-events-none select-none">
+                  <span className="absolute left-3 sm:left-4 md:left-5 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500 pointer-events-none select-none text-base">
                     📍
                   </span>
                   <input
                     value={form.lieu}
                     onChange={(e) => setForm({ ...form, lieu: e.target.value })}
                     placeholder="Ex: Sfax, Tunis, Télétravail..."
-                    className="w-full h-11 sm:h-12 pl-10 pr-4 rounded-xl sm:rounded-full
+                    className="w-full h-10 sm:h-11 md:h-12 pl-9 sm:pl-10 md:pl-12 pr-3 sm:pr-4 md:pr-5 rounded-lg sm:rounded-xl md:rounded-full text-sm
                                border border-gray-200 dark:border-gray-600
                                bg-white dark:bg-gray-700
                                text-gray-800 dark:text-gray-100
@@ -801,7 +801,7 @@ function JobOfferModal({ open, onClose, onSubmit, initialData }) {
               </div>
 
               {/* SKILLS */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-5 sm:gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-5 md:gap-6">
                 <div>
                   <label className={labelBase}>Hard Skills</label>
                   <input
@@ -810,7 +810,7 @@ function JobOfferModal({ open, onClose, onSubmit, initialData }) {
                     placeholder="React, Node.js, SQL, Docker..."
                     className={inputBase}
                   />
-                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">Séparées par une virgule.</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1.5">Séparées par une virgule.</p>
                 </div>
                 <div>
                   <label className={labelBase}>Soft Skills</label>
@@ -820,48 +820,48 @@ function JobOfferModal({ open, onClose, onSubmit, initialData }) {
                     placeholder="Communication, Leadership..."
                     className={inputBase}
                   />
-                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">Séparées par une virgule.</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1.5">Séparées par une virgule.</p>
                 </div>
               </div>
 
               {/* QUIZ — uniquement en création */}
               {!isEditing && (
-                <div className="border border-gray-200 dark:border-gray-700 rounded-2xl p-5 space-y-4">
+                <div className="border border-gray-200 dark:border-gray-700 rounded-lg sm:rounded-2xl p-4 sm:p-5 space-y-4">
                   <label className="flex items-center gap-3 cursor-pointer select-none">
-                    <div className="relative">
+                    <div className="relative flex-shrink-0">
                       <input
                         type="checkbox"
                         checked={generateQuiz}
                         onChange={(e) => setGenerateQuiz(e.target.checked)}
                         className="sr-only"
                       />
-                      <div className={`w-11 h-6 rounded-full transition-colors duration-200 ${generateQuiz ? "bg-[#6CB33F] dark:bg-emerald-500" : "bg-gray-300 dark:bg-gray-600"}`} />
-                      <div className={`absolute top-1 w-4 h-4 bg-white rounded-full shadow transition-transform duration-200 ${generateQuiz ? "translate-x-6" : "translate-x-1"}`} />
+                      <div className={`w-10 h-6 sm:w-11 rounded-full transition-colors duration-200 ${generateQuiz ? "bg-[#6CB33F] dark:bg-emerald-500" : "bg-gray-300 dark:bg-gray-600"}`} />
+                      <div className={`absolute top-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform duration-200 ${generateQuiz ? "translate-x-5 sm:translate-x-6" : "translate-x-1"}`} />
                     </div>
                     <div>
                       <div className="flex items-center gap-2">
                         <BrainCircuit className="h-4 w-4 text-[#6CB33F] dark:text-emerald-400" />
-                        <span className="text-sm font-extrabold text-gray-900 dark:text-white">Générer un quiz technique</span>
+                        <span className="text-xs sm:text-sm font-extrabold text-gray-900 dark:text-white">Générer un quiz technique</span>
                       </div>
                       <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
-                        Un quiz IA sera créé automatiquement à la publication de l&apos;offre.
+                        Un quiz IA sera créé automatiquement à la publication.
                       </p>
                     </div>
                   </label>
 
                   {generateQuiz && (
-                    <div className="flex items-center gap-4 pl-14">
-                      <label className="text-sm font-semibold text-gray-700 dark:text-gray-300 whitespace-nowrap">
+                    <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 pl-0 sm:pl-14">
+                      <label className="text-xs sm:text-sm font-semibold text-gray-700 dark:text-gray-300 whitespace-nowrap">
                         Nombre de questions
                       </label>
                       <div className="flex items-center gap-2">
                         <button
                           type="button"
                           onClick={() => handleNumQuestions(numQuestions - 1)}
-                          className="w-8 h-8 rounded-full border border-gray-200 dark:border-gray-600
-                                     text-gray-700 dark:text-gray-300 font-bold
+                          className="w-7 h-7 sm:w-8 sm:h-8 rounded-full border border-gray-200 dark:border-gray-600
+                                     text-gray-700 dark:text-gray-300 font-bold text-sm
                                      hover:bg-gray-100 dark:hover:bg-gray-700
-                                     transition-colors flex items-center justify-center"
+                                     transition-colors flex items-center justify-center flex-shrink-0"
                         >−</button>
                         <input
                           type="number"
@@ -869,7 +869,7 @@ function JobOfferModal({ open, onClose, onSubmit, initialData }) {
                           max={30}
                           value={numQuestions}
                           onChange={(e) => handleNumQuestions(e.target.value)}
-                          className="w-16 h-9 text-center rounded-xl
+                          className="w-14 h-8 sm:w-16 sm:h-9 text-center rounded-lg sm:rounded-xl text-sm
                                      border border-gray-200 dark:border-gray-600
                                      bg-white dark:bg-gray-700
                                      text-gray-800 dark:text-gray-100 font-bold
@@ -880,10 +880,10 @@ function JobOfferModal({ open, onClose, onSubmit, initialData }) {
                         <button
                           type="button"
                           onClick={() => handleNumQuestions(numQuestions + 1)}
-                          className="w-8 h-8 rounded-full border border-gray-200 dark:border-gray-600
-                                     text-gray-700 dark:text-gray-300 font-bold
+                          className="w-7 h-7 sm:w-8 sm:h-8 rounded-full border border-gray-200 dark:border-gray-600
+                                     text-gray-700 dark:text-gray-300 font-bold text-sm
                                      hover:bg-gray-100 dark:hover:bg-gray-700
-                                     transition-colors flex items-center justify-center"
+                                     transition-colors flex items-center justify-center flex-shrink-0"
                         >+</button>
                         <span className="text-xs text-gray-500 dark:text-gray-400">(max 30)</span>
                       </div>
@@ -891,7 +891,7 @@ function JobOfferModal({ open, onClose, onSubmit, initialData }) {
                   )}
 
                   {!generateQuiz && (
-                    <p className="pl-14 text-xs text-gray-400 dark:text-gray-500 italic">
+                    <p className="pl-0 sm:pl-14 text-xs text-gray-400 dark:text-gray-500 italic">
                       Aucun quiz ne sera généré. Vous pourrez en créer un manuellement plus tard.
                     </p>
                   )}
@@ -899,32 +899,32 @@ function JobOfferModal({ open, onClose, onSubmit, initialData }) {
               )}
 
               {/* PONDÉRATIONS */}
-              <div className="border-t border-gray-200 dark:border-gray-700 pt-6">
+              <div className="border-t border-gray-200 dark:border-gray-700 pt-5 sm:pt-6">
                 <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-sm font-extrabold text-gray-900 dark:text-white uppercase tracking-wide">
+                  <h3 className="text-xs sm:text-sm font-extrabold text-gray-900 dark:text-white uppercase tracking-wide">
                     Pondérations (0 – 100)
                   </h3>
-                  <span className={`text-sm font-extrabold ${isValidTotal ? "text-green-600 dark:text-emerald-400" : "text-red-600 dark:text-red-400"}`}>
+                  <span className={`text-xs sm:text-sm font-extrabold ${isValidTotal ? "text-green-600 dark:text-emerald-400" : "text-red-600 dark:text-red-400"}`}>
                     Total : {totalWeights}%
                   </span>
                 </div>
 
-                <div className="space-y-4">
+                <div className="space-y-3 sm:space-y-4">
                   {SCORE_ITEMS_MODAL.map((it) => {
                     const v = form.scores[it.key] ?? 0;
                     return (
-                      <div key={it.key} className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4">
-                        <p className="sm:flex-1 text-sm font-semibold text-gray-700 dark:text-gray-300">
+                      <div key={it.key} className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
+                        <p className="sm:flex-1 text-xs sm:text-sm font-semibold text-gray-700 dark:text-gray-300">
                           {it.label}
                         </p>
-                        <div className="flex items-center gap-3">
+                        <div className="flex items-center gap-2 sm:gap-3">
                           <input
                             type="number"
                             min={0}
                             max={100}
                             value={v}
                             onChange={(e) => setWeight(it.key, e.target.value)}
-                            className="w-24 h-11 px-4 rounded-xl sm:rounded-full
+                            className="w-20 sm:w-24 h-9 sm:h-11 px-2 sm:px-4 rounded-lg sm:rounded-xl md:rounded-full text-sm
                                        border border-gray-200 dark:border-gray-600
                                        bg-white dark:bg-gray-700
                                        text-gray-800 dark:text-gray-100
@@ -932,7 +932,7 @@ function JobOfferModal({ open, onClose, onSubmit, initialData }) {
                                        focus:ring-4 focus:ring-[#6CB33F]/15
                                        outline-none transition-colors"
                           />
-                          <span className="text-sm font-extrabold text-[#4E8F2F] dark:text-emerald-400 w-10">%</span>
+                          <span className="text-xs sm:text-sm font-extrabold text-[#4E8F2F] dark:text-emerald-400 w-6">%</span>
                         </div>
                       </div>
                     );
@@ -941,18 +941,18 @@ function JobOfferModal({ open, onClose, onSubmit, initialData }) {
 
                 {!isValidTotal && (
                   <p className="mt-3 text-xs font-semibold text-red-600 dark:text-red-400">
-                    La somme des pondérations doit être égale à 100% pour pouvoir enregistrer.
+                    La somme doit être égale à 100%.
                   </p>
                 )}
               </div>
             </div>
 
             {/* FOOTER */}
-            <div className="mt-7 sm:mt-8 pt-5 sm:pt-6 border-t border-gray-200 dark:border-gray-700 flex flex-col sm:flex-row gap-3 sm:gap-4">
+            <div className="mt-6 sm:mt-7 md:mt-8 pt-4 sm:pt-5 md:pt-6 border-t border-gray-200 dark:border-gray-700 flex flex-col sm:flex-row gap-2.5 sm:gap-4">
               <button
                 type="submit"
                 disabled={submitting || !isValidTotal}
-                className={`sm:flex-1 h-11 sm:h-12 rounded-xl sm:rounded-full font-semibold transition-colors shadow-sm
+                className={`flex-1 h-10 sm:h-11 md:h-12 rounded-lg sm:rounded-xl md:rounded-full font-semibold text-sm transition-colors shadow-sm
                   ${isValidTotal && !submitting
                     ? "bg-[#6CB33F] hover:bg-[#5AA332] dark:bg-emerald-600 dark:hover:bg-emerald-500 text-white"
                     : "bg-gray-300 dark:bg-gray-600 text-gray-500 dark:text-gray-400 cursor-not-allowed"
@@ -963,7 +963,7 @@ function JobOfferModal({ open, onClose, onSubmit, initialData }) {
                   : isEditing
                     ? "Mettre à jour"
                     : generateQuiz
-                      ? `Créer + Générer ${numQuestions} questions`
+                      ? `Créer + Quiz`
                       : "Créer l'offre"}
               </button>
 
@@ -977,7 +977,7 @@ function JobOfferModal({ open, onClose, onSubmit, initialData }) {
                   onClose();
                 }}
                 disabled={submitting}
-                className="sm:flex-1 h-11 sm:h-12 rounded-xl sm:rounded-full font-semibold
+                className="flex-1 h-10 sm:h-11 md:h-12 rounded-lg sm:rounded-xl md:rounded-full font-semibold text-sm
                            border border-gray-200 dark:border-gray-600
                            text-gray-700 dark:text-gray-300
                            hover:bg-gray-50 dark:hover:bg-gray-700

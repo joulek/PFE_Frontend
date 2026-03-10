@@ -291,6 +291,7 @@ export default function Navbar() {
 
   const [user, setUser] = useState(null);
   const [openMobile, setOpenMobile] = useState(false);
+  const [openCandidaturesRM, setOpenCandidaturesRM] = useState(false);
   const [openCandidatures, setOpenCandidatures] = useState(false);
   const [openAdmin, setOpenAdmin] = useState(false);
   const [openFormulaires, setOpenFormulaires] = useState(false);
@@ -322,6 +323,7 @@ export default function Navbar() {
 
   useEffect(() => {
     setOpenMobile(false);
+    setOpenCandidaturesRM(false);
     setOpenCandidatures(false);
     setOpenAdmin(false);
     setOpenFormulaires(false);
@@ -346,6 +348,7 @@ export default function Navbar() {
   const handleOpenNotif = async () => {
     const willOpen = !openNotif;
     setOpenNotif(willOpen);
+    setOpenCandidaturesRM(false);
     setOpenCandidatures(false);
     setOpenAdmin(false);
     setOpenFormulaires(false);
@@ -403,6 +406,11 @@ export default function Navbar() {
   const isAdmin              = user?.role === "ADMIN";
   const isAssistanteRH       = user?.role === "ASSISTANTE_RH";
   const isAssistanceDirection = user?.role === "ASSISTANCE_DIRECTION";
+
+  const isInCandidaturesRM =
+    pathname.startsWith("/ResponsableMetier/candidatures") ||
+    pathname.startsWith("/ResponsableMetier/candidatures_Analysis") ||
+    pathname.startsWith("/ResponsableMetier/list-entretien");
 
   const isInCandidatures =
     pathname.startsWith("/recruiter/candidatures") ||
@@ -481,20 +489,35 @@ export default function Navbar() {
               {/* ── RESPONSABLE METIER ── */}
               {!isAdmin && !isAssistanteRH && !isAssistanceDirection && (
                 <>
-                  <Link href="/jobs" className={`${linkBase} ${isActive("/jobs") ? activeLink : inactiveLink}`}>
+                 <Link href="/jobs" className={`${linkBase} ${isActive("/jobs") ? activeLink : inactiveLink}`}>
                     Offres d'emploi
                   </Link>
                   {user && (
                     <>
-                      <Link href="/ResponsableMetier/candidatures" className={`${linkBase} ${isActive("/ResponsableMetier/candidatures") ? activeLink : inactiveLink}`}>
-                        Mes candidatures
-                      </Link>
-                      <Link href="/ResponsableMetier/list-entretien" className={`${linkBase} ${isActive("/ResponsableMetier/list-entretien") ? activeLink : inactiveLink}`}>
-                        Liste des entretiens
-                      </Link>
-                        <Link href="/ResponsableMetier/candidatures_Analysis" className={`${linkBase} ${isActive("/ResponsableMetier/candidatures_Analysis") ? activeLink : inactiveLink}`}>
-                        Analyse des candidatures
-                      </Link>
+                    
+                      {/* CANDIDATURES DROPDOWN */}
+                      <div className="relative">
+                        <button
+                          onClick={() => { setOpenCandidaturesRM((v) => !v); setOpenCandidatures(false); setOpenAdmin(false); setOpenFormulaires(false); setOpenNotif(false); }}
+                          className={`${linkBase} ${isInCandidaturesRM ? activeLink : inactiveLink}`}
+                        >
+                          Candidatures ▾
+                        </button>
+                        {openCandidaturesRM && (
+                          <div className={`${dropdownBase} ${dropdownLight} ${dropdownDark}`}>
+                            <Link href="/ResponsableMetier/candidatures" className={`${dropdownItemBase} ${isActive("/ResponsableMetier/candidatures") ? dropdownActive : dropdownHover}`}>
+                              Mes candidatures
+                            </Link>
+                            <Link href="/ResponsableMetier/candidatures_Analysis" className={`${dropdownItemBase} ${isActive("/ResponsableMetier/candidatures_Analysis") ? dropdownActive : dropdownHover}`}>
+                              Analyse des candidatures
+                            </Link>
+                            <Link href="/ResponsableMetier/list-entretien" className={`${dropdownItemBase} ${isActive("/ResponsableMetier/list-entretien") ? dropdownActive : dropdownHover}`}>
+                              Liste des entretiens
+                            </Link>
+                          </div>
+                        )}
+                      </div>
+
                       <Link href="/ResponsableMetier/job" className={`${linkBase} ${isActive("/ResponsableMetier/job") ? activeLink : inactiveLink}`}>
                         Mes offres d&apos;emploi
                       </Link>
@@ -551,7 +574,7 @@ export default function Navbar() {
                   {/* CANDIDATURES DROPDOWN */}
                   <div className="relative">
                     <button
-                      onClick={() => { setOpenCandidatures((v) => !v); setOpenAdmin(false); setOpenFormulaires(false); setOpenNotif(false); }}
+                      onClick={() => { setOpenCandidatures((v) => !v); setOpenCandidaturesRM(false); setOpenAdmin(false); setOpenFormulaires(false); setOpenNotif(false); }}
                       className={`${linkBase} ${isInCandidatures ? activeLink : inactiveLink}`}
                     >
                       Candidatures ▾
@@ -581,7 +604,7 @@ export default function Navbar() {
                   {/* FORMULAIRES DROPDOWN */}
                   <div className="relative">
                     <button
-                      onClick={() => { setOpenFormulaires((v) => !v); setOpenCandidatures(false); setOpenAdmin(false); setOpenNotif(false); }}
+                      onClick={() => { setOpenFormulaires((v) => !v); setOpenCandidatures(false); setOpenCandidaturesRM(false); setOpenAdmin(false); setOpenNotif(false); }}
                       className={`${linkBase} ${isInFormulaires ? activeLink : inactiveLink}`}
                     >
                       Formulaires ▾
@@ -604,7 +627,7 @@ export default function Navbar() {
                   {/* ADMIN DROPDOWN */}
                   <div className="relative">
                     <button
-                      onClick={() => { setOpenAdmin((v) => !v); setOpenCandidatures(false); setOpenFormulaires(false); setOpenNotif(false); }}
+                      onClick={() => { setOpenAdmin((v) => !v); setOpenCandidatures(false); setOpenCandidaturesRM(false); setOpenFormulaires(false); setOpenNotif(false); }}
                       className={`${linkBase} ${isInAdmin ? activeLink : inactiveLink}`}
                     >
                       Administration ▾
@@ -691,9 +714,27 @@ export default function Navbar() {
                     </Link>
                     {user && (
                       <>
-                        <Link href="/ResponsableMetier/candidatures" className={`block px-5 py-3.5 rounded-xl font-medium transition ${isActive("/ResponsableMetier/candidatures") ? "bg-[#6CB33F] text-white" : "text-gray-700 dark:text-gray-200 hover:bg-gray-100/70 dark:hover:bg-gray-800/60"}`}>
-                          Mes candidatures
-                        </Link>
+                        {/* CANDIDATURES MOBILE */}
+                        <div>
+                          <button onClick={() => setOpenCandidaturesRM(!openCandidaturesRM)} className={`w-full text-left px-5 py-3.5 rounded-xl font-medium transition flex items-center justify-between ${isInCandidaturesRM ? "bg-[#6CB33F] text-white" : "text-gray-700 dark:text-gray-200 hover:bg-gray-100/70 dark:hover:bg-gray-800/60"}`}>
+                            Candidatures
+                            <span className={`transform transition-transform ${openCandidaturesRM ? "rotate-180" : ""}`}>▾</span>
+                          </button>
+                          {openCandidaturesRM && (
+                            <div className="pl-4 space-y-1 mt-1">
+                              <Link href="/ResponsableMetier/candidatures" className={`block px-5 py-2.5 rounded-lg text-sm transition ${isActive("/ResponsableMetier/candidatures") ? "bg-[#6CB33F]/20 text-[#4E8F2F] font-semibold" : "text-gray-600 dark:text-gray-300 hover:bg-gray-100/70 dark:hover:bg-gray-800/60"}`}>
+                                Mes candidatures
+                              </Link>
+                              <Link href="/ResponsableMetier/candidatures_Analysis" className={`block px-5 py-2.5 rounded-lg text-sm transition ${isActive("/ResponsableMetier/candidatures_Analysis") ? "bg-[#6CB33F]/20 text-[#4E8F2F] font-semibold" : "text-gray-600 dark:text-gray-300 hover:bg-gray-100/70 dark:hover:bg-gray-800/60"}`}>
+                                Analyse des candidatures
+                              </Link>
+                              <Link href="/ResponsableMetier/list-entretien" className={`block px-5 py-2.5 rounded-lg text-sm transition ${isActive("/ResponsableMetier/list-entretien") ? "bg-[#6CB33F]/20 text-[#4E8F2F] font-semibold" : "text-gray-600 dark:text-gray-300 hover:bg-gray-100/70 dark:hover:bg-gray-800/60"}`}>
+                                Liste des entretiens
+                              </Link>
+                            </div>
+                          )}
+                        </div>
+
                         <Link href="/ResponsableMetier/job" className={`block px-5 py-3.5 rounded-xl font-medium transition ${isActive("/ResponsableMetier/job") ? "bg-[#6CB33F] text-white" : "text-gray-700 dark:text-gray-200 hover:bg-gray-100/70 dark:hover:bg-gray-800/60"}`}>
                           Mes offres d&apos;emploi
                         </Link>

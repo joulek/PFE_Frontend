@@ -21,7 +21,7 @@ import {
 import { getMyInterviews, getMyInterviewsStats } from "../../services/interviewApi";
 
 // ─────────────────────────────────────────────────────────
-//  STATUTS — Vue ResponsableMetier (labels adaptés)
+//  STATUTS — Vue ResponsableMetier
 // ─────────────────────────────────────────────────────────
 const STATUS_CONFIG = {
   PENDING_CONFIRMATION: {
@@ -88,6 +88,10 @@ const TYPE_CONFIG = {
     label: "RH + Tech",
     cls: "text-violet-700 dark:text-violet-300 bg-violet-50 dark:bg-violet-950/30 border-violet-200 dark:border-violet-700",
   },
+  "RH + Tech": {
+    label: "RH + Tech",
+    cls: "text-violet-700 dark:text-violet-300 bg-violet-50 dark:bg-violet-950/30 border-violet-200 dark:border-violet-700",
+  },
   TECHNIQUE: {
     label: "Technique",
     cls: "text-pink-700 dark:text-pink-300 bg-pink-50 dark:bg-pink-950/30 border-pink-200 dark:border-pink-700",
@@ -131,6 +135,12 @@ function getStatusCount(stats, key) {
   return stats[key] ?? 0;
 }
 
+// ✅ Vérifier si c'est un entretien RH+Tech
+function isRHTechInterview(interviewType) {
+  const type = String(interviewType || "").toLowerCase();
+  return type.includes("rh") && type.includes("tech");
+}
+
 // ─────────────────────────────────────────────────────────
 //  Composants réutilisables
 // ─────────────────────────────────────────────────────────
@@ -157,11 +167,10 @@ function StatCard({ label, value, active, onClick, icon }) {
   return (
     <button
       onClick={onClick}
-      className={`rounded-2xl border p-4 text-left transition-colors shadow-sm ${
-        active
-          ? "bg-[#E9F5E3] dark:bg-gray-700 border-[#cfe4c4] dark:border-gray-600"
-          : "bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 hover:bg-green-50/40 dark:hover:bg-gray-700/60"
-      }`}
+      className={`rounded-2xl border p-4 text-left transition-colors shadow-sm ${active
+        ? "bg-[#E9F5E3] dark:bg-gray-700 border-[#cfe4c4] dark:border-gray-600"
+        : "bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 hover:bg-green-50/40 dark:hover:bg-gray-700/60"
+        }`}
     >
       <div className="flex items-center justify-between mb-3">
         <span className="text-[#4E8F2F] dark:text-emerald-400">{icon}</span>
@@ -174,21 +183,25 @@ function StatCard({ label, value, active, onClick, icon }) {
   );
 }
 
-function DetailCard({ label, value }) {
+function DetailCard({ label, value, children }) {
   return (
     <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 p-4 transition-colors">
       <div className="text-[11px] uppercase tracking-wider font-bold text-gray-500 dark:text-gray-400 mb-2">
         {label}
       </div>
-      <div className="text-sm font-medium text-gray-800 dark:text-gray-200 break-words">
-        {value || "—"}
-      </div>
+      {children ? (
+        children
+      ) : (
+        <div className="text-sm font-medium text-gray-800 dark:text-gray-200 break-words">
+          {value || "—"}
+        </div>
+      )}
     </div>
   );
 }
 
 // ─────────────────────────────────────────────────────────
-//  Alerte de rappel — entretiens à confirmer
+//  Alerte de rappel
 // ─────────────────────────────────────────────────────────
 function PendingAlert({ count, onClick }) {
   if (!count) return null;
@@ -254,9 +267,13 @@ export default function ResponsableMetierInterviewList() {
         status: statusFilter,
         search: debouncedSearch.trim(),
       });
-      setInterviews(data.interviews || []);
-      setTotal(data.total || 0);
-      setTotalPages(data.totalPages || 1);
+      // ✅ FILTRER: Uniquement les entretiens RH+Tech
+      const filteredInterviews = (data.interviews || []).filter(iv =>
+        isRHTechInterview(iv.interviewType)
+      );
+      setInterviews(filteredInterviews);
+      setTotal(filteredInterviews.length);
+      setTotalPages(Math.ceil(filteredInterviews.length / LIMIT) || 1);
     } catch (err) {
       setError(err.message || "Erreur lors du chargement");
     } finally {
@@ -290,26 +307,18 @@ export default function ResponsableMetierInterviewList() {
   // ─────────────────────────────────────────────────────────
   return (
     <div className="min-h-screen bg-[#F0FAF0] dark:bg-gray-950 text-gray-900 dark:text-gray-100 transition-colors duration-300">
-      <div className="max-w-full mx-auto px-4 sm:px-6 pt-10 pb-16">
+      <div className="max-w-full mx-auto px-4 sm:px-6 pt-6 sm:pt-10 pb-16">
 
         {/* ── En-tête ── */}
-        <div className="flex flex-col xl:flex-row xl:items-center xl:justify-between gap-4 mb-8">
+        <div className="flex flex-col xl:flex-row xl:items-center xl:justify-between gap-4 mb-6 sm:mb-8">
           <div>
             <h1 className="text-3xl sm:text-4xl font-extrabold text-gray-900 dark:text-white">
               Mes Entretiens
             </h1>
             <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">
-              Liste de vos entretiens assignés
+              Entretiens RH + Tech assignés
             </p>
           </div>
-
-          <button
-            onClick={() => { fetchInterviews(); fetchStats(); }}
-            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 font-semibold text-sm hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
-          >
-            <RefreshCcw className="w-4 h-4" />
-            Actualiser
-          </button>
         </div>
 
         {/* ── Alerte entretiens en attente ── */}
@@ -318,28 +327,8 @@ export default function ResponsableMetierInterviewList() {
           onClick={() => setStatusFilter("PENDING_CONFIRMATION")}
         />
 
-        {/* ── Cartes statistiques ── */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 mb-8">
-          {[
-            { key: "ALL", label: "Total", icon: <Briefcase className="w-5 h-5" /> },
-            { key: "PENDING_CONFIRMATION", label: "À confirmer", icon: <Clock3 className="w-5 h-5" /> },
-            { key: "CONFIRMED", label: "Confirmés", icon: <CheckCircle2 className="w-5 h-5" /> },
-            { key: "CANDIDATE_REQUESTED_RESCHEDULE", label: "Report demandé", icon: <RefreshCcw className="w-5 h-5" /> },
-            { key: "CANCELLED", label: "Annulés", icon: <XCircle className="w-5 h-5" /> },
-          ].map(({ key, label, icon }) => (
-            <StatCard
-              key={key}
-              label={label}
-              value={statsLoading ? "…" : getStatusCount(stats, key)}
-              active={statusFilter === key}
-              onClick={() => setStatusFilter(key)}
-              icon={icon}
-            />
-          ))}
-        </div>
-
         {/* ── Barre de recherche ── */}
-        <div className="bg-white dark:bg-gray-800 rounded-full shadow-sm border border-gray-100 dark:border-gray-700 px-4 sm:px-5 py-3 flex items-center gap-3 mb-5 transition-colors">
+        <div className="bg-white dark:bg-gray-800 rounded-full shadow-sm border border-gray-100 dark:border-gray-700 px-4 sm:px-5 py-3 flex items-center gap-3 mb-6 transition-colors duration-300">
           <Search className="w-5 h-5 text-[#4E8F2F] dark:text-emerald-400 flex-shrink-0" />
           <input
             value={search}
@@ -355,8 +344,8 @@ export default function ResponsableMetierInterviewList() {
         </div>
 
         {/* ── Filtres statuts ── */}
-        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-6">
-          <div className="flex flex-wrap gap-2">
+        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3 sm:gap-4 mb-6">
+          <div className="flex flex-wrap gap-1.5 sm:gap-2">
             {STATUS_FILTERS.map((s) => {
               const cfg = s === "ALL" ? { short: "Tous", dot: null } : STATUS_CONFIG[s];
               const isActive = statusFilter === s;
@@ -364,11 +353,10 @@ export default function ResponsableMetierInterviewList() {
                 <button
                   key={s}
                   onClick={() => setStatusFilter(s)}
-                  className={`inline-flex items-center gap-2 px-4 py-2 rounded-full border text-xs font-semibold transition-colors ${
-                    isActive
-                      ? "bg-[#6CB33F] hover:bg-[#4E8F2F] border-[#6CB33F] text-white dark:bg-emerald-600 dark:hover:bg-emerald-500 dark:border-emerald-600"
-                      : "bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-[#4E8F2F] dark:text-emerald-400 hover:bg-green-50 dark:hover:bg-gray-700"
-                  }`}
+                  className={`inline-flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-1.5 sm:py-2 rounded-full border text-xs font-semibold transition-colors ${isActive
+                    ? "bg-[#6CB33F] hover:bg-[#4E8F2F] border-[#6CB33F] text-white dark:bg-emerald-600 dark:hover:bg-emerald-500 dark:border-emerald-600"
+                    : "bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-[#4E8F2F] dark:text-emerald-400 hover:bg-green-50 dark:hover:bg-gray-700"
+                    }`}
                 >
                   {cfg?.dot ? (
                     <span className={`w-2 h-2 rounded-full ${isActive ? "bg-white" : cfg.dot}`} />
@@ -378,17 +366,17 @@ export default function ResponsableMetierInterviewList() {
               );
             })}
           </div>
-          <div className="text-sm font-medium text-gray-500 dark:text-gray-400">
+          <div className="text-xs sm:text-sm font-medium text-gray-500 dark:text-gray-400">
             {loading ? "…" : `${total} résultat${total > 1 ? "s" : ""}`}
           </div>
         </div>
 
         {/* ── État : chargement ── */}
         {loading && (
-          <div className="bg-white dark:bg-gray-800 rounded-3xl shadow-lg border border-gray-200 dark:border-gray-700 p-8 sm:p-12 text-center transition-colors">
+          <div className="bg-white dark:bg-gray-800 rounded-2xl sm:rounded-3xl shadow-lg border border-gray-200 dark:border-gray-700 p-6 sm:p-8 md:p-12 text-center transition-colors">
             <div className="flex flex-col items-center justify-center gap-4">
-              <div className="animate-spin rounded-full h-12 w-12 border-4 border-[#E9F5E3] dark:border-gray-700 border-t-[#4E8F2F] dark:border-t-emerald-400" />
-              <p className="text-gray-500 dark:text-gray-400 text-lg">
+              <div className="animate-spin rounded-full h-10 sm:h-12 w-10 sm:w-12 border-4 border-[#E9F5E3] dark:border-gray-700 border-t-[#4E8F2F] dark:border-t-emerald-400" />
+              <p className="text-gray-500 dark:text-gray-400 text-sm sm:text-lg">
                 Chargement de vos entretiens...
               </p>
             </div>
@@ -397,16 +385,16 @@ export default function ResponsableMetierInterviewList() {
 
         {/* ── État : erreur ── */}
         {!loading && error && (
-          <div className="bg-white dark:bg-gray-800 rounded-3xl shadow-lg border border-gray-200 dark:border-gray-700 p-8 sm:p-12 text-center transition-colors">
+          <div className="bg-white dark:bg-gray-800 rounded-2xl sm:rounded-3xl shadow-lg border border-gray-200 dark:border-gray-700 p-6 sm:p-8 md:p-12 text-center transition-colors">
             <div className="flex flex-col items-center justify-center gap-4">
-              <XCircle className="w-16 h-16 text-red-400" />
-              <p className="text-gray-700 dark:text-gray-300 text-lg font-semibold">
+              <XCircle className="w-12 sm:w-16 h-12 sm:h-16 text-red-400" />
+              <p className="text-gray-700 dark:text-gray-300 text-base sm:text-lg font-semibold">
                 Erreur de chargement
               </p>
-              <p className="text-gray-500 dark:text-gray-400">{error}</p>
+              <p className="text-gray-500 dark:text-gray-400 text-xs sm:text-sm">{error}</p>
               <button
                 onClick={fetchInterviews}
-                className="px-5 py-2.5 rounded-full bg-[#6CB33F] text-white font-semibold hover:bg-[#4E8F2F] transition-colors"
+                className="px-4 sm:px-5 py-2 sm:py-2.5 rounded-full bg-[#6CB33F] text-white font-semibold text-sm hover:bg-[#4E8F2F] transition-colors"
               >
                 Réessayer
               </button>
@@ -416,51 +404,57 @@ export default function ResponsableMetierInterviewList() {
 
         {/* ── État : liste vide ── */}
         {!loading && !error && interviews.length === 0 && (
-          <div className="bg-white dark:bg-gray-800 rounded-3xl shadow-lg border border-gray-200 dark:border-gray-700 p-8 sm:p-12 text-center transition-colors">
+          <div className="bg-white dark:bg-gray-800 rounded-2xl sm:rounded-3xl shadow-lg border border-gray-200 dark:border-gray-700 p-6 sm:p-8 md:p-12 text-center transition-colors">
             <div className="flex flex-col items-center justify-center gap-4">
-              <Calendar className="w-16 h-16 text-gray-300 dark:text-gray-600" />
-              <p className="text-gray-700 dark:text-gray-300 text-lg font-semibold">
+              <Calendar className="w-12 sm:w-16 h-12 sm:h-16 text-gray-300 dark:text-gray-600" />
+              <p className="text-gray-700 dark:text-gray-300 text-base sm:text-lg font-semibold">
                 Aucun entretien trouvé
               </p>
-              <p className="text-gray-500 dark:text-gray-400 text-sm">
+              <p className="text-gray-500 dark:text-gray-400 text-xs sm:text-sm">
                 {search
                   ? "Aucun résultat pour cette recherche."
                   : statusFilter !== "ALL"
-                  ? "Aucun entretien pour ce statut."
-                  : "Vous n'avez pas encore d'entretiens assignés."}
+                    ? "Aucun entretien pour ce statut."
+                    : "Vous n'avez pas d'entretiens RH + Tech assignés."}
               </p>
             </div>
           </div>
         )}
 
-        {/* ── Tableau ── */}
+        {/* ── Tableau responsive ── */}
         {!loading && !error && interviews.length > 0 && (
-          <div className="bg-white dark:bg-gray-800 rounded-3xl shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden transition-colors">
+          <div className="bg-white dark:bg-gray-800 rounded-2xl sm:rounded-3xl shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden transition-colors">
             <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b border-gray-100 dark:border-gray-700">
+              <table className="w-full text-sm min-w-[1180px]">
+                <thead className="bg-[#E9F5E3] dark:bg-gray-700 text-[#4E8F2F] dark:text-emerald-400">
+                  <tr >
                     {["Candidat", "Poste", "Type", "Date & heure", "Statut", ""].map((h) => (
                       <th
                         key={h}
-                        className="px-6 lg:px-8 py-4 text-left text-[11px] uppercase tracking-widest font-bold text-gray-400 dark:text-gray-500 whitespace-nowrap"
-                      >
+                        className="text-left px-6 lg:px-8 py-5 font-extrabold uppercase text-xs tracking-wider"                      >
                         {h}
                       </th>
                     ))}
                   </tr>
                 </thead>
 
-                <tbody className="divide-y divide-gray-100 dark:divide-gray-700/50">
+                <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
                   {interviews.map((iv) => {
                     const isExpanded = expandedRow === iv._id;
                     const statusCfg = STATUS_CONFIG[iv.status] || {};
                     const typeCfg = TYPE_CONFIG[iv.interviewType] || TYPE_CONFIG.RH;
                     const isCancelled = iv.status === "CANCELLED";
 
-                    // Date active à afficher
-                    const displayDate = iv.confirmedDate || iv.proposedDate;
-                    const displayTime = iv.confirmedDate ? iv.confirmedTime : iv.proposedTime;
+                    // ✅ CORRECTION: Fallback sur proposedStart/proposedEnd
+                    const displayDate = iv.confirmedDate || iv.proposedDate || iv.proposedStart;
+                    const displayTime = iv.confirmedDate
+                      ? iv.confirmedTime
+                      : (iv.proposedTime || (iv.proposedStart
+                        ? new Date(iv.proposedStart).toLocaleTimeString("fr-FR", {
+                          hour: "2-digit",
+                          minute: "2-digit"
+                        })
+                        : null));
 
                     return (
                       <React.Fragment key={iv._id}>
@@ -468,18 +462,16 @@ export default function ResponsableMetierInterviewList() {
                           onClick={() =>
                             setExpandedRow(isExpanded ? null : iv._id)
                           }
-                          className={`cursor-pointer transition-colors ${
-                            isExpanded
-                              ? "bg-green-50/30 dark:bg-gray-900/30"
-                              : "hover:bg-gray-50/80 dark:hover:bg-gray-700/30"
-                          } ${isCancelled ? "opacity-60" : ""}`}
+                          className={`hover:bg-green-50/40 dark:hover:bg-gray-700/40 transition-colors cursor-pointer ${
+                            isExpanded ? "bg-green-50/30 dark:bg-gray-700/30" : ""
+                            } ${isCancelled ? "opacity-60" : ""}`}
                         >
                           {/* Candidat */}
                           <td className="px-6 lg:px-8 py-5">
                             <div className="flex items-center gap-3">
                               <Avatar name={iv.candidateName} />
                               <div className="min-w-0">
-                                <p className="font-bold text-gray-900 dark:text-white truncate">
+                                <p className="font-bold text-gray-900 dark:text-white truncate text-xs sm:text-sm">
                                   {iv.candidateName || "—"}
                                 </p>
                                 <p className="text-xs text-gray-400 dark:text-gray-500 truncate">
@@ -490,43 +482,41 @@ export default function ResponsableMetierInterviewList() {
                           </td>
 
                           {/* Poste */}
-                          <td className="px-6 lg:px-8 py-5">
-                            <span className="flex items-center gap-2 text-gray-700 dark:text-gray-300 font-medium">
-                              <Briefcase className="w-4 h-4 text-gray-400 flex-shrink-0" />
-                              <span className="truncate max-w-[140px]">
+                          <td className="px-3 sm:px-4 md:px-6 lg:px-8 py-3 sm:py-5">
+                            <span className="flex items-center gap-2 text-gray-700 dark:text-gray-300 font-medium text-xs sm:text-sm">
+                              <Briefcase className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-gray-400 flex-shrink-0" />
+                              <span className="truncate max-w-[100px] sm:max-w-[140px]">
                                 {iv.jobTitle || "—"}
                               </span>
                             </span>
                           </td>
 
                           {/* Type d'entretien */}
-                          <td className="px-6 lg:px-8 py-5">
+                          <td className="px-3 sm:px-4 md:px-6 lg:px-8 py-3 sm:py-5">
                             <Badge
                               label={typeCfg.label}
-                              className={`${typeCfg.cls} border`}
+                              className={`${typeCfg.cls} border text-xs`}
                             />
                           </td>
 
-                          {/* Date & heure */}
-                          <td className="px-6 lg:px-8 py-5">
+                          {/* Date & heure — ✅ AFFICHAGE CORRIGÉ */}
+                          <td className="px-3 sm:px-4 md:px-6 lg:px-8 py-3 sm:py-5">
                             <div className="flex flex-col gap-1">
-                              <span className="flex items-center gap-2 text-gray-800 dark:text-gray-200 font-semibold text-sm">
-                                <Calendar className="w-4 h-4 text-[#4E8F2F] dark:text-emerald-400 flex-shrink-0" />
+                              <span className="flex items-center gap-2 text-gray-800 dark:text-gray-200 font-semibold text-xs sm:text-sm">
+                                <Calendar className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#4E8F2F] dark:text-emerald-400 flex-shrink-0" />
                                 {formatDate(displayDate)}
                               </span>
                               {displayTime && (
-                                <span className="flex items-center gap-2 text-gray-500 dark:text-gray-400 text-xs ml-6">
-                                  <Clock3 className="w-3.5 h-3.5" />
+                                <span className="flex items-center gap-2 text-gray-500 dark:text-gray-400 text-xs ml-5 sm:ml-6">
+                                  <Clock3 className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
                                   {displayTime}
                                 </span>
                               )}
-                              {/* Alerte report candidat */}
                               {iv.status === "CANDIDATE_REQUESTED_RESCHEDULE" && (
-                                <div className="flex items-center gap-1 text-orange-600 dark:text-orange-400 text-xs ml-6 font-semibold">
-                                  <AlertTriangle className="w-3.5 h-3.5" />
+                                <div className="flex items-center gap-1 text-orange-600 dark:text-orange-400 text-xs ml-5 sm:ml-6 font-semibold">
+                                  <AlertTriangle className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
                                   <span>
-                                    Report : {formatDate(iv.candidateProposedDate)}{" "}
-                                    {iv.candidateProposedTime}
+                                    {formatDate(iv.candidateProposedDate)}
                                   </span>
                                 </div>
                               )}
@@ -534,20 +524,19 @@ export default function ResponsableMetierInterviewList() {
                           </td>
 
                           {/* Statut */}
-                          <td className="px-6 lg:px-8 py-5">
+                          <td className="px-3 sm:px-4 md:px-6 lg:px-8 py-3 sm:py-5">
                             <Badge
                               label={statusCfg.short || iv.status}
-                              className={statusCfg.color || ""}
+                              className={`${statusCfg.color || ""} text-xs`}
                               dotClass={statusCfg.dot || ""}
                             />
                           </td>
 
                           {/* Chevron */}
-                          <td className="px-6 lg:px-8 py-5 text-right">
+                          <td className="px-3 sm:px-4 md:px-6 lg:px-8 py-3 sm:py-5 text-right">
                             <ChevronDown
-                              className={`w-5 h-5 text-gray-400 ml-auto transition-transform ${
-                                isExpanded ? "rotate-180" : ""
-                              }`}
+                              className={`w-4 h-4 sm:w-5 sm:h-5 text-gray-400 ml-auto transition-transform ${isExpanded ? "rotate-180" : ""
+                                }`}
                             />
                           </td>
                         </tr>
@@ -557,27 +546,12 @@ export default function ResponsableMetierInterviewList() {
                           <tr>
                             <td
                               colSpan={6}
-                              className="px-6 lg:px-8 pb-6 bg-green-50/20 dark:bg-gray-900/20"
+                              className="px-3 sm:px-4 md:px-6 lg:px-8 pb-4 sm:pb-6 bg-green-50/20 dark:bg-gray-900/20"
                             >
-                              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 pt-4">
-                                <DetailCard
-                                  label="Email candidat"
-                                  value={iv.candidateEmail}
-                                />
-                                <DetailCard
-                                  label="Date proposée"
-                                  value={`${formatDate(iv.proposedDate)} ${iv.proposedTime || ""}`}
-                                />
-                                <DetailCard
-                                  label="Date confirmée"
-                                  value={
-                                    iv.confirmedDate
-                                      ? `${formatDate(iv.confirmedDate)} ${iv.confirmedTime || ""}`
-                                      : "Non confirmée"
-                                  }
-                                />
+                              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3 sm:gap-4 pt-4">
+                                {/* Poste */}
                                 <DetailCard label="Poste" value={iv.jobTitle} />
-                                <DetailCard label="Notes" value={iv.notes || "Aucune note"} />
+
 
                                 {iv.status === "CANDIDATE_REQUESTED_RESCHEDULE" && (
                                   <>
@@ -598,60 +572,51 @@ export default function ResponsableMetierInterviewList() {
                                     value={`${formatDate(iv.responsableProposedDate)} ${iv.responsableProposedTime || ""}`}
                                   />
                                 )}
+
+                                {/* ✅ NOUVELLE CARTE: Fiche d'évaluation (bouton) */}
+                                {isRHTechInterview(iv.interviewType) &&
+                                  (iv.status === "CONFIRMED" ||
+                                    iv.status === "PENDING_CANDIDATE_CONFIRMATION") && (
+                                    <DetailCard label="Évaluation">
+                                      <button
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          router.push(
+                                            `/ResponsableMetier/interviews/${iv._id}/evaluation`
+                                          );
+                                        }}
+                                        className="w-full px-3 py-2 rounded-full bg-violet-50 dark:bg-violet-950/30 border border-violet-200 dark:border-violet-700 text-violet-700 dark:text-violet-300 font-semibold text-xs sm:text-sm hover:bg-violet-100 dark:hover:bg-violet-900/40 transition-colors flex items-center justify-center gap-2"
+                                      >
+                                        <FileText className="w-4 h-4" />
+                                        Fiche d'évaluation
+                                      </button>
+                                    </DetailCard>
+                                  )}
                               </div>
 
-                              {/* ── Actions ── */}
-                              <div className="mt-5 flex flex-wrap gap-3">
+                              {/* ── Actions (Confirmer / Répondre) ── */}
+                              <div className="mt-4 sm:mt-5 flex flex-col sm:flex-row flex-wrap gap-2 sm:gap-3">
 
                                 {/* Confirmer / Modifier la date */}
                                 {(iv.status === "PENDING_CONFIRMATION" ||
                                   iv.status === "CANDIDATE_REQUESTED_RESCHEDULE") && (
-                                  <button
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      router.push(
-                                        `/ResponsableMetier/confirm-interview/${iv.confirmationToken}`
-                                      );
-                                    }}
-                                    className="px-4 py-2 rounded-full bg-[#E9F5E3] dark:bg-emerald-950/30 border border-[#cfe4c4] dark:border-emerald-700 text-[#4E8F2F] dark:text-emerald-300 font-semibold text-sm hover:bg-[#d7ebcf] dark:hover:bg-emerald-900/40 transition-colors flex items-center gap-2"
-                                  >
-                                    <Send className="w-4 h-4" />
-                                    {iv.status === "CANDIDATE_REQUESTED_RESCHEDULE"
-                                      ? "Répondre au report"
-                                      : "Confirmer / Modifier"}
-                                  </button>
-                                )}
+                                    <button
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        router.push(
+                                          `/ResponsableMetier/confirm-interview/${iv.confirmationToken}`
+                                        );
+                                      }}
+                                      className="px-3 sm:px-4 py-2 rounded-full bg-[#E9F5E3] dark:bg-emerald-950/30 border border-[#cfe4c4] dark:border-emerald-700 text-[#4E8F2F] dark:text-emerald-300 font-semibold text-xs sm:text-sm hover:bg-[#d7ebcf] dark:hover:bg-emerald-900/40 transition-colors flex items-center gap-2"
+                                    >
+                                      <Send className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                                      {iv.status === "CANDIDATE_REQUESTED_RESCHEDULE"
+                                        ? "Répondre"
+                                        : "Confirmer"}
+                                    </button>
+                                  )}
 
-                                {/* Fiche d'évaluation */}
-                                {(iv.status === "CONFIRMED" ||
-                                  iv.status === "PENDING_CANDIDATE_CONFIRMATION") && (
-                                  <button
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      router.push(
-                                        `/ResponsableMetier/interviews/${iv._id}/evaluation`
-                                      );
-                                    }}
-                                    className="px-4 py-2 rounded-full bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-700 text-blue-700 dark:text-blue-300 font-semibold text-sm transition-colors flex items-center gap-2"
-                                  >
-                                    <FileText className="w-4 h-4" />
-                                    Fiche d'évaluation
-                                  </button>
-                                )}
 
-                                {/* Voir candidature */}
-                                <button
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    router.push(
-                                      `/ResponsableMetier/candidatures/${iv.candidatureId}`
-                                    );
-                                  }}
-                                  className="px-4 py-2 rounded-full bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-200 font-semibold text-sm transition-colors flex items-center gap-2"
-                                >
-                                  <User className="w-4 h-4" />
-                                  Voir candidature
-                                </button>
                               </div>
                             </td>
                           </tr>
@@ -667,7 +632,7 @@ export default function ResponsableMetierInterviewList() {
 
         {/* ── Pagination ── */}
         {!loading && !error && interviews.length > 0 && totalPages > 1 && (
-          <div className="mt-6 px-4 sm:px-8 py-5 flex flex-col lg:flex-row items-center justify-between gap-4 text-sm text-gray-500 dark:text-gray-400 transition-colors">
+          <div className="mt-6 sm:mt-8 px-3 sm:px-4 md:px-8 py-4 sm:py-5 flex flex-col lg:flex-row items-center justify-between gap-4 text-xs sm:text-sm text-gray-500 dark:text-gray-400 transition-colors">
             <p className="font-medium">
               Page {page} sur {totalPages} — Total : {total} entretien
               {total > 1 ? "s" : ""}
@@ -677,7 +642,7 @@ export default function ResponsableMetierInterviewList() {
               <button
                 onClick={() => setPage((p) => Math.max(1, p - 1))}
                 disabled={page === 1}
-                className="px-4 py-2 rounded-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 font-semibold disabled:opacity-50 transition-colors"
+                className="px-3 sm:px-4 py-2 rounded-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 font-semibold text-xs sm:text-sm disabled:opacity-50 transition-colors"
               >
                 ← Préc.
               </button>
@@ -686,11 +651,10 @@ export default function ResponsableMetierInterviewList() {
                 <button
                   key={p}
                   onClick={() => setPage(p)}
-                  className={`w-10 h-10 rounded-full border font-bold transition-colors ${
-                    p === page
-                      ? "bg-[#6CB33F] border-[#6CB33F] text-white dark:bg-emerald-600 dark:border-emerald-600"
-                      : "bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300"
-                  }`}
+                  className={`w-8 h-8 sm:w-10 sm:h-10 rounded-full border font-bold text-xs sm:text-sm transition-colors ${p === page
+                    ? "bg-[#6CB33F] border-[#6CB33F] text-white dark:bg-emerald-600 dark:border-emerald-600"
+                    : "bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300"
+                    }`}
                 >
                   {p}
                 </button>
@@ -699,7 +663,7 @@ export default function ResponsableMetierInterviewList() {
               <button
                 onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
                 disabled={page === totalPages}
-                className="px-4 py-2 rounded-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 font-semibold disabled:opacity-50 transition-colors"
+                className="px-3 sm:px-4 py-2 rounded-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 font-semibold text-xs sm:text-sm disabled:opacity-50 transition-colors"
               >
                 Suiv. →
               </button>

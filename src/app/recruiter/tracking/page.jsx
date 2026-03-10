@@ -8,10 +8,11 @@ import {
   ChevronUp,
   ChevronDown,
   Loader2,
-  AlertCircle,
   Eye,
   GripVertical,
-  UserPlus,
+  Briefcase,
+  GraduationCap,
+  Users,
 } from "lucide-react";
 import { getRecruitmentTracking } from "../../services/job.api";
 import Pagination from "../../components/Pagination";
@@ -32,10 +33,14 @@ function formatDateWithTime(date) {
 
 function getStatusBadge(status) {
   const styles = {
-    EN_ATTENTE: "bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400",
-    VALIDEE: "bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400",
-    CONFIRMEE: "bg-green-100 dark:bg-emerald-900/30 text-green-700 dark:text-emerald-400",
-    REJETEE: "bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400",
+    EN_ATTENTE:
+      "bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400",
+    VALIDEE:
+      "bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400",
+    CONFIRMEE:
+      "bg-green-100 dark:bg-emerald-900/30 text-green-700 dark:text-emerald-400",
+    REJETEE:
+      "bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400",
   };
 
   const labels = {
@@ -49,7 +54,9 @@ function getStatusBadge(status) {
   const label = labels[status] || status;
 
   return (
-    <span className={`inline-block px-3 py-1.5 rounded-full text-xs font-semibold ${style}`}>
+    <span
+      className={`inline-block px-3 py-1.5 rounded-full text-xs font-semibold ${style}`}
+    >
       {label}
     </span>
   );
@@ -78,6 +85,7 @@ const DEFAULT_COLUMNS = [
 
 const PAGE_SIZE = 10;
 
+
 export default function RecruitmentTrackingPage() {
   const router = useRouter();
   const [jobs, setJobs] = useState([]);
@@ -85,7 +93,10 @@ export default function RecruitmentTrackingPage() {
   const [error, setError] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
   const [typeFilter, setTypeFilter] = useState("ALL");
-  const [sortConfig, setSortConfig] = useState({ key: "createdAt", direction: "desc" });
+  const [sortConfig, setSortConfig] = useState({
+    key: "createdAt",
+    direction: "desc",
+  });
   const [columns, setColumns] = useState(DEFAULT_COLUMNS);
   const [draggedIndex, setDraggedIndex] = useState(null);
   const [columnMenuOpen, setColumnMenuOpen] = useState(false);
@@ -126,8 +137,9 @@ export default function RecruitmentTrackingPage() {
   const stats = useMemo(() => {
     return {
       total: jobs.length,
-      recrutement: jobs.filter(j => !j.typeOffre || j.typeOffre !== "STAGE").length,
-      stages: jobs.filter(j => j.typeOffre === "STAGE").length,
+      recrutement: jobs.filter((j) => !j.typeOffre || j.typeOffre !== "STAGE")
+        .length,
+      stages: jobs.filter((j) => j.typeOffre === "STAGE").length,
     };
   }, [jobs]);
 
@@ -146,11 +158,10 @@ export default function RecruitmentTrackingPage() {
       );
     }
 
-    // Filtre par type d'offre
     if (typeFilter === "RECRUTEMENT") {
-      result = result.filter(job => !job.typeOffre || job.typeOffre !== "STAGE");
+      result = result.filter((job) => !job.typeOffre || job.typeOffre !== "STAGE");
     } else if (typeFilter === "STAGES") {
-      result = result.filter(job => job.typeOffre === "STAGE");
+      result = result.filter((job) => job.typeOffre === "STAGE");
     }
 
     result.sort((a, b) => {
@@ -173,14 +184,12 @@ export default function RecruitmentTrackingPage() {
     return result;
   }, [jobs, searchTerm, typeFilter, sortConfig]);
 
-  // Pagination
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const paginatedJobs = useMemo(
     () => filtered.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE),
     [filtered, currentPage]
   );
 
-  // Reset page quand les filtres changent
   useEffect(() => {
     setCurrentPage(1);
   }, [searchTerm, typeFilter]);
@@ -302,14 +311,11 @@ export default function RecruitmentTrackingPage() {
   return (
     <div className="min-h-screen bg-[#eef7ea] dark:bg-gray-950 transition-colors duration-300">
       <div className="max-w-[1400px] mx-auto px-4 sm:px-8 py-10">
-        {/* TITLE */}
         <h1 className="text-4xl font-extrabold text-gray-900 dark:text-white mb-7">
           Suivi des Recrutements
         </h1>
 
-        {/* TOOLBAR */}
-        <div className="flex flex-col lg:flex-row lg:items-center gap-5 mb-8">
-          {/* Bouton Afficher colonnes masquées */}
+        <div className="flex flex-col lg:flex-row lg:items-center gap-5 mb-5">
           {columns.filter((c) => !c.visible).length > 0 && (
             <div className="relative">
               <button
@@ -324,10 +330,10 @@ export default function RecruitmentTrackingPage() {
                   inline-flex items-center justify-center gap-2 whitespace-nowrap"
               >
                 <Eye className="h-5 w-5" />
-                {columns.filter((c) => !c.visible).length} masquée{columns.filter((c) => !c.visible).length > 1 ? "s" : ""}
+                {columns.filter((c) => !c.visible).length} masquée
+                {columns.filter((c) => !c.visible).length > 1 ? "s" : ""}
               </button>
 
-              {/* Menu déroulant des colonnes masquées */}
               {columnMenuOpen && (
                 <div className="fixed inset-0 z-50">
                   <div
@@ -396,19 +402,17 @@ export default function RecruitmentTrackingPage() {
               inline-flex items-center justify-center gap-3 whitespace-nowrap"
           >
             <Download className="h-5 w-5" />
-            Exporter CSV
+            Exporter Excel
           </button>
         </div>
 
 
-        {/* ERROR */}
         {error && (
           <div className="mb-5 rounded-2xl border border-red-200 dark:border-red-900/40 bg-red-50 dark:bg-red-950/20 px-5 py-3 text-sm font-semibold text-red-700 dark:text-red-400">
             {error}
           </div>
         )}
 
-        {/* TABLE CARD */}
         <div className="bg-white dark:bg-gray-900 rounded-3xl shadow-sm border border-[#E9F5E3] dark:border-gray-800 overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full min-w-[1200px]">
@@ -489,7 +493,6 @@ export default function RecruitmentTrackingPage() {
                       className="hover:bg-[#f0faef] dark:hover:bg-gray-800/60 transition-colors"
                     >
                       {visibleColumns.map((col) => {
-                        // Titre avec sous-texte - TEXTE RETOUR À LA LIGNE
                         if (col.id === "titre") {
                           return (
                             <td key={col.id} className="px-6 py-5 max-w-xs">
@@ -505,7 +508,6 @@ export default function RecruitmentTrackingPage() {
                           );
                         }
 
-                        // Nombre avec badge
                         if (col.id === "nombrePostes") {
                           return (
                             <td key={col.id} className="px-6 py-5 whitespace-nowrap">
@@ -516,16 +518,17 @@ export default function RecruitmentTrackingPage() {
                           );
                         }
 
-                        // Département
                         if (col.id === "departement") {
                           return (
-                            <td key={col.id} className="px-6 py-5 text-sm text-gray-600 dark:text-gray-300 whitespace-nowrap">
+                            <td
+                              key={col.id}
+                              className="px-6 py-5 text-sm text-gray-600 dark:text-gray-300 whitespace-nowrap"
+                            >
                               {job.departement || "—"}
                             </td>
                           );
                         }
 
-                        // Société badge
                         if (col.id === "societe") {
                           return (
                             <td key={col.id} className="px-6 py-5 whitespace-nowrap">
@@ -534,31 +537,36 @@ export default function RecruitmentTrackingPage() {
                                   {job.societe}
                                 </span>
                               ) : (
-                                <span className="text-sm text-gray-400 dark:text-gray-500">—</span>
+                                <span className="text-sm text-gray-400 dark:text-gray-500">
+                                  —
+                                </span>
                               )}
                             </td>
                           );
                         }
 
-                        // Genre
                         if (col.id === "sexe") {
                           return (
-                            <td key={col.id} className="px-6 py-5 text-sm text-gray-600 dark:text-gray-300 whitespace-nowrap">
+                            <td
+                              key={col.id}
+                              className="px-6 py-5 text-sm text-gray-600 dark:text-gray-300 whitespace-nowrap"
+                            >
                               {prettySexe(job.sexe)}
                             </td>
                           );
                         }
 
-                        // Diplôme
                         if (col.id === "typeDiplome") {
                           return (
-                            <td key={col.id} className="px-6 py-5 text-sm text-gray-600 dark:text-gray-300 max-w-xs break-words">
+                            <td
+                              key={col.id}
+                              className="px-6 py-5 text-sm text-gray-600 dark:text-gray-300 max-w-xs break-words"
+                            >
                               {job.typeDiplome || "—"}
                             </td>
                           );
                         }
 
-                        // Statut
                         if (col.id === "status") {
                           return (
                             <td key={col.id} className="px-6 py-5 whitespace-nowrap">
@@ -567,10 +575,12 @@ export default function RecruitmentTrackingPage() {
                           );
                         }
 
-                        // Dates
                         if (col.id === "dateCloture") {
                           return (
-                            <td key={col.id} className="px-6 py-5 text-sm text-gray-500 dark:text-gray-400 whitespace-nowrap">
+                            <td
+                              key={col.id}
+                              className="px-6 py-5 text-sm text-gray-500 dark:text-gray-400 whitespace-nowrap"
+                            >
                               {formatDate(job.dateCloture)}
                             </td>
                           );
@@ -578,13 +588,15 @@ export default function RecruitmentTrackingPage() {
 
                         if (col.id === "createdAt") {
                           return (
-                            <td key={col.id} className="px-6 py-5 text-sm text-gray-500 dark:text-gray-400 whitespace-nowrap">
+                            <td
+                              key={col.id}
+                              className="px-6 py-5 text-sm text-gray-500 dark:text-gray-400 whitespace-nowrap"
+                            >
                               {formatDateWithTime(job.createdAt)}
                             </td>
                           );
                         }
 
-                        // Créé par
                         if (col.id === "createdByUser") {
                           return (
                             <td key={col.id} className="px-6 py-5 whitespace-nowrap">
@@ -600,18 +612,22 @@ export default function RecruitmentTrackingPage() {
                           );
                         }
 
-                        // Motif (texte long avec wrapping)
                         if (col.id === "motif") {
                           return (
-                            <td key={col.id} className="px-6 py-5 text-sm text-gray-600 dark:text-gray-300 max-w-xs break-words line-clamp-2">
+                            <td
+                              key={col.id}
+                              className="px-6 py-5 text-sm text-gray-600 dark:text-gray-300 max-w-xs break-words line-clamp-2"
+                            >
                               {job.motif || "—"}
                             </td>
                           );
                         }
 
-                        // Colonnes texte normales
                         return (
-                          <td key={col.id} className="px-6 py-5 text-sm text-gray-600 dark:text-gray-300 whitespace-nowrap">
+                          <td
+                            key={col.id}
+                            className="px-6 py-5 text-sm text-gray-600 dark:text-gray-300 whitespace-nowrap"
+                          >
                             {job[col.id] || "—"}
                           </td>
                         );
@@ -628,7 +644,6 @@ export default function RecruitmentTrackingPage() {
           </div>
         </div>
 
-        {/* FOOTER — count + pagination */}
         {filtered.length > 0 && (
           <div className="mt-5">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -637,7 +652,8 @@ export default function RecruitmentTrackingPage() {
                 <span className="font-semibold text-gray-600 dark:text-gray-300 ml-1">
                   {filtered.length}
                 </span>
-                offre{filtered.length > 1 ? "s" : ""} — Page {currentPage} / {totalPages}
+                offre{filtered.length > 1 ? "s" : ""} — Page {currentPage} /{" "}
+                {totalPages}
               </p>
 
               {totalPages > 1 && (

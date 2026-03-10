@@ -182,38 +182,19 @@ function ScoreBadge({ score }) {
   );
 }
 
-function StatCard({ label, value, active, onClick, icon }) {
-  return (
-    <button
-      onClick={onClick}
-      className={`rounded-2xl border p-4 text-left transition-colors shadow-sm ${
-        active
-          ? "bg-[#E9F5E3] dark:bg-gray-700 border-[#cfe4c4] dark:border-gray-600"
-          : "bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 hover:bg-green-50/40 dark:hover:bg-gray-700/60"
-      }`}
-    >
-      <div className="flex items-center justify-between mb-3">
-        <span className="text-[#4E8F2F] dark:text-emerald-400">{icon}</span>
-      </div>
-      <div className="text-2xl font-extrabold text-gray-900 dark:text-white">
-        {value}
-      </div>
-      <div className="text-[11px] uppercase tracking-wider font-bold text-gray-500 dark:text-gray-400">
-        {label}
-      </div>
-    </button>
-  );
-}
-
-function DetailCard({ label, value }) {
+function DetailCard({ label, value, children }) {
   return (
     <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 p-4 transition-colors">
       <div className="text-[11px] uppercase tracking-wider font-bold text-gray-500 dark:text-gray-400 mb-2">
         {label}
       </div>
-      <div className="text-sm font-medium text-gray-800 dark:text-gray-200 break-words">
-        {value || "—"}
-      </div>
+      {children ? (
+        children
+      ) : (
+        <div className="text-sm font-medium text-gray-800 dark:text-gray-200 break-words">
+          {value || "—"}
+        </div>
+      )}
     </div>
   );
 }
@@ -512,11 +493,10 @@ export default function AdminInterviewList() {
                 <button
                   key={s}
                   onClick={() => setStatusFilter(s)}
-                  className={`inline-flex items-center gap-2 px-4 py-2 rounded-full border text-xs font-semibold transition-colors ${
-                    isActive
-                      ? "bg-[#6CB33F] hover:bg-[#4E8F2F] border-[#6CB33F] text-white dark:bg-emerald-600 dark:hover:bg-emerald-500 dark:border-emerald-600"
-                      : "bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-[#4E8F2F] dark:text-emerald-400 hover:bg-green-50 dark:hover:bg-gray-700"
-                  }`}
+                  className={`inline-flex items-center gap-2 px-4 py-2 rounded-full border text-xs font-semibold transition-colors ${isActive
+                    ? "bg-[#6CB33F] hover:bg-[#4E8F2F] border-[#6CB33F] text-white dark:bg-emerald-600 dark:hover:bg-emerald-500 dark:border-emerald-600"
+                    : "bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-[#4E8F2F] dark:text-emerald-400 hover:bg-green-50 dark:hover:bg-gray-700"
+                    }`}
                 >
                   {cfg.dot ? (
                     <span
@@ -582,188 +562,9 @@ export default function AdminInterviewList() {
         )}
 
         {!loading && !error && interviews.length > 0 && (
-          <div className="lg:hidden space-y-4">
-            {interviews.map((iv) => {
-              const sc = STATUS_CONFIG[iv.status] || {};
-              const tc = TYPE_CONFIG[iv.interviewType] || TYPE_CONFIG.RH;
-              const dgaNote = getDGANote(iv);
-              const score = dgaNote
-                ? dgaNote.evaluationGlobale ?? dgaNote.score ?? null
-                : null;
-              const hasConfirmedDate = !!iv.confirmedDate;
-              const displayDate = hasConfirmedDate ? iv.confirmedDate : iv.proposedDate;
-              const displayTime = hasConfirmedDate ? iv.confirmedTime : iv.proposedTime;
-              const isCancelled = iv.status === "CANCELLED";
-              const isExpanded = expandedRow === iv._id;
-              const isActioning = actionLoading?.startsWith(iv._id);
-
-              return (
-                <div
-                  key={iv._id}
-                  className={`bg-white dark:bg-gray-800 rounded-3xl shadow-lg border border-[#E9F5E3] dark:border-gray-700 transition-colors duration-300 ${
-                    isCancelled ? "opacity-60" : ""
-                  }`}
-                >
-                  <button
-                    type="button"
-                    onClick={() => setExpandedRow(isExpanded ? null : iv._id)}
-                    className="w-full p-5 text-left"
-                  >
-                    <div className="flex items-start gap-3">
-                      <Avatar name={iv.candidateName} />
-
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-start justify-between gap-3">
-                          <div>
-                            <div className="font-extrabold text-gray-900 dark:text-white text-lg">
-                              {iv.candidateName}
-                            </div>
-                            <div className="text-sm text-gray-700 dark:text-gray-300 mt-1 break-all">
-                              {iv.candidateEmail}
-                            </div>
-                          </div>
-
-                          <ChevronDown
-                            className={`w-5 h-5 text-gray-400 transition-transform ${
-                              isExpanded ? "rotate-180" : ""
-                            }`}
-                          />
-                        </div>
-
-                        <div className="mt-3 flex flex-wrap gap-2">
-                          <Badge label={tc.label} className={tc.cls} />
-                          <Badge
-                            label={sc.short || iv.status}
-                            className={sc.color}
-                            dotClass={sc.dot}
-                          />
-                          {score !== null && <ScoreBadge score={score} />}
-                          {/* ✅ INDICATEUR VISUEL - MOBILE */}
-                          {(iv.status === "CONFIRMED" || iv.status === "PENDING_CANDIDATE_CONFIRMATION") && (
-                            <span className="text-[11px] font-semibold text-blue-600 dark:text-blue-300">
-                              À évaluer
-                            </span>
-                          )}
-                        </div>
-
-                        <div className="mt-3 flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
-                          <Briefcase className="w-4 h-4" />
-                          <span className="font-medium">{iv.jobTitle || "—"}</span>
-                        </div>
-
-                        <div className="mt-2 flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
-                          <Calendar className="w-4 h-4" />
-                          <span>
-                            {formatDate(displayDate)} • {displayTime || "—"}
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                  </button>
-
-                  {isExpanded && (
-                    <div className="px-5 pb-5">
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                        <DetailCard
-                          label="Date proposée"
-                          value={`${formatDate(iv.proposedDate)} ${iv.proposedTime || ""}`}
-                        />
-                        <DetailCard
-                          label="Date confirmée"
-                          value={
-                            iv.confirmedDate
-                              ? `${formatDate(iv.confirmedDate)} ${iv.confirmedTime || ""}`
-                              : "Non confirmée"
-                          }
-                        />
-                        <DetailCard
-                          label="Responsable"
-                          value={iv.assignedUserEmail || "—"}
-                        />
-                        <DetailCard label="Notes" value={iv.notes || "Aucune note"} />
-
-                        {iv.status === "CANDIDATE_REQUESTED_RESCHEDULE" && (
-                          <DetailCard
-                            label="Raison report"
-                            value={iv.candidateRescheduleReason || "Non précisée"}
-                          />
-                        )}
-
-                        {iv.status === "PENDING_ADMIN_APPROVAL" && (
-                          <DetailCard
-                            label="Nouvelle date proposée"
-                            value={`${formatDate(iv.responsableProposedDate)} ${iv.responsableProposedTime || ""}`}
-                          />
-                        )}
-                      </div>
-
-                      <div className="mt-4 flex flex-wrap gap-3">
-                        {iv.status === "PENDING_ADMIN_APPROVAL" && (
-                          <>
-                            <button
-                              disabled={!!isActioning}
-                              onClick={(e) => handleApprove(iv._id, e)}
-                              className="px-4 py-2 rounded-full bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-700 text-emerald-700 dark:text-emerald-300 font-semibold text-sm transition-colors"
-                            >
-                              {actionLoading === iv._id + "_approve" ? "…" : "Approuver"}
-                            </button>
-
-                            <button
-                              disabled={!!isActioning}
-                              onClick={(e) => handleReject(iv._id, e)}
-                              className="px-4 py-2 rounded-full bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-700 text-red-700 dark:text-red-300 font-semibold text-sm transition-colors"
-                            >
-                              {actionLoading === iv._id + "_reject" ? "…" : "Rejeter"}
-                            </button>
-                          </>
-                        )}
-
-                        {/* ✅ BOUTON FICHE D'ÉVALUATION - MOBILE */}
-                        {(iv.status === "CONFIRMED" || iv.status === "PENDING_CANDIDATE_CONFIRMATION") && (
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              router.push(`/recruiter/interviews/${iv._id}/evaluation`);
-                            }}
-                            className="px-4 py-2 rounded-full bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-700 text-blue-700 dark:text-blue-300 font-semibold text-sm transition-colors flex items-center gap-2"
-                          >
-                            <FileText className="w-4 h-4" />
-                            Fiche d'évaluation
-                          </button>
-                        )}
-
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            router.push(`/recruiter/candidatures/${iv.candidatureId}`);
-                          }}
-                          className="px-4 py-2 rounded-full bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-200 font-semibold text-sm transition-colors"
-                        >
-                          Voir candidature
-                        </button>
-
-                        {!isCancelled && (
-                          <button
-                            disabled={!!isActioning}
-                            onClick={(e) => openCancelModal(iv._id, e)}
-                            className="px-4 py-2 rounded-full bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-700 text-red-700 dark:text-red-300 font-semibold text-sm transition-colors"
-                          >
-                            Annuler
-                          </button>
-                        )}
-                      </div>
-                    </div>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-        )}
-
-        {!loading && !error && interviews.length > 0 && (
           <div className="hidden lg:block bg-white dark:bg-gray-800 rounded-3xl shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden transition-colors duration-300">
             <div className="overflow-x-auto">
-              <table className="w-full text-sm min-w-[1180px]">
+              <table className="w-full text-sm min-w-[1100px]">
                 <thead className="bg-[#E9F5E3] dark:bg-gray-700 text-[#4E8F2F] dark:text-emerald-400">
                   <tr>
                     <th className="text-left px-6 lg:px-8 py-5 font-extrabold uppercase text-xs tracking-wider">
@@ -771,9 +572,6 @@ export default function AdminInterviewList() {
                     </th>
                     <th className="text-left px-6 lg:px-8 py-5 font-extrabold uppercase text-xs tracking-wider">
                       Poste
-                    </th>
-                    <th className="text-left px-6 lg:px-8 py-5 font-extrabold uppercase text-xs tracking-wider">
-                      Date / Heure
                     </th>
                     <th className="text-left px-6 lg:px-8 py-5 font-extrabold uppercase text-xs tracking-wider">
                       Type
@@ -803,8 +601,13 @@ export default function AdminInterviewList() {
                       : null;
                     const comment = dgaNote ? dgaNote.commentaire || "" : "";
                     const hasConfirmedDate = !!iv.confirmedDate;
-                    const displayDate = hasConfirmedDate ? iv.confirmedDate : iv.proposedDate;
-                    const displayTime = hasConfirmedDate ? iv.confirmedTime : iv.proposedTime;
+                    const displayDate = hasConfirmedDate ? iv.confirmedDate : (iv.proposedDate || iv.proposedStart);
+                    const displayTime = hasConfirmedDate ? iv.confirmedTime : (iv.proposedTime || (iv.proposedStart
+                      ? new Date(iv.proposedStart).toLocaleTimeString("fr-FR", {
+                        hour: "2-digit",
+                        minute: "2-digit"
+                      })
+                      : null));
                     const isCancelled = iv.status === "CANCELLED";
                     const isExpanded = expandedRow === iv._id;
                     const hasDGA = iv.allEntretienNotes?.some((n) => /dga/i.test(n.type));
@@ -814,9 +617,8 @@ export default function AdminInterviewList() {
                       <React.Fragment key={iv._id}>
                         <tr
                           onClick={() => setExpandedRow(isExpanded ? null : iv._id)}
-                          className={`hover:bg-green-50/40 dark:hover:bg-gray-700/40 transition-colors cursor-pointer ${
-                            isExpanded ? "bg-green-50/30 dark:bg-gray-700/30" : ""
-                          } ${isCancelled ? "opacity-60" : ""}`}
+                          className={`hover:bg-green-50/40 dark:hover:bg-gray-700/40 transition-colors cursor-pointer ${isExpanded ? "bg-green-50/30 dark:bg-gray-700/30" : ""
+                            } ${isCancelled ? "opacity-60" : ""}`}
                         >
                           <td className="px-6 lg:px-8 py-5">
                             <div className="flex items-center gap-3">
@@ -833,25 +635,12 @@ export default function AdminInterviewList() {
                           </td>
 
                           <td className="px-6 lg:px-8 py-5">
-                            <span className="inline-flex items-center px-4 py-2 rounded-full bg-[#E9F5E3] dark:bg-gray-700 text-[#4E8F2F] dark:text-emerald-400 text-xs font-semibold border border-[#d7ebcf] dark:border-gray-600 transition-colors">
-                              {iv.jobTitle || "N/A"}
+                            <span className="flex items-center gap-2 text-gray-700 dark:text-gray-300 font-medium text-xs sm:text-sm">
+                              <Briefcase className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-gray-400 flex-shrink-0" />
+                              <span className="truncate max-w-[100px] sm:max-w-[140px]">
+                                {iv.jobTitle || "—"}
+                              </span>
                             </span>
-                          </td>
-
-                          <td className="px-6 lg:px-8 py-5 text-gray-700 dark:text-gray-300">
-                            <div
-                              className={`font-semibold ${
-                                hasConfirmedDate ? "text-emerald-700 dark:text-emerald-300" : ""
-                              }`}
-                            >
-                              {formatDate(displayDate)}
-                            </div>
-                            <div className="text-xs text-gray-500 dark:text-gray-400 mt-1 flex items-center gap-1">
-                              {displayTime || "—"}
-                              {hasConfirmedDate && (
-                                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />
-                              )}
-                            </div>
                           </td>
 
                           <td className="px-6 lg:px-8 py-5">
@@ -860,12 +649,6 @@ export default function AdminInterviewList() {
                               {hasDGA && !isCancelled && (
                                 <span className="text-[11px] font-semibold text-rose-600 dark:text-rose-300">
                                   + Note DGA
-                                </span>
-                              )}
-                              {/* ✅ INDICATEUR VISUEL - DESKTOP */}
-                              {(iv.status === "CONFIRMED" || iv.status === "PENDING_CANDIDATE_CONFIRMATION") && (
-                                <span className="text-[11px] font-semibold text-blue-600 dark:text-blue-300">
-                                   À évaluer
                                 </span>
                               )}
                             </div>
@@ -925,9 +708,8 @@ export default function AdminInterviewList() {
 
                           <td className="px-6 lg:px-8 py-5 text-right">
                             <ChevronDown
-                              className={`w-5 h-5 text-gray-400 ml-auto transition-transform ${
-                                isExpanded ? "rotate-180" : ""
-                              }`}
+                              className={`w-5 h-5 text-gray-400 ml-auto transition-transform ${isExpanded ? "rotate-180" : ""
+                                }`}
                             />
                           </td>
                         </tr>
@@ -935,29 +717,27 @@ export default function AdminInterviewList() {
                         {isExpanded && (
                           <tr>
                             <td
-                              colSpan={8}
+                              colSpan={7}
                               className="px-6 lg:px-8 pb-6 bg-green-50/20 dark:bg-gray-900/20"
                             >
+                              {/* ✅ GRILLE DETAIL CARDS */}
                               <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 pt-4">
-                                <DetailCard label="Email candidat" value={iv.candidateEmail} />
-                                <DetailCard
-                                  label="Date proposée"
-                                  value={`${formatDate(iv.proposedDate)} ${iv.proposedTime || ""}`}
-                                />
-                                <DetailCard
-                                  label="Date confirmée"
-                                  value={
-                                    iv.confirmedDate
-                                      ? `${formatDate(iv.confirmedDate)} ${iv.confirmedTime || ""}`
-                                      : "Non confirmée"
-                                  }
-                                />
+                                {/* Poste */}
+                                <DetailCard label="Poste" value={iv.jobTitle || "—"} />
+
+                                {/* Responsable */}
                                 <DetailCard
                                   label="Responsable"
                                   value={iv.assignedUserEmail || "—"}
                                 />
-                               
 
+                                {/* ✅ CARTE: Date et Heure (NOUVELLE) */}
+                                <DetailCard
+                                  label="Date et Heure"
+                                  value={`${formatDate(displayDate)} • ${displayTime || "—"}`}
+                                />
+
+                                {/* Raison report */}
                                 {iv.status === "CANDIDATE_REQUESTED_RESCHEDULE" && (
                                   <DetailCard
                                     label="Raison report"
@@ -965,71 +745,66 @@ export default function AdminInterviewList() {
                                   />
                                 )}
 
+                                {/* Nouvelle date proposée */}
                                 {iv.status === "PENDING_ADMIN_APPROVAL" && (
                                   <DetailCard
                                     label="Nouvelle date proposée"
                                     value={`${formatDate(iv.responsableProposedDate)} ${iv.responsableProposedTime || ""}`}
                                   />
                                 )}
-                              </div>
 
-                              <div className="mt-5 flex flex-wrap gap-3">
+                                {/* ✅ CARTE: Fiche d'évaluation */}
+                                {(iv.status === "CONFIRMED" || iv.status === "PENDING_CANDIDATE_CONFIRMATION") && (
+                                  <DetailCard label="Évaluation">
+                                    <button
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        router.push(`/recruiter/interviews/${iv._id}/evaluation`);
+                                      }}
+                                      className="w-full px-4 py-2.5 rounded-full bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-700 text-blue-700 dark:text-blue-300 font-semibold text-sm hover:bg-blue-100 dark:hover:bg-blue-900/40 transition-colors flex items-center justify-center gap-2"
+                                    >
+                                      <FileText className="w-4 h-4" />
+                                      Fiche d'évaluation
+                                    </button>
+                                  </DetailCard>
+                                )}
+
+                                {/* ✅ CARTE: Actions (Annuler) */}
+                                {!isCancelled && (
+                                  <DetailCard label="Actions">
+                                    <button
+                                      disabled={!!isActioning}
+                                      onClick={(e) => openCancelModal(iv._id, e)}
+                                      className="w-full px-4 py-2.5 rounded-full bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-700 text-red-700 dark:text-red-300 font-semibold text-sm hover:bg-red-100 dark:hover:bg-red-900/40 transition-colors disabled:opacity-50"
+                                    >
+                                      Annuler l'entretien
+                                    </button>
+                                  </DetailCard>
+                                )}
+
+                                {/* ✅ CARTE: Approuver/Rejeter (si PENDING_ADMIN_APPROVAL) */}
                                 {iv.status === "PENDING_ADMIN_APPROVAL" && (
                                   <>
-                                    <button
-                                      disabled={!!isActioning}
-                                      onClick={(e) => handleApprove(iv._id, e)}
-                                      className="px-4 py-2 rounded-full bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-700 text-emerald-700 dark:text-emerald-300 font-semibold text-sm transition-colors"
-                                    >
-                                      {actionLoading === iv._id + "_approve"
-                                        ? "…"
-                                        : "Approuver la modification"}
-                                    </button>
+                                    <DetailCard label="Approbation">
+                                      <button
+                                        disabled={!!isActioning}
+                                        onClick={(e) => handleApprove(iv._id, e)}
+                                        className="w-full px-4 py-2.5 rounded-full bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-700 text-emerald-700 dark:text-emerald-300 font-semibold text-sm hover:bg-emerald-100 dark:hover:bg-emerald-900/40 transition-colors disabled:opacity-50"
+                                      >
+                                        {actionLoading === iv._id + "_approve" ? "…" : "Approuver"}
+                                      </button>
+                                    </DetailCard>
 
-                                    <button
-                                      disabled={!!isActioning}
-                                      onClick={(e) => handleReject(iv._id, e)}
-                                      className="px-4 py-2 rounded-full bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-700 text-red-700 dark:text-red-300 font-semibold text-sm transition-colors"
-                                    >
-                                      {actionLoading === iv._id + "_reject"
-                                        ? "…"
-                                        : "Rejeter"}
-                                    </button>
+                                    <DetailCard label="Refus">
+                                      <button
+                                        disabled={!!isActioning}
+                                        onClick={(e) => handleReject(iv._id, e)}
+                                        className="w-full px-4 py-2.5 rounded-full bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-700 text-red-700 dark:text-red-300 font-semibold text-sm hover:bg-red-100 dark:hover:bg-red-900/40 transition-colors disabled:opacity-50"
+                                      >
+                                        {actionLoading === iv._id + "_reject" ? "…" : "Rejeter"}
+                                      </button>
+                                    </DetailCard>
                                   </>
-                                )}
-
-                                {/* ✅ BOUTON FICHE D'ÉVALUATION - DESKTOP */}
-                                {(iv.status === "CONFIRMED" || iv.status === "PENDING_CANDIDATE_CONFIRMATION") && (
-                                  <button
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      router.push(`/recruiter/interviews/${iv._id}/evaluation`);
-                                    }}
-                                    className="px-4 py-2 rounded-full bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-700 text-blue-700 dark:text-blue-300 font-semibold text-sm transition-colors flex items-center gap-2"
-                                  >
-                                    <FileText className="w-4 h-4" />
-                                    Fiche d'évaluation
-                                  </button>
-                                )}
-
-                                <button
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    router.push(`/recruiter/candidatures/${iv.candidatureId}`);
-                                  }}
-                                  className="px-4 py-2 rounded-full bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-200 font-semibold text-sm transition-colors"
-                                >
-                                  Voir candidature
-                                </button>
-
-                                {!isCancelled && (
-                                  <button
-                                    disabled={!!isActioning}
-                                    onClick={(e) => openCancelModal(iv._id, e)}
-                                    className="px-4 py-2 rounded-full bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-700 text-red-700 dark:text-red-300 font-semibold text-sm transition-colors lg:ml-auto"
-                                  >
-                                    Annuler l'entretien
-                                  </button>
                                 )}
                               </div>
                             </td>
@@ -1063,11 +838,10 @@ export default function AdminInterviewList() {
                 <button
                   key={p}
                   onClick={() => setPage(p)}
-                  className={`w-10 h-10 rounded-full border font-bold transition-colors ${
-                    p === page
-                      ? "bg-[#6CB33F] border-[#6CB33F] text-white dark:bg-emerald-600 dark:border-emerald-600"
-                      : "bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300"
-                  }`}
+                  className={`w-10 h-10 rounded-full border font-bold transition-colors ${p === page
+                    ? "bg-[#6CB33F] border-[#6CB33F] text-white dark:bg-emerald-600 dark:border-emerald-600"
+                    : "bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300"
+                    }`}
                 >
                   {p}
                 </button>
