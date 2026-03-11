@@ -583,7 +583,7 @@ export default function Navbar() {
               {isResponsableRHOPTYLAB && (
                 <>
                   <Link href="/RESPONSABLE_RH_OPTYLAB/candidats" className={`${linkBase} ${isActive("/RESPONSABLE_RH_OPTYLAB/candidats") ? activeLink : inactiveLink}`}>
-                    Liste candidats
+                    Liste des candidatures
                   </Link>
                   <Link href="/calendar" className={`${linkBase} ${isActive("/calendar") ? activeLink : inactiveLink}`}>
                     Mon calendrier
