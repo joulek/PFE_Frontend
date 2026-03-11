@@ -17,13 +17,17 @@ export function middleware(req) {
   const isAdmin               = role === "ADMIN";
   const isAssistanteRH        = role === "ASSISTANTE_RH";
   const isAssistanceDirection = role === "ASSISTANCE_DIRECTION";
+  const isResponsableRHOPTYLAB   = role === "RESPONSABLE_RH_OPTYLAB";
+  const isResponsableRHNord      = role === "RESPONSABLE_RH_NORD";
 
   const isRecruiterPath   = pathname.startsWith("/recruiter");
   const isResponsablePath =
     pathname.startsWith("/ResponsableMetier") ||
     pathname.startsWith("/responsableMetier");
 
-  const isAssistanceDirPath = pathname.startsWith("/entretiens-confirmes");
+  const isAssistanceDirPath     = pathname.startsWith("/entretiens-confirmes");
+  const isResponsableRHOPTYLABPath = pathname.startsWith("/RESPONSABLE_RH_OPTYLAB");
+  const isResponsableRHNordPath    = pathname.startsWith("/RESPONSABLE_RH_NORD");
 
   // Pages partagées ADMIN + ASSISTANTE_RH (hors /recruiter)
   const isSharedRHPath =
@@ -36,7 +40,7 @@ export function middleware(req) {
 
   const isLoginPage    = pathname.startsWith("/login");
   const isUnauthorized = pathname.startsWith("/unauthorized");
-  const isProtected    = isRecruiterPath || isResponsablePath || isSharedRHPath || isAssistanceDirPath || isCalendarPath;
+  const isProtected    = isRecruiterPath || isResponsablePath || isSharedRHPath || isAssistanceDirPath || isCalendarPath || isResponsableRHOPTYLABPath || isResponsableRHNordPath;
 
   const redirect = (to) => {
     const url = req.nextUrl.clone();
@@ -61,17 +65,25 @@ export function middleware(req) {
   // /employees + /roles → ADMIN + ASSISTANTE_RH uniquement
   if (isSharedRHPath && token && !isAdmin && !isAssistanteRH) return redirect("/unauthorized");
 
-  // /calendar → ADMIN + ASSISTANTE_RH + ASSISTANCE_DIRECTION
-  if (isCalendarPath && token && !isAdmin && !isAssistanteRH && !isAssistanceDirection) return redirect("/unauthorized");
+  // /calendar → ADMIN + ASSISTANTE_RH + ASSISTANCE_DIRECTION + RESPONSABLE_RH_OPTYLAB
+  if (isCalendarPath && token && !isAdmin && !isAssistanteRH && !isAssistanceDirection && !isResponsableRHOPTYLAB && !isResponsableRHNord) return redirect("/unauthorized");
 
   // /entretiens-confirmes/* → ASSISTANCE_DIRECTION + ADMIN uniquement
   if (isAssistanceDirPath && token && !isAdmin && !isAssistanceDirection) return redirect("/unauthorized");
+
+  // /RESPONSABLE_RH_OPTYLAB/* → RESPONSABLE_RH_OPTYLAB uniquement
+  if (isResponsableRHOPTYLABPath && token && !isResponsableRHOPTYLAB) return redirect("/unauthorized");
+
+  // /RESPONSABLE_RH_NORD/* → RESPONSABLE_RH_NORD uniquement
+  if (isResponsableRHNordPath && token && !isResponsableRHNord) return redirect("/unauthorized");
 
   // 3) Connecté et va /login => redirection selon rôle
   if (isLoginPage && token) {
     if (isAdmin)               return redirect("/recruiter/dashboard");
     if (isAssistanteRH)        return redirect("/employees");
     if (isAssistanceDirection) return redirect("/entretiens-confirmes");
+    if (isResponsableRHOPTYLAB)   return redirect("/RESPONSABLE_RH_OPTYLAB");
+    if (isResponsableRHNord)      return redirect("/RESPONSABLE_RH_NORD");
     return redirect("/ResponsableMetier/candidatures");
   }
 

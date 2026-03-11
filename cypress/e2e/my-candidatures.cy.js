@@ -5,7 +5,7 @@ describe("Mes candidatures – utilisateur", () => {
 
   const mockUser = {
     _id: "u1",
-    role: "RESPONSABLE_RH",
+    role: "RESPONSABLE_RH_OPTYLAB",
     email: "user@test.tn",
   };
 
@@ -51,7 +51,7 @@ describe("Mes candidatures – utilisateur", () => {
   });
 
   it("devrait afficher le rôle de l'utilisateur", () => {
-    cy.contains("Rôle: RESPONSABLE_RH").should("be.visible");
+    cy.contains("Rôle: RESPONSABLE_RH_OPTYLAB").should("be.visible");
   });
 
   it("devrait afficher la liste des candidatures", () => {

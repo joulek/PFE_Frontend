@@ -260,3 +260,24 @@ export async function cancelInterview(interviewId, reason) {
     body: JSON.stringify({ reason }),
   });
 }
+
+// ══════════════════════════════════════════════
+//  RESPONSABLE_RH_OPTYLAB — Note sur entretien confirmé
+// ══════════════════════════════════════════════
+
+/** Sauvegarder (créer ou modifier) une note */
+export async function saveRhOptylabNote(interviewId, text) {
+  return request(`/api/interviews/${interviewId}/rh-nord-note`, {
+    method: "POST",
+    headers: getAuthHeaders(),
+    body: JSON.stringify({ text }),
+  });
+}
+
+/** Supprimer la note */
+export async function deleteRhNordNote(interviewId) {
+  return request(`/api/interviews/${interviewId}/rh-nord-note`, {
+    method: "DELETE",
+    headers: getAuthHeaders(),
+  });
+}
