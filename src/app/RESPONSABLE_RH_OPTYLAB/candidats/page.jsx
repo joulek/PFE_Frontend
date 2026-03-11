@@ -107,7 +107,7 @@ export default function CandidaturesUnifiedPage() {
   const [q, setQ] = useState("");
   const [activeTab, setActiveTab] = useState("TOUS");
   const [page, setPage] = useState(1);
-  const pageSize = 10;
+  const pageSize = 5;
 
   useEffect(() => {
     async function load() {

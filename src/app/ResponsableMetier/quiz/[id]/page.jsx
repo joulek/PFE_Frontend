@@ -184,7 +184,7 @@ function ConfirmModal({ open, title, subtitle, loading, onClose, onConfirm }) {
 
 export default function ResponsableQuizDetailsPage() {
   const params = useParams();
-  const jobOfferId = useMemo(() => String(params?.jobId || ""), [params]);
+  const jobOfferId = useMemo(() => String(params?.id || ""), [params]);
 
   const [quiz, setQuiz] = useState(null);
   const [loading, setLoading] = useState(true);

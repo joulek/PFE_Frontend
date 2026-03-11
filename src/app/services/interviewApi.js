@@ -1,4 +1,5 @@
-const API_BASE = process.env.NEXT_PUBLIC_API_URL;
+// services/interviewApi.js
+import api from "./api";
 
 /* ============================================================
  *  INTERVIEW API SERVICE
@@ -10,36 +11,22 @@ const API_BASE = process.env.NEXT_PUBLIC_API_URL;
  *  2b. ResponsableMetier modifie  → modifyInterview() → mail admin
  *  3. Candidat confirme           → candidateConfirmInterview()
  *  3b. Candidat propose date      → candidateReschedule()
- *  4. Admin approuve/rejette      → adminApprove() / adminReject()
+ *  4. Admin approuve/rejette      → adminApproveModification() / adminRejectModification()
  *  5. Admin liste & stats         → getAllInterviewsAdmin() / getInterviewsStats()
  *  6. ResponsableMetier liste     → getMyInterviews() / getMyInterviewsStats()
+ *  7. RH Optylab notes            → saveRhNordNote() / deleteRhNordNote()
+ *  8. RH Optylab liste confirmés  → getConfirmedInterviews()
  *
  * ============================================================ */
-
-// ──────────────────────────────────────────────
-//  Helper : fetch wrapper
-// ──────────────────────────────────────────────
-async function request(url, options = {}) {
-  const response = await fetch(`${API_BASE}${url}`, {
-    headers: { "Content-Type": "application/json", ...options.headers },
-    ...options,
-  });
-  const data = await response.json();
-  return data;
-}
-
-// Helper pour récupérer le token auth
-function getAuthHeaders() {
-  const token =
-    (typeof localStorage !== "undefined" && localStorage.getItem("token")) ||
-    (typeof sessionStorage !== "undefined" && sessionStorage.getItem("token")) ||
-    "";
-  return token ? { Authorization: `Bearer ${token}` } : {};
-}
 
 // ══════════════════════════════════════════════
 //  ÉTAPE 1 : Admin planifie l'entretien
 // ══════════════════════════════════════════════
+
+/**
+ * POST /api/interviews/schedule
+ * ADMIN — Planifier un nouvel entretien
+ */
 export async function scheduleInterview({
   candidatureId,
   jobOfferId,
@@ -49,88 +36,131 @@ export async function scheduleInterview({
   proposedTime,
   notes,
 }) {
-  return request("/api/interviews/schedule", {
-    method: "POST",
-    body: JSON.stringify({
-      candidatureId,
-      jobOfferId,
-      candidateEmail,
-      candidateName,
-      proposedDate,
-      proposedTime,
-      notes,
-    }),
+  const { data } = await api.post("/api/interviews/schedule", {
+    candidatureId,
+    jobOfferId,
+    candidateEmail,
+    candidateName,
+    proposedDate,
+    proposedTime,
+    notes,
   });
+  return data;
 }
 
 // ══════════════════════════════════════════════
 //  ÉTAPE 2 : ResponsableMetier
 // ══════════════════════════════════════════════
 
-/** GET - Charger les détails de l'entretien (page responsable) */
+/**
+ * GET /api/interviews/confirm/:token
+ * Charger les détails de l'entretien (page responsable)
+ */
 export async function getInterviewByToken(token) {
-  return request(`/api/interviews/confirm/${token}`);
+  const { data } = await api.get(`/api/interviews/confirm/${token}`);
+  return data;
 }
 
-/** POST - Responsable confirme la date */
-export async function confirmInterview(token, { confirmedDate, confirmedTime, notes, location }) {
-  return request(`/api/interviews/confirm/${token}`, {
-    method: "POST",
-    body: JSON.stringify({ confirmedDate, confirmedTime, notes, location }),
+/**
+ * POST /api/interviews/confirm/:token
+ * Responsable confirme la date
+ */
+export async function confirmInterview(
+  token,
+  { confirmedDate, confirmedTime, notes, location }
+) {
+  const { data } = await api.post(`/api/interviews/confirm/${token}`, {
+    confirmedDate,
+    confirmedTime,
+    notes,
+    location,
   });
+  return data;
 }
 
-/** POST - Responsable demande une modification (→ mail admin, PAS candidat) */
+/**
+ * POST /api/interviews/modify/:token
+ * Responsable demande une modification (→ mail admin, PAS candidat)
+ */
 export async function modifyInterview(token, { newDate, newTime, notes }) {
-  return request(`/api/interviews/modify/${token}`, {
-    method: "POST",
-    body: JSON.stringify({ newDate, newTime, notes }),
+  const { data } = await api.post(`/api/interviews/modify/${token}`, {
+    newDate,
+    newTime,
+    notes,
   });
+  return data;
 }
 
 // ══════════════════════════════════════════════
 //  ÉTAPE 3 : Candidat
 // ══════════════════════════════════════════════
 
-/** GET - Charger les détails (page candidat) */
+/**
+ * GET /api/interviews/candidate/:token
+ * Charger les détails de l'entretien (page candidat)
+ */
 export async function getCandidateInterview(candidateToken) {
-  return request(`/api/interviews/candidate/${candidateToken}`);
+  const { data } = await api.get(`/api/interviews/candidate/${candidateToken}`);
+  return data;
 }
 
-/** POST - Candidat confirme l'entretien */
+/**
+ * POST /api/interviews/candidate/:token/confirm
+ * Candidat confirme l'entretien
+ */
 export async function candidateConfirmInterview(candidateToken) {
-  return request(`/api/interviews/candidate/${candidateToken}/confirm`, {
-    method: "POST",
-    body: JSON.stringify({}),
-  });
+  const { data } = await api.post(
+    `/api/interviews/candidate/${candidateToken}/confirm`,
+    {}
+  );
+  return data;
 }
 
-/** POST - Candidat propose une autre date */
-export async function candidateReschedule(candidateToken, { proposedDate, proposedTime, reason }) {
-  return request(`/api/interviews/candidate/${candidateToken}/reschedule`, {
-    method: "POST",
-    body: JSON.stringify({ proposedDate, proposedTime, reason }),
-  });
+/**
+ * POST /api/interviews/candidate/:token/reschedule
+ * Candidat propose une autre date
+ */
+export async function candidateReschedule(
+  candidateToken,
+  { proposedDate, proposedTime, reason }
+) {
+  const { data } = await api.post(
+    `/api/interviews/candidate/${candidateToken}/reschedule`,
+    {
+      proposedDate,
+      proposedTime,
+      reason,
+    }
+  );
+  return data;
 }
 
 // ══════════════════════════════════════════════
 //  ADMIN : Gestion des modifications
 // ══════════════════════════════════════════════
 
-/** POST - Admin approuve la modification du responsable */
+/**
+ * POST /api/interviews/admin/approve/:id
+ * Admin approuve la modification du responsable
+ */
 export async function adminApproveModification(interviewId) {
-  return request(`/api/interviews/admin/approve/${interviewId}`, {
-    method: "POST",
-    body: JSON.stringify({}),
-  });
+  const { data } = await api.post(
+    `/api/interviews/admin/approve/${interviewId}`,
+    {}
+  );
+  return data;
 }
 
-/** POST - Admin rejette la modification du responsable */
+/**
+ * POST /api/interviews/admin/reject/:id
+ * Admin rejette la modification du responsable
+ */
 export async function adminRejectModification(interviewId, reason) {
-  return request(`/api/interviews/admin/reject/${interviewId}`, {
-    method: "POST",
-    body: JSON.stringify({ reason }),
-  });
+  const { data } = await api.post(
+    `/api/interviews/admin/reject/${interviewId}`,
+    { reason }
+  );
+  return data;
 }
 
 // ══════════════════════════════════════════════
@@ -141,12 +171,7 @@ export async function adminRejectModification(interviewId, reason) {
  * GET /api/interviews/admin/all
  * ADMIN ONLY — Liste paginée et enrichie de tous les entretiens
  *
- * @param {object} params
- * @param {number}  params.page        - Numéro de page (défaut : 1)
- * @param {number}  params.limit       - Résultats par page (défaut : 20, max : 200)
- * @param {string}  params.status      - Filtrer par statut, ex: "CONFIRMED" | "ALL"
- * @param {string}  params.search      - Recherche par nom / email / poste
- *
+ * @param {{ page?: number, limit?: number, status?: string, search?: string }} params
  * @returns {{ success, interviews, total, page, totalPages }}
  */
 export async function getAllInterviewsAdmin({
@@ -159,12 +184,12 @@ export async function getAllInterviewsAdmin({
     page: String(page),
     limit: String(limit),
     status,
-    ...(search.trim() ? { search: search.trim() } : {}),
   });
 
-  return request(`/api/interviews/admin/all?${params}`, {
-    headers: getAuthHeaders(),
-  });
+  if (search.trim()) params.set("search", search.trim());
+
+  const { data } = await api.get(`/api/interviews/admin/all?${params}`);
+  return data;
 }
 
 /**
@@ -174,9 +199,8 @@ export async function getAllInterviewsAdmin({
  * @returns {{ success, data: { TOTAL, CONFIRMED, PENDING_CONFIRMATION, ... } }}
  */
 export async function getInterviewsStats() {
-  return request("/api/interviews/admin/stats", {
-    headers: getAuthHeaders(),
-  });
+  const { data } = await api.get("/api/interviews/admin/stats");
+  return data;
 }
 
 // ══════════════════════════════════════════════
@@ -187,12 +211,7 @@ export async function getInterviewsStats() {
  * GET /api/interviews/responsable/my-interviews
  * RESPONSABLE_METIER ONLY — Liste paginée de ses entretiens assignés
  *
- * @param {object} params
- * @param {number}  params.page    - Numéro de page (défaut : 1)
- * @param {number}  params.limit   - Résultats par page (défaut : 10)
- * @param {string}  params.status  - Filtrer par statut, ex: "CONFIRMED" | "ALL"
- * @param {string}  params.search  - Recherche par nom / email / poste
- *
+ * @param {{ page?: number, limit?: number, status?: string, search?: string }} params
  * @returns {{ success, interviews, total, page, totalPages }}
  */
 export async function getMyInterviews({
@@ -205,12 +224,14 @@ export async function getMyInterviews({
     page: String(page),
     limit: String(limit),
     status,
-    ...(search.trim() ? { search: search.trim() } : {}),
   });
 
-  return request(`/api/interviews/responsable/my-interviews?${params}`, {
-    headers: getAuthHeaders(),
-  });
+  if (search.trim()) params.set("search", search.trim());
+
+  const { data } = await api.get(
+    `/api/interviews/responsable/my-interviews?${params}`
+  );
+  return data;
 }
 
 /**
@@ -220,47 +241,124 @@ export async function getMyInterviews({
  * @returns {{ success, data: { TOTAL, CONFIRMED, PENDING_CONFIRMATION, ... } }}
  */
 export async function getMyInterviewsStats() {
-  return request("/api/interviews/responsable/my-stats", {
-    headers: getAuthHeaders(),
+  const { data } = await api.get("/api/interviews/responsable/my-stats");
+  return data;
+}
+
+// ══════════════════════════════════════════════
+//  RESPONSABLE_RH_OPTYLAB : Entretiens confirmés
+// ══════════════════════════════════════════════
+
+/**
+ * GET /api/interviews/confirmed
+ * Liste paginée des entretiens confirmés
+ *
+ * @param {{ page?: number, limit?: number, search?: string }} params
+ * @returns {{ interviews, total, totalPages }}
+ */
+export async function getConfirmedInterviews({
+  page = 1,
+  limit = 10,
+  search = "",
+} = {}) {
+  const params = new URLSearchParams({
+    page: String(page),
+    limit: String(limit),
   });
+
+  if (search.trim()) {
+    params.set("search", search.trim());
+  }
+
+  const { data } = await api.get(`/api/interviews/confirmed?${params}`);
+  return data;
+}
+
+// ══════════════════════════════════════════════
+//  RESPONSABLE_RH_OPTYLAB : Notes sur entretien
+// ══════════════════════════════════════════════
+
+/**
+ * POST /api/interviews/:id/rh-nord-note
+ * Créer ou modifier une note RH
+ */
+export async function saveRhNordNote(interviewId, text) {
+  const { data } = await api.post(
+    `/api/interviews/${interviewId}/rh-nord-note`,
+    { text }
+  );
+  return data;
+}
+
+/**
+ * DELETE /api/interviews/:id/rh-nord-note
+ * Supprimer la note RH
+ */
+export async function deleteRhNordNote(interviewId) {
+  const { data } = await api.delete(
+    `/api/interviews/${interviewId}/rh-nord-note`
+  );
+  return data;
 }
 
 // ══════════════════════════════════════════════
 //  CONSULTATION
 // ══════════════════════════════════════════════
 
-/** Entretiens par candidature */
+/**
+ * GET /api/interviews/candidature/:id
+ * Entretiens par candidature
+ */
 export async function getInterviewsByCandidature(candidatureId) {
-  return request(`/api/interviews/candidature/${candidatureId}`);
+  const { data } = await api.get(
+    `/api/interviews/candidature/${candidatureId}`
+  );
+  return data;
 }
 
-/** Entretiens par offre */
+/**
+ * GET /api/interviews/job/:id
+ * Entretiens par offre d'emploi
+ */
 export async function getInterviewsByJobOffer(jobOfferId) {
-  return request(`/api/interviews/job/${jobOfferId}`);
+  const { data } = await api.get(`/api/interviews/job/${jobOfferId}`);
+  return data;
 }
 
-/** Entretiens par utilisateur */
+/**
+ * GET /api/interviews/user/:id
+ * Entretiens par utilisateur
+ */
 export async function getInterviewsByUser(userId) {
-  return request(`/api/interviews/user/${userId}`);
+  const { data } = await api.get(`/api/interviews/user/${userId}`);
+  return data;
 }
 
-/** Entretiens à venir */
+/**
+ * GET /api/interviews/upcoming
+ * Entretiens à venir
+ */
 export async function getUpcomingInterviews() {
-  return request(`/api/interviews/upcoming`);
+  const { data } = await api.get("/api/interviews/upcoming");
+  return data;
 }
 
 // ══════════════════════════════════════════════
 //  ANNULATION
 // ══════════════════════════════════════════════
 
-/** Annuler un entretien */
+/**
+ * DELETE /api/interviews/:id
+ * Annuler un entretien
+ */
 export async function cancelInterview(interviewId, reason) {
-  return request(`/api/interviews/${interviewId}`, {
-    method: "DELETE",
-    body: JSON.stringify({ reason }),
+  const { data } = await api.delete(`/api/interviews/${interviewId}`, {
+    data: { reason },
   });
+  return data;
 }
 
+<<<<<<< HEAD
 // ══════════════════════════════════════════════
 //  RH NORD — Entretiens téléphoniques confirmés
 // ══════════════════════════════════════════════
@@ -337,3 +435,6 @@ export async function getMyTelephoniqueInterviews({
 
   return response.json();
 }
+=======
+
+>>>>>>> 38367e70351b131678b33a46e9b596c8b978337a

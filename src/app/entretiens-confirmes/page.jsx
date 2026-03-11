@@ -1,7 +1,7 @@
 "use client";
 // app/entretiens-confirmes/page.jsx
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useMemo } from "react";
 import {
   Calendar, Search, User, Briefcase, Clock,
   CheckCircle2, AlertCircle, RefreshCw,
@@ -12,7 +12,7 @@ import api from "../services/api";
 function formatDate(d) {
   if (!d) return "—";
   return new Date(d).toLocaleDateString("fr-FR", {
-    weekday: "short", day: "numeric", month: "short", year: "numeric",
+    day: "2-digit", month: "short", year: "numeric",
   });
 }
 function formatTime(t) {
@@ -37,13 +37,39 @@ function Avatar({ name }) {
 function TypeBadge({ type }) {
   const isRhTech = type === "rh_technique" || type === "RH + Tech" || type === "rh+tech";
   return (
-    <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-bold border whitespace-nowrap ${
+    <span className={`inline-flex items-center justify-center rounded-full border px-3 py-1 text-[12px] font-semibold whitespace-nowrap ${
       isRhTech
-        ? "bg-violet-50 dark:bg-violet-950/30 text-violet-700 dark:text-violet-300 border-violet-200 dark:border-violet-700"
-        : "bg-[#E9F5E3] dark:bg-[#4E8F2F]/20 text-[#4E8F2F] dark:text-emerald-400 border-[#d7ebcf] dark:border-emerald-700"
+        ? "border-violet-200 bg-violet-50 text-violet-700 dark:border-violet-700 dark:bg-violet-950/30 dark:text-violet-300"
+        : "border-[#d7ebcf] bg-[#E9F5E3] text-[#4E8F2F] dark:border-gray-600 dark:bg-gray-700 dark:text-emerald-400"
     }`}>
-      {isRhTech ? "RH + Tech" : "RH"}
+      {isRhTech ? "RH + Tech" : "Entretien RH"}
     </span>
+  );
+}
+
+function StatusBadge() {
+  return (
+    <span className="inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-[12px] font-semibold text-emerald-700 dark:border-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-300">
+      <span className="h-2 w-2 rounded-full bg-emerald-500" />
+      Confirmé
+    </span>
+  );
+}
+
+function FilterChip({ active, label, count, onClick }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`inline-flex items-center gap-2 rounded-full border px-4 py-2 text-xs font-semibold transition-colors ${
+        active
+          ? "bg-[#6CB33F] border-[#6CB33F] text-white dark:bg-emerald-600 dark:border-emerald-600"
+          : "bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-[#4E8F2F] dark:text-emerald-400 hover:bg-green-50 dark:hover:bg-gray-700"
+      }`}
+    >
+      <span>{label}</span>
+      <span className="opacity-70">{count}</span>
+    </button>
   );
 }
 
@@ -59,28 +85,46 @@ function StatCard({ label, value, icon: Icon, colorClass }) {
   );
 }
 
-function Pagination({ page, totalPages, total, onChange }) {
+function Pagination({ page, totalPages, total, limit, onChange }) {
   if (totalPages <= 1) return null;
+  const from = (page - 1) * limit + 1;
+  const to = Math.min(page * limit, total);
   return (
-    <div className="mt-6 px-4 sm:px-8 py-4 sm:py-5 flex flex-col lg:flex-row items-center justify-between gap-4 text-xs sm:text-sm text-gray-500 dark:text-gray-400">
-      <p className="font-medium">Page {page} sur {totalPages} — Total : {total} entretien{total > 1 ? "s" : ""}</p>
-      <div className="flex items-center gap-2 flex-wrap justify-center">
-        <button onClick={() => onChange(page - 1)} disabled={page <= 1}
-          className="px-3 sm:px-4 py-2 rounded-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 font-semibold disabled:opacity-50 transition-colors">
-          Prev
+    <div className="flex items-center justify-between px-5 py-4 border-t border-gray-100 dark:border-gray-700/50">
+      <p className="text-xs text-gray-400">
+        <span className="font-semibold text-gray-600 dark:text-gray-300">{from}–{to}</span>
+        {" "}sur{" "}
+        <span className="font-semibold text-gray-600 dark:text-gray-300">{total}</span>
+      </p>
+      <div className="flex items-center gap-1">
+        <button type="button" onClick={() => onChange(page - 1)} disabled={page <= 1}
+          className="w-8 h-8 rounded-lg border border-gray-200 dark:border-gray-700 flex items-center justify-center text-gray-500 hover:bg-[#4E8F2F] hover:text-white hover:border-[#4E8F2F] disabled:opacity-40 disabled:cursor-not-allowed transition-colors">
+          ‹
         </button>
-        {Array.from({ length: Math.min(totalPages, 8) }, (_, i) => i + 1).map((p) => (
-          <button key={p} onClick={() => onChange(p)}
-            className={`w-8 h-8 sm:w-10 sm:h-10 rounded-full border font-bold text-xs sm:text-sm transition-colors ${
-              p === page
-                ? "bg-[#6CB33F] border-[#6CB33F] text-white"
-                : "bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:bg-green-50 dark:hover:bg-gray-700"
-            }`}>{p}
-          </button>
-        ))}
-        <button onClick={() => onChange(page + 1)} disabled={page >= totalPages}
-          className="px-3 sm:px-4 py-2 rounded-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 font-semibold disabled:opacity-50 transition-colors">
-          Suiv.
+        {Array.from({ length: totalPages }, (_, i) => i + 1)
+          .filter((p) => p === 1 || p === totalPages || Math.abs(p - page) <= 1)
+          .reduce((acc, p, idx, arr) => {
+            if (idx > 0 && p - arr[idx - 1] > 1) acc.push("...");
+            acc.push(p);
+            return acc;
+          }, [])
+          .map((p, i) =>
+            p === "..." ? (
+              <span key={`e${i}`} className="text-gray-400 px-1 text-xs">…</span>
+            ) : (
+              <button type="button" key={p} onClick={() => onChange(p)}
+                className={`w-8 h-8 rounded-lg text-xs font-bold transition-colors ${
+                  p === page
+                    ? "bg-[#4E8F2F] text-white"
+                    : "border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
+                }`}>
+                {p}
+              </button>
+            )
+          )}
+        <button type="button" onClick={() => onChange(page + 1)} disabled={page >= totalPages}
+          className="w-8 h-8 rounded-lg border border-gray-200 dark:border-gray-700 flex items-center justify-center text-gray-500 hover:bg-[#4E8F2F] hover:text-white hover:border-[#4E8F2F] disabled:opacity-40 disabled:cursor-not-allowed transition-colors">
+          ›
         </button>
       </div>
     </div>
@@ -99,29 +143,37 @@ function groupByCandidate(interviews) {
   return Array.from(map.values());
 }
 
+/* ══════════════════════════════════════════════════════════════ */
 export default function ConfirmedInterviewsPage() {
   const [interviews, setInterviews]   = useState([]);
   const [total, setTotal]             = useState(0);
   const [totalPages, setTotalPages]   = useState(1);
   const [page, setPage]               = useState(1);
-  const [search, setSearch]           = useState("");
   const [searchInput, setSearchInput] = useState("");
+  const [search, setSearch]           = useState("");
+  const [activeFilter, setActiveFilter] = useState("all");
   const [loading, setLoading]         = useState(true);
+  const [refreshing, setRefreshing]   = useState(false);
   const [error, setError]             = useState(null);
   const LIMIT = 15;
 
-  const fetchData = useCallback(async () => {
-    setLoading(true); setError(null);
+  const fetchData = useCallback(async (withRefresh = false) => {
     try {
+      setError(null);
+      if (withRefresh) setRefreshing(true);
+      else setLoading(true);
       const params = new URLSearchParams({ page, limit: LIMIT });
       if (search.trim()) params.set("search", search.trim());
       const { data } = await api.get(`/api/interviews/confirmed?${params}`);
-      setInterviews(data.interviews || []);
-      setTotal(data.total || 0);
-      setTotalPages(data.totalPages || 1);
+      setInterviews(data?.interviews || []);
+      setTotal(data?.total || 0);
+      setTotalPages(data?.totalPages || 1);
     } catch (e) {
       setError(e?.response?.data?.message || "Erreur lors du chargement");
-    } finally { setLoading(false); }
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
   }, [page, search]);
 
   useEffect(() => { fetchData(); }, [fetchData]);
@@ -130,13 +182,21 @@ export default function ConfirmedInterviewsPage() {
     return () => clearTimeout(t);
   }, [searchInput]);
 
-  const groups = groupByCandidate(interviews);
-  const rhTechCount = interviews.filter(i =>
-    i.interviewType === "rh_technique" || i.interviewType === "RH + Tech"
-  ).length;
-  const uniqueCandidates = groups.length;
+  const counts = useMemo(() => ({
+    all:     interviews.length,
+    rhTech:  interviews.filter(i => i.interviewType === "rh_technique" || i.interviewType === "RH + Tech").length,
+    rh:      interviews.filter(i => i.interviewType !== "rh_technique" && i.interviewType !== "RH + Tech").length,
+  }), [interviews]);
 
-  // Aplatir groupes en lignes avec rowspan
+  const filteredInterviews = useMemo(() => {
+    if (activeFilter === "rh")          return interviews.filter(i => i.interviewType !== "rh_technique" && i.interviewType !== "RH + Tech");
+    if (activeFilter === "rh_technique") return interviews.filter(i => i.interviewType === "rh_technique" || i.interviewType === "RH + Tech");
+    return interviews;
+  }, [interviews, activeFilter]);
+
+  // Grouper par candidat puis aplatir avec rowspan
+  const groups = groupByCandidate(filteredInterviews);
+  const uniqueCandidates = groups.length;
   const rows = [];
   let groupIdx = 0;
   groups.forEach((group) => {
@@ -148,196 +208,269 @@ export default function ConfirmedInterviewsPage() {
 
   return (
     <div className="min-h-screen bg-[#F0FAF0] dark:bg-gray-950 text-gray-900 dark:text-gray-100 transition-colors duration-300">
-      <div className="max-w-full mx-auto px-4 sm:px-6 pt-6 sm:pt-10 pb-16">
+      <div className="max-w-full mx-auto px-4 sm:px-6 pt-10 pb-16">
 
-        <div className="mb-6 sm:mb-8">
-          <h1 className="text-3xl sm:text-4xl font-extrabold text-gray-900 dark:text-white">Entretiens confirm&#233;s</h1>
-          <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">
-            {loading ? "Chargement..." : `${total} entretien${total > 1 ? "s" : ""} · ${uniqueCandidates} candidat${uniqueCandidates > 1 ? "s" : ""}`}
-          </p>
+        {/* En-tête */}
+        <div className="flex flex-col xl:flex-row xl:items-center xl:justify-between gap-4 mb-6">
+          <div>
+            <h1 className="text-3xl sm:text-4xl font-extrabold text-gray-900 dark:text-white">
+              Liste des Entretiens
+            </h1>
+            <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">
+              {loading ? "Chargement..." : `${total} entretien${total > 1 ? "s" : ""} · ${uniqueCandidates} candidat${uniqueCandidates > 1 ? "s" : ""}`}
+            </p>
+          </div>
         </div>
 
+        {/* Stats */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 mb-6">
-          <StatCard label="Total entretiens"  value={total}             colorClass="text-[#4E8F2F] dark:text-emerald-400" icon={CheckCircle2} />
+          <StatCard label="Total entretiens"  value={total}            colorClass="text-[#4E8F2F] dark:text-emerald-400" icon={CheckCircle2} />
           <StatCard label="Candidats uniques" value={uniqueCandidates} colorClass="text-[#4E8F2F] dark:text-emerald-400" icon={User}         />
-          <StatCard label="RH + Tech"         value={rhTechCount}      colorClass="text-violet-500 dark:text-violet-400"  icon={Calendar}    />
-          <StatCard label="RH seul"           value={interviews.length - rhTechCount} colorClass="text-blue-500 dark:text-blue-400" icon={Briefcase} />
+          <StatCard label="RH + Tech"         value={counts.rhTech}   colorClass="text-violet-500 dark:text-violet-400"  icon={Calendar}    />
+          <StatCard label="RH seul"           value={counts.rh}       colorClass="text-blue-500 dark:text-blue-400"      icon={Briefcase}   />
         </div>
 
-        <div className="bg-white dark:bg-gray-800 rounded-full shadow-sm border border-gray-100 dark:border-gray-700 px-4 sm:px-5 py-3 flex items-center gap-3 mb-6">
+        {/* Recherche */}
+        <div className="bg-white dark:bg-gray-800 rounded-full shadow-sm border border-gray-100 dark:border-gray-700 px-4 sm:px-5 py-3 flex items-center gap-3 mb-4 transition-colors duration-300">
           <Search className="w-5 h-5 text-[#4E8F2F] dark:text-emerald-400 flex-shrink-0" />
-          <input value={searchInput} onChange={e => setSearchInput(e.target.value)}
-            placeholder="Rechercher un candidat, poste, responsable..."
+          <input type="text" value={searchInput} onChange={e => setSearchInput(e.target.value)}
+            placeholder="Rechercher (nom, email, poste)…"
             className="w-full outline-none text-sm bg-transparent text-gray-700 dark:text-gray-300 placeholder-gray-500 dark:placeholder-gray-400" />
           {searchInput && (
-            <button onClick={() => setSearchInput("")} className="text-gray-400 hover:text-gray-600">
+            <button type="button" onClick={() => setSearchInput("")} className="text-gray-400 hover:text-gray-600">
               <X className="w-4 h-4" />
             </button>
           )}
-          <button onClick={fetchData}
-            className="flex-shrink-0 w-8 h-8 rounded-full border border-gray-200 dark:border-gray-700 flex items-center justify-center text-gray-500 hover:bg-[#4E8F2F] hover:text-white hover:border-[#4E8F2F] transition-colors">
-            <RefreshCw className={`w-3.5 h-3.5 ${loading ? "animate-spin" : ""}`} />
+          <button type="button" onClick={() => fetchData(true)} title="Actualiser"
+            className="flex-shrink-0 text-gray-500 hover:text-[#4E8F2F] dark:text-gray-400 dark:hover:text-emerald-400 transition-colors">
+            <RefreshCw className={`w-4 h-4 ${refreshing ? "animate-spin" : ""}`} />
           </button>
         </div>
 
-        {loading && (
-          <div className="bg-white dark:bg-gray-800 rounded-3xl shadow-lg border border-gray-200 dark:border-gray-700 p-12 text-center">
-            <div className="flex flex-col items-center gap-4">
-              <div className="animate-spin rounded-full h-12 w-12 border-4 border-[#E9F5E3] border-t-[#4E8F2F]" />
-              <p className="text-gray-500 text-lg">Chargement des entretiens...</p>
-            </div>
+        {/* Filtres */}
+        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-6">
+          <div className="flex flex-wrap gap-2">
+            <FilterChip active={activeFilter === "all"}          label="Tous"     count={counts.all}    onClick={() => setActiveFilter("all")} />
+            <FilterChip active={activeFilter === "rh"}           label="RH"       count={counts.rh}     onClick={() => setActiveFilter("rh")} />
+            <FilterChip active={activeFilter === "rh_technique"} label="RH + Tech" count={counts.rhTech} onClick={() => setActiveFilter("rh_technique")} />
           </div>
-        )}
-
-        {!loading && error && (
-          <div className="bg-white dark:bg-gray-800 rounded-3xl shadow-lg border border-gray-200 p-12 text-center">
-            <div className="flex flex-col items-center gap-4">
-              <AlertCircle className="w-16 h-16 text-red-400" />
-              <p className="text-gray-700 text-lg font-semibold">Erreur de chargement</p>
-              <p className="text-gray-500 text-sm">{error}</p>
-              <button onClick={fetchData} className="px-5 py-2.5 rounded-full bg-[#6CB33F] text-white font-semibold text-sm">
-                R&#233;essayer
-              </button>
-            </div>
+          <div className="text-sm font-medium text-gray-500 dark:text-gray-400">
+            {loading ? "…" : `${filteredInterviews.length} résultat${filteredInterviews.length > 1 ? "s" : ""}`}
           </div>
-        )}
+        </div>
 
-        {!loading && !error && interviews.length === 0 && (
-          <div className="bg-white dark:bg-gray-800 rounded-3xl shadow-lg border border-gray-200 p-12 text-center">
-            <div className="flex flex-col items-center gap-4">
-              <Calendar className="w-16 h-16 text-gray-300" />
-              <p className="text-gray-700 text-lg font-semibold">Aucun entretien confirm&#233;</p>
+        {/* Tableau */}
+        <div className="bg-white dark:bg-gray-800 rounded-3xl shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden transition-colors duration-300">
+
+          {/* ── Chargement ── */}
+          {loading && (
+            <div className="flex flex-col items-center justify-center p-12 gap-4">
+              <div className="animate-spin rounded-full h-10 w-10 border-4 border-[#E9F5E3] dark:border-gray-700 border-t-[#4E8F2F] dark:border-t-emerald-400" />
+              <p className="text-sm text-gray-500 dark:text-gray-400">Chargement des entretiens...</p>
             </div>
-          </div>
-        )}
+          )}
 
-        {!loading && !error && rows.length > 0 && (
-          <div className="bg-white dark:bg-gray-800 rounded-2xl sm:rounded-3xl shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm border-collapse" style={{ minWidth: "1100px" }}>
-                <thead className="bg-[#E9F5E3] dark:bg-gray-700 text-[#4E8F2F] dark:text-emerald-400">
-                  <tr>
-                    {["#", "Candidat", "Poste", "Date & heure", "Lieu", "Type", "Responsable", "Statut"].map((h) => (
-                      <th key={h} className="text-left px-5 py-5 font-extrabold uppercase text-xs tracking-wider whitespace-nowrap border-b border-[#d7ebcf] dark:border-gray-600">
-                        {h}
-                      </th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {rows.map((row) => {
-                    const { iv, isFirst, rowspan, candidateName, candidateEmail, groupIdx: gi } = row;
-                    const date = iv.confirmedDate || iv.proposedDate;
-                    const time = iv.confirmedTime || iv.proposedTime;
-                    const isRhTech = iv.interviewType === "rh_technique" || iv.interviewType === "RH + Tech";
-                    const evenBg = gi % 2 === 0 ? "" : "bg-gray-50/70 dark:bg-gray-750";
-                    const topBorder = isFirst ? "border-t-2 border-[#c8e6bc] dark:border-gray-600" : "border-t border-gray-100 dark:border-gray-700/50";
+          {/* ── Erreur ── */}
+          {!loading && error && (
+            <div className="p-8 sm:p-12 text-center">
+              <div className="flex flex-col items-center gap-4">
+                <div className="w-16 h-16 rounded-full bg-red-50 dark:bg-red-950/30 flex items-center justify-center">
+                  <AlertCircle className="w-8 h-8 text-red-500" />
+                </div>
+                <h2 className="text-xl font-bold text-gray-900 dark:text-white">Une erreur est survenue</h2>
+                <p className="text-gray-600 dark:text-gray-400 max-w-md">{error}</p>
+                <button type="button" onClick={() => fetchData(true)}
+                  className="mt-2 px-5 py-2.5 bg-[#6CB33F] hover:bg-[#4E8F2F] text-white rounded-full font-semibold transition-colors text-sm">
+                  Réessayer
+                </button>
+              </div>
+            </div>
+          )}
 
-                    return (
-                      <tr key={String(iv._id)} className={`${evenBg} hover:bg-green-50/50 dark:hover:bg-gray-700/30 transition-colors`}>
+          {/* ── Vide ── */}
+          {!loading && !error && rows.length === 0 && (
+            <div className="p-8 sm:p-12 text-center">
+              <div className="flex flex-col items-center gap-4">
+                <div className="w-16 h-16 rounded-full bg-[#E9F5E3] dark:bg-gray-700 flex items-center justify-center">
+                  <CheckCircle2 className="w-8 h-8 text-[#4E8F2F] dark:text-emerald-400" />
+                </div>
+                <h2 className="text-xl font-bold text-gray-900 dark:text-white">Aucun entretien trouvé</h2>
+                <p className="text-gray-600 dark:text-gray-400">Aucun entretien confirmé ne correspond au filtre actuel.</p>
+              </div>
+            </div>
+          )}
 
-                        {isFirst && (
-                          <td rowSpan={rowspan} className={`px-5 py-4 align-middle border-r border-gray-100 dark:border-gray-700 ${topBorder}`}>
-                            <span className="flex items-center justify-center w-7 h-7 rounded-full bg-[#E9F5E3] dark:bg-emerald-900/30 text-[#4E8F2F] dark:text-emerald-400 font-extrabold text-xs">
-                              {gi + 1}
-                            </span>
-                          </td>
-                        )}
+          {/* ── Tableau desktop ── */}
+          {!loading && !error && rows.length > 0 && (
+            <>
+              <div className="hidden lg:block overflow-x-auto">
+                <table className="w-full text-sm border-collapse" style={{ minWidth: "1180px" }}>
+                  <thead className="bg-[#E9F5E3] dark:bg-gray-700 text-[#4E8F2F] dark:text-emerald-400">
+                    <tr>
+                      {["#", "Candidat", "Poste", "Date", "Heure", "Lieu", "Type", "Responsable", "Statut"].map(h => (
+                        <th key={h} className="text-left px-6 lg:px-8 py-5 font-extrabold uppercase text-xs tracking-wider whitespace-nowrap border-b border-[#d7ebcf] dark:border-gray-600">
+                          {h}
+                        </th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {rows.map((row) => {
+                      const { iv, isFirst, rowspan, candidateName, candidateEmail, groupIdx: gi } = row;
+                      const date = iv.confirmedDate || iv.proposedDate;
+                      const time = iv.confirmedTime || iv.proposedTime;
+                      const isRhTech = iv.interviewType === "rh_technique" || iv.interviewType === "RH + Tech";
+                      const evenBg = gi % 2 === 0 ? "" : "bg-gray-50/60 dark:bg-gray-750/40";
+                      const topBorder = isFirst ? "border-t-2 border-[#c8e6bc] dark:border-gray-600" : "border-t border-gray-100 dark:border-gray-700/50";
 
-                        {isFirst && (
-                          <td rowSpan={rowspan} className={`px-5 py-4 align-middle border-r border-gray-100 dark:border-gray-700 ${topBorder}`}>
-                            <div className="flex items-center gap-3">
-                              <Avatar name={candidateName} />
-                              <div className="min-w-0">
-                                <p className="font-bold text-gray-900 dark:text-white text-sm truncate max-w-[160px]">{candidateName || "—"}</p>
-                                <p className="text-xs text-gray-400 truncate max-w-[160px]">{candidateEmail || ""}</p>
-                                {rowspan > 1 && (
-                                  <span className="inline-flex mt-1.5 px-2 py-0.5 rounded-full bg-[#E9F5E3] text-[#4E8F2F] text-[10px] font-bold border border-[#d7ebcf]">
-                                    {rowspan} entretiens
-                                  </span>
-                                )}
-                              </div>
-                            </div>
-                          </td>
-                        )}
+                      return (
+                        <tr key={String(iv._id)} className={`${evenBg} hover:bg-green-50/50 dark:hover:bg-gray-700/30 transition-colors`}>
 
-                        {/* Poste */}
-                        <td className={`px-5 py-4 ${topBorder}`}>
-                          <span className="flex items-center gap-2 text-gray-700 dark:text-gray-300 font-medium text-xs sm:text-sm">
-                            <Briefcase className="w-3.5 h-3.5 text-gray-400 flex-shrink-0" />
-                            <span className="truncate max-w-[180px]">{iv.jobTitle || "—"}</span>
-                          </span>
-                        </td>
-
-                        {/* Date & heure */}
-                        <td className={`px-5 py-4 ${topBorder}`}>
-                          <div className="flex flex-col gap-0.5">
-                            <span className="flex items-center gap-2 text-gray-800 dark:text-gray-200 font-semibold text-xs whitespace-nowrap">
-                              <Calendar className="w-3.5 h-3.5 text-[#4E8F2F] flex-shrink-0" />
-                              {formatDate(date)}
-                            </span>
-                            {time && time !== "—" && (
-                              <span className="flex items-center gap-1.5 text-gray-500 text-xs ml-5">
-                                <Clock className="w-3 h-3" />{formatTime(time)}
+                          {isFirst && (
+                            <td rowSpan={rowspan} className={`px-6 lg:px-8 py-4 align-middle border-r border-gray-100 dark:border-gray-700 ${topBorder}`}>
+                              <span className="flex items-center justify-center w-7 h-7 rounded-full bg-[#E9F5E3] dark:bg-emerald-900/30 text-[#4E8F2F] dark:text-emerald-400 font-extrabold text-xs">
+                                {gi + 1}
                               </span>
-                            )}
-                          </div>
-                        </td>
-
-                        {/* Lieu */}
-                        <td className={`px-5 py-4 ${topBorder}`}>
-                          <span className="flex items-center gap-2 text-gray-500 text-xs">
-                            <MapPin className="w-3.5 h-3.5 flex-shrink-0" />
-                            <span className="truncate max-w-[120px]">{iv.location || "—"}</span>
-                          </span>
-                        </td>
-
-                        {/* Type */}
-                        <td className={`px-5 py-4 ${topBorder}`}>
-                          <TypeBadge type={iv.interviewType} />
-                        </td>
-
-                        {/* Responsable — tous types */}
-                        <td className={`px-5 py-4 ${topBorder}`}>
-                          {(iv.responsableName || iv.responsableEmail) ? (
-                            <div className="flex items-center gap-2">
-                              <div className={`w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 ${isRhTech ? "bg-violet-100 dark:bg-violet-900/30" : "bg-[#E9F5E3] dark:bg-emerald-900/30"}`}>
-                                <UserCheck className={`w-3.5 h-3.5 ${isRhTech ? "text-violet-600 dark:text-violet-400" : "text-[#4E8F2F] dark:text-emerald-400"}`} />
-                              </div>
-                              <div className="min-w-0">
-                                {iv.responsableName && (
-                                  <p className="font-semibold text-gray-800 dark:text-gray-200 text-xs truncate max-w-[140px]">{iv.responsableName}</p>
-                                )}
-                                {iv.responsableEmail && (
-                                  <p className="text-[11px] text-gray-400 truncate max-w-[140px] flex items-center gap-1">
-                                    <Mail className="w-2.5 h-2.5 flex-shrink-0" />{iv.responsableEmail}
-                                  </p>
-                                )}
-                              </div>
-                            </div>
-                          ) : (
-                            <span className="text-xs text-gray-300 dark:text-gray-600">—</span>
+                            </td>
                           )}
-                        </td>
 
-                        {/* Statut */}
-                        <td className={`px-5 py-4 ${topBorder}`}>
-                          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold border bg-emerald-50 text-emerald-700 border-emerald-200 whitespace-nowrap">
-                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                            Confirm&#233;
-                          </span>
-                        </td>
+                          {isFirst && (
+                            <td rowSpan={rowspan} className={`px-6 lg:px-8 py-4 align-middle border-r border-gray-100 dark:border-gray-700 ${topBorder}`}>
+                              <div className="flex items-center gap-3">
+                                <Avatar name={candidateName} />
+                                <div className="min-w-0">
+                                  <p className="font-extrabold text-gray-900 dark:text-white truncate max-w-[160px]">{candidateName || "—"}</p>
+                                  <p className="text-xs text-gray-500 dark:text-gray-400 truncate max-w-[160px]">{candidateEmail || ""}</p>
+                                  {rowspan > 1 && (
+                                    <span className="inline-flex mt-1.5 px-2 py-0.5 rounded-full bg-[#E9F5E3] text-[#4E8F2F] text-[10px] font-bold border border-[#d7ebcf]">
+                                      {rowspan} entretiens
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
+                            </td>
+                          )}
 
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-            <Pagination page={page} totalPages={totalPages} total={total}
-              onChange={p => { setPage(p); window.scrollTo({ top: 0, behavior: "smooth" }); }} />
-          </div>
-        )}
+                          {/* Poste */}
+                          <td className={`px-6 lg:px-8 py-5 ${topBorder}`}>
+                            <span className="flex items-center gap-2 text-gray-700 dark:text-gray-300 font-medium text-sm">
+                              <Briefcase className="w-4 h-4 text-gray-400 flex-shrink-0" />
+                              <span className="truncate max-w-[190px]">{iv.jobTitle || "—"}</span>
+                            </span>
+                          </td>
+
+                          {/* Date */}
+                          <td className={`px-6 lg:px-8 py-5 text-sm text-gray-700 dark:text-gray-300 whitespace-nowrap ${topBorder}`}>
+                            <div className="flex items-center gap-2">
+                              <Calendar className="w-4 h-4 text-[#4E8F2F] dark:text-emerald-400 flex-shrink-0" />
+                              <span>{formatDate(date)}</span>
+                            </div>
+                          </td>
+
+                          {/* Heure */}
+                          <td className={`px-6 lg:px-8 py-5 text-sm text-gray-700 dark:text-gray-300 whitespace-nowrap ${topBorder}`}>
+                            <div className="flex items-center gap-2">
+                              <Clock className="w-4 h-4 text-gray-400 flex-shrink-0" />
+                              <span>{formatTime(time)}</span>
+                            </div>
+                          </td>
+
+                          {/* Lieu */}
+                          <td className={`px-6 lg:px-8 py-5 ${topBorder}`}>
+                            <div className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
+                              <MapPin className="w-4 h-4 text-gray-400 flex-shrink-0" />
+                              <span className="truncate max-w-[150px]">{iv.location || "—"}</span>
+                            </div>
+                          </td>
+
+                          {/* Type */}
+                          <td className={`px-6 lg:px-8 py-5 ${topBorder}`}>
+                            <TypeBadge type={iv.interviewType} />
+                          </td>
+
+                          {/* Responsable */}
+                          <td className={`px-6 lg:px-8 py-5 ${topBorder}`}>
+                            {(iv.responsableName || iv.responsableEmail) ? (
+                              <div className="flex items-center gap-2">
+                                <div className={`w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 ${isRhTech ? "bg-violet-100 dark:bg-violet-900/30" : "bg-[#E9F5E3] dark:bg-emerald-900/30"}`}>
+                                  <UserCheck className={`w-3.5 h-3.5 ${isRhTech ? "text-violet-600 dark:text-violet-400" : "text-[#4E8F2F] dark:text-emerald-400"}`} />
+                                </div>
+                                <div className="min-w-0">
+                                  {iv.responsableName && (
+                                    <p className="font-semibold text-gray-800 dark:text-gray-200 text-xs truncate max-w-[140px]">{iv.responsableName}</p>
+                                  )}
+                                  {iv.responsableEmail && (
+                                    <p className="text-[11px] text-gray-400 truncate max-w-[140px] flex items-center gap-1">
+                                      <Mail className="w-2.5 h-2.5 flex-shrink-0" />{iv.responsableEmail}
+                                    </p>
+                                  )}
+                                </div>
+                              </div>
+                            ) : (
+                              <span className="text-xs text-gray-300 dark:text-gray-600">—</span>
+                            )}
+                          </td>
+
+                          {/* Statut */}
+                          <td className={`px-6 lg:px-8 py-5 ${topBorder}`}>
+                            <StatusBadge />
+                          </td>
+
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* ── Cartes mobile ── */}
+              <div className="grid gap-4 p-4 lg:hidden">
+                {filteredInterviews.map((iv, idx) => {
+                  const date = iv.confirmedDate || iv.proposedDate;
+                  const time = iv.confirmedTime || iv.proposedTime;
+                  const isRhTech = iv.interviewType === "rh_technique" || iv.interviewType === "RH + Tech";
+                  return (
+                    <div key={String(iv._id)} className="rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-4 shadow-sm">
+                      <div className="flex items-start gap-3 mb-4">
+                        <Avatar name={iv.candidateName} />
+                        <div className="min-w-0 flex-1">
+                          <p className="font-extrabold text-gray-900 dark:text-white truncate">{iv.candidateName || "—"}</p>
+                          <p className="text-xs text-gray-500 dark:text-gray-400 truncate">{iv.candidateEmail || "—"}</p>
+                        </div>
+                        <TypeBadge type={iv.interviewType} />
+                      </div>
+                      <div className="space-y-2 text-sm">
+                        <div className="flex items-center gap-2 text-gray-700 dark:text-gray-300">
+                          <Briefcase className="w-4 h-4 text-gray-400" /><span>{iv.jobTitle || "—"}</span>
+                        </div>
+                        <div className="flex items-center gap-2 text-gray-700 dark:text-gray-300">
+                          <Calendar className="w-4 h-4 text-[#4E8F2F]" /><span>{formatDate(date)}</span>
+                          <Clock className="w-4 h-4 text-gray-400 ml-2" /><span>{formatTime(time)}</span>
+                        </div>
+                        <div className="flex items-center gap-2 text-gray-700 dark:text-gray-300">
+                          <MapPin className="w-4 h-4 text-gray-400" /><span>{iv.location || "—"}</span>
+                        </div>
+                        {(iv.responsableName || iv.responsableEmail) && (
+                          <div className="flex items-center gap-2 text-gray-700 dark:text-gray-300">
+                            <UserCheck className={`w-4 h-4 flex-shrink-0 ${isRhTech ? "text-violet-500" : "text-[#4E8F2F]"}`} />
+                            <div className="min-w-0">
+                              {iv.responsableName && <span className="font-semibold text-xs">{iv.responsableName}</span>}
+                              {iv.responsableEmail && <p className="text-[11px] text-gray-400 truncate">{iv.responsableEmail}</p>}
+                            </div>
+                          </div>
+                        )}
+                        <div className="pt-1"><StatusBadge /></div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+
+              <Pagination page={page} totalPages={totalPages} total={total} limit={LIMIT}
+                onChange={p => { setPage(p); window.scrollTo({ top: 0, behavior: "smooth" }); }} />
+            </>
+          )}
+        </div>
 
       </div>
     </div>
