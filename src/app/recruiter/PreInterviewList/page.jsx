@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, useRef } from "react";
+import { createPortal } from "react-dom";
 import { getPreInterviewList, sendDocuments } from "../../services/candidature.api";
 import { getQuizByJob } from "../../services/quiz.api";
 import api from "../../services/api";
@@ -418,19 +419,15 @@ function SendDocumentsModal({ candidature, onClose, onSuccess, initialSentFiche 
    MODAL — Planifier Entretien (3 flows)
 ================================================================ */
 
-// ── Flow 1: Téléphonique — note CRUD ──────────────────────────
-function TelephoniqueFlow({ candidate, onBack }) {
-  const [notes, setNotes] = useState([]);
-  const [noteText, setNoteText] = useState("");
-  const [editId, setEditId] = useState(null);
-  const [saving, setSaving] = useState(false);
-  const [loading, setLoading] = useState(true);
+// ── Flow 1: Téléphonique — juste Valider → CONFIRMED ──
+function TelephoniqueFlow({ candidate, onBack, onClose }) {
+  const [creating, setCreating] = useState(false);
+  const [created, setCreated] = useState(false);
 
   const name =
     candidate?.fullName ||
     `${candidate?.prenom || ""} ${candidate?.nom || ""}`.trim() ||
     "Candidat";
-
   const email = safeStr(candidate?.email) || "Email non renseigné";
   const phone =
     safeStr(candidate?.telephone) ||
@@ -439,77 +436,46 @@ function TelephoniqueFlow({ candidate, onBack }) {
     safeStr(candidate?.personalInfoForm?.phone) ||
     safeStr(candidate?.extracted?.parsed?.telephone) ||
     safeStr(candidate?.extracted?.parsed?.phone) ||
-    "Téléphone non renseigné"; const jobTitle = safeStr(candidate?.jobTitle) || "Poste non renseigné";
+    "Téléphone non renseigné";
+  const jobTitle = safeStr(candidate?.jobTitle) || "Poste non renseigné";
 
-  useEffect(() => {
-    fetchNotes();
-  }, []);
-
-  async function fetchNotes() {
-    setLoading(true);
+  async function handleValider() {
+    setCreating(true);
     try {
-      const r = await api.get(`/candidatures/${candidate._id}/entretien-notes`);
-      const normalized = (r.data || [])
-        .map((n) => {
-          const id =
-            n.noteId ||
-            n._id?.$oid ||
-            (typeof n._id === "string" ? n._id : null) ||
-            n.id ||
-            null;
-          if (!id) return null;
-          return { ...n, noteId: String(id) };
-        })
-        .filter(Boolean);
-      setNotes(normalized);
+      const now = new Date();
+      await api.post("/api/interviews/schedule", {
+        candidatureId: candidate._id,
+        jobOfferId: candidate.jobOfferId,
+        proposedDate: now.toISOString(),
+        proposedTime: now.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" }),
+        interviewType: "telephonique",
+      });
+      setCreated(true);
     } catch (e) {
-      console.error("fetchNotes error:", e);
-      setNotes([]);
+      alert("Erreur : " + (e?.response?.data?.message || e?.message || "Impossible de créer l'entretien"));
     } finally {
-      setLoading(false);
+      setCreating(false);
     }
   }
 
-  async function saveNote() {
-    if (!noteText.trim()) return;
-    setSaving(true);
-    try {
-      if (editId) {
-        await api.patch(
-          `/candidatures/${candidate._id}/entretien-note/${editId}`,
-          { note: noteText.trim() }
-        );
-      } else {
-        await api.post(
-          `/candidatures/${candidate._id}/entretien-note`,
-          { type: "telephonique", note: noteText.trim() }
-        );
-      }
-      setNoteText("");
-      setEditId(null);
-      await fetchNotes();
-    } catch (e) {
-      console.error("saveNote error:", e?.response?.status, e?.response?.data);
-    } finally {
-      setSaving(false);
-    }
-  }
-
-  async function deleteNote(noteId) {
-    if (!noteId) return;
-    if (!confirm("Supprimer cette note ?")) return;
-    try {
-      await api.delete(`/candidatures/${candidate._id}/entretien-note/${noteId}`);
-      await fetchNotes();
-    } catch (e) {
-      console.error("deleteNote error:", e?.response?.status, e?.response?.data);
-    }
-  }
-
-  function startEdit(n) {
-    const id = n._id?.$oid || n._id?.toString?.() || String(n._id || "");
-    setEditId(id);
-    setNoteText(n.note);
+  if (created) {
+    return (
+      <div className="p-5 text-center">
+        <div className="w-16 h-16 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center mx-auto mb-4">
+          <CheckCircle2 className="w-8 h-8 text-green-600 dark:text-green-400" />
+        </div>
+        <h3 className="font-bold text-gray-800 dark:text-white text-lg mb-1">Entretien créé !</h3>
+        <p className="text-sm text-gray-500 dark:text-gray-400 mb-5">
+          L'entretien téléphonique est enregistré avec le statut <strong className="text-green-600">Confirmé</strong>.
+        </p>
+        <button
+          onClick={onClose}
+          className="px-6 py-2.5 rounded-xl bg-green-600 hover:bg-green-700 text-white font-bold text-sm transition-colors"
+        >
+          Fermer
+        </button>
+      </div>
+    );
   }
 
   return (
@@ -521,47 +487,36 @@ function TelephoniqueFlow({ candidate, onBack }) {
         ← Retour
       </button>
 
+      {/* Header type + date */}
       <div className="flex items-center gap-3 mb-4 p-3 bg-green-50/60 dark:bg-green-900/20 rounded-xl border border-green-100 dark:border-green-800">
         <div className="w-9 h-9 rounded-xl bg-green-600 flex items-center justify-center flex-shrink-0">
           <PhoneCall className="w-4 h-4 text-white" />
         </div>
         <div>
-          <p className="text-sm font-bold text-gray-800 dark:text-white">
-            Entretien Téléphonique
-          </p>
+          <p className="text-sm font-bold text-gray-800 dark:text-white">Entretien Téléphonique</p>
           <p className="text-xs text-gray-500 dark:text-gray-400">
-            {new Date().toLocaleDateString("fr-FR", {
-              day: "numeric",
-              month: "long",
-              year: "numeric",
-            })}
+            {new Date().toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" })}
           </p>
         </div>
       </div>
 
-      {/* Contact candidat */}
-      <div className="mb-5 p-4 bg-white dark:bg-gray-800 rounded-xl border border-gray-100 dark:border-gray-700 shadow-sm">
+      {/* Infos candidat */}
+      <div className="mb-6 p-4 bg-white dark:bg-gray-800 rounded-xl border border-gray-100 dark:border-gray-700 shadow-sm">
         <div className="flex items-start gap-3">
           <div className="w-10 h-10 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center text-green-700 dark:text-green-300 font-extrabold text-sm flex-shrink-0">
             {name?.[0]?.toUpperCase() || "C"}
           </div>
-
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-extrabold text-gray-800 dark:text-white truncate">
-              {name}
-            </p>
-
-            <div className="mt-2 space-y-2">
-              <div className="flex items-center gap-2 text-xs text-gray-600 dark:text-gray-300 break-all">
+            <p className="text-sm font-extrabold text-gray-800 dark:text-white truncate">{name}</p>
+            <div className="mt-2 space-y-1.5">
+              <div className="flex items-center gap-2 text-xs text-gray-600 dark:text-gray-300">
                 <Mail className="w-3.5 h-3.5 text-green-600 flex-shrink-0" />
-                <span>{email}</span>
+                <span className="truncate">{email}</span>
               </div>
-
-              <div className="flex items-center gap-2 text-xs text-gray-600 dark:text-gray-300 break-all">
+              <div className="flex items-center gap-2 text-xs text-gray-600 dark:text-gray-300">
                 <Phone className="w-3.5 h-3.5 text-green-600 flex-shrink-0" />
                 <span>{phone}</span>
               </div>
-
               <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
                 <Briefcase className="w-3.5 h-3.5 text-green-600 flex-shrink-0" />
                 <span className="truncate">{jobTitle}</span>
@@ -571,94 +526,20 @@ function TelephoniqueFlow({ candidate, onBack }) {
         </div>
       </div>
 
-      <textarea
-        value={noteText}
-        onChange={(e) => setNoteText(e.target.value)}
-        placeholder={
-          editId
-            ? "Modifier la note..."
-            : "Ajouter une note après l'entretien téléphonique..."
-        }
-        rows={3}
-        className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-green-400 mb-2"
-      />
-
-      <div className="flex flex-col sm:flex-row gap-2 mb-5">
-        <button
-          onClick={saveNote}
-          disabled={!noteText.trim() || saving}
-          className="flex-1 py-2.5 rounded-xl bg-green-600 hover:bg-green-700 text-white text-sm font-bold disabled:opacity-40 flex items-center justify-center gap-2"
-        >
-          {saving ? (
-            <Loader2 className="w-4 h-4 animate-spin" />
-          ) : (
-            <StickyNote className="w-4 h-4" />
-          )}
-          {editId ? "Modifier" : "Sauvegarder"}
-        </button>
-
-        {editId && (
-          <button
-            onClick={() => {
-              setEditId(null);
-              setNoteText("");
-            }}
-            className="px-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 text-sm text-gray-600 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800"
-          >
-            Annuler
-          </button>
-        )}
-      </div>
-
-      {loading ? (
-        <div className="flex justify-center py-4">
-          <Loader2 className="w-5 h-5 animate-spin text-green-400" />
-        </div>
-      ) : notes.length === 0 ? (
-        <p className="text-center text-sm text-gray-400 py-3">
-          Aucune note enregistrée
-        </p>
-      ) : (
-        <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
-          {notes.map((n, i) => (
-            <div
-              key={n._id || i}
-              className="p-3 bg-gray-50 dark:bg-gray-800/50 rounded-xl border border-gray-100 dark:border-gray-700"
-            >
-              <p className="text-sm text-gray-700 dark:text-gray-300 mb-2">
-                {n.note}
-              </p>
-              <div className="flex items-center justify-between gap-3">
-                <span className="text-xs text-gray-400">
-                  {new Date(n.createdAt).toLocaleDateString("fr-FR")}
-                </span>
-                <div className="flex gap-3">
-                  <button
-                    onClick={() => startEdit(n)}
-                    className="text-xs text-green-600 hover:text-green-700 font-medium"
-                  >
-                    Modifier
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() =>
-                      deleteNote(n.noteId || n._id?.$oid || n._id)
-                    }
-                    className="text-xs text-red-400 hover:text-red-600 font-medium"
-                  >
-                    Supprimer
-                  </button>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
+      {/* Bouton Valider */}
+      <button
+        onClick={handleValider}
+        disabled={creating}
+        className="w-full py-3 rounded-xl bg-green-600 hover:bg-green-700 text-white text-sm font-bold disabled:opacity-50 flex items-center justify-center gap-2 transition-colors"
+      >
+        {creating ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}
+        {creating ? "Création..." : "Valider l'entretien"}
+      </button>
     </div>
   );
 }
 
-// ── Flow 2: Entretien RH ──────────────────────────
+
 function RHFlow({ candidate, onBack, onClose }) {
   const name =
     candidate?.fullName || `${candidate?.prenom || ""} ${candidate?.nom || ""}`.trim() || "Candidat";
@@ -1029,7 +910,10 @@ function NoteStars({ note }) {
   );
 }
 
-function PreInterviewCard({ c, index }) {
+/* ================================================================
+   TABLE ROW — un candidat = une ligne
+================================================================ */
+function PreInterviewRow({ c, index }) {
   const [sentFiche, setSentFiche] = useState(() => wasSentFiche(c._id));
   const [sentQuiz, setSentQuiz] = useState(() => wasSentQuiz(c._id));
   const [showSendModal, setShowSendModal] = useState(false);
@@ -1047,224 +931,177 @@ function PreInterviewCard({ c, index }) {
   const allSent = sentFiche && sentQuiz;
   const anySent = sentFiche || sentQuiz;
 
-  // Sauvegarder quand l'état change
-  useEffect(() => {
-    if (sentFiche) {
-      markSentFiche(c._id);
-    }
-  }, [sentFiche, c._id]);
-
-  useEffect(() => {
-    if (sentQuiz) {
-      markSentQuiz(c._id);
-    }
-  }, [sentQuiz, c._id]);
-
-  // Sauvegarder dans localStorage global quand les deux sont envoyés
-  useEffect(() => {
-    if (allSent) {
-      markSent(c._id);
-    }
-  }, [allSent, c._id]);
-
-  // Déterminer l'état du bouton
-  function getButtonState() {
-    if (allSent) {
-      return {
-        label: "Documents envoyés",
-        disabled: true,
-        badges: []
-      };
-    }
-
-    if (sentFiche && !sentQuiz) {
-      return {
-        label: "Envoyer Quiz",
-        disabled: false,
-        badges: [
-          <span key="fiche" className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 rounded-full text-sm font-medium"><ClipboardList className="w-4 h-4" /> Fiche ✓</span>
-        ]
-      };
-    }
-
-    if (sentQuiz && !sentFiche) {
-      return {
-        label: "Envoyer Fiche",
-        disabled: false,
-        badges: [
-          <span key="quiz" className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 rounded-full text-sm font-medium"><Brain className="w-4 h-4" /> Quiz ✓</span>
-        ]
-      };
-    }
-
-    return {
-      label: "Envoyer (fiche / quiz)",
-      disabled: false,
-      badges: []
-    };
-  }
-
-  const buttonState = getButtonState();
+  useEffect(() => { if (sentFiche) markSentFiche(c._id); }, [sentFiche, c._id]);
+  useEffect(() => { if (sentQuiz) markSentQuiz(c._id); }, [sentQuiz, c._id]);
+  useEffect(() => { if (allSent) markSent(c._id); }, [allSent, c._id]);
 
   function handleModalSuccess(justSentFiche, justSentQuiz) {
     if (justSentFiche) setSentFiche(true);
     if (justSentQuiz) setSentQuiz(true);
   }
 
+  // Bouton envoi
+  let sendBtn;
+  if (allSent) {
+    sendBtn = (
+      <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 text-xs font-semibold border border-green-200 dark:border-green-800 cursor-default">
+        <CheckCircle2 className="w-3.5 h-3.5" /> Envoyés
+      </span>
+    );
+  } else {
+    const label = sentFiche ? "Envoyer Quiz" : sentQuiz ? "Envoyer Fiche" : "Envoyer Quiz";
+    const color = anySent ? "bg-amber-500 hover:bg-amber-600" : "bg-[#4E8F2F] hover:bg-[#3d7024]";
+    sendBtn = (
+      <button
+        onClick={() => setShowSendModal(true)}
+        className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg ${color} text-white text-xs font-semibold transition-colors`}
+      >
+        <Send className="w-3.5 h-3.5" />
+        {label}
+      </button>
+    );
+  }
+
+  // Badges fiche / quiz
+  const ficheBadge = sentFiche ? (
+    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 text-[11px] font-bold">
+      <ClipboardList className="w-3 h-3" /> Fiche ✓
+    </span>
+  ) : null;
+
+  const quizBadge = sentQuiz ? (
+    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 text-[11px] font-bold">
+      <Brain className="w-3 h-3" /> Quiz ✓
+    </span>
+  ) : null;
+
   return (
     <>
-      <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700 shadow-sm overflow-hidden">
-        <div className="p-6">
-          {/* TOP CONTENT — responsive */}
-          <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-6">
-            {/* LEFT */}
-            <div className="flex items-start gap-5 flex-1 min-w-0">
-              {/* Avatar */}
-              <div className="relative shrink-0">
-                <div className="w-16 h-16 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center text-green-700 dark:text-green-300 font-extrabold text-2xl">
-                  {name?.[0]?.toUpperCase() || "C"}
-                </div>
-                <span className="absolute -top-1 -left-1 w-6 h-6 rounded-full bg-green-600 text-white text-[11px] font-bold flex items-center justify-center">
-                  {index + 1}
-                </span>
-              </div>
+      <tr className="group border-b border-gray-100 dark:border-gray-800 hover:bg-green-50/40 dark:hover:bg-green-900/10 transition-colors">
+        {/* # */}
+        <td className="pl-5 pr-3 py-4 w-10">
+          <span className="w-6 h-6 rounded-full bg-[#6CB33F] text-white text-[11px] font-bold flex items-center justify-center">
+            {index + 1}
+          </span>
+        </td>
 
-              {/* Infos */}
-              <div className="min-w-0">
-                <h2 className="text-2xl font-extrabold text-gray-900 dark:text-white truncate">{name}</h2>
-
-                <div className="flex items-center gap-2 mt-1">
-                  <Briefcase className="w-4 h-4 text-gray-400 shrink-0" />
-                  <p className="text-sm text-gray-500 dark:text-gray-400 truncate">{jobTitle}</p>
-                </div>
-
-                {email && (
-                  <a
-                    href={`mailto:${email}`}
-                    className="mt-3 inline-flex items-center gap-2 text-sm text-blue-600 dark:text-blue-400 hover:underline"
-                  >
-                    <Mail className="w-4 h-4" />
-                    {email}
-                  </a>
-                )}
-
-                {cvUrl && (
-                  <a
-                    href={cvUrl}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="mt-3 inline-flex items-center gap-2 text-base font-semibold text-green-700 dark:text-emerald-400 hover:text-green-800"
-                  >
-                    <FileText className="w-5 h-5" />
-                    Voir CV <span className="text-gray-400 text-sm font-normal">({cvName})</span>
-                  </a>
-                )}
-              </div>
+        {/* CANDIDAT */}
+        <td className="px-4 py-4 min-w-[200px]">
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center text-green-700 dark:text-green-300 font-extrabold text-base shrink-0">
+              {name?.[0]?.toUpperCase() || "C"}
             </div>
-
-            {/* RIGHT (score + date) */}
-            <div className="w-full md:w-[320px] shrink-0 flex flex-row md:flex-col items-start md:items-end justify-between md:justify-start gap-4">
-              <div className="text-left md:text-right">
-                <p className="text-[11px] font-semibold text-gray-400 uppercase mb-2">Match score</p>
-                <div className={`inline-flex text-3xl font-extrabold px-5 py-2 rounded-2xl ${scoreBg(score)}`}>{pct(score)}</div>
-
-              </div>
-
-              {selectedAt && (
-                <div className="inline-flex items-center gap-2 text-sm text-green-700 dark:text-green-400 bg-green-50 dark:bg-green-900/20 px-4 py-2 rounded-full">
-                  <Clock className="w-4 h-4" />
-                  Sélectionné le {formatDate(selectedAt)}
-                </div>
+            <div className="min-w-0">
+              <p className="font-bold text-sm text-gray-900 dark:text-white truncate">{name}</p>
+              {email && (
+                <a href={`mailto:${email}`} className="text-xs text-blue-500 hover:underline truncate block">
+                  {email}
+                </a>
               )}
             </div>
           </div>
+        </td>
 
-          {/* FOOTER ACTIONS */}
-          <div className="mt-6 flex flex-wrap items-center justify-end gap-3">
-            {/* Envoyer — état dynamique */}
-            {allSent ? (
-              <div className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-700 text-green-700 dark:text-green-400 text-sm font-semibold cursor-not-allowed">
-                <CheckCircle2 className="w-4 h-4" />
-                {buttonState.label}
-                {buttonState.badges.length > 0 && (
-                  <div className="flex gap-1.5">
-                    {buttonState.badges}
-                  </div>
-                )}
-              </div>
-            ) : anySent ? (
-              <>
-                <button
-                  onClick={() => setShowSendModal(true)}
-                  className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-full bg-amber-600 hover:bg-amber-700 text-white text-sm font-semibold transition"
-                >
-                  <Send className="w-4 h-4" />
-                  {buttonState.label}
-                </button>
-                {buttonState.badges.length > 0 && (
-                  <div className="flex gap-1.5">
-                    {buttonState.badges}
-                  </div>
-                )}
-              </>
-            ) : (
-              <button
-                onClick={() => setShowSendModal(true)}
-                className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-full bg-green-600 hover:bg-green-700 text-white text-sm font-semibold transition"
-              >
-                <Send className="w-4 h-4" />
-                {buttonState.label}
-              </button>
-            )}
+        {/* POSTE */}
+        <td className="px-4 py-4 min-w-[160px]">
+          <div className="flex items-center gap-2">
+            <Briefcase className="w-3.5 h-3.5 text-gray-400 shrink-0" />
+            <span className="text-sm text-gray-600 dark:text-gray-300 truncate">{jobTitle}</span>
+          </div>
+        </td>
 
-            {/* Planifier */}
+        {/* CV */}
+        <td className="px-4 py-4 w-[110px]">
+          {cvUrl ? (
+            <a
+              href={cvUrl}
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-200 text-xs font-semibold transition-colors"
+            >
+              <FileText className="w-3.5 h-3.5 text-[#4E8F2F]" /> Voir CV
+            </a>
+          ) : (
+            <span className="text-xs text-gray-400">—</span>
+          )}
+        </td>
+
+        {/* SCORE */}
+        <td className="px-4 py-4 w-[100px]">
+          <div className={`inline-flex items-center justify-center px-3 py-1 rounded-lg text-sm font-extrabold ${scoreBg(score)}`}>
+            {pct(score)}
+          </div>
+        </td>
+
+        {/* SÉLECTIONNÉ LE */}
+        <td className="px-4 py-4 w-[130px]">
+          {selectedAt ? (
+            <div className="flex items-center gap-1.5 text-xs text-gray-500 dark:text-gray-400">
+              <Clock className="w-3.5 h-3.5 text-[#6CB33F]" />
+              {formatDate(selectedAt)}
+            </div>
+          ) : (
+            <span className="text-xs text-gray-400">—</span>
+          )}
+        </td>
+
+        {/* DOCS ENVOYÉS */}
+        <td className="px-4 py-4 w-[120px]">
+          <div className="flex flex-col gap-1">
+            {ficheBadge}
+            {quizBadge}
+            {!ficheBadge && !quizBadge && <span className="text-xs text-gray-400">Aucun</span>}
+          </div>
+        </td>
+
+        {/* ACTIONS */}
+        <td className="px-4 py-4 pr-5 w-[280px]">
+          <div className="flex items-center gap-2 flex-wrap">
+            {sendBtn}
+
             <button
               onClick={() => setShowEntretienModal(true)}
-              className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-full bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold transition"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold transition-colors"
             >
-              <Calendar className="w-4 h-4" />
-              Planifier entretien
+              <Calendar className="w-3.5 h-3.5" />
+              Planifier
             </button>
 
-            {/* Résultats */}
             <Link
               href={`/recruiter/PreInterviewList/${c._id}/results`}
-              className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-full bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-800 dark:text-gray-100 text-sm font-semibold transition"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-200 text-xs font-semibold transition-colors"
             >
-              <BarChart2 className="w-4 h-4" />
+              <BarChart2 className="w-3.5 h-3.5" />
               Résultats
             </Link>
           </div>
-        </div>
-      </div>
+        </td>
+      </tr>
 
-      {/* Modal envoi */}
-      {showSendModal && (
+      {showSendModal && createPortal(
         <SendDocumentsModal
           candidature={c}
           onClose={() => setShowSendModal(false)}
-          onSuccess={(justSentFiche, justSentQuiz) => handleModalSuccess(justSentFiche, justSentQuiz)}
+          onSuccess={handleModalSuccess}
           initialSentFiche={sentFiche}
           initialSentQuiz={sentQuiz}
-        />
+        />,
+        document.body
       )}
-
-      {showEntretienModal && (
+      {showEntretienModal && createPortal(
         <EntretienModal
           candidate={c}
           onClose={() => setShowEntretienModal(false)}
-          onRHScheduled={(iv) => {
-            setRhInterview(iv);
-            setShowEntretienModal(false);
-          }}
-        />
+          onRHScheduled={(iv) => { setRhInterview(iv); setShowEntretienModal(false); }}
+        />,
+        document.body
       )}
     </>
   );
 }
 
 /* ================================================================
-   PAGE PRINCIPALE
+   PAGE PRINCIPALE — TABLEAU
 ================================================================ */
 export default function PreInterviewListPage() {
   const [candidates, setCandidates] = useState([]);
@@ -1301,48 +1138,75 @@ export default function PreInterviewListPage() {
   if (loading)
     return (
       <div className="min-h-screen bg-[#F0FAF0] dark:bg-gray-950 flex items-center justify-center">
-        <Loader2 className="w-8 h-8 animate-spin text-green-500" />
+        <Loader2 className="w-8 h-8 animate-spin text-[#6CB33F]" />
       </div>
     );
 
   return (
     <div className="min-h-screen bg-[#F0FAF0] dark:bg-gray-950 transition-colors duration-300">
-      <div className="max-w-4xl mx-auto px-4 py-8 space-y-6">
+      <div className="max-w-[1400px] mx-auto px-6 py-8 space-y-6">
+
         {/* Header */}
-        <div className="flex items-start justify-between gap-4">
+        <div className="flex items-center justify-between gap-4 flex-wrap">
           <div>
-            <h1 className="text-3xl font-extrabold text-gray-900 dark:text-white flex items-center gap-3">
-              <UserCheck className="w-8 h-8 text-green-500" />
+            <h1 className="text-2xl font-extrabold text-gray-900 dark:text-white flex items-center gap-3">
+              <UserCheck className="w-7 h-7 text-[#6CB33F]" />
               Candidats Pré-sélectionnés
             </h1>
-            <p className="text-gray-500 dark:text-gray-400 mt-1">
+            <p className="text-gray-500 dark:text-gray-400 mt-0.5 text-sm">
               {candidates.length} candidat{candidates.length > 1 ? "s" : ""} prêt{candidates.length > 1 ? "s" : ""} pour entretien
             </p>
           </div>
+
+          {/* Search */}
+          <div className="relative w-full sm:w-80">
+            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+            <input
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Rechercher (nom, email, poste)..."
+              className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-sm text-gray-800 dark:text-gray-100 outline-none focus:ring-2 focus:ring-[#6CB33F]/50 transition-colors"
+            />
+          </div>
         </div>
 
-        {/* Search */}
-        <div className="relative">
-          <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-          <input
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Rechercher un candidat (nom, email, job)..."
-            className="w-full pl-11 pr-4 py-3 rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-sm text-gray-800 dark:text-gray-100 outline-none focus:ring-2 focus:ring-green-400 transition-colors"
-          />
-        </div>
-
-        {/* Liste */}
+        {/* Tableau */}
         {filtered.length === 0 ? (
-          <div className="text-center py-16 text-gray-400">
+          <div className="text-center py-20 text-gray-400">
             <UserCheck className="w-12 h-12 mx-auto mb-3 opacity-30" />
             <p className="font-medium">{search ? "Aucun candidat trouvé" : "Aucun candidat pré-sélectionné"}</p>
           </div>
         ) : (
-          <div className="space-y-4">
-            {filtered.map((c, i) => (
-              <PreInterviewCard key={c._id} c={c} index={i} />
-            ))}
+          <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-sm overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full border-collapse">
+                <thead>
+                  <tr className="bg-[#F0FAF0] dark:bg-green-900/20 border-b border-gray-200 dark:border-gray-800">
+                    <th className="pl-5 pr-3 py-3 text-left w-10"></th>
+                    <th className="px-4 py-3 text-left text-xs font-bold text-[#4E8F2F] dark:text-[#6CB33F] uppercase tracking-wider">Candidat</th>
+                    <th className="px-4 py-3 text-left text-xs font-bold text-[#4E8F2F] dark:text-[#6CB33F] uppercase tracking-wider">Poste</th>
+                    <th className="px-4 py-3 text-left text-xs font-bold text-[#4E8F2F] dark:text-[#6CB33F] uppercase tracking-wider">CV</th>
+                    <th className="px-4 py-3 text-left text-xs font-bold text-[#4E8F2F] dark:text-[#6CB33F] uppercase tracking-wider">Score</th>
+                    <th className="px-4 py-3 text-left text-xs font-bold text-[#4E8F2F] dark:text-[#6CB33F] uppercase tracking-wider">Sélectionné le</th>
+                    <th className="px-4 py-3 text-left text-xs font-bold text-[#4E8F2F] dark:text-[#6CB33F] uppercase tracking-wider">Documents</th>
+                    <th className="px-4 py-3 pr-5 text-left text-xs font-bold text-[#4E8F2F] dark:text-[#6CB33F] uppercase tracking-wider">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filtered.map((c, i) => (
+                    <PreInterviewRow key={c._id} c={c} index={i} />
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Footer résumé */}
+            <div className="px-5 py-3 border-t border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-900/50">
+              <p className="text-xs text-gray-400">
+                {filtered.length} candidat{filtered.length > 1 ? "s" : ""} affiché{filtered.length > 1 ? "s" : ""}
+                {search && ` · filtre : "${search}"`}
+              </p>
+            </div>
           </div>
         )}
       </div>

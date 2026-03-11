@@ -3,7 +3,10 @@
 import { useState } from "react";
 import Link from "next/link";
 import { ArrowLeft, Plus, Trash2, Check, X } from "lucide-react";
-import { createFiche, createCriterion } from "../../../services/evaluationCriteria.api";
+import {
+  createFiche,
+  createCriterion,
+} from "../../../services/evaluationCriteria.api";
 
 function Card({ children, className = "" }) {
   return (
@@ -24,13 +27,19 @@ function SectionTitle({ children }) {
   return (
     <div className="flex items-center gap-3">
       <span className="h-3 w-3 rounded-full bg-green-600 dark:bg-[#7CC242]" />
-      <h2 className="text-lg font-extrabold text-[#0B1220] dark:text-white">{children}</h2>
+      <h2 className="text-lg font-extrabold text-[#0B1220] dark:text-white">
+        {children}
+      </h2>
     </div>
   );
 }
 
 function Label({ children }) {
-  return <label className="block text-sm font-semibold text-[#0B1220] dark:text-white">{children}</label>;
+  return (
+    <label className="block text-sm font-semibold text-[#0B1220] dark:text-white">
+      {children}
+    </label>
+  );
 }
 
 function Input(props) {
@@ -155,10 +164,13 @@ export default function CreateEvaluationFichePage() {
   const [error, setError] = useState("");
 
   const addCriterion = () => setCriteria((prev) => [...prev, emptyCriterion()]);
-  const removeCriterion = (id) => setCriteria((prev) => prev.filter((c) => c.id !== id));
+  const removeCriterion = (id) =>
+    setCriteria((prev) => prev.filter((c) => c.id !== id));
 
   const updateCriterionField = (id, patch) => {
-    setCriteria((prev) => prev.map((c) => (c.id === id ? { ...c, ...patch } : c)));
+    setCriteria((prev) =>
+      prev.map((c) => (c.id === id ? { ...c, ...patch } : c)),
+    );
   };
 
   const addChoice = (id) => {
@@ -168,7 +180,7 @@ export default function CreateEvaluationFichePage() {
         const v = (c.newChoice || "").trim();
         if (!v) return c;
         return { ...c, choices: [...c.choices, v], newChoice: "" };
-      })
+      }),
     );
   };
 
@@ -177,7 +189,7 @@ export default function CreateEvaluationFichePage() {
       prev.map((c) => {
         if (c.id !== id) return c;
         return { ...c, choices: c.choices.filter((_, i) => i !== idx) };
-      })
+      }),
     );
   };
 
@@ -186,10 +198,13 @@ export default function CreateEvaluationFichePage() {
     if (!name.trim()) errs.push("Le titre de la fiche est obligatoire.");
     criteria.forEach((c, idx) => {
       if (!c.label.trim()) errs.push(`Critère ${idx + 1}: label obligatoire.`);
-      if (c.type === "choice" && c.choices.length === 0) errs.push(`Critère ${idx + 1}: ajoute au moins un choix.`);
+      if (c.type === "choice" && c.choices.length === 0)
+        errs.push(`Critère ${idx + 1}: ajoute au moins un choix.`);
       if (c.type === "score") {
-        if (Number(c.scale.min) >= Number(c.scale.max)) errs.push(`Critère ${idx + 1}: min < max requis.`);
-        if (Number(c.scale.step) <= 0) errs.push(`Critère ${idx + 1}: step > 0 requis.`);
+        if (Number(c.scale.min) >= Number(c.scale.max))
+          errs.push(`Critère ${idx + 1}: min < max requis.`);
+        if (Number(c.scale.step) <= 0)
+          errs.push(`Critère ${idx + 1}: step > 0 requis.`);
       }
     });
     return errs;
@@ -206,8 +221,14 @@ export default function CreateEvaluationFichePage() {
     setSaving(true);
     try {
       // 🆕 Inclure interviewType dans la création
-      const ficheRes = await createFiche({ name, description, interviewType, isActive });
-      const ficheId = ficheRes?.data?._id || ficheRes?.data?.fiche?._id || ficheRes?.data?.id;
+      const ficheRes = await createFiche({
+        name,
+        description,
+        interviewType,
+        isActive,
+      });
+      const ficheId =
+        ficheRes?.data?._id || ficheRes?.data?.fiche?._id || ficheRes?.data?.id;
       if (!ficheId) throw new Error("ID de la fiche non récupéré.");
 
       for (let i = 0; i < criteria.length; i++) {
@@ -227,7 +248,9 @@ export default function CreateEvaluationFichePage() {
 
       window.location.href = "/recruiter/criteres-evaluation";
     } catch (e) {
-      setError(e?.response?.data?.message || e?.message || "Erreur enregistrement");
+      setError(
+        e?.response?.data?.message || e?.message || "Erreur enregistrement",
+      );
     } finally {
       setSaving(false);
     }
@@ -263,7 +286,9 @@ export default function CreateEvaluationFichePage() {
               <SectionTitle>Informations générales</SectionTitle>
 
               <div className="flex items-center gap-3">
-                <span className="text-sm text-[#0B1220] dark:text-white">Activer la fiche</span>
+                <span className="text-sm text-[#0B1220] dark:text-white">
+                  Activer la fiche
+                </span>
                 <input
                   type="checkbox"
                   checked={isActive}
@@ -280,24 +305,38 @@ export default function CreateEvaluationFichePage() {
 
             <div className="mt-6">
               <Label>Type d'entretien</Label>
-              <Select value={interviewType} onChange={(e) => setInterviewType(e.target.value)}>
+              <Select
+                value={interviewType}
+                onChange={(e) => setInterviewType(e.target.value)}
+              >
                 <option value="">-- Sélectionner un type --</option>
+                <option value="Entretien téléphonique">
+                  Entretien téléphonique
+                </option>
                 <option value="Entretien RH">Entretien RH</option>
                 <option value="Entretien technique">Entretien technique</option>
-                <option value="Entretien RH + technique">Entretien RH + technique</option>
+                <option value="Entretien RH + technique">
+                  Entretien RH + technique
+                </option>
               </Select>
             </div>
 
             <div className="mt-6">
               <Label>Description</Label>
-              <Textarea rows={4} value={description} onChange={(e) => setDescription(e.target.value)} />
+              <Textarea
+                rows={4}
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+              />
             </div>
           </Card>
         </div>
 
         {/* Critères */}
         <div className="mt-10">
-          <h2 className="text-2xl font-black text-[#0B1220] dark:text-white">Critères</h2>
+          <h2 className="text-2xl font-black text-[#0B1220] dark:text-white">
+            Critères
+          </h2>
 
           <div className="mt-6 space-y-6">
             {criteria.map((c, idx) => (
@@ -324,7 +363,9 @@ export default function CreateEvaluationFichePage() {
                     <Label>Label *</Label>
                     <Input
                       value={c.label}
-                      onChange={(e) => updateCriterionField(c.id, { label: e.target.value })}
+                      onChange={(e) =>
+                        updateCriterionField(c.id, { label: e.target.value })
+                      }
                       placeholder="Ex: Communication"
                     />
                   </div>
@@ -334,7 +375,11 @@ export default function CreateEvaluationFichePage() {
                     <Textarea
                       rows={3}
                       value={c.description}
-                      onChange={(e) => updateCriterionField(c.id, { description: e.target.value })}
+                      onChange={(e) =>
+                        updateCriterionField(c.id, {
+                          description: e.target.value,
+                        })
+                      }
                       placeholder="Description du critère"
                     />
                   </div>
@@ -342,7 +387,12 @@ export default function CreateEvaluationFichePage() {
                   <div className="grid grid-cols-1 gap-6 md:grid-cols-3 md:items-end">
                     <div>
                       <Label>Type</Label>
-                      <Select value={c.type} onChange={(e) => updateCriterionField(c.id, { type: e.target.value })}>
+                      <Select
+                        value={c.type}
+                        onChange={(e) =>
+                          updateCriterionField(c.id, { type: e.target.value })
+                        }
+                      >
                         <option value="text">Texte</option>
                         <option value="score">Score</option>
                         <option value="choice">Choix</option>
@@ -356,7 +406,9 @@ export default function CreateEvaluationFichePage() {
                         type="number"
                         step="0.1"
                         value={c.weight}
-                        onChange={(e) => updateCriterionField(c.id, { weight: e.target.value })}
+                        onChange={(e) =>
+                          updateCriterionField(c.id, { weight: e.target.value })
+                        }
                       />
                     </div>
 
@@ -364,16 +416,24 @@ export default function CreateEvaluationFichePage() {
                       <input
                         type="checkbox"
                         checked={c.isActive}
-                        onChange={(e) => updateCriterionField(c.id, { isActive: e.target.checked })}
+                        onChange={(e) =>
+                          updateCriterionField(c.id, {
+                            isActive: e.target.checked,
+                          })
+                        }
                         className="h-5 w-5 rounded border-gray-300 text-green-600 focus:ring-green-500"
                       />
-                      <span className="text-sm font-semibold text-[#0B1220] dark:text-white">Actif</span>
+                      <span className="text-sm font-semibold text-[#0B1220] dark:text-white">
+                        Actif
+                      </span>
                     </div>
                   </div>
 
                   {c.type === "score" && (
                     <div className="rounded-3xl border border-green-200 bg-green-50 p-6 dark:border-white/10 dark:bg-white/5">
-                      <h4 className="font-extrabold text-[#0B1220] dark:text-white">Échelle de score</h4>
+                      <h4 className="font-extrabold text-[#0B1220] dark:text-white">
+                        Échelle de score
+                      </h4>
                       <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-3">
                         <div>
                           <Label>Min</Label>
@@ -381,7 +441,12 @@ export default function CreateEvaluationFichePage() {
                             type="number"
                             value={c.scale.min}
                             onChange={(e) =>
-                              updateCriterionField(c.id, { scale: { ...c.scale, min: Number(e.target.value) } })
+                              updateCriterionField(c.id, {
+                                scale: {
+                                  ...c.scale,
+                                  min: Number(e.target.value),
+                                },
+                              })
                             }
                           />
                         </div>
@@ -391,7 +456,12 @@ export default function CreateEvaluationFichePage() {
                             type="number"
                             value={c.scale.max}
                             onChange={(e) =>
-                              updateCriterionField(c.id, { scale: { ...c.scale, max: Number(e.target.value) } })
+                              updateCriterionField(c.id, {
+                                scale: {
+                                  ...c.scale,
+                                  max: Number(e.target.value),
+                                },
+                              })
                             }
                           />
                         </div>
@@ -402,7 +472,12 @@ export default function CreateEvaluationFichePage() {
                             step="0.1"
                             value={c.scale.step}
                             onChange={(e) =>
-                              updateCriterionField(c.id, { scale: { ...c.scale, step: Number(e.target.value) } })
+                              updateCriterionField(c.id, {
+                                scale: {
+                                  ...c.scale,
+                                  step: Number(e.target.value),
+                                },
+                              })
                             }
                           />
                         </div>
@@ -412,12 +487,18 @@ export default function CreateEvaluationFichePage() {
 
                   {c.type === "choice" && (
                     <div className="rounded-3xl border border-green-200 bg-green-50 p-6 dark:border-white/10 dark:bg-white/5">
-                      <h4 className="font-extrabold text-[#0B1220] dark:text-white">Options</h4>
+                      <h4 className="font-extrabold text-[#0B1220] dark:text-white">
+                        Options
+                      </h4>
 
                       <div className="mt-4 flex flex-col gap-3 md:flex-row">
                         <Input
                           value={c.newChoice}
-                          onChange={(e) => updateCriterionField(c.id, { newChoice: e.target.value })}
+                          onChange={(e) =>
+                            updateCriterionField(c.id, {
+                              newChoice: e.target.value,
+                            })
+                          }
                           placeholder="Ajouter une option"
                           onKeyDown={(e) => {
                             if (e.key === "Enter") {
@@ -426,7 +507,11 @@ export default function CreateEvaluationFichePage() {
                             }
                           }}
                         />
-                        <OutlineGreenButton type="button" onClick={() => addChoice(c.id)} className="md:w-[180px]">
+                        <OutlineGreenButton
+                          type="button"
+                          onClick={() => addChoice(c.id)}
+                          className="md:w-[180px]"
+                        >
                           Ajouter
                         </OutlineGreenButton>
                       </div>
@@ -462,19 +547,28 @@ export default function CreateEvaluationFichePage() {
 
             {error && (
               <div className="rounded-3xl border border-red-200 bg-red-50 p-5 dark:border-red-500/20 dark:bg-red-500/10">
-                <p className="text-sm font-semibold text-red-600 dark:text-red-400">{error}</p>
+                <p className="text-sm font-semibold text-red-600 dark:text-red-400">
+                  {error}
+                </p>
               </div>
             )}
 
             <div className="flex flex-col gap-3 md:flex-row md:justify-end">
-              <Link href="/recruiter/criteres-evaluation" className="md:order-1">
+              <Link
+                href="/recruiter/criteres-evaluation"
+                className="md:order-1"
+              >
                 <OutlineGreenButton className="w-full md:w-auto">
                   <X size={18} />
                   Annuler
                 </OutlineGreenButton>
               </Link>
 
-              <SolidGreenButton onClick={onSave} disabled={saving} className="w-full md:w-auto">
+              <SolidGreenButton
+                onClick={onSave}
+                disabled={saving}
+                className="w-full md:w-auto"
+              >
                 <Check size={18} />
                 {saving ? "Enregistrement..." : "Enregistrer la fiche"}
               </SolidGreenButton>

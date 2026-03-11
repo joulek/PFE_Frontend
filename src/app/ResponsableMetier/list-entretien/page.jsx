@@ -17,8 +17,24 @@ import {
   X,
   AlertTriangle,
   Send,
+  Trophy,
+  ClipboardList,
+  Loader2,
+  BarChart2,
+  CheckCheck,
+  CircleX,
 } from "lucide-react";
 import { getMyInterviews, getMyInterviewsStats } from "../../services/interviewApi";
+import api from "../../services/api";
+
+// ─────────────────────────────────────────────────────────
+//  API helpers (inline — uses your existing api instance)
+// ─────────────────────────────────────────────────────────
+const getFicheSubmissionsByCandidature = (candidatureId) =>
+  api.get(`/fiche-submissions/candidature/${candidatureId}`);
+
+const getQuizSubmissionsByCandidature = (candidatureId) =>
+  api.get(`/quiz-submissions/candidature/${candidatureId}`);
 
 // ─────────────────────────────────────────────────────────
 //  STATUTS — Vue ResponsableMetier
@@ -102,9 +118,6 @@ const TYPE_CONFIG = {
   },
 };
 
-// ─────────────────────────────────────────────────────────
-//  Filtres affichés pour le ResponsableMetier
-// ─────────────────────────────────────────────────────────
 const STATUS_FILTERS = [
   "ALL",
   "PENDING_CONFIRMATION",
@@ -116,7 +129,11 @@ const STATUS_FILTERS = [
 
 function formatDate(d) {
   if (!d) return "—";
-  return new Date(d).toLocaleDateString("fr-FR", {
+  // MongoDB peut renvoyer { $date: "..." } ou un objet Date ou une string ISO
+  const raw = d?.$date ?? d;
+  const parsed = new Date(raw);
+  if (isNaN(parsed.getTime())) return "—";
+  return parsed.toLocaleDateString("fr-FR", {
     day: "2-digit",
     month: "short",
     year: "numeric",
@@ -135,7 +152,6 @@ function getStatusCount(stats, key) {
   return stats[key] ?? 0;
 }
 
-// ✅ Vérifier si c'est un entretien RH+Tech
 function isRHTechInterview(interviewType) {
   const type = String(interviewType || "").toLowerCase();
   return type.includes("rh") && type.includes("tech");
@@ -200,9 +216,6 @@ function DetailCard({ label, value, children }) {
   );
 }
 
-// ─────────────────────────────────────────────────────────
-//  Alerte de rappel
-// ─────────────────────────────────────────────────────────
 function PendingAlert({ count, onClick }) {
   if (!count) return null;
   return (
@@ -216,6 +229,184 @@ function PendingAlert({ count, onClick }) {
       </span>
       <ChevronRight className="w-4 h-4 ml-auto text-amber-400" />
     </button>
+  );
+}
+
+// ─────────────────────────────────────────────────────────
+//  Score circle pour le quiz
+// ─────────────────────────────────────────────────────────
+function ScoreCircle({ percentage }) {
+  const pct = Math.min(100, Math.max(0, percentage ?? 0));
+  const color =
+    pct >= 70
+      ? "text-emerald-600 dark:text-emerald-400"
+      : pct >= 40
+        ? "text-amber-600 dark:text-amber-400"
+        : "text-red-600 dark:text-red-400";
+  const ring =
+    pct >= 70
+      ? "border-emerald-400 dark:border-emerald-500"
+      : pct >= 40
+        ? "border-amber-400 dark:border-amber-500"
+        : "border-red-400 dark:border-red-500";
+
+  return (
+    <div
+      className={`w-14 h-14 rounded-full border-4 ${ring} flex items-center justify-center flex-shrink-0`}
+    >
+      <span className={`text-base font-extrabold ${color}`}>{pct}%</span>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────
+//  Carte résultat Quiz
+// ─────────────────────────────────────────────────────────
+function QuizResultCard({ candidatureId }) {
+  const router = useRouter();
+  const [data, setData] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (!candidatureId) { setLoading(false); return; }
+    getQuizSubmissionsByCandidature(candidatureId)
+      .then((res) => {
+        const list = Array.isArray(res) ? res : (res?.data ?? []);
+        setData(list[0] ?? null);
+      })
+      .catch(() => setData(null))
+      .finally(() => setLoading(false));
+  }, [candidatureId]);
+
+  return (
+    <DetailCard label="Résultat Quiz">
+      {loading ? (
+        <div className="flex items-center gap-2 text-gray-400 text-xs py-1">
+          <Loader2 className="w-4 h-4 animate-spin" />
+          Chargement…
+        </div>
+      ) : !data ? (
+        <div className="flex items-center gap-2 text-gray-400 text-xs py-1">
+          <BarChart2 className="w-4 h-4" />
+          <span>Pas encore soumis</span>
+        </div>
+      ) : (
+        <div className="space-y-3 mt-1">
+          {/* Score + stats inline */}
+          <div className="flex items-center gap-3">
+            <ScoreCircle percentage={data.percentage} />
+            <div className="min-w-0">
+              <p className="text-sm font-bold text-gray-800 dark:text-gray-100">
+                {data.score ?? "—"} / {data.totalQuestions ?? "—"} bonnes réponses
+              </p>
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                Soumis le {formatDate(data.submittedAt)}
+              </p>
+              <div className="flex flex-wrap gap-1.5 mt-2">
+                {(data.answers ?? []).slice(0, 5).map((a, i) => (
+                  <span
+                    key={i}
+                    className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold border ${a.isCorrect
+                      ? "bg-emerald-50 dark:bg-emerald-950/30 border-emerald-200 dark:border-emerald-700 text-emerald-700 dark:text-emerald-300"
+                      : "bg-red-50 dark:bg-red-950/30 border-red-200 dark:border-red-700 text-red-700 dark:text-red-300"
+                      }`}
+                  >
+                    {a.isCorrect ? <CheckCheck className="w-3 h-3" /> : <CircleX className="w-3 h-3" />}
+                    Q{a.order ?? i + 1}
+                  </span>
+                ))}
+                {(data.answers ?? []).length > 5 && (
+                  <span className="text-[10px] text-gray-400 self-center">
+                    +{data.answers.length - 5} autres
+                  </span>
+                )}
+              </div>
+            </div>
+          </div>
+          {/* ✅ Bouton Voir détails */}
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              router.push(`/ResponsableMetier/list-entretien/${candidatureId}/quiz-result`);
+            }}
+            className="w-full mt-1 px-3 py-2 rounded-full bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-700 text-emerald-700 dark:text-emerald-300 font-semibold text-xs hover:bg-emerald-100 dark:hover:bg-emerald-900/40 transition-colors flex items-center justify-center gap-2"
+          >
+            <Trophy className="w-3.5 h-3.5" />
+            Voir détails
+          </button>
+        </div>
+      )}
+    </DetailCard>
+  );
+}
+
+// ─────────────────────────────────────────────────────────
+//  Carte résultat Fiche de renseignement
+// ─────────────────────────────────────────────────────────
+function FicheResultCard({ candidatureId }) {
+  const router = useRouter();
+  const [data, setData] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (!candidatureId) { setLoading(false); return; }
+    getFicheSubmissionsByCandidature(candidatureId)
+      .then((res) => {
+        const list = Array.isArray(res) ? res : (res?.data ?? []);
+        const submitted = list.find((s) => s.status === "SUBMITTED") ?? list[0] ?? null;
+        setData(submitted);
+      })
+      .catch(() => setData(null))
+      .finally(() => setLoading(false));
+  }, [candidatureId]);
+
+  return (
+    <DetailCard label="Fiche de renseignement">
+      {loading ? (
+        <div className="flex items-center gap-2 text-gray-400 text-xs py-1">
+          <Loader2 className="w-4 h-4 animate-spin" />
+          Chargement…
+        </div>
+      ) : !data ? (
+        <div className="flex items-center gap-2 text-gray-400 text-xs py-1">
+          <ClipboardList className="w-4 h-4" />
+          <span>Non remplie</span>
+        </div>
+      ) : (
+        <div className="space-y-2 mt-1">
+          {/* Statut badge */}
+          <div className="flex items-center gap-2">
+            <span
+              className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold border ${data.status === "SUBMITTED"
+                ? "bg-emerald-50 dark:bg-emerald-950/30 border-emerald-200 dark:border-emerald-700 text-emerald-700 dark:text-emerald-300"
+                : "bg-amber-50 dark:bg-amber-950/30 border-amber-200 dark:border-amber-700 text-amber-700 dark:text-amber-300"
+                }`}
+            >
+              {data.status === "SUBMITTED" ? <CheckCircle2 className="w-3 h-3" /> : <Clock3 className="w-3 h-3" />}
+              {data.status === "SUBMITTED" ? "Soumise" : "En cours"}
+            </span>
+            {data.status === "SUBMITTED" && (
+              <span className="text-[11px] text-gray-400 dark:text-gray-500">
+                {formatDate(data.finishedAt)}
+              </span>
+            )}
+          </div>
+
+
+          {/* ✅ Bouton Voir détails */}
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              router.push(`/ResponsableMetier/list-entretien/${candidatureId}/fiche-result`);
+            }}
+            className="w-full mt-1 px-3 py-2 rounded-full bg-violet-50 dark:bg-violet-950/30 border border-violet-200 dark:border-violet-700 text-violet-700 dark:text-violet-300 font-semibold text-xs hover:bg-violet-100 dark:hover:bg-violet-900/40 transition-colors flex items-center justify-center gap-2"
+          >
+            <ClipboardList className="w-3.5 h-3.5" />
+            Voir détails
+          </button>
+        </div>
+      )}
+    </DetailCard>
   );
 }
 
@@ -242,7 +433,6 @@ export default function ResponsableMetierInterviewList() {
   const LIMIT = 10;
   const debounceRef = useRef(null);
 
-  // Debounce search
   useEffect(() => {
     clearTimeout(debounceRef.current);
     debounceRef.current = setTimeout(() => {
@@ -256,7 +446,6 @@ export default function ResponsableMetierInterviewList() {
     setPage(1);
   }, [statusFilter]);
 
-  // ── Fetch entretiens ──
   const fetchInterviews = useCallback(async () => {
     setLoading(true);
     setError(null);
@@ -267,8 +456,7 @@ export default function ResponsableMetierInterviewList() {
         status: statusFilter,
         search: debouncedSearch.trim(),
       });
-      // ✅ FILTRER: Uniquement les entretiens RH+Tech
-      const filteredInterviews = (data.interviews || []).filter(iv =>
+      const filteredInterviews = (data.interviews || []).filter((iv) =>
         isRHTechInterview(iv.interviewType)
       );
       setInterviews(filteredInterviews);
@@ -281,7 +469,6 @@ export default function ResponsableMetierInterviewList() {
     }
   }, [page, statusFilter, debouncedSearch]);
 
-  // ── Fetch stats ──
   const fetchStats = useCallback(async () => {
     setStatsLoading(true);
     try {
@@ -294,17 +481,9 @@ export default function ResponsableMetierInterviewList() {
     }
   }, []);
 
-  useEffect(() => {
-    fetchInterviews();
-  }, [fetchInterviews]);
+  useEffect(() => { fetchInterviews(); }, [fetchInterviews]);
+  useEffect(() => { fetchStats(); }, [fetchStats]);
 
-  useEffect(() => {
-    fetchStats();
-  }, [fetchStats]);
-
-  // ─────────────────────────────────────────────────────────
-  //  RENDER
-  // ─────────────────────────────────────────────────────────
   return (
     <div className="min-h-screen bg-[#F0FAF0] dark:bg-gray-950 text-gray-900 dark:text-gray-100 transition-colors duration-300">
       <div className="max-w-full mx-auto px-4 sm:px-6 pt-6 sm:pt-10 pb-16">
@@ -321,13 +500,13 @@ export default function ResponsableMetierInterviewList() {
           </div>
         </div>
 
-        {/* ── Alerte entretiens en attente ── */}
+        {/* ── Alerte ── */}
         <PendingAlert
           count={stats?.PENDING_CONFIRMATION ?? 0}
           onClick={() => setStatusFilter("PENDING_CONFIRMATION")}
         />
 
-        {/* ── Barre de recherche ── */}
+        {/* ── Recherche ── */}
         <div className="bg-white dark:bg-gray-800 rounded-full shadow-sm border border-gray-100 dark:border-gray-700 px-4 sm:px-5 py-3 flex items-center gap-3 mb-6 transition-colors duration-300">
           <Search className="w-5 h-5 text-[#4E8F2F] dark:text-emerald-400 flex-shrink-0" />
           <input
@@ -371,7 +550,7 @@ export default function ResponsableMetierInterviewList() {
           </div>
         </div>
 
-        {/* ── État : chargement ── */}
+        {/* ── Chargement ── */}
         {loading && (
           <div className="bg-white dark:bg-gray-800 rounded-2xl sm:rounded-3xl shadow-lg border border-gray-200 dark:border-gray-700 p-6 sm:p-8 md:p-12 text-center transition-colors">
             <div className="flex flex-col items-center justify-center gap-4">
@@ -383,7 +562,7 @@ export default function ResponsableMetierInterviewList() {
           </div>
         )}
 
-        {/* ── État : erreur ── */}
+        {/* ── Erreur ── */}
         {!loading && error && (
           <div className="bg-white dark:bg-gray-800 rounded-2xl sm:rounded-3xl shadow-lg border border-gray-200 dark:border-gray-700 p-6 sm:p-8 md:p-12 text-center transition-colors">
             <div className="flex flex-col items-center justify-center gap-4">
@@ -402,7 +581,7 @@ export default function ResponsableMetierInterviewList() {
           </div>
         )}
 
-        {/* ── État : liste vide ── */}
+        {/* ── Liste vide ── */}
         {!loading && !error && interviews.length === 0 && (
           <div className="bg-white dark:bg-gray-800 rounded-2xl sm:rounded-3xl shadow-lg border border-gray-200 dark:border-gray-700 p-6 sm:p-8 md:p-12 text-center transition-colors">
             <div className="flex flex-col items-center justify-center gap-4">
@@ -421,17 +600,18 @@ export default function ResponsableMetierInterviewList() {
           </div>
         )}
 
-        {/* ── Tableau responsive ── */}
+        {/* ── Tableau ── */}
         {!loading && !error && interviews.length > 0 && (
           <div className="bg-white dark:bg-gray-800 rounded-2xl sm:rounded-3xl shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden transition-colors">
             <div className="overflow-x-auto">
               <table className="w-full text-sm min-w-[1180px]">
                 <thead className="bg-[#E9F5E3] dark:bg-gray-700 text-[#4E8F2F] dark:text-emerald-400">
-                  <tr >
+                  <tr>
                     {["Candidat", "Poste", "Type", "Date & heure", "Statut", ""].map((h) => (
                       <th
                         key={h}
-                        className="text-left px-6 lg:px-8 py-5 font-extrabold uppercase text-xs tracking-wider"                      >
+                        className="text-left px-6 lg:px-8 py-5 font-extrabold uppercase text-xs tracking-wider"
+                      >
                         {h}
                       </th>
                     ))}
@@ -445,25 +625,17 @@ export default function ResponsableMetierInterviewList() {
                     const typeCfg = TYPE_CONFIG[iv.interviewType] || TYPE_CONFIG.RH;
                     const isCancelled = iv.status === "CANCELLED";
 
-                    // ✅ CORRECTION: Fallback sur proposedStart/proposedEnd
-                    const displayDate = iv.confirmedDate || iv.proposedDate || iv.proposedStart;
+                    const displayDate = iv.confirmedDate || iv.proposedDate
+                      || iv.date || iv.scheduledDate || iv.slotDate || iv.createdAt;
                     const displayTime = iv.confirmedDate
                       ? iv.confirmedTime
-                      : (iv.proposedTime || (iv.proposedStart
-                        ? new Date(iv.proposedStart).toLocaleTimeString("fr-FR", {
-                          hour: "2-digit",
-                          minute: "2-digit"
-                        })
-                        : null));
+                      : iv.proposedTime || iv.time || iv.slotTime;
 
                     return (
                       <React.Fragment key={iv._id}>
                         <tr
-                          onClick={() =>
-                            setExpandedRow(isExpanded ? null : iv._id)
-                          }
-                          className={`hover:bg-green-50/40 dark:hover:bg-gray-700/40 transition-colors cursor-pointer ${
-                            isExpanded ? "bg-green-50/30 dark:bg-gray-700/30" : ""
+                          onClick={() => setExpandedRow(isExpanded ? null : iv._id)}
+                          className={`hover:bg-green-50/40 dark:hover:bg-gray-700/40 transition-colors cursor-pointer ${isExpanded ? "bg-green-50/30 dark:bg-gray-700/30" : ""
                             } ${isCancelled ? "opacity-60" : ""}`}
                         >
                           {/* Candidat */}
@@ -491,7 +663,7 @@ export default function ResponsableMetierInterviewList() {
                             </span>
                           </td>
 
-                          {/* Type d'entretien */}
+                          {/* Type */}
                           <td className="px-3 sm:px-4 md:px-6 lg:px-8 py-3 sm:py-5">
                             <Badge
                               label={typeCfg.label}
@@ -499,7 +671,7 @@ export default function ResponsableMetierInterviewList() {
                             />
                           </td>
 
-                          {/* Date & heure — ✅ AFFICHAGE CORRIGÉ */}
+                          {/* Date & heure */}
                           <td className="px-3 sm:px-4 md:px-6 lg:px-8 py-3 sm:py-5">
                             <div className="flex flex-col gap-1">
                               <span className="flex items-center gap-2 text-gray-800 dark:text-gray-200 font-semibold text-xs sm:text-sm">
@@ -515,9 +687,7 @@ export default function ResponsableMetierInterviewList() {
                               {iv.status === "CANDIDATE_REQUESTED_RESCHEDULE" && (
                                 <div className="flex items-center gap-1 text-orange-600 dark:text-orange-400 text-xs ml-5 sm:ml-6 font-semibold">
                                   <AlertTriangle className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
-                                  <span>
-                                    {formatDate(iv.candidateProposedDate)}
-                                  </span>
+                                  <span>{formatDate(iv.candidateProposedDate)}</span>
                                 </div>
                               )}
                             </div>
@@ -548,10 +718,10 @@ export default function ResponsableMetierInterviewList() {
                               colSpan={6}
                               className="px-3 sm:px-4 md:px-6 lg:px-8 pb-4 sm:pb-6 bg-green-50/20 dark:bg-gray-900/20"
                             >
-                              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3 sm:gap-4 pt-4">
+                              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-3 sm:gap-4 pt-4">
+
                                 {/* Poste */}
                                 <DetailCard label="Poste" value={iv.jobTitle} />
-
 
                                 {iv.status === "CANDIDATE_REQUESTED_RESCHEDULE" && (
                                   <>
@@ -573,7 +743,7 @@ export default function ResponsableMetierInterviewList() {
                                   />
                                 )}
 
-                                {/* ✅ NOUVELLE CARTE: Fiche d'évaluation (bouton) */}
+                                {/* ✅ Fiche d'évaluation (bouton) */}
                                 {isRHTechInterview(iv.interviewType) &&
                                   (iv.status === "CONFIRMED" ||
                                     iv.status === "PENDING_CANDIDATE_CONFIRMATION") && (
@@ -592,12 +762,17 @@ export default function ResponsableMetierInterviewList() {
                                       </button>
                                     </DetailCard>
                                   )}
+
+                                {/* ✅ NEW — Résultat Quiz */}
+                                <QuizResultCard candidatureId={iv.candidatureId} />
+
+                                {/* ✅ NEW — Résultat Fiche de renseignement */}
+                                <FicheResultCard candidatureId={iv.candidatureId} />
+
                               </div>
 
-                              {/* ── Actions (Confirmer / Répondre) ── */}
+                              {/* ── Actions ── */}
                               <div className="mt-4 sm:mt-5 flex flex-col sm:flex-row flex-wrap gap-2 sm:gap-3">
-
-                                {/* Confirmer / Modifier la date */}
                                 {(iv.status === "PENDING_CONFIRMATION" ||
                                   iv.status === "CANDIDATE_REQUESTED_RESCHEDULE") && (
                                     <button
@@ -615,8 +790,6 @@ export default function ResponsableMetierInterviewList() {
                                         : "Confirmer"}
                                     </button>
                                   )}
-
-
                               </div>
                             </td>
                           </tr>

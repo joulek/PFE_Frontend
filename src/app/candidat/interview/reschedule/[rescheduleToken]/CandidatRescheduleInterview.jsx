@@ -53,13 +53,15 @@ export default function CandidatRescheduleInterview({ token }) {
   const [ok, setOk] = useState(false);
   const [submitError, setSubmitError] = useState("");
 
+  const API_BASE = process.env.NEXT_PUBLIC_API_URL || "";
+
   async function loadInfo() {
     setLoading(true);
     setError("");
     setOk(false);
     try {
       const res = await fetch(
-        `/api/calendar/interview/reschedule-info/${token}`
+        `${API_BASE}/api/calendar/interview/reschedule-info/${token}`
       );
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
@@ -86,7 +88,7 @@ export default function CandidatRescheduleInterview({ token }) {
     setSubmitError("");
     setOk(false);
     try {
-      const res = await fetch(`/api/calendar/interview/reschedule/${token}`, {
+      const res = await fetch(`${API_BASE}/api/calendar/interview/reschedule/${token}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

@@ -656,6 +656,9 @@ export default function EvaluationFicheDetailsPage() {
                     <SelectBase value={ficheInterviewType} onChange={(e) => setFicheInterviewType(e.target.value)}>
                       <option value="">-- Sélectionner un type --</option>
                       <option value="Entretien RH">Entretien RH</option>
+                     <option value="Entretien téléphonique">
+                  Entretien téléphonique
+                </option>
                       <option value="Entretien technique">Entretien technique</option>
                       <option value="Entretien RH + technique">Entretien RH + technique</option>
                     </SelectBase>

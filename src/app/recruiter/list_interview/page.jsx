@@ -18,6 +18,10 @@ import {
   FileText,
   X,
   ChevronRight,
+  Phone,
+  Users,
+  Cpu,
+  ArrowLeft,
 } from "lucide-react";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL;
@@ -99,7 +103,9 @@ const STATUS_CONFIG = {
   },
 };
 
+// ✅ FIX: TYPE_CONFIG complet — toutes les variantes possibles couvertes
 const TYPE_CONFIG = {
+  // ── Entretien RH ──
   RH: {
     label: "Entretien RH",
     cls: "text-[#4E8F2F] dark:text-emerald-400 bg-[#E9F5E3] dark:bg-gray-700 border-[#d7ebcf] dark:border-gray-600",
@@ -108,19 +114,85 @@ const TYPE_CONFIG = {
     label: "Entretien RH",
     cls: "text-[#4E8F2F] dark:text-emerald-400 bg-[#E9F5E3] dark:bg-gray-700 border-[#d7ebcf] dark:border-gray-600",
   },
+
+  // ── Entretien RH + Technique ──
   rh_technique: {
     label: "RH + Tech",
     cls: "text-violet-700 dark:text-violet-300 bg-violet-50 dark:bg-violet-950/30 border-violet-200 dark:border-violet-700",
   },
+  RH_TECHNIQUE: {
+    label: "RH + Tech",
+    cls: "text-violet-700 dark:text-violet-300 bg-violet-50 dark:bg-violet-950/30 border-violet-200 dark:border-violet-700",
+  },
+  rh_tech: {
+    label: "RH + Tech",
+    cls: "text-violet-700 dark:text-violet-300 bg-violet-50 dark:bg-violet-950/30 border-violet-200 dark:border-violet-700",
+  },
+  RH_TECH: {
+    label: "RH + Tech",
+    cls: "text-violet-700 dark:text-violet-300 bg-violet-50 dark:bg-violet-950/30 border-violet-200 dark:border-violet-700",
+  },
+
+  // ── Technique ──
   TECHNIQUE: {
     label: "Technique",
     cls: "text-pink-700 dark:text-pink-300 bg-pink-50 dark:bg-pink-950/30 border-pink-200 dark:border-pink-700",
   },
+  technique: {
+    label: "Technique",
+    cls: "text-pink-700 dark:text-pink-300 bg-pink-50 dark:bg-pink-950/30 border-pink-200 dark:border-pink-700",
+  },
+
+  // ── DGA ──
   DGA: {
     label: "DGA",
     cls: "text-rose-700 dark:text-rose-300 bg-rose-50 dark:bg-rose-950/30 border-rose-200 dark:border-rose-700",
   },
+  dga: {
+    label: "DGA",
+    cls: "text-rose-700 dark:text-rose-300 bg-rose-50 dark:bg-rose-950/30 border-rose-200 dark:border-rose-700",
+  },
+
+  // ── Téléphonique ──
+  telephonique: {
+    label: "Téléphonique",
+    cls: "text-sky-700 dark:text-sky-300 bg-sky-50 dark:bg-sky-950/30 border-sky-200 dark:border-sky-700",
+  },
+  TELEPHONIQUE: {
+    label: "Téléphonique",
+    cls: "text-sky-700 dark:text-sky-300 bg-sky-50 dark:bg-sky-950/30 border-sky-200 dark:border-sky-700",
+  },
+  tel: {
+    label: "Téléphonique",
+    cls: "text-sky-700 dark:text-sky-300 bg-sky-50 dark:bg-sky-950/30 border-sky-200 dark:border-sky-700",
+  },
+  TEL: {
+    label: "Téléphonique",
+    cls: "text-sky-700 dark:text-sky-300 bg-sky-50 dark:bg-sky-950/30 border-sky-200 dark:border-sky-700",
+  },
 };
+
+// ✅ FIX: Fonction de résolution robuste du type (insensible à la casse)
+function isRHPlusTechInterviewFE(type) {
+  if (!type) return false;
+  const n = String(type).toLowerCase().trim();
+  return n.includes("rh") && (n.includes("tech") || n.includes("technique"));
+}
+
+function resolveTypeConfig(interviewType) {
+  if (!interviewType) return TYPE_CONFIG.RH;
+  // Chercher d'abord la clé exacte
+  if (TYPE_CONFIG[interviewType]) return TYPE_CONFIG[interviewType];
+  // Sinon chercher en majuscules
+  if (TYPE_CONFIG[interviewType.toUpperCase()]) return TYPE_CONFIG[interviewType.toUpperCase()];
+  // Sinon chercher en minuscules
+  if (TYPE_CONFIG[interviewType.toLowerCase()]) return TYPE_CONFIG[interviewType.toLowerCase()];
+  // Fallback par défaut
+  return {
+    label: interviewType,
+    cls: "text-gray-700 dark:text-gray-300 bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700",
+  };
+}
 
 function formatDate(d) {
   if (!d) return "—";
@@ -195,6 +267,231 @@ function DetailCard({ label, value, children }) {
           {value || "—"}
         </div>
       )}
+    </div>
+  );
+}
+
+/* ══════════════════════════════════════════════════════════════
+ *  MODAL — Planifier un entretien
+ * ══════════════════════════════════════════════════════════════ */
+function PlanifierModal({ open, onClose, onCreated }) {
+  const router = useRouter();
+  const [step, setStep] = useState("type");
+  const [note, setNote] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [done, setDone] = useState(false);
+  const [candidatureId, setCandidatureId] = useState("");
+  const [jobOfferId, setJobOfferId] = useState("");
+
+  useEffect(() => {
+    if (open) {
+      setStep("type");
+      setNote("");
+      setSaving(false);
+      setDone(false);
+      setCandidatureId("");
+      setJobOfferId("");
+    }
+  }, [open]);
+
+  if (!open) return null;
+
+  const today = new Date().toLocaleDateString("fr-FR", {
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  });
+
+  const isPhoneValid = note.trim() && candidatureId.trim() && jobOfferId.trim();
+
+  async function handleValider() {
+    if (!isPhoneValid) return;
+    setSaving(true);
+    try {
+      await apiFetch("/api/interviews/schedule", {
+        method: "POST",
+        body: JSON.stringify({
+          candidatureId: candidatureId.trim(),
+          jobOfferId: jobOfferId.trim(),
+          proposedDate: new Date().toISOString(),
+          proposedTime: new Date().toLocaleTimeString("fr-FR", {
+            hour: "2-digit",
+            minute: "2-digit",
+          }),
+          // ✅ FIX: interviewType explicitement envoyé
+          interviewType: "telephonique",
+          notes: note.trim(),
+        }),
+      });
+      setDone(true);
+      if (onCreated) onCreated();
+    } catch (err) {
+      alert("Erreur : " + (err.message || "Impossible de créer l'entretien"));
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  const TYPES = [
+    {
+      key: "telephonique",
+      label: "Entretien Téléphonique",
+      sub: "Note et suivi après appel",
+      icon: <Phone className="w-5 h-5 text-white" />,
+      action: () => setStep("tel"),
+    },
+    {
+      key: "rh",
+      label: "Entretien RH",
+      sub: "Planifier + email candidat",
+      icon: <Users className="w-5 h-5 text-white" />,
+      action: () => { onClose(); router.push("/recruiter/schedule_interview?type=rh"); },
+    },
+    {
+      key: "rh_technique",
+      label: "Entretien RH + Technique",
+      sub: "Créneaux libres communs",
+      icon: <Cpu className="w-5 h-5 text-white" />,
+      action: () => { onClose(); router.push("/recruiter/schedule_interview?type=rh_technique"); },
+    },
+  ];
+
+  return (
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+      <div className="absolute inset-0 bg-black/50 backdrop-blur-[2px]" onClick={onClose} />
+
+      <div className="relative w-full max-w-md rounded-3xl bg-[#f8fef5] dark:bg-gray-900 border border-gray-100 dark:border-gray-700 shadow-2xl overflow-hidden">
+
+        <div className="flex items-center justify-between px-6 pt-6 pb-1">
+          <div>
+            <h2 className="text-xl font-extrabold text-gray-900 dark:text-white">
+              Planifier un entretien
+            </h2>
+          </div>
+          <button
+            onClick={onClose}
+            className="w-9 h-9 rounded-full border border-gray-200 dark:border-gray-700 flex items-center justify-center text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+
+        <div className="px-6 pb-6 pt-4">
+
+          {step === "type" && (
+            <div className="flex flex-col gap-3">
+              {TYPES.map((t) => (
+                <button
+                  key={t.key}
+                  onClick={t.action}
+                  className="flex items-center gap-4 p-4 rounded-2xl bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 hover:border-[#6CB33F] hover:shadow-sm transition-all text-left group"
+                >
+                  <div className="w-11 h-11 rounded-2xl bg-[#6CB33F] flex items-center justify-center flex-shrink-0 shadow-sm">
+                    {t.icon}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="font-bold text-gray-900 dark:text-white text-sm">{t.label}</div>
+                    <div className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">{t.sub}</div>
+                  </div>
+                  <ChevronRight className="w-4 h-4 text-gray-300 group-hover:text-[#6CB33F] flex-shrink-0 transition-colors" />
+                </button>
+              ))}
+            </div>
+          )}
+
+          {step === "tel" && !done && (
+            <div className="flex flex-col gap-4">
+              <button
+                onClick={() => setStep("type")}
+                className="flex items-center gap-1.5 text-sm text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition-colors w-fit"
+              >
+                <ArrowLeft className="w-4 h-4" />
+                Retour
+              </button>
+
+              <div className="flex items-center gap-3 p-3 rounded-2xl bg-white dark:bg-gray-800 border border-sky-100 dark:border-gray-700">
+                <div className="w-10 h-10 rounded-xl bg-[#6CB33F] flex items-center justify-center flex-shrink-0">
+                  <Phone className="w-5 h-5 text-white" />
+                </div>
+                <div>
+                  <div className="font-bold text-gray-900 dark:text-white text-sm">Entretien Téléphonique</div>
+                  <div className="text-xs text-gray-400">{today}</div>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1.5 uppercase tracking-wider">
+                  ID Candidature <span className="text-red-400">*</span>
+                </label>
+                <input
+                  value={candidatureId}
+                  onChange={(e) => setCandidatureId(e.target.value)}
+                  placeholder="Ex: 664f1a2b3c4d5e6f7a8b9c0d"
+                  className="w-full rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 placeholder-gray-400 px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-[#6CB33F]/20 focus:border-[#6CB33F] transition-colors"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1.5 uppercase tracking-wider">
+                  ID Offre d'emploi <span className="text-red-400">*</span>
+                </label>
+                <input
+                  value={jobOfferId}
+                  onChange={(e) => setJobOfferId(e.target.value)}
+                  placeholder="Ex: 664f1a2b3c4d5e6f7a8b9c0e"
+                  className="w-full rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 placeholder-gray-400 px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-[#6CB33F]/20 focus:border-[#6CB33F] transition-colors"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1.5 uppercase tracking-wider">
+                  Note après l'appel <span className="text-red-400">*</span>
+                </label>
+                <textarea
+                  value={note}
+                  onChange={(e) => setNote(e.target.value)}
+                  rows={4}
+                  placeholder="Ajouter une note après l'entretien téléphonique..."
+                  className="w-full rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 placeholder-gray-400 px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-[#6CB33F]/20 focus:border-[#6CB33F] transition-colors resize-none"
+                />
+              </div>
+
+              <button
+                onClick={handleValider}
+                disabled={saving || !isPhoneValid}
+                className="w-full py-3 rounded-2xl bg-[#6CB33F] hover:bg-[#4E8F2F] disabled:opacity-40 disabled:cursor-not-allowed text-white font-bold text-sm flex items-center justify-center gap-2 transition-colors"
+              >
+                {saving ? (
+                  <><span className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />Enregistrement...</>
+                ) : (
+                  <><CheckCircle2 className="w-4 h-4" />Valider l'entretien téléphonique</>
+                )}
+              </button>
+            </div>
+          )}
+
+          {step === "tel" && done && (
+            <div className="flex flex-col items-center gap-4 py-4">
+              <div className="w-16 h-16 rounded-full bg-emerald-50 dark:bg-emerald-950/30 flex items-center justify-center">
+                <CheckCircle2 className="w-8 h-8 text-emerald-500" />
+              </div>
+              <div className="text-center">
+                <p className="font-extrabold text-gray-900 dark:text-white text-lg">Entretien créé !</p>
+                <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                  L'entretien téléphonique est enregistré avec le statut <strong>Confirmé</strong>.
+                </p>
+              </div>
+              <button
+                onClick={onClose}
+                className="px-6 py-2.5 rounded-full bg-[#6CB33F] hover:bg-[#4E8F2F] text-white font-semibold text-sm transition-colors"
+              >
+                Fermer
+              </button>
+            </div>
+          )}
+
+        </div>
+      </div>
     </div>
   );
 }
@@ -297,6 +594,8 @@ export default function AdminInterviewList() {
   const [cancelModalOpen, setCancelModalOpen] = useState(false);
   const [cancelInterviewId, setCancelInterviewId] = useState(null);
   const [cancelReason, setCancelReason] = useState("");
+
+  const [planifierOpen, setPlanifierOpen] = useState(false);
 
   const LIMIT = 10;
   const debounceRef = useRef(null);
@@ -436,6 +735,15 @@ export default function AdminInterviewList() {
 
   return (
     <div className="min-h-screen bg-[#F0FAF0] dark:bg-gray-950 text-gray-900 dark:text-gray-100 transition-colors duration-300">
+      <PlanifierModal
+        open={planifierOpen}
+        onClose={() => setPlanifierOpen(false)}
+        onCreated={async () => {
+          await fetchInterviews();
+          await fetchStats();
+        }}
+      />
+
       <CancelInterviewModal
         open={cancelModalOpen}
         onClose={closeCancelModal}
@@ -458,7 +766,7 @@ export default function AdminInterviewList() {
 
           <div className="flex items-center gap-3 flex-wrap">
             <button
-              onClick={() => router.push("/recruiter/schedule_interview")}
+              onClick={() => setPlanifierOpen(true)}
               className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-[#6CB33F] hover:bg-[#4E8F2F] dark:bg-emerald-600 dark:hover:bg-emerald-500 text-white font-semibold transition-colors"
             >
               <Plus className="w-4 h-4" />
@@ -592,9 +900,25 @@ export default function AdminInterviewList() {
                 </thead>
 
                 <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
-                  {interviews.map((iv) => {
+                  {(() => {
+                    // ✅ Grouper par candidat + poste
+                    const grouped = [];
+                    const seen = new Map();
+                    for (const iv of interviews) {
+                      const key = `${iv.candidateEmail}__${iv.jobTitle || ""}`;
+                      if (seen.has(key)) {
+                        seen.get(key).siblings.push(iv);
+                      } else {
+                        const group = { ...iv, siblings: [] };
+                        seen.set(key, group);
+                        grouped.push(group);
+                      }
+                    }
+                    return grouped.map((iv) => {
+                    const allIvs = [iv, ...iv.siblings];
                     const sc = STATUS_CONFIG[iv.status] || {};
-                    const tc = TYPE_CONFIG[iv.interviewType] || TYPE_CONFIG.RH;
+                    // ✅ FIX: utiliser resolveTypeConfig au lieu d'accès direct
+                    const tc = resolveTypeConfig(iv.interviewType);
                     const dgaNote = getDGANote(iv);
                     const score = dgaNote
                       ? dgaNote.evaluationGlobale ?? dgaNote.score ?? null
@@ -644,8 +968,13 @@ export default function AdminInterviewList() {
                           </td>
 
                           <td className="px-6 lg:px-8 py-5">
-                            <div className="flex flex-col gap-2">
-                              <Badge label={tc.label} className={tc.cls} />
+                            <div className="flex flex-col gap-1">
+                              {allIvs.map((siv) => {
+                                const stc = resolveTypeConfig(siv.interviewType);
+                                return (
+                                  <Badge key={siv._id} label={stc.label} className={stc.cls} />
+                                );
+                              })}
                               {hasDGA && !isCancelled && (
                                 <span className="text-[11px] font-semibold text-rose-600 dark:text-rose-300">
                                   + Note DGA
@@ -720,24 +1049,16 @@ export default function AdminInterviewList() {
                               colSpan={7}
                               className="px-6 lg:px-8 pb-6 bg-green-50/20 dark:bg-gray-900/20"
                             >
-                              {/* ✅ GRILLE DETAIL CARDS */}
                               <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 pt-4">
-                                {/* Poste */}
                                 <DetailCard label="Poste" value={iv.jobTitle || "—"} />
-
-                                {/* Responsable */}
-                                <DetailCard
-                                  label="Responsable"
-                                  value={iv.assignedUserEmail || "—"}
-                                />
-
-                                {/* ✅ CARTE: Date et Heure (NOUVELLE) */}
+                                {allIvs.some(siv => isRHPlusTechInterviewFE(siv.interviewType)) && (
+                                  <DetailCard label="Responsable" value={iv.assignedUserEmail || "—"} />
+                                )}
                                 <DetailCard
                                   label="Date et Heure"
                                   value={`${formatDate(displayDate)} • ${displayTime || "—"}`}
                                 />
 
-                                {/* Raison report */}
                                 {iv.status === "CANDIDATE_REQUESTED_RESCHEDULE" && (
                                   <DetailCard
                                     label="Raison report"
@@ -745,7 +1066,6 @@ export default function AdminInterviewList() {
                                   />
                                 )}
 
-                                {/* Nouvelle date proposée */}
                                 {iv.status === "PENDING_ADMIN_APPROVAL" && (
                                   <DetailCard
                                     label="Nouvelle date proposée"
@@ -753,36 +1073,33 @@ export default function AdminInterviewList() {
                                   />
                                 )}
 
-                                {/* ✅ CARTE: Fiche d'évaluation */}
-                                {(iv.status === "CONFIRMED" || iv.status === "PENDING_CANDIDATE_CONFIRMATION") && (
+                                {allIvs.some(siv => siv.status === "CONFIRMED" || siv.status === "PENDING_CANDIDATE_CONFIRMATION") && (
                                   <DetailCard label="Évaluation">
-                                    <button
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        router.push(`/recruiter/interviews/${iv._id}/evaluation`);
-                                      }}
-                                      className="w-full px-4 py-2.5 rounded-full bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-700 text-blue-700 dark:text-blue-300 font-semibold text-sm hover:bg-blue-100 dark:hover:bg-blue-900/40 transition-colors flex items-center justify-center gap-2"
-                                    >
-                                      <FileText className="w-4 h-4" />
-                                      Fiche d'évaluation
-                                    </button>
+                                    <div className="flex flex-col gap-2">
+                                      {allIvs
+                                        .filter(siv => siv.status === "CONFIRMED" || siv.status === "PENDING_CANDIDATE_CONFIRMATION")
+                                        .map((siv) => {
+                                          const stc = resolveTypeConfig(siv.interviewType);
+                                          return (
+                                            <button
+                                              key={siv._id}
+                                              onClick={(e) => {
+                                                e.stopPropagation();
+                                                router.push(`/recruiter/interviews/${siv._id}/evaluation`);
+                                              }}
+                                              className="w-full px-4 py-2.5 rounded-full bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-700 text-blue-700 dark:text-blue-300 font-semibold text-sm hover:bg-blue-100 dark:hover:bg-blue-900/40 transition-colors flex items-center justify-center gap-2"
+                                            >
+                                              <FileText className="w-4 h-4" />
+                                              {stc.label}
+                                            </button>
+                                          );
+                                        })}
+                                    </div>
                                   </DetailCard>
                                 )}
 
-                                {/* ✅ CARTE: Actions (Annuler) */}
-                                {!isCancelled && (
-                                  <DetailCard label="Actions">
-                                    <button
-                                      disabled={!!isActioning}
-                                      onClick={(e) => openCancelModal(iv._id, e)}
-                                      className="w-full px-4 py-2.5 rounded-full bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-700 text-red-700 dark:text-red-300 font-semibold text-sm hover:bg-red-100 dark:hover:bg-red-900/40 transition-colors disabled:opacity-50"
-                                    >
-                                      Annuler l'entretien
-                                    </button>
-                                  </DetailCard>
-                                )}
 
-                                {/* ✅ CARTE: Approuver/Rejeter (si PENDING_ADMIN_APPROVAL) */}
+
                                 {iv.status === "PENDING_ADMIN_APPROVAL" && (
                                   <>
                                     <DetailCard label="Approbation">
@@ -812,7 +1129,8 @@ export default function AdminInterviewList() {
                         )}
                       </React.Fragment>
                     );
-                  })}
+                    });
+                  })()}
                 </tbody>
               </table>
             </div>
