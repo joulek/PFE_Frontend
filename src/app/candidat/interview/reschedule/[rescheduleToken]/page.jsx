@@ -1,6 +1,7 @@
-// app/candidat/reschedule-interview/[token]/page.jsx
-import CandidatRescheduleRhTechInterview from "./CandidatRescheduleInterview";
+// ✅ CHEMIN CORRECT : app/candidat/interview/reschedule/[rescheduleToken]/page.jsx
+import CandidatRescheduleRhTechInterview from "./Candidatreschedulerhtechinterview";
+
 export default async function Page({ params }) {
-  const { token } = await params;
-  return <CandidatRescheduleRhTechInterview token={token} />;
+  const { rescheduleToken } = await params;
+  return <CandidatRescheduleRhTechInterview token={rescheduleToken} />;
 }

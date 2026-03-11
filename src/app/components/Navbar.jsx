@@ -295,6 +295,9 @@ export default function Navbar() {
   const [openCandidatures, setOpenCandidatures] = useState(false);
   const [openAdmin, setOpenAdmin] = useState(false);
   const [openFormulaires, setOpenFormulaires] = useState(false);
+  const [openNordCandidatures, setOpenNordCandidatures] = useState(false);
+  const [openNordRecrutement, setOpenNordRecrutement] = useState(false);
+  const [openNordEntretiens, setOpenNordEntretiens] = useState(false);
 
   // ✅ Notifications state
   const [notifications, setNotifications] = useState([]);
@@ -327,6 +330,9 @@ export default function Navbar() {
     setOpenCandidatures(false);
     setOpenAdmin(false);
     setOpenFormulaires(false);
+    setOpenNordCandidatures(false);
+    setOpenNordRecrutement(false);
+    setOpenNordEntretiens(false);
     setOpenNotif(false);
   }, [pathname]);
 
@@ -403,9 +409,11 @@ export default function Navbar() {
   }, []);
 
   const isActive = (path) => pathname === path;
-  const isAdmin              = user?.role === "ADMIN";
-  const isAssistanteRH       = user?.role === "ASSISTANTE_RH";
+  const isAdmin               = user?.role === "ADMIN";
+  const isAssistanteRH        = user?.role === "ASSISTANTE_RH";
   const isAssistanceDirection = user?.role === "ASSISTANCE_DIRECTION";
+  const isResponsableRHOPTYLAB   = user?.role === "RESPONSABLE_RH_OPTYLAB";
+  const isResponsableRHNORD = user?.role === "RESPONSABLE_RH_NORD";
 
   const isInCandidaturesRM =
     pathname.startsWith("/ResponsableMetier/candidatures") ||
@@ -423,6 +431,15 @@ export default function Navbar() {
   const isInFormulaires =
     pathname.startsWith("/recruiter/fiche-renseignement") ||
     pathname.startsWith("/recruiter/QuizTechnique");
+
+  const isInNordCandidatures =
+    pathname.startsWith("/Responsable_RH_Nord/candidatures");
+  const isInNordRecrutement =
+    pathname.startsWith("/Responsable_RH_Nord/quiz") ||
+    pathname.startsWith("/Responsable_RH_Nord/job");
+  const isInNordEntretiens =
+    pathname.startsWith("/Responsable_RH_Nord/list-entretien") ||
+    pathname.startsWith("/Responsable_RH_Nord/fiche_renseignement");
 
   async function handleLogout() {
     try { await logout(); } catch { }
@@ -487,7 +504,7 @@ export default function Navbar() {
             {/* DESKTOP MENU */}
             <div className="hidden md:flex items-center bg-[#F4F7F5] dark:bg-gray-800/60 rounded-full p-1 gap-1 transition-colors duration-200">
               {/* ── RESPONSABLE METIER ── */}
-              {!isAdmin && !isAssistanteRH && !isAssistanceDirection && (
+              {!isAdmin && !isAssistanteRH && !isAssistanceDirection && !isResponsableRHOPTYLAB && !isResponsableRHNORD && (
                 <>
                  <Link href="/jobs" className={`${linkBase} ${isActive("/jobs") ? activeLink : inactiveLink}`}>
                     Offres d'emploi
@@ -562,6 +579,98 @@ export default function Navbar() {
                 </>
               )}
 
+              {/* ── RESPONSABLE RH NORD ── */}
+              {isResponsableRHOPTYLAB && (
+                <>
+                  <Link href="/RESPONSABLE_RH_OPTYLAB/candidats" className={`${linkBase} ${isActive("/RESPONSABLE_RH_OPTYLAB/candidats") ? activeLink : inactiveLink}`}>
+                    Liste candidats
+                  </Link>
+                  <Link href="/calendar" className={`${linkBase} ${isActive("/calendar") ? activeLink : inactiveLink}`}>
+                    Mon calendrier
+                  </Link>
+                   <Link href="/RESPONSABLE_RH_OPTYLAB/entretiens-confirmes" className={`${linkBase} ${isActive("/RESPONSABLE_RH_OPTYLAB/entretiens-confirmes") ? activeLink : inactiveLink}`}>
+                    Entretiens confirmés
+                  </Link>
+                 
+                   <Link href="/RESPONSABLE_RH_OPTYLAB/fiche_renseignement" className={`${linkBase} ${isActive("/RESPONSABLE_RH_OPTYLAB/fiche_renseignement") ? activeLink : inactiveLink}`}>
+                    Fiche renseignements
+                  </Link>
+                </>
+              )}
+
+
+              {/* ── RESPONSABLE RH NORD ── */}
+              {isResponsableRHNORD && (
+                <>
+                  {/* Candidatures dropdown */}
+                  <div className="relative">
+                    <button
+                      onClick={() => { setOpenNordCandidatures((v) => !v); setOpenNordRecrutement(false); setOpenNordEntretiens(false); setOpenNotif(false); }}
+                      className={`${linkBase} ${isInNordCandidatures ? activeLink : inactiveLink}`}
+                    >
+                      Candidatures ▾
+                    </button>
+                    {openNordCandidatures && (
+                      <div className={`${dropdownBase} ${dropdownLight} ${dropdownDark}`}>
+                        <Link href="/Responsable_RH_Nord/candidatures" className={`${dropdownItemBase} ${isActive("/Responsable_RH_Nord/candidatures") ? dropdownActive : dropdownHover}`}>
+                          Liste candidatures
+                        </Link>
+                        <Link href="/Responsable_RH_Nord/candidatures_Analysis" className={`${dropdownItemBase} ${isActive("/Responsable_RH_Nord/candidatures_Analysis") ? dropdownActive : dropdownHover}`}>
+                          Analyse des candidatures
+                        </Link>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Recrutement dropdown */}
+                  <div className="relative">
+                    <button
+                      onClick={() => { setOpenNordRecrutement((v) => !v); setOpenNordCandidatures(false); setOpenNordEntretiens(false); setOpenNotif(false); }}
+                      className={`${linkBase} ${isInNordRecrutement ? activeLink : inactiveLink}`}
+                    >
+                      Recrutement ▾
+                    </button>
+                    {openNordRecrutement && (
+                      <div className={`${dropdownBase} ${dropdownLight} ${dropdownDark}`}>
+                        <Link href="/Responsable_RH_Nord/quiz" className={`${dropdownItemBase} ${isActive("/Responsable_RH_Nord/quiz") ? dropdownActive : dropdownHover}`}>
+                          Quiz
+                        </Link>
+                        <Link href="/Responsable_RH_Nord/job" className={`${dropdownItemBase} ${isActive("/Responsable_RH_Nord/job") ? dropdownActive : dropdownHover}`}>
+                          Mes offres d&apos;emploi
+                        </Link>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Entretiens dropdown */}
+                  <div className="relative">
+                    <button
+                      onClick={() => { setOpenNordEntretiens((v) => !v); setOpenNordCandidatures(false); setOpenNordRecrutement(false); setOpenNotif(false); }}
+                      className={`${linkBase} ${isInNordEntretiens ? activeLink : inactiveLink}`}
+                    >
+                      Entretiens ▾
+                    </button>
+                    {openNordEntretiens && (
+                      <div className={`${dropdownBase} ${dropdownLight} ${dropdownDark}`}>
+                        <Link href="/Responsable_RH_Nord/list-entretien" className={`${dropdownItemBase} ${isActive("/Responsable_RH_Nord/list-entretien") ? dropdownActive : dropdownHover}`}>
+                          Entretiens confirmés
+                        </Link>
+                          <Link href="/Responsable_RH_Nord/PreInterviewList" className={`${linkBase} ${isActive("/Responsable_RH_Nord/PreInterviewList") ? activeLink : inactiveLink}`}>
+                    Pre interview list 
+                  </Link>
+                        <Link href="/Responsable_RH_Nord/fiche_renseignement" className={`${dropdownItemBase} ${isActive("/Responsable_RH_Nord/fiche_renseignement") ? dropdownActive : dropdownHover}`}>
+                          Fiche renseignements
+                        </Link>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Calendrier lien direct */}
+                  <Link href="/Responsable_RH_Nord/calendar" className={`${linkBase} ${isActive("/Responsable_RH_Nord/calendar") ? activeLink : inactiveLink}`}>
+                    Calendrier
+                  </Link>
+                </>
+              )}
               {isAdmin && (
                 <>
                   <Link href="/recruiter/dashboard" className={`${linkBase} ${isActive("/recruiter/dashboard") ? activeLink : inactiveLink}`}>
@@ -707,7 +816,7 @@ export default function Navbar() {
             <div className="md:hidden pb-5 pt-2">
               <div className="rounded-2xl bg-white/95 dark:bg-gray-900/85 shadow-xl border border-gray-200/70 dark:border-gray-700/60 p-4 space-y-2 backdrop-blur-sm transition-colors duration-200">
                 {/* ── RESPONSABLE METIER ── */}
-                {!isAdmin && !isAssistanteRH && !isAssistanceDirection && (
+                {!isAdmin && !isAssistanteRH && !isAssistanceDirection && !isResponsableRHOPTYLAB && !isResponsableRHNORD && (
                   <>
                     <Link href="/jobs" className={`block px-5 py-3.5 rounded-xl font-medium transition ${isActive("/jobs") ? "bg-[#6CB33F] text-white" : "text-gray-700 dark:text-gray-200 hover:bg-gray-100/70 dark:hover:bg-gray-800/60"}`}>
                       Offres d'emploi
@@ -779,6 +888,82 @@ export default function Navbar() {
                   </>
                 )}
 
+                {/* ── RESPONSABLE RH OPTYLAB ── */}
+                {isResponsableRHOPTYLAB && (
+                  <>
+                    <Link href="/RESPONSABLE_RH_OPTYLAB/candidatures" className={`block px-5 py-3.5 rounded-xl font-medium transition ${isActive("/RESPONSABLE_RH_OPTYLAB/candidatures") ? "bg-[#6CB33F] text-white" : "text-gray-700 dark:text-gray-200 hover:bg-gray-100/70 dark:hover:bg-gray-800/60"}`}>
+                      Liste candidatures
+                    </Link>
+                    <Link href="/calendar" className={`block px-5 py-3.5 rounded-xl font-medium transition ${isActive("/calendar") ? "bg-[#6CB33F] text-white" : "text-gray-700 dark:text-gray-200 hover:bg-gray-100/70 dark:hover:bg-gray-800/60"}`}>
+                      Mon calendrier
+                    </Link>
+                  </>
+                )}
+
+
+                {/* ── RESPONSABLE RH NORD ── */}
+                {isResponsableRHNORD && (
+                  <>
+                    {/* Candidatures */}
+                    <div>
+                      <button onClick={() => setOpenNordCandidatures(!openNordCandidatures)} className={`w-full text-left px-5 py-3.5 rounded-xl font-medium transition flex items-center justify-between ${isInNordCandidatures ? "bg-[#6CB33F] text-white" : "text-gray-700 dark:text-gray-200 hover:bg-gray-100/70 dark:hover:bg-gray-800/60"}`}>
+                        Candidatures
+                        <span className={`transform transition-transform ${openNordCandidatures ? "rotate-180" : ""}`}>▾</span>
+                      </button>
+                      {openNordCandidatures && (
+                        <div className="pl-4 space-y-1 mt-1">
+                          <Link href="/Responsable_RH_Nord/candidatures" className={`block px-5 py-2.5 rounded-lg text-sm transition ${isActive("/Responsable_RH_Nord/candidatures") ? "bg-[#6CB33F]/20 text-[#4E8F2F] font-semibold" : "text-gray-600 dark:text-gray-300 hover:bg-gray-100/70 dark:hover:bg-gray-800/60"}`}>
+                            Liste candidatures
+                          </Link>
+                          <Link href="/Responsable_RH_Nord/candidatures_Analysis" className={`block px-5 py-2.5 rounded-lg text-sm transition ${isActive("/Responsable_RH_Nord/candidatures_Analysis") ? "bg-[#6CB33F]/20 text-[#4E8F2F] font-semibold" : "text-gray-600 dark:text-gray-300 hover:bg-gray-100/70 dark:hover:bg-gray-800/60"}`}>
+                            Analyse des candidatures
+                          </Link>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Recrutement */}
+                    <div>
+                      <button onClick={() => setOpenNordRecrutement(!openNordRecrutement)} className={`w-full text-left px-5 py-3.5 rounded-xl font-medium transition flex items-center justify-between ${isInNordRecrutement ? "bg-[#6CB33F] text-white" : "text-gray-700 dark:text-gray-200 hover:bg-gray-100/70 dark:hover:bg-gray-800/60"}`}>
+                        Recrutement
+                        <span className={`transform transition-transform ${openNordRecrutement ? "rotate-180" : ""}`}>▾</span>
+                      </button>
+                      {openNordRecrutement && (
+                        <div className="pl-4 space-y-1 mt-1">
+                          <Link href="/Responsable_RH_Nord/quiz" className={`block px-5 py-2.5 rounded-lg text-sm transition ${isActive("/Responsable_RH_Nord/quiz") ? "bg-[#6CB33F]/20 text-[#4E8F2F] font-semibold" : "text-gray-600 dark:text-gray-300 hover:bg-gray-100/70 dark:hover:bg-gray-800/60"}`}>
+                            Quiz
+                          </Link>
+                          <Link href="/Responsable_RH_Nord/job" className={`block px-5 py-2.5 rounded-lg text-sm transition ${isActive("/Responsable_RH_Nord/job") ? "bg-[#6CB33F]/20 text-[#4E8F2F] font-semibold" : "text-gray-600 dark:text-gray-300 hover:bg-gray-100/70 dark:hover:bg-gray-800/60"}`}>
+                            Mes offres d&apos;emploi
+                          </Link>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Entretiens */}
+                    <div>
+                      <button onClick={() => setOpenNordEntretiens(!openNordEntretiens)} className={`w-full text-left px-5 py-3.5 rounded-xl font-medium transition flex items-center justify-between ${isInNordEntretiens ? "bg-[#6CB33F] text-white" : "text-gray-700 dark:text-gray-200 hover:bg-gray-100/70 dark:hover:bg-gray-800/60"}`}>
+                        Entretiens
+                        <span className={`transform transition-transform ${openNordEntretiens ? "rotate-180" : ""}`}>▾</span>
+                      </button>
+                      {openNordEntretiens && (
+                        <div className="pl-4 space-y-1 mt-1">
+                          <Link href="/Responsable_RH_Nord/list-entretien" className={`block px-5 py-2.5 rounded-lg text-sm transition ${isActive("/Responsable_RH_Nord/list-entretien") ? "bg-[#6CB33F]/20 text-[#4E8F2F] font-semibold" : "text-gray-600 dark:text-gray-300 hover:bg-gray-100/70 dark:hover:bg-gray-800/60"}`}>
+                            Entretiens confirmés
+                          </Link>
+                          <Link href="/Responsable_RH_Nord/fiche_renseignement" className={`block px-5 py-2.5 rounded-lg text-sm transition ${isActive("/Responsable_RH_Nord/fiche_renseignement") ? "bg-[#6CB33F]/20 text-[#4E8F2F] font-semibold" : "text-gray-600 dark:text-gray-300 hover:bg-gray-100/70 dark:hover:bg-gray-800/60"}`}>
+                            Fiche renseignements
+                          </Link>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Calendrier */}
+                    <Link href="/Responsable_RH_Nord/calendar" className={`block px-5 py-3.5 rounded-xl font-medium transition ${isActive("/Responsable_RH_Nord/calendar") ? "bg-[#6CB33F] text-white" : "text-gray-700 dark:text-gray-200 hover:bg-gray-100/70 dark:hover:bg-gray-800/60"}`}>
+                      Mon calendrier
+                    </Link>
+                  </>
+                )}
                 {isAdmin && (
                   <>
                     <Link href="/recruiter/dashboard" className="block px-5 py-3.5 rounded-xl text-gray-700 dark:text-gray-200 hover:bg-gray-100/70 dark:hover:bg-gray-800/60">Tableau de bord</Link>

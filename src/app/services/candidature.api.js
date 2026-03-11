@@ -17,6 +17,13 @@ export const togglePreInterview = (id) =>
 export const getPreInterviewList = () =>
   api.get("/candidatures/pre-interview");
 
+// ── Pré-entretien NORD (RESPONSABLE_RH_NORD) ──────────────────
+export const togglePreInterviewNord = (id) =>
+  api.patch(`/candidatures/${id}/pre-interview-nord`);
+
+export const getPreInterviewNordList = () =>
+  api.get("/candidatures/pre-interview-nord");
+
 // ── 🆕 Envoyer fiche + quiz ───────────────────────────────────
 export const sendDocuments = (candidatureId, payload) =>
   api.post(`/candidatures/${candidatureId}/send-documents`, payload);

@@ -177,8 +177,33 @@ const MONTHS = [
 
 const HOURS = Array.from({ length: 24 }, (_, i) => i);
 
+/* ================= STATUS CONFIG ================= */
+const STATUS_CFG = {
+  PENDING_CANDIDATE_CONFIRMATION: { label: "En attente",     dot: "#F59E0B", bg: "#FEF3C7", text: "#92400E", border: "#F59E0B" },
+  CANDIDATE_REQUESTED_RESCHEDULE: { label: "Report demandé", dot: "#EF4444", bg: "#FEE2E2", text: "#991B1B", border: "#EF4444" },
+  CONFIRMED:                      { label: "Confirmé",       dot: "#10B981", bg: "#D1FAE5", text: "#065F46", border: "#10B981" },
+  RESCHEDULED:                    { label: "Reprogrammé",    dot: "#3B82F6", bg: "#DBEAFE", text: "#1E3A8A", border: "#3B82F6" },
+  CANCELLED:                      { label: "Annulé",         dot: "#9CA3AF", bg: "#F3F4F6", text: "#6B7280", border: "#9CA3AF" },
+};
+
+const STATUS_CFG_DARK = {
+  PENDING_CANDIDATE_CONFIRMATION: { label: "En attente",     dot: "#F59E0B", bg: "rgba(245,158,11,0.18)", text: "#FCD34D", border: "#F59E0B" },
+  CANDIDATE_REQUESTED_RESCHEDULE: { label: "Report demandé", dot: "#EF4444", bg: "rgba(239,68,68,0.18)",  text: "#FCA5A5", border: "#EF4444" },
+  CONFIRMED:                      { label: "Confirmé",       dot: "#10B981", bg: "rgba(16,185,129,0.18)", text: "#6EE7B7", border: "#10B981" },
+  RESCHEDULED:                    { label: "Reprogrammé",    dot: "#3B82F6", bg: "rgba(59,130,246,0.18)", text: "#BFDBFE", border: "#3B82F6" },
+  CANCELLED:                      { label: "Annulé",         dot: "#9CA3AF", bg: "rgba(156,163,175,0.18)",text: "#9CA3AF", border: "#9CA3AF" },
+};
+
+function getStatusCfg(ev, isDark) {
+  if (ev?.source !== "nord" || !ev?.status) return null;
+  const map = isDark ? STATUS_CFG_DARK : STATUS_CFG;
+  return map[ev.status] || null;
+}
+
 /* ================= EVENT STYLE ================= */
-function eventStyle(ev, T) {
+function eventStyle(ev, T, isDark) {
+  const sc = getStatusCfg(ev, isDark);
+  if (sc) return { background: sc.bg, color: sc.text, borderLeft: `3px solid ${sc.border}` };
   const isGoogle = ev?.source === "google";
   return {
     background: isGoogle ? T.evBg : T.evAltBg,
@@ -949,7 +974,7 @@ const MiniMonth = ({ T, S, currentDate, selectedDate, onChangeMonth, onPickDay }
 };
 
 /* ================= MONTH VIEW ================= */
-const MonthView = ({ T, year, month, events, today, onDayClick, onEventClick }) => {
+const MonthView = ({ T, isDark, year, month, events, today, onDayClick, onEventClick }) => {
   const firstDow = (new Date(year, month, 1).getDay() + 6) % 7;
   const daysInMonth = new Date(year, month + 1, 0).getDate();
   const cells = [];
@@ -1028,7 +1053,9 @@ const MonthView = ({ T, year, month, events, today, onDayClick, onEventClick }) 
                     {d}
                   </div>
 
-                  {dayEvs.slice(0, 3).map((ev, j) => (
+                  {dayEvs.slice(0, 3).map((ev, j) => {
+                    const sc = getStatusCfg(ev, isDark);
+                    return (
                     <div
                       key={j}
                       onClick={(e) => {
@@ -1036,21 +1063,24 @@ const MonthView = ({ T, year, month, events, today, onDayClick, onEventClick }) 
                         onEventClick?.(ev);
                       }}
                       style={{
-                        ...eventStyle(ev, T),
+                        ...eventStyle(ev, T, isDark),
                         fontSize: 11,
                         fontWeight: 700,
                         borderRadius: 4,
                         padding: "2px 5px",
-                        marginBottom: 1,
+                        marginBottom: 2,
                         overflow: "hidden",
                         whiteSpace: "nowrap",
                         textOverflow: "ellipsis",
                         cursor: "pointer",
                       }}
                     >
+                      {sc && <span style={{ width:6, height:6, borderRadius:"50%", background:sc.dot, flexShrink:0, display:"inline-block", marginRight:3, verticalAlign:"middle" }} />}
                       {ev.title}
+                      {sc && <span style={{ marginLeft:4, fontSize:9, fontWeight:900, opacity:0.85 }}>{sc.label}</span>}
                     </div>
-                  ))}
+                    );
+                  })}
 
                   {dayEvs.length > 3 && (
                     <div style={{ fontSize: 10, color: T.muted }}>+{dayEvs.length - 3}</div>
@@ -1066,7 +1096,7 @@ const MonthView = ({ T, year, month, events, today, onDayClick, onEventClick }) 
 };
 
 /* ================= WEEK VIEW ================= */
-const WeekView = ({ T, weekStart, events, today, onSlotClick, onEventClick }) => {
+const WeekView = ({ T, isDark, weekStart, events, today, onSlotClick, onEventClick }) => {
   const days = Array.from({ length: 7 }, (_, i) => {
     const d = new Date(weekStart);
     d.setDate(d.getDate() + i);
@@ -1138,15 +1168,14 @@ const WeekView = ({ T, weekStart, events, today, onSlotClick, onEventClick }) =>
                   background: T.surface,
                 }}
               >
-                {evs.map((ev, j) => (
+                {evs.map((ev, j) => {
+                  const sc = getStatusCfg(ev, isDark);
+                  return (
                   <div
                     key={j}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onEventClick?.(ev);
-                    }}
+                    onClick={(e) => { e.stopPropagation(); onEventClick?.(ev); }}
                     style={{
-                      ...eventStyle(ev, T),
+                      ...eventStyle(ev, T, isDark),
                       position: "absolute",
                       inset: "1px 2px",
                       borderRadius: 4,
@@ -1154,15 +1183,16 @@ const WeekView = ({ T, weekStart, events, today, onSlotClick, onEventClick }) =>
                       fontSize: 10,
                       fontWeight: 700,
                       overflow: "hidden",
-                      whiteSpace: "nowrap",
-                      textOverflow: "ellipsis",
                       cursor: "pointer",
                       zIndex: j + 1,
                     }}
                   >
+                    {sc && <span style={{ display:"inline-block",width:5,height:5,borderRadius:"50%",background:sc.dot,marginRight:3,verticalAlign:"middle" }} />}
                     {ev.title}
+                    {sc && <span style={{ marginLeft:3,fontSize:8,fontWeight:900,opacity:0.85 }}>{sc.label}</span>}
                   </div>
-                ))}
+                  );
+                })}
               </div>
             );
           })}
@@ -1173,7 +1203,7 @@ const WeekView = ({ T, weekStart, events, today, onSlotClick, onEventClick }) =>
 };
 
 /* ================= DAY VIEW ================= */
-const DayView = ({ T, date, events, onSlotClick, onEventClick }) => {
+const DayView = ({ T, isDark, date, events, onSlotClick, onEventClick }) => {
   const dayEvs = events.filter((ev) => isSameDay(new Date(ev.startDate || ev.start), date));
 
   return (
@@ -1212,15 +1242,14 @@ const DayView = ({ T, date, events, onSlotClick, onEventClick }) => {
           >
             {dayEvs
               .filter((ev) => new Date(ev.startDate || ev.start).getHours() === h)
-              .map((ev, j) => (
+              .map((ev, j) => {
+                const sc = getStatusCfg(ev, isDark);
+                return (
                 <div
                   key={j}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onEventClick?.(ev);
-                  }}
+                  onClick={(e) => { e.stopPropagation(); onEventClick?.(ev); }}
                   style={{
-                    ...eventStyle(ev, T),
+                    ...eventStyle(ev, T, isDark),
                     position: "absolute",
                     inset: "1px 4px",
                     borderRadius: 4,
@@ -1228,15 +1257,16 @@ const DayView = ({ T, date, events, onSlotClick, onEventClick }) => {
                     fontSize: 12,
                     fontWeight: 700,
                     overflow: "hidden",
-                    whiteSpace: "nowrap",
-                    textOverflow: "ellipsis",
                     cursor: "pointer",
                     zIndex: j + 1,
                   }}
                 >
+                  {sc && <span style={{ display:"inline-block",width:6,height:6,borderRadius:"50%",background:sc.dot,marginRight:4,verticalAlign:"middle" }} />}
                   {ev.title}
+                  {sc && <span style={{ marginLeft:5,fontSize:9,fontWeight:900,opacity:0.85 }}>{sc.label}</span>}
                 </div>
-              ))}
+                );
+              })}
           </div>
         </React.Fragment>
       ))}
@@ -1728,6 +1758,7 @@ const GoogleCalendar = ({ onDateSelect }) => {
           {view === "month" && (
             <MonthView
               T={T}
+              isDark={isDark}
               year={currentDate.getFullYear()}
               month={currentDate.getMonth()}
               events={events}
@@ -1742,6 +1773,7 @@ const GoogleCalendar = ({ onDateSelect }) => {
           {view === "week" && (
             <WeekView
               T={T}
+              isDark={isDark}
               weekStart={weekStart}
               events={events}
               today={today}
@@ -1753,6 +1785,7 @@ const GoogleCalendar = ({ onDateSelect }) => {
           {view === "day" && (
             <DayView
               T={T}
+              isDark={isDark}
               date={dayDate}
               events={events}
               onSlotClick={(d, h) => openNewEventModal(d, h)}
