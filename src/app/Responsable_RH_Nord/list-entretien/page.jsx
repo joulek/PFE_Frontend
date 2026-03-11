@@ -17,61 +17,53 @@ import {
   X,
   AlertTriangle,
   Send,
+  PhoneCall,
 } from "lucide-react";
-import { getMyInterviews, getMyInterviewsStats } from "../../services/interviewApi";
+import {
+  getMyInterviews,
+  getMyInterviewsStats,
+  getMyTelephoniqueInterviews,
+} from "../../services/interviewApi";
 
 // ─────────────────────────────────────────────────────────
-//  STATUTS — Vue ResponsableMetier
+//  STATUTS
 // ─────────────────────────────────────────────────────────
 const STATUS_CONFIG = {
   PENDING_CONFIRMATION: {
     label: "En attente de votre confirmation",
     short: "À confirmer",
-    color:
-      "text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-700 bg-amber-50 dark:bg-amber-950/30",
+    color: "text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-700 bg-amber-50 dark:bg-amber-950/30",
     dot: "bg-amber-500",
   },
   PENDING_CANDIDATE_CONFIRMATION: {
     label: "Attente confirmation candidat",
     short: "Attente candidat",
-    color:
-      "text-sky-700 dark:text-sky-300 border-sky-200 dark:border-sky-700 bg-sky-50 dark:bg-sky-950/30",
+    color: "text-sky-700 dark:text-sky-300 border-sky-200 dark:border-sky-700 bg-sky-50 dark:bg-sky-950/30",
     dot: "bg-sky-500",
   },
   CONFIRMED: {
     label: "Confirmé",
     short: "Confirmé",
-    color:
-      "text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-700 bg-emerald-50 dark:bg-emerald-950/30",
+    color: "text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-700 bg-emerald-50 dark:bg-emerald-950/30",
     dot: "bg-emerald-500",
   },
   CANDIDATE_REQUESTED_RESCHEDULE: {
     label: "Candidat demande un report",
     short: "Report demandé",
-    color:
-      "text-orange-700 dark:text-orange-300 border-orange-200 dark:border-orange-700 bg-orange-50 dark:bg-orange-950/30",
+    color: "text-orange-700 dark:text-orange-300 border-orange-200 dark:border-orange-700 bg-orange-50 dark:bg-orange-950/30",
     dot: "bg-orange-500",
   },
   PENDING_ADMIN_APPROVAL: {
     label: "En attente d'approbation admin",
     short: "Attente admin",
-    color:
-      "text-violet-700 dark:text-violet-300 border-violet-200 dark:border-violet-700 bg-violet-50 dark:bg-violet-950/30",
+    color: "text-violet-700 dark:text-violet-300 border-violet-200 dark:border-violet-700 bg-violet-50 dark:bg-violet-950/30",
     dot: "bg-violet-500",
   },
   MODIFIED: {
     label: "Modifié",
     short: "Modifié",
-    color:
-      "text-indigo-700 dark:text-indigo-300 border-indigo-200 dark:border-indigo-700 bg-indigo-50 dark:bg-indigo-950/30",
+    color: "text-indigo-700 dark:text-indigo-300 border-indigo-200 dark:border-indigo-700 bg-indigo-50 dark:bg-indigo-950/30",
     dot: "bg-indigo-500",
-  },
-  CANCELLED: {
-    label: "Annulé",
-    short: "Annulé",
-    color:
-      "text-red-700 dark:text-red-300 border-red-200 dark:border-red-700 bg-red-50 dark:bg-red-950/30",
-    dot: "bg-red-500",
   },
 };
 
@@ -100,18 +92,18 @@ const TYPE_CONFIG = {
     label: "DGA",
     cls: "text-rose-700 dark:text-rose-300 bg-rose-50 dark:bg-rose-950/30 border-rose-200 dark:border-rose-700",
   },
+  // ✅ Téléphonique
+  telephonique: {
+    label: "Téléphonique",
+    cls: "text-green-700 dark:text-green-300 bg-green-50 dark:bg-green-950/30 border-green-200 dark:border-green-700",
+  },
 };
 
-// ─────────────────────────────────────────────────────────
-//  Filtres affichés pour le ResponsableMetier
-// ─────────────────────────────────────────────────────────
 const STATUS_FILTERS = [
   "ALL",
-  "PENDING_CONFIRMATION",
   "CONFIRMED",
   "PENDING_CANDIDATE_CONFIRMATION",
   "CANDIDATE_REQUESTED_RESCHEDULE",
-  "CANCELLED",
 ];
 
 function formatDate(d) {
@@ -129,13 +121,6 @@ function getInitials(name) {
   return (p[0] || "?")[0].toUpperCase();
 }
 
-function getStatusCount(stats, key) {
-  if (!stats) return 0;
-  if (key === "ALL") return stats.TOTAL ?? 0;
-  return stats[key] ?? 0;
-}
-
-// ✅ Vérifier si c'est un entretien RH+Tech
 function isRHTechInterview(interviewType) {
   const type = String(interviewType || "").toLowerCase();
   return type.includes("rh") && type.includes("tech");
@@ -154,9 +139,7 @@ function Avatar({ name }) {
 
 function Badge({ label, className = "", dotClass = "" }) {
   return (
-    <span
-      className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold border whitespace-nowrap transition-colors ${className}`}
-    >
+    <span className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold border whitespace-nowrap transition-colors ${className}`}>
       {dotClass ? <span className={`w-2 h-2 rounded-full ${dotClass}`} /> : null}
       {label}
     </span>
@@ -170,15 +153,13 @@ function StatCard({ label, value, active, onClick, icon }) {
       className={`rounded-2xl border p-4 text-left transition-colors shadow-sm ${active
         ? "bg-[#E9F5E3] dark:bg-gray-700 border-[#cfe4c4] dark:border-gray-600"
         : "bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 hover:bg-green-50/40 dark:hover:bg-gray-700/60"
-        }`}
+      }`}
     >
       <div className="flex items-center justify-between mb-3">
         <span className="text-[#4E8F2F] dark:text-emerald-400">{icon}</span>
       </div>
       <div className="text-2xl font-extrabold text-gray-900 dark:text-white">{value}</div>
-      <div className="text-[11px] uppercase tracking-wider font-bold text-gray-500 dark:text-gray-400">
-        {label}
-      </div>
+      <div className="text-[11px] uppercase tracking-wider font-bold text-gray-500 dark:text-gray-400">{label}</div>
     </button>
   );
 }
@@ -186,23 +167,14 @@ function StatCard({ label, value, active, onClick, icon }) {
 function DetailCard({ label, value, children }) {
   return (
     <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 p-4 transition-colors">
-      <div className="text-[11px] uppercase tracking-wider font-bold text-gray-500 dark:text-gray-400 mb-2">
-        {label}
-      </div>
-      {children ? (
-        children
-      ) : (
-        <div className="text-sm font-medium text-gray-800 dark:text-gray-200 break-words">
-          {value || "—"}
-        </div>
+      <div className="text-[11px] uppercase tracking-wider font-bold text-gray-500 dark:text-gray-400 mb-2">{label}</div>
+      {children ? children : (
+        <div className="text-sm font-medium text-gray-800 dark:text-gray-200 break-words">{value || "—"}</div>
       )}
     </div>
   );
 }
 
-// ─────────────────────────────────────────────────────────
-//  Alerte de rappel
-// ─────────────────────────────────────────────────────────
 function PendingAlert({ count, onClick }) {
   if (!count) return null;
   return (
@@ -211,9 +183,7 @@ function PendingAlert({ count, onClick }) {
       className="w-full flex items-center gap-3 px-5 py-3.5 rounded-2xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-700 text-amber-800 dark:text-amber-200 text-sm font-semibold hover:bg-amber-100 dark:hover:bg-amber-900/40 transition-colors mb-6"
     >
       <AlertTriangle className="w-5 h-5 text-amber-500 flex-shrink-0" />
-      <span>
-        {count} entretien{count > 1 ? "s" : ""} en attente de votre confirmation
-      </span>
+      <span>{count} entretien{count > 1 ? "s" : ""} en attente de votre confirmation</span>
       <ChevronRight className="w-4 h-4 ml-auto text-amber-400" />
     </button>
   );
@@ -242,7 +212,6 @@ export default function ResponsableMetierInterviewList() {
   const LIMIT = 10;
   const debounceRef = useRef(null);
 
-  // Debounce search
   useEffect(() => {
     clearTimeout(debounceRef.current);
     debounceRef.current = setTimeout(() => {
@@ -252,28 +221,81 @@ export default function ResponsableMetierInterviewList() {
     return () => clearTimeout(debounceRef.current);
   }, [search]);
 
-  useEffect(() => {
-    setPage(1);
-  }, [statusFilter]);
+  useEffect(() => { setPage(1); }, [statusFilter]);
 
-  // ── Fetch entretiens ──
+  // ── Fetch entretiens (RH+Tech + Téléphoniques fusionnés) ──
+ // ── Fetch entretiens (RH+Tech + Téléphoniques fusionnés) ──
+  // CORRECTION : ajout de logs, suppression du filtre trop strict sur status pour téléphoniques
   const fetchInterviews = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
-      const data = await getMyInterviews({
+      // 1. Entretiens RH+Tech classiques
+      const rhTechData = await getMyInterviews({
         page,
         limit: LIMIT,
         status: statusFilter,
         search: debouncedSearch.trim(),
       });
-      // ✅ FILTRER: Uniquement les entretiens RH+Tech
-      const filteredInterviews = (data.interviews || []).filter(iv =>
+      const rhTechList = (rhTechData.interviews || []).filter(iv =>
         isRHTechInterview(iv.interviewType)
       );
-      setInterviews(filteredInterviews);
-      setTotal(filteredInterviews.length);
-      setTotalPages(Math.ceil(filteredInterviews.length / LIMIT) || 1);
+
+      // 2. Entretiens téléphoniques confirmés
+      // ✅ FIX : on les charge pour TOUS les filtres (plus seulement ALL/CONFIRMED)
+      // Le filtre de statut ne s'applique pas côté téléphonique (toujours CONFIRMED)
+      let telList = [];
+      try {
+        const telData = await getMyTelephoniqueInterviews({
+          page:   1,
+          limit:  50,
+          search: debouncedSearch.trim(),
+        });
+
+        telList = telData.interviews || [];
+
+        // ✅ FIX : si un filtre de statut autre que ALL/CONFIRMED est actif,
+        // on exclut les téléphoniques (ils sont toujours CONFIRMED)
+        if (statusFilter !== "ALL" && statusFilter !== "CONFIRMED") {
+          telList = [];
+        }
+
+        console.log("📞 Téléphoniques chargés:", telList.length);
+      } catch (telErr) {
+        // ✅ FIX : log visible au lieu d'avaler silencieusement l'erreur
+        console.error("❌ Erreur chargement téléphoniques:", telErr);
+      }
+
+      // 3. Fusion par candidatureId — une seule ligne si même candidat a tél + RH+Tech
+      const telByCandidatureId = {};
+      for (const tel of telList) {
+        const key = String(tel.candidatureId || tel._id);
+        telByCandidatureId[key] = tel;
+      }
+
+      // Enrichir les RH+Tech avec leur entretien téléphonique associé
+      const enrichedRhTech = rhTechList.map((iv) => {
+        const key = iv.candidatureId ? String(iv.candidatureId) : null;
+        const tel = key ? telByCandidatureId[key] : null;
+        if (tel) {
+          delete telByCandidatureId[key];
+          return { ...iv, _telEntry: tel };
+        }
+        return iv;
+      });
+
+      // Téléphoniques restants (sans RH+Tech associé)
+      const remainingTel = Object.values(telByCandidatureId);
+
+      const merged = [...enrichedRhTech, ...remainingTel].sort((a, b) => {
+        const da = new Date(a.confirmedDate || a.proposedDate || a.confirmedAt || 0);
+        const db = new Date(b.confirmedDate || b.proposedDate || b.confirmedAt || 0);
+        return db - da;
+      });
+
+      setInterviews(merged);
+      setTotal(merged.length);
+      setTotalPages(Math.ceil(merged.length / LIMIT) || 1);
     } catch (err) {
       setError(err.message || "Erreur lors du chargement");
     } finally {
@@ -294,40 +316,24 @@ export default function ResponsableMetierInterviewList() {
     }
   }, []);
 
-  useEffect(() => {
-    fetchInterviews();
-  }, [fetchInterviews]);
+  useEffect(() => { fetchInterviews(); }, [fetchInterviews]);
+  useEffect(() => { fetchStats(); }, [fetchStats]);
 
-  useEffect(() => {
-    fetchStats();
-  }, [fetchStats]);
-
-  // ─────────────────────────────────────────────────────────
-  //  RENDER
-  // ─────────────────────────────────────────────────────────
   return (
     <div className="min-h-screen bg-[#F0FAF0] dark:bg-gray-950 text-gray-900 dark:text-gray-100 transition-colors duration-300">
       <div className="max-w-full mx-auto px-4 sm:px-6 pt-6 sm:pt-10 pb-16">
 
-        {/* ── En-tête ── */}
+        {/* En-tête */}
         <div className="flex flex-col xl:flex-row xl:items-center xl:justify-between gap-4 mb-6 sm:mb-8">
           <div>
-            <h1 className="text-3xl sm:text-4xl font-extrabold text-gray-900 dark:text-white">
-              Mes Entretiens
-            </h1>
-            <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">
-              Entretiens RH + Tech assignés
-            </p>
+            <h1 className="text-3xl sm:text-4xl font-extrabold text-gray-900 dark:text-white">Mes Entretiens</h1>
+            <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">Entretiens RH + Tech &amp; Téléphoniques assignés</p>
           </div>
         </div>
 
-        {/* ── Alerte entretiens en attente ── */}
-        <PendingAlert
-          count={stats?.PENDING_CONFIRMATION ?? 0}
-          onClick={() => setStatusFilter("PENDING_CONFIRMATION")}
-        />
+        <PendingAlert count={stats?.PENDING_CONFIRMATION ?? 0} onClick={() => setStatusFilter("PENDING_CONFIRMATION")} />
 
-        {/* ── Barre de recherche ── */}
+        {/* Recherche */}
         <div className="bg-white dark:bg-gray-800 rounded-full shadow-sm border border-gray-100 dark:border-gray-700 px-4 sm:px-5 py-3 flex items-center gap-3 mb-6 transition-colors duration-300">
           <Search className="w-5 h-5 text-[#4E8F2F] dark:text-emerald-400 flex-shrink-0" />
           <input
@@ -343,7 +349,7 @@ export default function ResponsableMetierInterviewList() {
           )}
         </div>
 
-        {/* ── Filtres statuts ── */}
+        {/* Filtres */}
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3 sm:gap-4 mb-6">
           <div className="flex flex-wrap gap-1.5 sm:gap-2">
             {STATUS_FILTERS.map((s) => {
@@ -356,11 +362,9 @@ export default function ResponsableMetierInterviewList() {
                   className={`inline-flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-1.5 sm:py-2 rounded-full border text-xs font-semibold transition-colors ${isActive
                     ? "bg-[#6CB33F] hover:bg-[#4E8F2F] border-[#6CB33F] text-white dark:bg-emerald-600 dark:hover:bg-emerald-500 dark:border-emerald-600"
                     : "bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-[#4E8F2F] dark:text-emerald-400 hover:bg-green-50 dark:hover:bg-gray-700"
-                    }`}
+                  }`}
                 >
-                  {cfg?.dot ? (
-                    <span className={`w-2 h-2 rounded-full ${isActive ? "bg-white" : cfg.dot}`} />
-                  ) : null}
+                  {cfg?.dot ? <span className={`w-2 h-2 rounded-full ${isActive ? "bg-white" : cfg.dot}`} /> : null}
                   {cfg?.short || s}
                 </button>
               );
@@ -371,69 +375,52 @@ export default function ResponsableMetierInterviewList() {
           </div>
         </div>
 
-        {/* ── État : chargement ── */}
+        {/* Chargement */}
         {loading && (
-          <div className="bg-white dark:bg-gray-800 rounded-2xl sm:rounded-3xl shadow-lg border border-gray-200 dark:border-gray-700 p-6 sm:p-8 md:p-12 text-center transition-colors">
+          <div className="bg-white dark:bg-gray-800 rounded-2xl sm:rounded-3xl shadow-lg border border-gray-200 dark:border-gray-700 p-12 text-center transition-colors">
             <div className="flex flex-col items-center justify-center gap-4">
-              <div className="animate-spin rounded-full h-10 sm:h-12 w-10 sm:w-12 border-4 border-[#E9F5E3] dark:border-gray-700 border-t-[#4E8F2F] dark:border-t-emerald-400" />
-              <p className="text-gray-500 dark:text-gray-400 text-sm sm:text-lg">
-                Chargement de vos entretiens...
-              </p>
+              <div className="animate-spin rounded-full h-12 w-12 border-4 border-[#E9F5E3] dark:border-gray-700 border-t-[#4E8F2F] dark:border-t-emerald-400" />
+              <p className="text-gray-500 dark:text-gray-400 text-lg">Chargement de vos entretiens...</p>
             </div>
           </div>
         )}
 
-        {/* ── État : erreur ── */}
+        {/* Erreur */}
         {!loading && error && (
-          <div className="bg-white dark:bg-gray-800 rounded-2xl sm:rounded-3xl shadow-lg border border-gray-200 dark:border-gray-700 p-6 sm:p-8 md:p-12 text-center transition-colors">
+          <div className="bg-white dark:bg-gray-800 rounded-2xl sm:rounded-3xl shadow-lg border border-gray-200 dark:border-gray-700 p-12 text-center transition-colors">
             <div className="flex flex-col items-center justify-center gap-4">
-              <XCircle className="w-12 sm:w-16 h-12 sm:h-16 text-red-400" />
-              <p className="text-gray-700 dark:text-gray-300 text-base sm:text-lg font-semibold">
-                Erreur de chargement
-              </p>
-              <p className="text-gray-500 dark:text-gray-400 text-xs sm:text-sm">{error}</p>
-              <button
-                onClick={fetchInterviews}
-                className="px-4 sm:px-5 py-2 sm:py-2.5 rounded-full bg-[#6CB33F] text-white font-semibold text-sm hover:bg-[#4E8F2F] transition-colors"
-              >
-                Réessayer
-              </button>
+              <XCircle className="w-16 h-16 text-red-400" />
+              <p className="text-gray-700 dark:text-gray-300 text-lg font-semibold">Erreur de chargement</p>
+              <p className="text-gray-500 dark:text-gray-400 text-sm">{error}</p>
+              <button onClick={fetchInterviews} className="px-5 py-2.5 rounded-full bg-[#6CB33F] text-white font-semibold text-sm hover:bg-[#4E8F2F] transition-colors">Réessayer</button>
             </div>
           </div>
         )}
 
-        {/* ── État : liste vide ── */}
+        {/* Vide */}
         {!loading && !error && interviews.length === 0 && (
-          <div className="bg-white dark:bg-gray-800 rounded-2xl sm:rounded-3xl shadow-lg border border-gray-200 dark:border-gray-700 p-6 sm:p-8 md:p-12 text-center transition-colors">
+          <div className="bg-white dark:bg-gray-800 rounded-2xl sm:rounded-3xl shadow-lg border border-gray-200 dark:border-gray-700 p-12 text-center transition-colors">
             <div className="flex flex-col items-center justify-center gap-4">
-              <Calendar className="w-12 sm:w-16 h-12 sm:h-16 text-gray-300 dark:text-gray-600" />
-              <p className="text-gray-700 dark:text-gray-300 text-base sm:text-lg font-semibold">
-                Aucun entretien trouvé
-              </p>
-              <p className="text-gray-500 dark:text-gray-400 text-xs sm:text-sm">
-                {search
-                  ? "Aucun résultat pour cette recherche."
-                  : statusFilter !== "ALL"
-                    ? "Aucun entretien pour ce statut."
-                    : "Vous n'avez pas d'entretiens RH + Tech assignés."}
+              <Calendar className="w-16 h-16 text-gray-300 dark:text-gray-600" />
+              <p className="text-gray-700 dark:text-gray-300 text-lg font-semibold">Aucun entretien trouvé</p>
+              <p className="text-gray-500 dark:text-gray-400 text-sm">
+                {search ? "Aucun résultat pour cette recherche."
+                  : statusFilter !== "ALL" ? "Aucun entretien pour ce statut."
+                  : "Vous n'avez pas d'entretiens assignés."}
               </p>
             </div>
           </div>
         )}
 
-        {/* ── Tableau responsive ── */}
+        {/* ── Tableau ── */}
         {!loading && !error && interviews.length > 0 && (
           <div className="bg-white dark:bg-gray-800 rounded-2xl sm:rounded-3xl shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden transition-colors">
             <div className="overflow-x-auto">
-              <table className="w-full text-sm min-w-[1180px]">
+              <table className="w-full text-sm min-w-[1280px]">
                 <thead className="bg-[#E9F5E3] dark:bg-gray-700 text-[#4E8F2F] dark:text-emerald-400">
-                  <tr >
-                    {["Candidat", "Poste", "Type", "Date & heure", "Statut", ""].map((h) => (
-                      <th
-                        key={h}
-                        className="text-left px-6 lg:px-8 py-5 font-extrabold uppercase text-xs tracking-wider"                      >
-                        {h}
-                      </th>
+                  <tr>
+                    {["Candidat", "Poste", "Type", "Date & heure", "Évaluation", "Statut", ""].map((h) => (
+                      <th key={h} className="text-left px-6 lg:px-8 py-5 font-extrabold uppercase text-xs tracking-wider">{h}</th>
                     ))}
                   </tr>
                 </thead>
@@ -441,42 +428,47 @@ export default function ResponsableMetierInterviewList() {
                 <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
                   {interviews.map((iv) => {
                     const isExpanded = expandedRow === iv._id;
+                    const isTelephonique = iv._isTelephonique === true || iv.interviewType === "telephonique";
+                    const isRHTech = isRHTechInterview(iv.interviewType);
+                    const hasBoth = !isTelephonique && !!iv._telEntry; // RH+Tech avec tél fusionné
+
                     const statusCfg = STATUS_CONFIG[iv.status] || {};
-                    const typeCfg = TYPE_CONFIG[iv.interviewType] || TYPE_CONFIG.RH;
+                    const typeCfg   = isTelephonique
+                      ? TYPE_CONFIG.telephonique
+                      : (TYPE_CONFIG[iv.interviewType] || TYPE_CONFIG.RH);
                     const isCancelled = iv.status === "CANCELLED";
 
-                    // ✅ CORRECTION: Fallback sur proposedStart/proposedEnd
-                    const displayDate = iv.confirmedDate || iv.proposedDate || iv.proposedStart;
+                    const displayDate = iv.confirmedDate || iv.proposedDate || iv.confirmedAt || iv.proposedStart;
                     const displayTime = iv.confirmedDate
                       ? iv.confirmedTime
                       : (iv.proposedTime || (iv.proposedStart
-                        ? new Date(iv.proposedStart).toLocaleTimeString("fr-FR", {
-                          hour: "2-digit",
-                          minute: "2-digit"
-                        })
+                        ? new Date(iv.proposedStart).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" })
                         : null));
+
+                    // Bouton évaluation
+                    const showEvalRHTech = isRHTech && (iv.status === "CONFIRMED" || iv.status === "PENDING_CANDIDATE_CONFIRMATION");
+                    const showEvalTel = isTelephonique;
+                    const showEval = showEvalRHTech || showEvalTel || hasBoth;
+
+                    const evalUrlRHTech = `/Responsable_RH_Nord/interviews/${iv._id}/evaluation`;
+                    const evalUrlTel = isTelephonique
+                      ? `/Responsable_RH_Nord/interviews/${iv._id}/evaluation-telephonique`
+                      : iv._telEntry ? `/Responsable_RH_Nord/interviews/${iv._telEntry._id}/evaluation-telephonique` : null;
+                    const evalUrl = isTelephonique ? evalUrlTel : evalUrlRHTech;
 
                     return (
                       <React.Fragment key={iv._id}>
                         <tr
-                          onClick={() =>
-                            setExpandedRow(isExpanded ? null : iv._id)
-                          }
-                          className={`hover:bg-green-50/40 dark:hover:bg-gray-700/40 transition-colors cursor-pointer ${
-                            isExpanded ? "bg-green-50/30 dark:bg-gray-700/30" : ""
-                            } ${isCancelled ? "opacity-60" : ""}`}
+                          onClick={() => setExpandedRow(isExpanded ? null : iv._id)}
+                          className={`hover:bg-green-50/40 dark:hover:bg-gray-700/40 transition-colors cursor-pointer ${isExpanded ? "bg-green-50/30 dark:bg-gray-700/30" : ""} ${isCancelled ? "opacity-60" : ""}`}
                         >
                           {/* Candidat */}
                           <td className="px-6 lg:px-8 py-5">
                             <div className="flex items-center gap-3">
                               <Avatar name={iv.candidateName} />
                               <div className="min-w-0">
-                                <p className="font-bold text-gray-900 dark:text-white truncate text-xs sm:text-sm">
-                                  {iv.candidateName || "—"}
-                                </p>
-                                <p className="text-xs text-gray-400 dark:text-gray-500 truncate">
-                                  {iv.candidateEmail || "—"}
-                                </p>
+                                <p className="font-bold text-gray-900 dark:text-white truncate text-xs sm:text-sm">{iv.candidateName || "—"}</p>
+                                <p className="text-xs text-gray-400 dark:text-gray-500 truncate">{iv.candidateEmail || "—"}</p>
                               </div>
                             </div>
                           </td>
@@ -485,21 +477,21 @@ export default function ResponsableMetierInterviewList() {
                           <td className="px-3 sm:px-4 md:px-6 lg:px-8 py-3 sm:py-5">
                             <span className="flex items-center gap-2 text-gray-700 dark:text-gray-300 font-medium text-xs sm:text-sm">
                               <Briefcase className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-gray-400 flex-shrink-0" />
-                              <span className="truncate max-w-[100px] sm:max-w-[140px]">
-                                {iv.jobTitle || "—"}
-                              </span>
+                              <span className="truncate max-w-[100px] sm:max-w-[140px]">{iv.jobTitle || "—"}</span>
                             </span>
                           </td>
 
-                          {/* Type d'entretien */}
+                          {/* Type — badge(s) */}
                           <td className="px-3 sm:px-4 md:px-6 lg:px-8 py-3 sm:py-5">
-                            <Badge
-                              label={typeCfg.label}
-                              className={`${typeCfg.cls} border text-xs`}
-                            />
+                            <div className="flex flex-col gap-1.5">
+                              <Badge label={typeCfg.label} className={`${typeCfg.cls} border text-xs`} />
+                              {hasBoth && (
+                                <Badge label="Téléphonique" className={`${TYPE_CONFIG.telephonique.cls} border text-xs`} />
+                              )}
+                            </div>
                           </td>
 
-                          {/* Date & heure — ✅ AFFICHAGE CORRIGÉ */}
+                          {/* Date & heure */}
                           <td className="px-3 sm:px-4 md:px-6 lg:px-8 py-3 sm:py-5">
                             <div className="flex flex-col gap-1">
                               <span className="flex items-center gap-2 text-gray-800 dark:text-gray-200 font-semibold text-xs sm:text-sm">
@@ -515,11 +507,34 @@ export default function ResponsableMetierInterviewList() {
                               {iv.status === "CANDIDATE_REQUESTED_RESCHEDULE" && (
                                 <div className="flex items-center gap-1 text-orange-600 dark:text-orange-400 text-xs ml-5 sm:ml-6 font-semibold">
                                   <AlertTriangle className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
-                                  <span>
-                                    {formatDate(iv.candidateProposedDate)}
-                                  </span>
+                                  <span>{formatDate(iv.candidateProposedDate)}</span>
                                 </div>
                               )}
+                            </div>
+                          </td>
+
+                          {/* Évaluation — un ou deux boutons */}
+                          <td className="px-3 sm:px-4 md:px-6 lg:px-8 py-3 sm:py-5">
+                            <div className="flex flex-col gap-1.5">
+                              {(showEvalRHTech || hasBoth) && (
+                                <button
+                                  onClick={(e) => { e.stopPropagation(); router.push(evalUrlRHTech); }}
+                                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-xs font-semibold transition-colors whitespace-nowrap text-violet-700 dark:text-violet-300 bg-violet-50 dark:bg-violet-950/30 border-violet-200 dark:border-violet-700 hover:bg-violet-100 dark:hover:bg-violet-900/40"
+                                >
+                                  <FileText className="w-3.5 h-3.5" />
+                                  RH + Tech
+                                </button>
+                              )}
+                              {(showEvalTel || hasBoth) && evalUrlTel && (
+                                <button
+                                  onClick={(e) => { e.stopPropagation(); router.push(evalUrlTel); }}
+                                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-xs font-semibold transition-colors whitespace-nowrap text-green-700 dark:text-green-300 bg-green-50 dark:bg-green-950/30 border-green-200 dark:border-green-700 hover:bg-green-100 dark:hover:bg-green-900/40"
+                                >
+                                  <PhoneCall className="w-3.5 h-3.5" />
+                                  Téléphonique
+                                </button>
+                              )}
+                              {!showEval && <span className="text-xs text-gray-400">—</span>}
                             </div>
                           </td>
 
@@ -534,24 +549,23 @@ export default function ResponsableMetierInterviewList() {
 
                           {/* Chevron */}
                           <td className="px-3 sm:px-4 md:px-6 lg:px-8 py-3 sm:py-5 text-right">
-                            <ChevronDown
-                              className={`w-4 h-4 sm:w-5 sm:h-5 text-gray-400 ml-auto transition-transform ${isExpanded ? "rotate-180" : ""
-                                }`}
-                            />
+                            <ChevronDown className={`w-4 h-4 sm:w-5 sm:h-5 text-gray-400 ml-auto transition-transform ${isExpanded ? "rotate-180" : ""}`} />
                           </td>
                         </tr>
 
                         {/* ── Ligne expandée ── */}
                         {isExpanded && (
                           <tr>
-                            <td
-                              colSpan={6}
-                              className="px-3 sm:px-4 md:px-6 lg:px-8 pb-4 sm:pb-6 bg-green-50/20 dark:bg-gray-900/20"
-                            >
+                            <td colSpan={7} className="px-3 sm:px-4 md:px-6 lg:px-8 pb-4 sm:pb-6 bg-green-50/20 dark:bg-gray-900/20">
                               <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3 sm:gap-4 pt-4">
-                                {/* Poste */}
                                 <DetailCard label="Poste" value={iv.jobTitle} />
 
+                                {isTelephonique && (
+                                  <DetailCard
+                                    label="Type d'entretien"
+                                    value="Entretien Téléphonique — confirmé par RH Nord"
+                                  />
+                                )}
 
                                 {iv.status === "CANDIDATE_REQUESTED_RESCHEDULE" && (
                                   <>
@@ -572,51 +586,21 @@ export default function ResponsableMetierInterviewList() {
                                     value={`${formatDate(iv.responsableProposedDate)} ${iv.responsableProposedTime || ""}`}
                                   />
                                 )}
-
-                                {/* ✅ NOUVELLE CARTE: Fiche d'évaluation (bouton) */}
-                                {isRHTechInterview(iv.interviewType) &&
-                                  (iv.status === "CONFIRMED" ||
-                                    iv.status === "PENDING_CANDIDATE_CONFIRMATION") && (
-                                    <DetailCard label="Évaluation">
-                                      <button
-                                        onClick={(e) => {
-                                          e.stopPropagation();
-                                          router.push(
-                                            `/ResponsableMetier/interviews/${iv._id}/evaluation`
-                                          );
-                                        }}
-                                        className="w-full px-3 py-2 rounded-full bg-violet-50 dark:bg-violet-950/30 border border-violet-200 dark:border-violet-700 text-violet-700 dark:text-violet-300 font-semibold text-xs sm:text-sm hover:bg-violet-100 dark:hover:bg-violet-900/40 transition-colors flex items-center justify-center gap-2"
-                                      >
-                                        <FileText className="w-4 h-4" />
-                                        Fiche d'évaluation
-                                      </button>
-                                    </DetailCard>
-                                  )}
                               </div>
 
-                              {/* ── Actions (Confirmer / Répondre) ── */}
                               <div className="mt-4 sm:mt-5 flex flex-col sm:flex-row flex-wrap gap-2 sm:gap-3">
-
-                                {/* Confirmer / Modifier la date */}
-                                {(iv.status === "PENDING_CONFIRMATION" ||
-                                  iv.status === "CANDIDATE_REQUESTED_RESCHEDULE") && (
-                                    <button
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        router.push(
-                                          `/ResponsableMetier/confirm-interview/${iv.confirmationToken}`
-                                        );
-                                      }}
-                                      className="px-3 sm:px-4 py-2 rounded-full bg-[#E9F5E3] dark:bg-emerald-950/30 border border-[#cfe4c4] dark:border-emerald-700 text-[#4E8F2F] dark:text-emerald-300 font-semibold text-xs sm:text-sm hover:bg-[#d7ebcf] dark:hover:bg-emerald-900/40 transition-colors flex items-center gap-2"
-                                    >
-                                      <Send className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                                      {iv.status === "CANDIDATE_REQUESTED_RESCHEDULE"
-                                        ? "Répondre"
-                                        : "Confirmer"}
-                                    </button>
-                                  )}
-
-
+                                {!isTelephonique && (iv.status === "PENDING_CONFIRMATION" || iv.status === "CANDIDATE_REQUESTED_RESCHEDULE") && (
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      router.push(`/ResponsableMetier/confirm-interview/${iv.confirmationToken}`);
+                                    }}
+                                    className="px-3 sm:px-4 py-2 rounded-full bg-[#E9F5E3] dark:bg-emerald-950/30 border border-[#cfe4c4] dark:border-emerald-700 text-[#4E8F2F] dark:text-emerald-300 font-semibold text-xs sm:text-sm hover:bg-[#d7ebcf] dark:hover:bg-emerald-900/40 transition-colors flex items-center gap-2"
+                                  >
+                                    <Send className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                                    {iv.status === "CANDIDATE_REQUESTED_RESCHEDULE" ? "Répondre" : "Confirmer"}
+                                  </button>
+                                )}
                               </div>
                             </td>
                           </tr>
@@ -630,43 +614,32 @@ export default function ResponsableMetierInterviewList() {
           </div>
         )}
 
-        {/* ── Pagination ── */}
+        {/* Pagination */}
         {!loading && !error && interviews.length > 0 && totalPages > 1 && (
           <div className="mt-6 sm:mt-8 px-3 sm:px-4 md:px-8 py-4 sm:py-5 flex flex-col lg:flex-row items-center justify-between gap-4 text-xs sm:text-sm text-gray-500 dark:text-gray-400 transition-colors">
-            <p className="font-medium">
-              Page {page} sur {totalPages} — Total : {total} entretien
-              {total > 1 ? "s" : ""}
-            </p>
-
+            <p className="font-medium">Page {page} sur {totalPages} — Total : {total} entretien{total > 1 ? "s" : ""}</p>
             <div className="flex items-center gap-2 flex-wrap justify-center">
               <button
                 onClick={() => setPage((p) => Math.max(1, p - 1))}
                 disabled={page === 1}
                 className="px-3 sm:px-4 py-2 rounded-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 font-semibold text-xs sm:text-sm disabled:opacity-50 transition-colors"
-              >
-                ← Préc.
-              </button>
-
+              >← Préc.</button>
               {Array.from({ length: Math.min(totalPages, 8) }, (_, i) => i + 1).map((p) => (
                 <button
                   key={p}
                   onClick={() => setPage(p)}
-                  className={`w-8 h-8 sm:w-10 sm:h-10 rounded-full border font-bold text-xs sm:text-sm transition-colors ${p === page
-                    ? "bg-[#6CB33F] border-[#6CB33F] text-white dark:bg-emerald-600 dark:border-emerald-600"
-                    : "bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300"
-                    }`}
-                >
-                  {p}
-                </button>
+                  className={`w-8 h-8 sm:w-10 sm:h-10 rounded-full border font-bold text-xs sm:text-sm transition-colors ${
+                    p === page
+                      ? "bg-[#6CB33F] border-[#6CB33F] text-white dark:bg-emerald-600 dark:border-emerald-600"
+                      : "bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300"
+                  }`}
+                >{p}</button>
               ))}
-
               <button
                 onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
                 disabled={page === totalPages}
                 className="px-3 sm:px-4 py-2 rounded-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 font-semibold text-xs sm:text-sm disabled:opacity-50 transition-colors"
-              >
-                Suiv. →
-              </button>
+              >Suiv. →</button>
             </div>
           </div>
         )}

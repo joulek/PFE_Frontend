@@ -439,7 +439,8 @@ export default function Navbar() {
     pathname.startsWith("/Responsable_RH_Nord/job");
   const isInNordEntretiens =
     pathname.startsWith("/Responsable_RH_Nord/list-entretien") ||
-    pathname.startsWith("/Responsable_RH_Nord/fiche_renseignement");
+    pathname.startsWith("/fiche_renseignement");
+  const isInFiche = pathname.startsWith("/fiche_renseignement");
 
   async function handleLogout() {
     try { await logout(); } catch { }
@@ -531,6 +532,7 @@ export default function Navbar() {
                             <Link href="/ResponsableMetier/list-entretien" className={`${dropdownItemBase} ${isActive("/ResponsableMetier/list-entretien") ? dropdownActive : dropdownHover}`}>
                               Liste des entretiens
                             </Link>
+                            
                           </div>
                         )}
                       </div>
@@ -540,6 +542,9 @@ export default function Navbar() {
                       </Link>
                       <Link href="/ResponsableMetier/quiz" className={`${linkBase} ${isActive("/ResponsableMetier/quiz") ? activeLink : inactiveLink}`}>
                         Mes quizs
+                      </Link>
+                      <Link href="/fiche_renseignement" className={`${linkBase} ${isInFiche ? activeLink : inactiveLink}`}>
+                        Fiches
                       </Link>
                       <Link href="/ResponsableMetier/calendar" className={`${linkBase} ${isActive("/ResponsableMetier/calendar") ? activeLink : inactiveLink}`}>
                         Mon calendrier
@@ -592,7 +597,7 @@ export default function Navbar() {
                     Entretiens confirmés
                   </Link>
                  
-                   <Link href="/RESPONSABLE_RH_OPTYLAB/fiche_renseignement" className={`${linkBase} ${isActive("/RESPONSABLE_RH_OPTYLAB/fiche_renseignement") ? activeLink : inactiveLink}`}>
+                   <Link href="/fiche_renseignement" className={`${linkBase} ${isInFiche ? activeLink : inactiveLink}`}>
                     Fiche renseignements
                   </Link>
                 </>
@@ -658,7 +663,7 @@ export default function Navbar() {
                           <Link href="/Responsable_RH_Nord/PreInterviewList" className={`${linkBase} ${isActive("/Responsable_RH_Nord/PreInterviewList") ? activeLink : inactiveLink}`}>
                     Pre interview list 
                   </Link>
-                        <Link href="/Responsable_RH_Nord/fiche_renseignement" className={`${dropdownItemBase} ${isActive("/Responsable_RH_Nord/fiche_renseignement") ? dropdownActive : dropdownHover}`}>
+                        <Link href="/fiche_renseignement" className={`${dropdownItemBase} ${isActive("/Responsable_RH_Nord/fiche_renseignement") ? dropdownActive : dropdownHover}`}>
                           Fiche renseignements
                         </Link>
                       </div>
@@ -850,6 +855,9 @@ export default function Navbar() {
                         <Link href="/ResponsableMetier/quiz" className={`block px-5 py-3.5 rounded-xl font-medium transition ${isActive("/ResponsableMetier/quiz") ? "bg-[#6CB33F] text-white" : "text-gray-700 dark:text-gray-200 hover:bg-gray-100/70 dark:hover:bg-gray-800/60"}`}>
                           Mes quizs
                         </Link>
+                        <Link href="/fiche_renseignement" className={`block px-5 py-3.5 rounded-xl font-medium transition ${isInFiche ? "bg-[#6CB33F] text-white" : "text-gray-700 dark:text-gray-200 hover:bg-gray-100/70 dark:hover:bg-gray-800/60"}`}>
+                          Fiches de renseignement
+                        </Link>
                         <Link href="/ResponsableMetier/calendar" className={`block px-5 py-3.5 rounded-xl font-medium transition ${isActive("/ResponsableMetier/calendar") ? "bg-[#6CB33F] text-white" : "text-gray-700 dark:text-gray-200 hover:bg-gray-100/70 dark:hover:bg-gray-800/60"}`}>
                           Mon calendrier
                         </Link>
@@ -893,6 +901,9 @@ export default function Navbar() {
                   <>
                     <Link href="/RESPONSABLE_RH_OPTYLAB/candidatures" className={`block px-5 py-3.5 rounded-xl font-medium transition ${isActive("/RESPONSABLE_RH_OPTYLAB/candidatures") ? "bg-[#6CB33F] text-white" : "text-gray-700 dark:text-gray-200 hover:bg-gray-100/70 dark:hover:bg-gray-800/60"}`}>
                       Liste candidatures
+                    </Link>
+                    <Link href="/fiche_renseignement" className={`block px-5 py-3.5 rounded-xl font-medium transition ${isInFiche ? "bg-[#6CB33F] text-white" : "text-gray-700 dark:text-gray-200 hover:bg-gray-100/70 dark:hover:bg-gray-800/60"}`}>
+                      Fiches de renseignement
                     </Link>
                     <Link href="/calendar" className={`block px-5 py-3.5 rounded-xl font-medium transition ${isActive("/calendar") ? "bg-[#6CB33F] text-white" : "text-gray-700 dark:text-gray-200 hover:bg-gray-100/70 dark:hover:bg-gray-800/60"}`}>
                       Mon calendrier

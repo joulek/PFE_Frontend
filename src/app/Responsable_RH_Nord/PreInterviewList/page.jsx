@@ -28,7 +28,6 @@ import {
   Users,
   Star,
   ChevronRight,
-  StickyNote,
 } from "lucide-react";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL;
@@ -78,42 +77,22 @@ function formatDate(d) {
 
 // ── localStorage pour persister "envoyé" entre refreshes ──
 function markSentFiche(id) {
-  try {
-    localStorage.setItem(`fiche_sent_${id}`, "1");
-  } catch { }
+  try { localStorage.setItem(`fiche_sent_${id}`, "1"); } catch { }
 }
 function wasSentFiche(id) {
-  try {
-    return localStorage.getItem(`fiche_sent_${id}`) === "1";
-  } catch {
-    return false;
-  }
+  try { return localStorage.getItem(`fiche_sent_${id}`) === "1"; } catch { return false; }
 }
-
 function markSentQuiz(id) {
-  try {
-    localStorage.setItem(`quiz_sent_${id}`, "1");
-  } catch { }
+  try { localStorage.setItem(`quiz_sent_${id}`, "1"); } catch { }
 }
 function wasSentQuiz(id) {
-  try {
-    return localStorage.getItem(`quiz_sent_${id}`) === "1";
-  } catch {
-    return false;
-  }
+  try { return localStorage.getItem(`quiz_sent_${id}`) === "1"; } catch { return false; }
 }
-
 function markSent(id) {
-  try {
-    localStorage.setItem(`docs_sent_${id}`, "1");
-  } catch { }
+  try { localStorage.setItem(`docs_sent_${id}`, "1"); } catch { }
 }
 function wasSent(id) {
-  try {
-    return localStorage.getItem(`docs_sent_${id}`) === "1";
-  } catch {
-    return false;
-  }
+  try { return localStorage.getItem(`docs_sent_${id}`) === "1"; } catch { return false; }
 }
 
 /* ================================================================
@@ -208,7 +187,6 @@ function SendDocumentsModal({ candidature, onClose, onSuccess, initialSentFiche 
                 à <span className="font-semibold text-gray-700 dark:text-gray-300">{name}</span>
               </p>
             </div>
-
             <button
               onClick={onClose}
               className="w-9 h-9 rounded-full hover:bg-white/70 dark:hover:bg-gray-800 flex items-center justify-center transition-colors"
@@ -276,15 +254,15 @@ function SendDocumentsModal({ candidature, onClose, onSuccess, initialSentFiche 
                   <Brain className="w-4 h-4 inline mr-1.5 text-green-600" />
                   Quiz technique
                 </p>
-
                 {quiz ? (
                   <label
-                    className={`flex items-start gap-3 p-4 rounded-xl border-2 cursor-pointer transition-all ${sentQuiz
+                    className={`flex items-start gap-3 p-4 rounded-xl border-2 cursor-pointer transition-all ${
+                      sentQuiz
                         ? "border-green-500 bg-green-50/60 dark:bg-green-900/20 opacity-60 cursor-not-allowed"
                         : includeQuiz
                           ? "border-green-500 bg-green-50/60 dark:bg-green-900/20"
                           : "border-gray-200 dark:border-gray-700 hover:border-green-300 dark:hover:border-green-700"
-                      }`}
+                    }`}
                   >
                     <input
                       type="checkbox"
@@ -323,13 +301,13 @@ function SendDocumentsModal({ candidature, onClose, onSuccess, initialSentFiche 
                   <ClipboardList className="w-4 h-4 inline mr-1.5 text-green-600" />
                   Fiche de renseignement
                 </p>
-
                 <div className="space-y-2 max-h-48 overflow-y-auto">
                   <label
-                    className={`flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition-all ${!selectedFicheId
+                    className={`flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition-all ${
+                      !selectedFicheId
                         ? "border-gray-300 bg-gray-50 dark:bg-gray-800 dark:border-gray-700"
                         : "border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600"
-                      }`}
+                    }`}
                   >
                     <input
                       type="radio"
@@ -342,16 +320,16 @@ function SendDocumentsModal({ candidature, onClose, onSuccess, initialSentFiche 
                     />
                     <span className="text-sm text-gray-500 dark:text-gray-400">Ne pas envoyer de fiche</span>
                   </label>
-
                   {fiches.map((f) => (
                     <label
                       key={f._id}
-                      className={`flex items-start gap-3 p-3 rounded-xl border cursor-pointer transition-all ${sentFiche
+                      className={`flex items-start gap-3 p-3 rounded-xl border cursor-pointer transition-all ${
+                        sentFiche
                           ? "border-green-500 bg-green-50/60 dark:bg-green-900/20 opacity-60 cursor-not-allowed"
                           : selectedFicheId === f._id
                             ? "border-green-500 bg-green-50/60 dark:bg-green-900/20"
                             : "border-gray-200 dark:border-gray-700 hover:border-green-300 dark:hover:border-green-700"
-                        }`}
+                      }`}
                     >
                       <input
                         type="radio"
@@ -414,22 +392,19 @@ function SendDocumentsModal({ candidature, onClose, onSuccess, initialSentFiche 
 }
 
 /* ================================================================
-   MODAL — Planifier Entretien (3 flows)
+   MODAL — Planifier Entretien (2 flows)
 ================================================================ */
 
-// ── Flow 1: Téléphonique — note CRUD ──────────────────────────
-function TelephoniqueFlow({ candidate, onBack }) {
-  const [notes, setNotes] = useState([]);
-  const [noteText, setNoteText] = useState("");
-  const [editId, setEditId] = useState(null);
-  const [saving, setSaving] = useState(false);
-  const [loading, setLoading] = useState(true);
+// ── Flow 1: Téléphonique — confirmation directe ──────────────────────────
+function TelephoniqueFlow({ candidate, onBack, onClose }) {
+  const [confirming, setConfirming] = useState(false);
+  const [done, setDone] = useState(false);
+  const [error, setError] = useState("");
 
   const name =
     candidate?.fullName ||
     `${candidate?.prenom || ""} ${candidate?.nom || ""}`.trim() ||
     "Candidat";
-
   const email = safeStr(candidate?.email) || "Email non renseigné";
   const phone =
     safeStr(candidate?.telephone) ||
@@ -438,77 +413,24 @@ function TelephoniqueFlow({ candidate, onBack }) {
     safeStr(candidate?.personalInfoForm?.phone) ||
     safeStr(candidate?.extracted?.parsed?.telephone) ||
     safeStr(candidate?.extracted?.parsed?.phone) ||
-    "Téléphone non renseigné"; const jobTitle = safeStr(candidate?.jobTitle) || "Poste non renseigné";
+    "Téléphone non renseigné";
+  const jobTitle = safeStr(candidate?.jobTitle) || "Poste non renseigné";
 
-  useEffect(() => {
-    fetchNotes();
-  }, []);
-
-  async function fetchNotes() {
-    setLoading(true);
+  async function confirmInterview() {
+    setConfirming(true);
+    setError("");
     try {
-      const r = await api.get(`/candidatures/${candidate._id}/entretien-notes`);
-      const normalized = (r.data || [])
-        .map((n) => {
-          const id =
-            n.noteId ||
-            n._id?.$oid ||
-            (typeof n._id === "string" ? n._id : null) ||
-            n.id ||
-            null;
-          if (!id) return null;
-          return { ...n, noteId: String(id) };
-        })
-        .filter(Boolean);
-      setNotes(normalized);
+      // ✅ FIX : bonne route backend
+      await api.patch(`/api/interviewNord/confirm-telephonique/${candidate._id}`);
+      setDone(true);
+      setTimeout(() => onClose(), 1200);
     } catch (e) {
-      console.error("fetchNotes error:", e);
-      setNotes([]);
+      console.error("confirmInterview error:", e?.response?.status, e?.response?.data);
+      const msg = e?.response?.data?.error || e?.response?.data?.message || "Erreur lors de la confirmation. Réessayez.";
+      setError(msg);
     } finally {
-      setLoading(false);
+      setConfirming(false);
     }
-  }
-
-  async function saveNote() {
-    if (!noteText.trim()) return;
-    setSaving(true);
-    try {
-      if (editId) {
-        await api.patch(
-          `/candidatures/${candidate._id}/entretien-note/${editId}`,
-          { note: noteText.trim() }
-        );
-      } else {
-        await api.post(
-          `/candidatures/${candidate._id}/entretien-note`,
-          { type: "telephonique", note: noteText.trim() }
-        );
-      }
-      setNoteText("");
-      setEditId(null);
-      await fetchNotes();
-    } catch (e) {
-      console.error("saveNote error:", e?.response?.status, e?.response?.data);
-    } finally {
-      setSaving(false);
-    }
-  }
-
-  async function deleteNote(noteId) {
-    if (!noteId) return;
-    if (!confirm("Supprimer cette note ?")) return;
-    try {
-      await api.delete(`/candidatures/${candidate._id}/entretien-note/${noteId}`);
-      await fetchNotes();
-    } catch (e) {
-      console.error("deleteNote error:", e?.response?.status, e?.response?.data);
-    }
-  }
-
-  function startEdit(n) {
-    const id = n._id?.$oid || n._id?.toString?.() || String(n._id || "");
-    setEditId(id);
-    setNoteText(n.note);
   }
 
   return (
@@ -520,6 +442,7 @@ function TelephoniqueFlow({ candidate, onBack }) {
         ← Retour
       </button>
 
+      {/* Header entretien */}
       <div className="flex items-center gap-3 mb-4 p-3 bg-green-50/60 dark:bg-green-900/20 rounded-xl border border-green-100 dark:border-green-800">
         <div className="w-9 h-9 rounded-xl bg-green-600 flex items-center justify-center flex-shrink-0">
           <PhoneCall className="w-4 h-4 text-white" />
@@ -538,29 +461,23 @@ function TelephoniqueFlow({ candidate, onBack }) {
         </div>
       </div>
 
-      {/* Contact candidat */}
-      <div className="mb-5 p-4 bg-white dark:bg-gray-800 rounded-xl border border-gray-100 dark:border-gray-700 shadow-sm">
+      {/* Fiche candidat */}
+      <div className="mb-6 p-4 bg-white dark:bg-gray-800 rounded-xl border border-gray-100 dark:border-gray-700 shadow-sm">
         <div className="flex items-start gap-3">
           <div className="w-10 h-10 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center text-green-700 dark:text-green-300 font-extrabold text-sm flex-shrink-0">
             {name?.[0]?.toUpperCase() || "C"}
           </div>
-
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-extrabold text-gray-800 dark:text-white truncate">
-              {name}
-            </p>
-
+            <p className="text-sm font-extrabold text-gray-800 dark:text-white truncate">{name}</p>
             <div className="mt-2 space-y-2">
               <div className="flex items-center gap-2 text-xs text-gray-600 dark:text-gray-300 break-all">
                 <Mail className="w-3.5 h-3.5 text-green-600 flex-shrink-0" />
                 <span>{email}</span>
               </div>
-
               <div className="flex items-center gap-2 text-xs text-gray-600 dark:text-gray-300 break-all">
                 <Phone className="w-3.5 h-3.5 text-green-600 flex-shrink-0" />
                 <span>{phone}</span>
               </div>
-
               <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
                 <Briefcase className="w-3.5 h-3.5 text-green-600 flex-shrink-0" />
                 <span className="truncate">{jobTitle}</span>
@@ -570,93 +487,40 @@ function TelephoniqueFlow({ candidate, onBack }) {
         </div>
       </div>
 
-      <textarea
-        value={noteText}
-        onChange={(e) => setNoteText(e.target.value)}
-        placeholder={
-          editId
-            ? "Modifier la note..."
-            : "Ajouter une note après l'entretien téléphonique..."
-        }
-        rows={3}
-        className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-green-400 mb-2"
-      />
-
-      <div className="flex flex-col sm:flex-row gap-2 mb-5">
-        <button
-          onClick={saveNote}
-          disabled={!noteText.trim() || saving}
-          className="flex-1 py-2.5 rounded-xl bg-green-600 hover:bg-green-700 text-white text-sm font-bold disabled:opacity-40 flex items-center justify-center gap-2"
-        >
-          {saving ? (
-            <Loader2 className="w-4 h-4 animate-spin" />
-          ) : (
-            <StickyNote className="w-4 h-4" />
-          )}
-          {editId ? "Modifier" : "Sauvegarder"}
-        </button>
-
-        {editId && (
-          <button
-            onClick={() => {
-              setEditId(null);
-              setNoteText("");
-            }}
-            className="px-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 text-sm text-gray-600 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800"
-          >
-            Annuler
-          </button>
-        )}
-      </div>
-
-      {loading ? (
-        <div className="flex justify-center py-4">
-          <Loader2 className="w-5 h-5 animate-spin text-green-400" />
-        </div>
-      ) : notes.length === 0 ? (
-        <p className="text-center text-sm text-gray-400 py-3">
-          Aucune note enregistrée
-        </p>
-      ) : (
-        <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
-          {notes.map((n, i) => (
-            <div
-              key={n._id || i}
-              className="p-3 bg-gray-50 dark:bg-gray-800/50 rounded-xl border border-gray-100 dark:border-gray-700"
-            >
-              <p className="text-sm text-gray-700 dark:text-gray-300 mb-2">
-                {n.note}
-              </p>
-              <div className="flex items-center justify-between gap-3">
-                <span className="text-xs text-gray-400">
-                  {new Date(n.createdAt).toLocaleDateString("fr-FR")}
-                </span>
-                <div className="flex gap-3">
-                  <button
-                    onClick={() => startEdit(n)}
-                    className="text-xs text-green-600 hover:text-green-700 font-medium"
-                  >
-                    Modifier
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() =>
-                      deleteNote(n.noteId || n._id?.$oid || n._id)
-                    }
-                    className="text-xs text-red-400 hover:text-red-600 font-medium"
-                  >
-                    Supprimer
-                  </button>
-                </div>
-              </div>
-            </div>
-          ))}
+      {/* Succès */}
+      {done && (
+        <div className="flex items-center gap-2 p-3 mb-4 bg-green-50 dark:bg-green-900/20 rounded-xl border border-green-200 dark:border-green-800 text-sm text-green-700 dark:text-green-300">
+          <CheckCircle2 className="w-4 h-4 shrink-0" />
+          Entretien téléphonique confirmé avec succès !
         </div>
       )}
+
+      {/* Erreur */}
+      {error && (
+        <div className="flex items-center gap-2 p-3 mb-4 bg-red-50 dark:bg-red-900/20 rounded-xl border border-red-200 dark:border-red-800 text-sm text-red-600 dark:text-red-400">
+          <AlertCircle className="w-4 h-4 shrink-0" />
+          {error}
+        </div>
+      )}
+
+      {/* Bouton valider */}
+      <button
+        onClick={confirmInterview}
+        disabled={confirming || done}
+        className="w-full py-3 rounded-xl bg-green-600 hover:bg-green-700 text-white text-sm font-bold flex items-center justify-center gap-2 transition-colors disabled:opacity-60"
+      >
+        {confirming ? (
+          <Loader2 className="w-4 h-4 animate-spin" />
+        ) : done ? (
+          <CheckCircle2 className="w-4 h-4" />
+        ) : (
+          <CheckCircle2 className="w-4 h-4" />
+        )}
+        {done ? "Entretien confirmé !" : confirming ? "Confirmation..." : "Valider l'entretien"}
+      </button>
     </div>
   );
 }
-
 // ── Flow 2: Entretien RH ──────────────────────────
 function RHFlow({ candidate, onBack, onClose }) {
   const name =
@@ -732,14 +596,13 @@ function RHFlow({ candidate, onBack, onClose }) {
   );
 }
 
-
 // ── Wrapper Modal principal ─────────────────────────────────────
 function EntretienModal({ candidate, onClose, onRHScheduled }) {
   const [step, setStep] = useState("type");
   const name = getName(candidate);
 
   const types = [
-    { id: "telephonique", label: "Entretien Téléphonique", icon: PhoneCall, desc: "Note et suivi après appel" },
+    { id: "telephonique", label: "Entretien Téléphonique", icon: PhoneCall, desc: "Valider l'entretien téléphonique" },
     { id: "rh", label: "Entretien RH", icon: Users, desc: "Planifier + email candidat" },
   ];
 
@@ -754,7 +617,6 @@ function EntretienModal({ candidate, onClose, onRHScheduled }) {
               <h2 className="text-gray-900 dark:text-white font-extrabold text-lg truncate">Planifier un entretien</h2>
               <p className="text-gray-500 dark:text-gray-400 text-sm mt-0.5 truncate">{name}</p>
             </div>
-
             <button
               onClick={onClose}
               className="w-9 h-9 rounded-full hover:bg-white/70 dark:hover:bg-gray-800 flex items-center justify-center transition-colors shrink-0"
@@ -775,19 +637,23 @@ function EntretienModal({ candidate, onClose, onRHScheduled }) {
                 <div className="w-11 h-11 rounded-xl bg-green-600 flex items-center justify-center shadow-sm flex-shrink-0">
                   <t.icon className="w-5 h-5 text-white" />
                 </div>
-
                 <div className="flex-1 min-w-0">
                   <p className="font-extrabold text-gray-900 dark:text-white text-sm">{t.label}</p>
                   <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{t.desc}</p>
                 </div>
-
                 <ChevronRight className="w-4 h-4 text-gray-400 group-hover:text-green-600 transition-colors flex-shrink-0" />
               </button>
             ))}
           </div>
         )}
 
-        {step === "telephonique" && <TelephoniqueFlow candidate={candidate} onBack={() => setStep("type")} onClose={onClose} />}
+        {step === "telephonique" && (
+          <TelephoniqueFlow
+            candidate={candidate}
+            onBack={() => setStep("type")}
+            onClose={onClose}
+          />
+        )}
         {step === "rh" && (
           <RHFlow
             candidate={candidate}
@@ -810,8 +676,7 @@ function NoteStars({ note }) {
         {[1, 2, 3, 4, 5].map((s) => (
           <button key={s} onClick={() => setStars(s)}>
             <Star
-              className={`w-5 h-5 transition-colors ${s <= stars ? "text-yellow-400 fill-yellow-400" : "text-gray-300"
-                }`}
+              className={`w-5 h-5 transition-colors ${s <= stars ? "text-yellow-400 fill-yellow-400" : "text-gray-300"}`}
             />
           </button>
         ))}
@@ -820,16 +685,15 @@ function NoteStars({ note }) {
   );
 }
 
-function PreInterviewCard({ c, index }) {
-  const [sentFiche, setSentFiche] = useState(() => wasSentFiche(c._id));
-  const [sentQuiz, setSentQuiz] = useState(() => wasSentQuiz(c._id));
-  const [showSendModal, setShowSendModal] = useState(false);
-  const [showEntretienModal, setShowEntretienModal] = useState(false);
-  const [rhInterview, setRhInterview] = useState(c?.latestRhInterview || null);
+/* ================================================================
+   TABLE ROW — ligne de candidat (modals gérés dans la page parente)
+================================================================ */
+function PreInterviewRow({ c, index, onOpenSendModal, onOpenEntretienModal }) {
+  const sentFiche = wasSentFiche(c._id);
+  const sentQuiz = wasSentQuiz(c._id);
 
   const name = getName(c);
   const cvUrl = getCvUrl(c);
-  const cvName = getCvName(c);
   const score = getMatchScore(c);
   const jobTitle = safeStr(c?.jobTitle) || "—";
   const email = safeStr(c?.email);
@@ -838,239 +702,180 @@ function PreInterviewCard({ c, index }) {
   const allSent = sentFiche && sentQuiz;
   const anySent = sentFiche || sentQuiz;
 
-  // Sauvegarder quand l'état change
-  useEffect(() => {
-    if (sentFiche) {
-      markSentFiche(c._id);
-    }
-  }, [sentFiche, c._id]);
-
-  useEffect(() => {
-    if (sentQuiz) {
-      markSentQuiz(c._id);
-    }
-  }, [sentQuiz, c._id]);
-
-  // Sauvegarder dans localStorage global quand les deux sont envoyés
-  useEffect(() => {
-    if (allSent) {
-      markSent(c._id);
-    }
-  }, [allSent, c._id]);
-
-  // Déterminer l'état du bouton
-  function getButtonState() {
-    if (allSent) {
-      return {
-        label: "Documents envoyés",
-        disabled: true,
-        badges: []
-      };
-    }
-
-    if (sentFiche && !sentQuiz) {
-      return {
-        label: "Envoyer Quiz",
-        disabled: false,
-        badges: [
-          <span key="fiche" className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 rounded-full text-sm font-medium"><ClipboardList className="w-4 h-4" /> Fiche ✓</span>
-        ]
-      };
-    }
-
-    if (sentQuiz && !sentFiche) {
-      return {
-        label: "Envoyer Fiche",
-        disabled: false,
-        badges: [
-          <span key="quiz" className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 rounded-full text-sm font-medium"><Brain className="w-4 h-4" /> Quiz ✓</span>
-        ]
-      };
-    }
-
-    return {
-      label: "Envoyer (fiche / quiz)",
-      disabled: false,
-      badges: []
-    };
+  function getDocumentsBadge() {
+    if (allSent) return <span className="text-xs font-semibold text-green-600 dark:text-green-400 flex items-center gap-1"><CheckCircle2 className="w-3.5 h-3.5" /> Envoyés</span>;
+    if (sentFiche) return <span className="text-xs text-amber-600 dark:text-amber-400 flex items-center gap-1"><ClipboardList className="w-3.5 h-3.5" /> Fiche ✓</span>;
+    if (sentQuiz) return <span className="text-xs text-amber-600 dark:text-amber-400 flex items-center gap-1"><Brain className="w-3.5 h-3.5" /> Quiz ✓</span>;
+    return <span className="text-xs text-gray-400">Aucun</span>;
   }
 
-  const buttonState = getButtonState();
-
-  function handleModalSuccess(justSentFiche, justSentQuiz) {
-    if (justSentFiche) setSentFiche(true);
-    if (justSentQuiz) setSentQuiz(true);
+  function getSendButton() {
+    if (allSent) return null;
+    const label = sentFiche && !sentQuiz ? "Envoyer Quiz"
+      : sentQuiz && !sentFiche ? "Envoyer Fiche"
+        : "Envoyer Fiche / Quiz";
+    const color = anySent ? "bg-amber-500 hover:bg-amber-600" : "bg-green-600 hover:bg-green-700";
+    return (
+      <button
+        onClick={() => onOpenSendModal(c)}
+        className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg ${color} text-white text-xs font-semibold transition whitespace-nowrap`}
+      >
+        <Send className="w-3.5 h-3.5" />
+        {label}
+      </button>
+    );
   }
 
   return (
-    <>
-      <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700 shadow-sm overflow-hidden">
-        <div className="p-6">
-          {/* TOP CONTENT — responsive */}
-          <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-6">
-            {/* LEFT */}
-            <div className="flex items-start gap-5 flex-1 min-w-0">
-              {/* Avatar */}
-              <div className="relative shrink-0">
-                <div className="w-16 h-16 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center text-green-700 dark:text-green-300 font-extrabold text-2xl">
-                  {name?.[0]?.toUpperCase() || "C"}
-                </div>
-                <span className="absolute -top-1 -left-1 w-6 h-6 rounded-full bg-green-600 text-white text-[11px] font-bold flex items-center justify-center">
-                  {index + 1}
-                </span>
-              </div>
-
-              {/* Infos */}
-              <div className="min-w-0">
-                <h2 className="text-2xl font-extrabold text-gray-900 dark:text-white truncate">{name}</h2>
-
-                <div className="flex items-center gap-2 mt-1">
-                  <Briefcase className="w-4 h-4 text-gray-400 shrink-0" />
-                  <p className="text-sm text-gray-500 dark:text-gray-400 truncate">{jobTitle}</p>
-                </div>
-
-                {email && (
-                  <a
-                    href={`mailto:${email}`}
-                    className="mt-3 inline-flex items-center gap-2 text-sm text-blue-600 dark:text-blue-400 hover:underline"
-                  >
-                    <Mail className="w-4 h-4" />
-                    {email}
-                  </a>
-                )}
-
-                {cvUrl && (
-                  <a
-                    href={cvUrl}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="mt-3 inline-flex items-center gap-2 text-base font-semibold text-green-700 dark:text-emerald-400 hover:text-green-800"
-                  >
-                    <FileText className="w-5 h-5" />
-                    Voir CV <span className="text-gray-400 text-sm font-normal">({cvName})</span>
-                  </a>
-                )}
-              </div>
+    <tr className="border-b border-gray-100 dark:border-gray-700 hover:bg-green-50/40 dark:hover:bg-green-900/10 transition-colors">
+      {/* CANDIDAT */}
+      <td className="px-4 py-4">
+        <div className="flex items-center gap-3">
+          <div className="relative shrink-0">
+            <div className="w-10 h-10 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center text-green-700 dark:text-green-300 font-extrabold text-base">
+              {name?.[0]?.toUpperCase() || "C"}
             </div>
-
-            {/* RIGHT (score + date) */}
-            <div className="w-full md:w-[320px] shrink-0 flex flex-row md:flex-col items-start md:items-end justify-between md:justify-start gap-4">
-              <div className="text-left md:text-right">
-                <p className="text-[11px] font-semibold text-gray-400 uppercase mb-2">Match score</p>
-                <div className={`inline-flex text-3xl font-extrabold px-5 py-2 rounded-2xl ${scoreBg(score)}`}>{pct(score)}</div>
-
-              </div>
-
-              {selectedAt && (
-                <div className="inline-flex items-center gap-2 text-sm text-green-700 dark:text-green-400 bg-green-50 dark:bg-green-900/20 px-4 py-2 rounded-full">
-                  <Clock className="w-4 h-4" />
-                  Sélectionné le {formatDate(selectedAt)}
-                </div>
-              )}
-            </div>
+            <span className="absolute -top-1 -left-1 w-5 h-5 rounded-full bg-green-600 text-white text-[10px] font-bold flex items-center justify-center">
+              {index + 1}
+            </span>
           </div>
-
-          {/* FOOTER ACTIONS */}
-          <div className="mt-6 flex flex-wrap items-center justify-end gap-3">
-            {/* Envoyer — état dynamique */}
-            {allSent ? (
-              <div className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-700 text-green-700 dark:text-green-400 text-sm font-semibold cursor-not-allowed">
-                <CheckCircle2 className="w-4 h-4" />
-                {buttonState.label}
-                {buttonState.badges.length > 0 && (
-                  <div className="flex gap-1.5">
-                    {buttonState.badges}
-                  </div>
-                )}
-              </div>
-            ) : anySent ? (
-              <>
-                <button
-                  onClick={() => setShowSendModal(true)}
-                  className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-full bg-amber-600 hover:bg-amber-700 text-white text-sm font-semibold transition"
-                >
-                  <Send className="w-4 h-4" />
-                  {buttonState.label}
-                </button>
-                {buttonState.badges.length > 0 && (
-                  <div className="flex gap-1.5">
-                    {buttonState.badges}
-                  </div>
-                )}
-              </>
-            ) : (
-              <button
-                onClick={() => setShowSendModal(true)}
-                className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-full bg-green-600 hover:bg-green-700 text-white text-sm font-semibold transition"
-              >
-                <Send className="w-4 h-4" />
-                {buttonState.label}
-              </button>
+          <div className="min-w-0">
+            <p className="font-bold text-gray-900 dark:text-white text-sm truncate">{name}</p>
+            {email && (
+              <a href={`mailto:${email}`} className="text-xs text-blue-500 hover:underline truncate block">{email}</a>
             )}
-
-            {/* Planifier */}
-            <button
-              onClick={() => setShowEntretienModal(true)}
-              className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-full bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold transition"
-            >
-              <Calendar className="w-4 h-4" />
-              Planifier entretien
-            </button>
-
-            {/* Résultats */}
-            <Link
-              href={`/Responsable_RH_Nord/PreInterviewList/${c._id}/results`}
-              className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-full bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-800 dark:text-gray-100 text-sm font-semibold transition"
-            >
-              <BarChart2 className="w-4 h-4" />
-              Résultats
-            </Link>
           </div>
         </div>
-      </div>
+      </td>
 
-      {/* Modal envoi */}
-      {showSendModal && (
-        <SendDocumentsModal
-          candidature={c}
-          onClose={() => setShowSendModal(false)}
-          onSuccess={(justSentFiche, justSentQuiz) => handleModalSuccess(justSentFiche, justSentQuiz)}
-          initialSentFiche={sentFiche}
-          initialSentQuiz={sentQuiz}
-        />
-      )}
+      {/* POSTE */}
+      <td className="px-4 py-4">
+        <div className="flex items-center gap-1.5 text-sm text-gray-600 dark:text-gray-300">
+          <Briefcase className="w-3.5 h-3.5 text-gray-400 shrink-0" />
+          <span className="truncate max-w-[180px]">{jobTitle}</span>
+        </div>
+      </td>
 
-      {showEntretienModal && (
-        <EntretienModal
-          candidate={c}
-          onClose={() => setShowEntretienModal(false)}
-          onRHScheduled={(iv) => {
-            setRhInterview(iv);
-            setShowEntretienModal(false);
-          }}
-        />
-      )}
-    </>
+      {/* CV */}
+      <td className="px-4 py-4">
+        {cvUrl ? (
+          <a href={cvUrl} target="_blank" rel="noreferrer"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-xs font-semibold text-gray-700 dark:text-gray-200 hover:border-green-400 hover:text-green-700 transition">
+            <FileText className="w-3.5 h-3.5" />
+            Voir CV
+          </a>
+        ) : (
+          <span className="text-xs text-gray-400">—</span>
+        )}
+      </td>
+
+      {/* SCORE */}
+      <td className="px-4 py-4">
+        <span className={`inline-flex items-center px-3 py-1 rounded-lg text-sm font-extrabold ${scoreBg(score)}`}>
+          {pct(score)}
+        </span>
+      </td>
+
+      {/* SÉLECTIONNÉ LE */}
+      <td className="px-4 py-4">
+        {selectedAt ? (
+          <div className="flex items-center gap-1.5 text-xs text-gray-500 dark:text-gray-400 whitespace-nowrap">
+            <Clock className="w-3.5 h-3.5 text-green-500 shrink-0" />
+            {formatDate(selectedAt)}
+          </div>
+        ) : (
+          <span className="text-xs text-gray-400">—</span>
+        )}
+      </td>
+
+      {/* DOCUMENTS */}
+      <td className="px-4 py-4">{getDocumentsBadge()}</td>
+
+      {/* ACTIONS */}
+      <td className="px-4 py-4">
+        <div className="flex flex-col gap-1.5 items-start">
+          <div className="flex items-center gap-1.5">
+            {getSendButton()}
+            <button
+              onClick={() => onOpenEntretienModal(c)}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold transition whitespace-nowrap"
+            >
+              <Calendar className="w-3.5 h-3.5" />
+              Planifier
+            </button>
+          </div>
+          <Link
+            href={`/Responsable_RH_Nord/PreInterviewList/${c._id}/results`}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-200 text-xs font-semibold transition whitespace-nowrap"
+          >
+            <BarChart2 className="w-3.5 h-3.5" />
+            Résultats
+          </Link>
+        </div>
+      </td>
+    </tr>
   );
 }
 
 /* ================================================================
    PAGE PRINCIPALE
 ================================================================ */
+
+const LS_PREINTERVIEW_KEY = "preinterview_candidates_list";
+
+function getStoredCandidates() {
+  try {
+    const raw = localStorage.getItem(LS_PREINTERVIEW_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch { return null; }
+}
+
+function saveStoredCandidates(candidates) {
+  try {
+    localStorage.setItem(LS_PREINTERVIEW_KEY, JSON.stringify(candidates));
+  } catch { }
+}
+
 export default function PreInterviewListPage() {
   const [candidates, setCandidates] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
 
+  const [sendModalCandidate, setSendModalCandidate] = useState(null);
+  const [entretienModalCandidate, setEntretienModalCandidate] = useState(null);
+  const [sentMap, setSentMap] = useState({});
+
   useEffect(() => {
     async function load() {
       try {
         setLoading(true);
+        const stored = getStoredCandidates();
+        if (stored && stored.length > 0) {
+          setCandidates(stored);
+          setLoading(false);
+        }
         const res = await getPreInterviewNordList();
-        setCandidates(Array.isArray(res?.data) ? res.data : []);
+        const fresh = Array.isArray(res?.data) ? res.data : [];
+        if (stored && stored.length > 0) {
+          const storedIds = new Set(stored.map((c) => c._id));
+          const newFromApi = fresh.filter((c) => !storedIds.has(c._id));
+          const updated = stored.map((c) => {
+            const fromApi = fresh.find((f) => f._id === c._id);
+            if (fromApi) return { ...fromApi, preInterviewNord: { ...fromApi.preInterviewNord, status: "SELECTED" } };
+            return c;
+          });
+          const merged = [...updated, ...newFromApi];
+          setCandidates(merged);
+          saveStoredCandidates(merged);
+        } else {
+          setCandidates(fresh);
+          saveStoredCandidates(fresh);
+        }
       } catch (e) {
         console.error("Erreur chargement pré-entretien:", e?.message);
-        setCandidates([]);
+        const stored = getStoredCandidates();
+        if (stored) setCandidates(stored);
+        else setCandidates([]);
       } finally {
         setLoading(false);
       }
@@ -1089,6 +894,21 @@ export default function PreInterviewListPage() {
     });
   }, [candidates, search]);
 
+  function handleModalSuccess(candidateId, justSentFiche, justSentQuiz) {
+    setSentMap((prev) => {
+      const cur = prev[candidateId] || {};
+      const next = {
+        sentFiche: cur.sentFiche || justSentFiche,
+        sentQuiz: cur.sentQuiz || justSentQuiz,
+      };
+      if (next.sentFiche) markSentFiche(candidateId);
+      if (next.sentQuiz) markSentQuiz(candidateId);
+      if (next.sentFiche && next.sentQuiz) markSent(candidateId);
+      return { ...prev, [candidateId]: next };
+    });
+    setSendModalCandidate(null);
+  }
+
   if (loading)
     return (
       <div className="min-h-screen bg-[#F0FAF0] dark:bg-gray-950 flex items-center justify-center">
@@ -1098,9 +918,10 @@ export default function PreInterviewListPage() {
 
   return (
     <div className="min-h-screen bg-[#F0FAF0] dark:bg-gray-950 transition-colors duration-300">
-      <div className="max-w-4xl mx-auto px-4 py-8 space-y-6">
+      <div className="max-w-7xl mx-auto px-4 py-8 space-y-6">
+
         {/* Header */}
-        <div className="flex items-start justify-between gap-4">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
             <h1 className="text-3xl font-extrabold text-gray-900 dark:text-white flex items-center gap-3">
               <UserCheck className="w-8 h-8 text-green-500" />
@@ -1110,33 +931,77 @@ export default function PreInterviewListPage() {
               {candidates.length} candidat{candidates.length > 1 ? "s" : ""} prêt{candidates.length > 1 ? "s" : ""} pour entretien
             </p>
           </div>
+          <div className="relative w-full sm:w-72">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+            <input
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Rechercher (nom, email, poste)..."
+              className="w-full pl-9 pr-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-sm text-gray-800 dark:text-gray-100 outline-none focus:ring-2 focus:ring-green-400 transition-colors"
+            />
+          </div>
         </div>
 
-        {/* Search */}
-        <div className="relative">
-          <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-          <input
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Rechercher un candidat (nom, email, job)..."
-            className="w-full pl-11 pr-4 py-3 rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-sm text-gray-800 dark:text-gray-100 outline-none focus:ring-2 focus:ring-green-400 transition-colors"
-          />
-        </div>
-
-        {/* Liste */}
+        {/* Tableau */}
         {filtered.length === 0 ? (
           <div className="text-center py-16 text-gray-400">
             <UserCheck className="w-12 h-12 mx-auto mb-3 opacity-30" />
             <p className="font-medium">{search ? "Aucun candidat trouvé" : "Aucun candidat pré-sélectionné"}</p>
           </div>
         ) : (
-          <div className="space-y-4">
-            {filtered.map((c, i) => (
-              <PreInterviewCard key={c._id} c={c} index={i} />
-            ))}
+          <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700 shadow-sm overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead>
+                  <tr className="border-b border-gray-100 dark:border-gray-700 bg-gray-50/60 dark:bg-gray-800">
+                    <th className="px-4 py-3 text-left text-xs font-bold text-green-700 dark:text-green-400 uppercase tracking-wider">Candidat</th>
+                    <th className="px-4 py-3 text-left text-xs font-bold text-green-700 dark:text-green-400 uppercase tracking-wider">Poste</th>
+                    <th className="px-4 py-3 text-left text-xs font-bold text-green-700 dark:text-green-400 uppercase tracking-wider">CV</th>
+                    <th className="px-4 py-3 text-left text-xs font-bold text-green-700 dark:text-green-400 uppercase tracking-wider">Score</th>
+                    <th className="px-4 py-3 text-left text-xs font-bold text-green-700 dark:text-green-400 uppercase tracking-wider">Sélectionné le</th>
+                    <th className="px-4 py-3 text-left text-xs font-bold text-green-700 dark:text-green-400 uppercase tracking-wider">Documents</th>
+                    <th className="px-4 py-3 text-left text-xs font-bold text-green-700 dark:text-green-400 uppercase tracking-wider">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filtered.map((c, i) => (
+                    <PreInterviewRow
+                      key={c._id}
+                      c={c}
+                      index={i}
+                      onOpenSendModal={setSendModalCandidate}
+                      onOpenEntretienModal={setEntretienModalCandidate}
+                    />
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <div className="px-4 py-3 border-t border-gray-100 dark:border-gray-700 text-xs text-gray-400 dark:text-gray-500">
+              {filtered.length} candidat{filtered.length > 1 ? "s" : ""} affiché{filtered.length > 1 ? "s" : ""}
+            </div>
           </div>
         )}
       </div>
+
+      {/* ── MODALS EN DEHORS DU TABLEAU ── */}
+      {sendModalCandidate && (
+        <SendDocumentsModal
+          candidature={sendModalCandidate}
+          onClose={() => setSendModalCandidate(null)}
+          onSuccess={(justSentFiche, justSentQuiz) =>
+            handleModalSuccess(sendModalCandidate._id, justSentFiche, justSentQuiz)
+          }
+          initialSentFiche={wasSentFiche(sendModalCandidate._id)}
+          initialSentQuiz={wasSentQuiz(sendModalCandidate._id)}
+        />
+      )}
+      {entretienModalCandidate && (
+        <EntretienModal
+          candidate={entretienModalCandidate}
+          onClose={() => setEntretienModalCandidate(null)}
+          onRHScheduled={() => setEntretienModalCandidate(null)}
+        />
+      )}
     </div>
   );
 }

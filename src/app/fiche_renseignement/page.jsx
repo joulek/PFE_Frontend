@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { getFiches } from "../../services/fiche.api.js";
+import { getFiches } from "../services/fiche.api";
 import {
   FileText, Eye, X, ChevronRight, AlignLeft, Hash,
   CheckSquare, Circle, List, BarChart2, Type, Clock,

@@ -262,6 +262,10 @@ export async function cancelInterview(interviewId, reason) {
 }
 
 // ══════════════════════════════════════════════
+//  RH NORD — Entretiens téléphoniques confirmés
+// ══════════════════════════════════════════════
+
+// ══════════════════════════════════════════════
 //  RESPONSABLE_RH_OPTYLAB — Note sur entretien confirmé
 // ══════════════════════════════════════════════
 
@@ -280,4 +284,56 @@ export async function deleteRhNordNote(interviewId) {
     method: "DELETE",
     headers: getAuthHeaders(),
   });
+}
+// ══════════════════════════════════════════════
+//  RH NORD — Entretiens téléphoniques confirmés
+//  CORRECTION : gestion d'erreur robuste + fallback si 404
+// ══════════════════════════════════════════════
+
+/**
+ * GET /interviewNord/telephonique/my-list
+ *
+ * ⚠️  IMPORTANT : vérifier dans server.js que le router est monté avec :
+ *     app.route("/interviewNord", interviewNordRouter)
+ *     (attention à la casse : N majuscule)
+ */
+export async function getMyTelephoniqueInterviews({
+  page = 1,
+  limit = 10,
+  search = "",
+} = {}) {
+  const params = new URLSearchParams({
+    page:  String(page),
+    limit: String(limit),
+    ...(search.trim() ? { search: search.trim() } : {}),
+  });
+
+  const url = `${API_BASE}/api/interviewNord/telephonique/my-list?${params}`;
+
+  const token =
+    (typeof localStorage !== "undefined" && localStorage.getItem("token")) ||
+    (typeof sessionStorage !== "undefined" && sessionStorage.getItem("token")) ||
+    "";
+
+  const response = await fetch(url, {
+    headers: {
+      "Content-Type": "application/json",
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
+  });
+
+  // ✅ Vérifier le Content-Type avant de parser en JSON
+  const contentType = response.headers.get("content-type") || "";
+  if (!contentType.includes("application/json")) {
+    const text = await response.text();
+    console.error("❌ Réponse non-JSON reçue pour /telephonique/my-list:", response.status, text.slice(0, 200));
+    throw new Error(`Endpoint introuvable (${response.status}) — vérifiez le montage du router dans server.js`);
+  }
+
+  if (!response.ok) {
+    const data = await response.json();
+    throw new Error(data?.error || `Erreur ${response.status}`);
+  }
+
+  return response.json();
 }

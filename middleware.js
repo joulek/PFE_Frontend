@@ -19,6 +19,7 @@ export function middleware(req) {
   const isAssistanceDirection = role === "ASSISTANCE_DIRECTION";
   const isResponsableRHOPTYLAB   = role === "RESPONSABLE_RH_OPTYLAB";
   const isResponsableRHNord      = role === "RESPONSABLE_RH_NORD";
+  const isResponsableMetier      = role === "RESPONSABLE_METIER";
 
   const isRecruiterPath   = pathname.startsWith("/recruiter");
   const isResponsablePath =
@@ -26,6 +27,7 @@ export function middleware(req) {
     pathname.startsWith("/responsableMetier");
 
   const isAssistanceDirPath     = pathname.startsWith("/entretiens-confirmes");
+  const isFichesPath            = pathname.startsWith("/fiche_renseignement");
   const isResponsableRHOPTYLABPath = pathname.startsWith("/RESPONSABLE_RH_OPTYLAB");
   const isResponsableRHNordPath    = pathname.startsWith("/RESPONSABLE_RH_NORD");
 
@@ -40,7 +42,7 @@ export function middleware(req) {
 
   const isLoginPage    = pathname.startsWith("/login");
   const isUnauthorized = pathname.startsWith("/unauthorized");
-  const isProtected    = isRecruiterPath || isResponsablePath || isSharedRHPath || isAssistanceDirPath || isCalendarPath || isResponsableRHOPTYLABPath || isResponsableRHNordPath;
+  const isProtected    = isRecruiterPath || isResponsablePath || isSharedRHPath || isAssistanceDirPath || isCalendarPath || isResponsableRHOPTYLABPath || isResponsableRHNordPath || isFichesPath;
 
   const redirect = (to) => {
     const url = req.nextUrl.clone();
@@ -70,6 +72,9 @@ export function middleware(req) {
 
   // /entretiens-confirmes/* → ASSISTANCE_DIRECTION + ADMIN uniquement
   if (isAssistanceDirPath && token && !isAdmin && !isAssistanceDirection) return redirect("/unauthorized");
+
+  // /fiche_renseignement → RESPONSABLE_METIER + RESPONSABLE_RH_NORD + RESPONSABLE_RH_OPTYLAB + ADMIN
+  if (isFichesPath && token && !isResponsableMetier && !isResponsableRHNord && !isResponsableRHOPTYLAB && !isAdmin) return redirect("/unauthorized");
 
   // /RESPONSABLE_RH_OPTYLAB/* → RESPONSABLE_RH_OPTYLAB uniquement
   if (isResponsableRHOPTYLABPath && token && !isResponsableRHOPTYLAB) return redirect("/unauthorized");
