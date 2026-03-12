@@ -236,53 +236,38 @@ export default function RecruitmentTrackingPage() {
   function exportToCSV() {
     const visibleColumns = columns.filter((col) => col.visible);
     const headers = visibleColumns.map((col) => col.label);
+    const SEPARATOR = ";"; // ← point-virgule pour Excel FR
+
+    const escapeCell = (value) => {
+      const str = value === null || value === undefined ? "" : String(value);
+      return `"${str.replace(/"/g, '""')}"`;
+    };
 
     const rows = filtered.map((job) =>
       visibleColumns.map((col) => {
         switch (col.id) {
-          case "titre":
-            return `${job.titre} (${job.lieu || "—"})`;
-          case "nombrePostes":
-            return job.nombrePostes || "—";
-          case "departement":
-            return job.departement || "—";
-          case "societe":
-            return job.societe || "—";
-          case "sexe":
-            return prettySexe(job.sexe);
-          case "typeDiplome":
-            return job.typeDiplome || "—";
-          case "status":
-            return job.status || "—";
-          case "dateCloture":
-            return formatDate(job.dateCloture);
-          case "motif":
-            return job.motif || "—";
-          case "createdByUser":
-            return job.createdByUser || "—";
-          case "createdAt":
-            return formatDateWithTime(job.createdAt);
-          default:
-            return "—";
+          case "titre": return escapeCell(`${job.titre || ""}${job.lieu ? ` (${job.lieu})` : ""}`);
+          case "nombrePostes": return escapeCell(job.nombrePostes ?? "");
+          case "departement": return escapeCell(job.departement ?? "");
+          case "societe": return escapeCell(job.societe ?? "");
+          case "sexe": return escapeCell(prettySexe(job.sexe));
+          case "typeDiplome": return escapeCell(job.typeDiplome ?? "");
+          case "status": return escapeCell(job.status ?? "");
+          case "dateCloture": return escapeCell(formatDate(job.dateCloture));
+          case "motif": return escapeCell(job.motif ?? "");
+          case "createdByUser": return escapeCell(job.createdByUser ?? "");
+          case "createdAt": return escapeCell(formatDateWithTime(job.createdAt));
+          default: return escapeCell(job[col.id] ?? "");
         }
       })
     );
 
     const csvContent = [
-      headers.join(","),
-      ...rows.map((row) =>
-        row
-          .map((cell) => {
-            if (typeof cell === "string" && cell.includes(",")) {
-              return `"${cell}"`;
-            }
-            return cell;
-          })
-          .join(",")
-      ),
+      headers.map(escapeCell).join(SEPARATOR),
+      ...rows.map((row) => row.join(SEPARATOR)),
     ].join("\n");
 
-    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const blob = new Blob(["\uFEFF" + csvContent], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
@@ -425,11 +410,10 @@ export default function RecruitmentTrackingPage() {
                       onDragStart={(e) => handleDragStart(e, visibleIndices[idx])}
                       onDragOver={handleDragOver}
                       onDrop={(e) => handleDrop(e, visibleIndices[idx])}
-                      className={`px-6 py-4 text-left text-xs font-extrabold uppercase tracking-wider text-[#3d7a1a] dark:text-emerald-400 whitespace-nowrap cursor-move select-none transition-all ${
-                        draggedIndex === visibleIndices[idx]
+                      className={`px-6 py-4 text-left text-xs font-extrabold uppercase tracking-wider text-[#3d7a1a] dark:text-emerald-400 whitespace-nowrap cursor-move select-none transition-all ${draggedIndex === visibleIndices[idx]
                           ? "opacity-50 bg-yellow-100 dark:bg-yellow-900/30"
                           : "hover:bg-[#d9f0cd] dark:hover:bg-gray-700/50"
-                      }`}
+                        }`}
                     >
                       <div className="flex items-center justify-between gap-2">
                         <span className="flex items-center gap-2">

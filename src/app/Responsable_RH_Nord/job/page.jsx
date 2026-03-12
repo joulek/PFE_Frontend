@@ -56,6 +56,45 @@ function clamp(n, min, max) {
   return Math.min(max, Math.max(min, x));
 }
 
+const CONTRACT_OPTIONS = [
+  { value: "", label: "Type de contrat" },
+  { value: "CDD", label: "CDD" },
+  { value: "CDI", label: "CDI" },
+  { value: "CIVP", label: "CIVP" },
+];
+
+const STAGE_CONTRAT_OPTIONS = [
+  { value: "", label: "Type de stage" },
+  { value: "STAGE_PFE", label: "Stage PFE" },
+  { value: "STAGE_ETE", label: "Stage d'été" },
+  { value: "STAGE_INITIATION", label: "Stage d'initiation" },
+  { value: "ALTERNANCE", label: "Alternance" },
+];
+
+const MOTIF_OPTIONS = [
+  { value: "", label: "Motif" },
+  { value: "NOUVEAU", label: "Nouveau poste" },
+  { value: "REMPLACEMENT", label: "Remplacement" },
+  { value: "RENFORT", label: "Renfort" },
+];
+
+const SEXE_OPTIONS = [
+  { value: "", label: "Genre" },
+  { value: "H", label: "H" },
+  { value: "F", label: "F" },
+  { value: "HF", label: "H/F" },
+];
+
+const DUREE_STAGE_OPTIONS = [
+  { value: "", label: "Durée du stage" },
+  { value: "1_MOIS", label: "1 mois" },
+  { value: "2_MOIS", label: "2 mois" },
+  { value: "3_MOIS", label: "3 mois" },
+  { value: "4_MOIS", label: "4 mois" },
+  { value: "5_MOIS", label: "5 mois" },
+  { value: "6_MOIS", label: "6 mois" },
+];
+
 /* ================= STATUS CONFIG ================= */
 const STATUS_CONFIG = {
   CONFIRMEE: {
@@ -74,7 +113,6 @@ const STATUS_CONFIG = {
     icon: CheckCircle2,
     cardBorder: "border-blue-200 dark:border-blue-800",
   },
-
   EN_ATTENTE: {
     label: "En attente",
     bg: "bg-amber-100 dark:bg-amber-900/30",
@@ -134,20 +172,42 @@ function OriginBadge({ origin }) {
   );
 }
 
+
+/* ================= TYPE OFFRE BADGE ================= */
+function TypeOffreBadge({ typeOffre }) {
+  const isStage = (typeOffre || '').toUpperCase() === 'STAGE';
+  return isStage ? (
+    <span className="inline-flex items-center gap-1.5 text-xs font-bold px-3 py-1 rounded-full border bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-800">
+      <svg xmlns='http://www.w3.org/2000/svg' width='13' height='13' viewBox='0 0 24 24' fill='none' stroke='currentColor' strokeWidth='2' strokeLinecap='round' strokeLinejoin='round'><path d='M22 10v6M2 10l10-5 10 5-10 5z'/><path d='M6 12v5c3 3 9 3 12 0v-5'/></svg>
+      Stage
+    </span>
+  ) : (
+    <span className="inline-flex items-center gap-1.5 text-xs font-bold px-3 py-1 rounded-full border bg-gray-50 dark:bg-gray-700/40 text-gray-600 dark:text-gray-300 border-gray-200 dark:border-gray-600">
+      <svg xmlns='http://www.w3.org/2000/svg' width='13' height='13' viewBox='0 0 24 24' fill='none' stroke='currentColor' strokeWidth='2' strokeLinecap='round' strokeLinejoin='round'><rect width='20' height='14' x='2' y='7' rx='2' ry='2'/><path d='M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16'/></svg>
+      Emploi
+    </span>
+  );
+}
+
 /* ================= FILTERS ================= */
 const STATUS_TABS = [
   { key: "EN_ATTENTE", label: "En attente" },
-  { key: "VALIDEE",    label: "Validées" },
-  { key: "CONFIRMEE",  label: "Publiées" },
-  { key: "REJETEE",    label: "Rejetées" },
+  { key: "VALIDEE", label: "Validées" },
+  { key: "CONFIRMEE", label: "Publiées" },
+  { key: "REJETEE", label: "Rejetées" },
 ];
 
 const ORIGIN_FILTERS = [
-  { key: "all",      label: "Toutes" },
-  { key: "CREATED",  label: "Créées" },
+  { key: "all", label: "Toutes" },
+  { key: "CREATED", label: "Créées" },
   { key: "ASSIGNED", label: "Assignées" },
 ];
 
+const TYPE_OFFRE_FILTERS = [
+  { key: 'all', label: 'Tous' },
+  { key: 'JOB', label: 'Recrutement' },
+  { key: 'STAGE', label: 'Stages' },
+];
 
 /* =================================================================
    PAGE
@@ -158,6 +218,8 @@ export default function ResponsableJobsPage() {
 
   const [activeTab, setActiveTab] = useState("all");
   const [originFilter, setOriginFilter] = useState("all");
+
+  const [typeOffreFilter, setTypeOffreFilter] = useState("all");
 
   const [expandedJobs, setExpandedJobs] = useState({});
 
@@ -213,9 +275,8 @@ export default function ResponsableJobsPage() {
     setExpandedJobs((prev) => ({ ...prev, [jobId]: !prev[jobId] }));
   }
 
-  // ✅ counts inclut VALIDEE et PUBLIEE
   const counts = useMemo(() => {
-    const c = { all: jobs.length, EN_ATTENTE: 0, VALIDEE: 0,  CONFIRMEE: 0, REJETEE: 0 };
+    const c = { all: jobs.length, EN_ATTENTE: 0, VALIDEE: 0, CONFIRMEE: 0, REJETEE: 0 };
     for (const j of jobs) {
       const s = j._status || getJobStatus(j);
       if (c[s] !== undefined) c[s] += 1;
@@ -233,6 +294,16 @@ export default function ResponsableJobsPage() {
     return o;
   }, [jobs]);
 
+  const typeOffreCounts = useMemo(() => {
+    const t = { all: jobs.length, JOB: 0, STAGE: 0 };
+    for (const j of jobs) {
+      const type = (j.typeOffre || "JOB").toUpperCase();
+      if (type === "STAGE") t.STAGE++;
+      else t.JOB++;
+    }
+    return t;
+  }, [jobs]);
+
   const filteredJobs = useMemo(() => {
     let arr = [...jobs];
     if (originFilter !== "all") {
@@ -242,11 +313,18 @@ export default function ResponsableJobsPage() {
         return true;
       });
     }
+    if (typeOffreFilter !== "all") {
+      arr = arr.filter((j) => {
+        const type = (j.typeOffre || "JOB").toUpperCase();
+        if (typeOffreFilter === "STAGE") return type === "STAGE";
+        return type !== "STAGE";
+      });
+    }
     if (activeTab !== "all") {
       arr = arr.filter((j) => (j._status || getJobStatus(j)) === activeTab);
     }
     return arr;
-  }, [jobs, activeTab, originFilter]);
+  }, [jobs, activeTab, originFilter, typeOffreFilter]);
 
   const totalPages = Math.max(1, Math.ceil(filteredJobs.length / pageSize));
   const paginatedJobs = useMemo(() => {
@@ -254,7 +332,7 @@ export default function ResponsableJobsPage() {
     return filteredJobs.slice(start, start + pageSize);
   }, [filteredJobs, page]);
 
-  useEffect(() => { setPage(1); }, [activeTab, originFilter]);
+  useEffect(() => { setPage(1); }, [activeTab, originFilter, typeOffreFilter]);
   useEffect(() => { if (page > totalPages) setPage(totalPages); }, [page, totalPages]);
 
   async function handleCreate(payload) {
@@ -316,18 +394,16 @@ export default function ResponsableJobsPage() {
           </button>
         </div>
 
-        {/* FILTER BAR — redesigned responsive */}
+        {/* FILTER BAR */}
         <div className="bg-white dark:bg-gray-900/60 border border-gray-200 dark:border-gray-700 rounded-2xl mb-8 overflow-hidden shadow-sm">
 
           {/* ROW 1 — Origine */}
           <div className="flex flex-col md:flex-row md:items-center gap-2 md:gap-0 border-b border-gray-100 dark:border-gray-700/60 px-3 md:px-0">
-            {/* Label */}
             <div className="md:px-5 md:py-3.5 md:border-r border-gray-100 dark:border-gray-700/60 md:shrink-0">
               <span className="text-xs font-bold uppercase tracking-widest text-gray-400 dark:text-gray-500 whitespace-nowrap">
                 Origine
               </span>
             </div>
-            {/* Buttons */}
             <div className="flex items-center gap-1.5 px-0 md:px-4 py-3 md:py-2.5 flex-wrap">
               {ORIGIN_FILTERS.map((f) => {
                 const active = originFilter === f.key;
@@ -336,19 +412,63 @@ export default function ResponsableJobsPage() {
                   <button
                     key={f.key}
                     onClick={() => setOriginFilter(f.key)}
+                    className={`inline-flex items-center gap-1.5 px-3 md:px-4 py-1 md:py-1.5 rounded-full text-xs md:text-sm font-bold transition-all duration-150 ${active
+                        ? "bg-gray-900 dark:bg-white text-white dark:text-gray-900"
+                        : "text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
+                      }`}
+                  >
+                    {f.label}
+                    <span className={`text-xs px-1.5 py-0.5 rounded-full font-bold ${active
+                        ? "bg-white/20 dark:bg-gray-900/20 text-white dark:text-gray-900"
+                        : "bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400"
+                      }`}>
+                      {badgeCount}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* ROW 2 — Type d'offre */}
+          <div className="flex flex-col md:flex-row md:items-center gap-2 md:gap-0 border-b border-gray-100 dark:border-gray-700/60 px-3 md:px-0">
+            <div className="md:px-5 md:py-3.5 md:border-r border-gray-100 dark:border-gray-700/60 md:shrink-0">
+              <span className="text-xs font-bold uppercase tracking-widest text-gray-400 dark:text-gray-500 whitespace-nowrap">
+                Type
+              </span>
+            </div>
+            <div className="flex items-center gap-1.5 px-0 md:px-4 py-3 md:py-2.5 flex-wrap">
+              {TYPE_OFFRE_FILTERS.map((f) => {
+                const active = typeOffreFilter === f.key;
+                const count = f.key === "all" ? typeOffreCounts.all : typeOffreCounts[f.key] || 0;
+                const colorActive = f.key === "JOB"
+                  ? "bg-gray-700 dark:bg-gray-200 text-white dark:text-gray-900"
+                  : f.key === "STAGE"
+                  ? "bg-blue-500 text-white"
+                  : "bg-gray-900 dark:bg-white text-white dark:text-gray-900";
+                return (
+                  <button
+                    key={f.key}
+                    onClick={() => setTypeOffreFilter(f.key)}
                     className={`inline-flex items-center gap-1.5 px-3 md:px-4 py-1 md:py-1.5 rounded-full text-xs md:text-sm font-bold transition-all duration-150 ${
                       active
-                        ? "bg-gray-900 dark:bg-white text-white dark:text-gray-900"
+                        ? colorActive
                         : "text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
                     }`}
                   >
+                    {f.key === "JOB" && (
+                      <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="20" height="14" x="2" y="7" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
+                    )}
+                    {f.key === "STAGE" && (
+                      <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>
+                    )}
                     {f.label}
                     <span className={`text-xs px-1.5 py-0.5 rounded-full font-bold ${
                       active
-                        ? "bg-white/20 dark:bg-gray-900/20 text-white dark:text-gray-900"
+                        ? "bg-white/20 dark:bg-black/20 text-white dark:text-gray-900"
                         : "bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400"
                     }`}>
-                      {badgeCount}
+                      {count}
                     </span>
                   </button>
                 );
@@ -358,50 +478,44 @@ export default function ResponsableJobsPage() {
 
           {/* ROW 2 — Statut */}
           <div className="flex flex-col md:flex-row md:items-center gap-2 md:gap-0 px-3 md:px-0">
-            {/* Label */}
             <div className="md:px-5 md:py-3.5 md:border-r border-gray-100 dark:border-gray-700/60 md:shrink-0">
               <span className="text-xs font-bold uppercase tracking-widest text-gray-400 dark:text-gray-500 whitespace-nowrap">
                 Statut
               </span>
             </div>
-            {/* Buttons */}
             <div className="flex items-center gap-1 md:gap-1 px-0 md:px-4 py-3 md:py-2.5 flex-wrap overflow-x-auto">
-              {/* Tous */}
               <button
                 type="button"
                 onClick={() => setActiveTab("all")}
-                className={`inline-flex items-center gap-1.5 px-3 md:px-4 py-1 md:py-1.5 rounded-full text-xs md:text-sm font-bold transition-all duration-150 flex-shrink-0 ${
-                  activeTab === "all"
+                className={`inline-flex items-center gap-1.5 px-3 md:px-4 py-1 md:py-1.5 rounded-full text-xs md:text-sm font-bold transition-all duration-150 flex-shrink-0 ${activeTab === "all"
                     ? "bg-[#6CB33F] dark:bg-emerald-600 text-white"
                     : "text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
-                }`}
+                  }`}
               >
                 Tous
-                <span className={`text-xs px-1.5 py-0.5 rounded-full font-bold ${
-                  activeTab === "all"
+                <span className={`text-xs px-1.5 py-0.5 rounded-full font-bold ${activeTab === "all"
                     ? "bg-white/25 text-white"
                     : "bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400"
-                }`}>
+                  }`}>
                   {counts.all}
                 </span>
               </button>
 
-              {/* Separator */}
               <span className="mx-0.5 h-4 w-px bg-gray-200 dark:bg-gray-700 flex-shrink-0" />
 
               {STATUS_TABS.map((tab) => {
                 const active = activeTab === tab.key;
                 const colorMap = {
-                  EN_ATTENTE: active ? "bg-amber-500 text-white"   : "text-amber-600 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-900/20",
-                  VALIDEE:    active ? "bg-blue-500 text-white"    : "text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20",
-                  CONFIRMEE:  active ? "bg-green-600 text-white"   : "text-green-700 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/20",
-                  REJETEE:    active ? "bg-red-500 text-white"     : "text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20",
+                  EN_ATTENTE: active ? "bg-amber-500 text-white" : "text-amber-600 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-900/20",
+                  VALIDEE: active ? "bg-blue-500 text-white" : "text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20",
+                  CONFIRMEE: active ? "bg-green-600 text-white" : "text-green-700 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/20",
+                  REJETEE: active ? "bg-red-500 text-white" : "text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20",
                 };
                 const badgeColor = {
                   EN_ATTENTE: active ? "bg-white/25 text-white" : "bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300",
-                  VALIDEE:    active ? "bg-white/25 text-white" : "bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300",
-                  CONFIRMEE:  active ? "bg-white/25 text-white" : "bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300",
-                  REJETEE:    active ? "bg-white/25 text-white" : "bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300",
+                  VALIDEE: active ? "bg-white/25 text-white" : "bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300",
+                  CONFIRMEE: active ? "bg-white/25 text-white" : "bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300",
+                  REJETEE: active ? "bg-white/25 text-white" : "bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300",
                 };
                 return (
                   <button
@@ -434,20 +548,19 @@ export default function ResponsableJobsPage() {
                 key={job._id}
                 className={`bg-white dark:bg-gray-800 rounded-2xl shadow p-4 md:p-6 flex flex-col hover:shadow-lg transition-all duration-300 border ${cfg.cardBorder}`}
               >
-                {/* Header */}
                 <div className="flex items-start justify-between gap-2 md:gap-3 mb-3">
                   <div className="min-w-0 flex-1">
                     <h3 className="text-lg md:text-xl font-extrabold text-gray-900 dark:text-white truncate">
                       {job.titre || "Sans titre"}
                     </h3>
                     <div className="mt-2 flex flex-wrap gap-1.5 md:gap-2">
+                      <TypeOffreBadge typeOffre={job.typeOffre} />
                       <OriginBadge origin={job._origin || "CREATED"} />
                       <StatusBadge status={status} />
                     </div>
                   </div>
                 </div>
 
-                {/* rejection reason */}
                 {status === "REJETEE" && job.rejectionReason && (
                   <div className="rounded-lg md:rounded-xl border border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-900/20 p-2 md:p-3 mb-3">
                     <p className="text-xs font-extrabold text-red-600 dark:text-red-400 uppercase mb-1">Motif du rejet</p>
@@ -455,7 +568,6 @@ export default function ResponsableJobsPage() {
                   </div>
                 )}
 
-                {/* Description */}
                 <p className={`text-gray-700 dark:text-gray-200 text-xs md:text-sm mb-2 whitespace-pre-line ${!isExpanded ? "line-clamp-3" : ""}`}>
                   {job.description || "—"}
                 </p>
@@ -472,7 +584,6 @@ export default function ResponsableJobsPage() {
 
                 <div className="border-t border-gray-100 dark:border-gray-700 my-3 md:my-4" />
 
-                {/* Meta */}
                 <div className="mt-auto relative">
                   <div className="text-xs md:text-sm text-gray-600 dark:text-gray-300 space-y-1 pr-28 md:pr-32">
                     {job.lieu && (
@@ -558,12 +669,27 @@ function JobOfferModal({ open, onClose, onSubmit, initialData }) {
   const isEditing = !!initialData;
 
   const emptyForm = {
+    typeOffre: "JOB",
+
     titre: "",
     description: "",
     lieu: "",
     dateCloture: "",
+
+    salaire: "",
+    nombrePostes: "",
+    typeDiplome: "",
+
+    typeContrat: "",
+    motif: "",
+    genre: "",
+
+    typeStage: "",
+    dureeStage: "",
+
     hardSkills: "",
     softSkills: "",
+
     scores: {
       skillsFit: 30,
       experienceFit: 30,
@@ -580,29 +706,40 @@ function JobOfferModal({ open, onClose, onSubmit, initialData }) {
   const [numQuestions, setNumQuestions] = useState(25);
 
   const SCORE_ITEMS_MODAL = [
-    { key: "skillsFit",        label: "Skills Fit" },
-    { key: "experienceFit",    label: "Professional Experience Fit" },
-    { key: "projectsFit",      label: "Projects Fit & Impact" },
-    { key: "educationFit",     label: "Education / Certifications" },
+    { key: "skillsFit", label: "Skills Fit" },
+    { key: "experienceFit", label: "Professional Experience Fit" },
+    { key: "projectsFit", label: "Projects Fit & Impact" },
+    { key: "educationFit", label: "Education / Certifications" },
     { key: "communicationFit", label: "Communication / Clarity signals" },
   ];
+
+  const isStage = form.typeOffre === "STAGE";
 
   useEffect(() => {
     if (!open) return;
     Promise.resolve().then(() => {
       if (initialData) {
         setForm({
-          titre:       initialData.titre || "",
+          typeOffre: initialData.typeOffre || "JOB",
+          titre: initialData.titre || "",
           description: initialData.description || "",
-          lieu:        initialData.lieu || "",
+          lieu: initialData.lieu || "",
           dateCloture: initialData.dateCloture ? String(initialData.dateCloture).slice(0, 10) : "",
-          hardSkills:  Array.isArray(initialData.hardSkills) ? initialData.hardSkills.join(", ") : initialData.hardSkills || "",
-          softSkills:  Array.isArray(initialData.softSkills) ? initialData.softSkills.join(", ") : initialData.softSkills || "",
+          salaire: initialData.salaire || "",
+          nombrePostes: initialData.nombrePostes || "",
+          typeDiplome: initialData.typeDiplome || "",
+          typeContrat: initialData.typeContrat || "",
+          motif: initialData.motif || "",
+          genre: initialData.genre || "",
+          typeStage: initialData.typeStage || "",
+          dureeStage: initialData.dureeStage || "",
+          hardSkills: Array.isArray(initialData.hardSkills) ? initialData.hardSkills.join(", ") : initialData.hardSkills || "",
+          softSkills: Array.isArray(initialData.softSkills) ? initialData.softSkills.join(", ") : initialData.softSkills || "",
           scores: {
-            skillsFit:        initialData?.scores?.skillsFit        ?? 30,
-            experienceFit:    initialData?.scores?.experienceFit    ?? 30,
-            projectsFit:      initialData?.scores?.projectsFit      ?? 20,
-            educationFit:     initialData?.scores?.educationFit     ?? 10,
+            skillsFit: initialData?.scores?.skillsFit ?? 30,
+            experienceFit: initialData?.scores?.experienceFit ?? 30,
+            projectsFit: initialData?.scores?.projectsFit ?? 20,
+            educationFit: initialData?.scores?.educationFit ?? 10,
             communicationFit: initialData?.scores?.communicationFit ?? 10,
           },
         });
@@ -643,23 +780,51 @@ function JobOfferModal({ open, onClose, onSubmit, initialData }) {
     return String(str || "").split(",").map((t) => t.trim()).filter(Boolean);
   }
 
+  function handleTypeOffreChange(type) {
+    setForm((prev) => ({
+      ...prev,
+      typeOffre: type,
+      // reset type-specific fields on switch
+      typeContrat: "",
+      motif: "",
+      typeStage: "",
+      dureeStage: "",
+      salaire: "",
+    }));
+  }
+
   async function handleSubmit(e) {
     e.preventDefault();
     setFormError("");
-    if (!form.titre.trim())       return setFormError("❌ Le titre du poste est obligatoire.");
+    if (!form.titre.trim()) return setFormError("❌ Le titre du poste est obligatoire.");
     if (!form.description.trim()) return setFormError("❌ La description est obligatoire.");
-    if (!form.lieu.trim())        return setFormError("❌ Le lieu du poste est obligatoire.");
-    if (!form.dateCloture)        return setFormError("❌ La date de clôture est obligatoire.");
-    if (!isValidTotal)            return setFormError("❌ La somme des pondérations doit être égale à 100%.");
+    if (!form.lieu.trim()) return setFormError("❌ Le lieu du poste est obligatoire.");
+    if (!form.dateCloture) return setFormError("❌ La date de clôture est obligatoire.");
+    if (!isValidTotal) return setFormError("❌ La somme des pondérations doit être égale à 100%.");
 
     const payload = {
-      titre:        form.titre.trim(),
-      description:  form.description.trim(),
-      lieu:         form.lieu.trim(),
-      dateCloture:  form.dateCloture,
-      hardSkills:   parseSkills(form.hardSkills),
-      softSkills:   parseSkills(form.softSkills),
+      typeOffre: form.typeOffre,
+      titre: form.titre.trim(),
+      description: form.description.trim(),
+      lieu: form.lieu.trim(),
+      dateCloture: form.dateCloture,
+      nombrePostes: form.nombrePostes || undefined,
+      typeDiplome: form.typeDiplome || undefined,
+      genre: form.genre || undefined,
+      hardSkills: parseSkills(form.hardSkills),
+      softSkills: parseSkills(form.softSkills),
       scores: form.scores,
+      // JOB-specific
+      ...(form.typeOffre === "JOB" && {
+        salaire: form.salaire || undefined,
+        typeContrat: form.typeContrat || undefined,
+        motif: form.motif || undefined,
+      }),
+      // STAGE-specific
+      ...(form.typeOffre === "STAGE" && {
+        typeStage: form.typeStage || undefined,
+        dureeStage: form.dureeStage || undefined,
+      }),
       ...(!isEditing && {
         generateQuiz,
         numQuestions: generateQuiz ? numQuestions : 0,
@@ -686,6 +851,15 @@ function JobOfferModal({ open, onClose, onSubmit, initialData }) {
     "focus:ring-4 focus:ring-[#6CB33F]/15 dark:focus:ring-emerald-500/20 " +
     "outline-none transition-colors";
 
+  const selectBase =
+    "w-full h-10 sm:h-11 md:h-12 px-3 sm:px-4 md:px-5 rounded-lg sm:rounded-xl md:rounded-full " +
+    "border border-gray-200 dark:border-gray-600 " +
+    "bg-white dark:bg-gray-700 " +
+    "text-gray-800 dark:text-gray-100 text-sm " +
+    "focus:border-[#6CB33F] dark:focus:border-emerald-500 " +
+    "focus:ring-4 focus:ring-[#6CB33F]/15 dark:focus:ring-emerald-500/20 " +
+    "outline-none transition-colors cursor-pointer appearance-none";
+
   const labelBase =
     "block text-xs sm:text-sm font-semibold tracking-wide text-gray-700 dark:text-gray-300 mb-2 uppercase";
 
@@ -701,7 +875,7 @@ function JobOfferModal({ open, onClose, onSubmit, initialData }) {
           <div className="flex items-start justify-between gap-3 sm:gap-4">
             <div className="flex-1">
               <h2 className="text-xl sm:text-2xl font-extrabold text-gray-900 dark:text-white">
-                {isEditing ? "Modifier l'offre" : "Nouvelle offre"}
+                {isEditing ? "Modifier l'offre" : "Ajouter une offre"}
               </h2>
               <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 mt-1">
                 Tous les champs marqués <span className="text-red-500">*</span> sont obligatoires.
@@ -734,20 +908,57 @@ function JobOfferModal({ open, onClose, onSubmit, initialData }) {
                 </div>
               )}
 
+              {/* TYPE D'OFFRE */}
+              <div>
+                <label className={labelBase}>
+                  Type d'offre <span className="text-red-500">*</span>
+                </label>
+                <div className="grid grid-cols-2 gap-3">
+                  <button
+                    type="button"
+                    onClick={() => handleTypeOffreChange("JOB")}
+                    className={`h-11 sm:h-12 rounded-xl sm:rounded-2xl font-extrabold text-sm flex items-center justify-center gap-2 transition-all border-2 ${
+                      !isStage
+                        ? "bg-[#6CB33F] border-[#6CB33F] text-white shadow-md"
+                        : "bg-white dark:bg-gray-700 border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:border-[#6CB33F]/50"
+                    }`}
+                  >
+                    <Briefcase size={16} />
+                    Offre d'emploi
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleTypeOffreChange("STAGE")}
+                    className={`h-11 sm:h-12 rounded-xl sm:rounded-2xl font-extrabold text-sm flex items-center justify-center gap-2 transition-all border-2 ${
+                      isStage
+                        ? "bg-blue-500 border-blue-500 text-white shadow-md"
+                        : "bg-white dark:bg-gray-700 border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:border-blue-400/50"
+                    }`}
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>
+                    Stage
+                  </button>
+                </div>
+              </div>
+
               {/* TITRE */}
               <div>
-                <label className={labelBase}>Titre du poste <span className="text-red-500">*</span></label>
+                <label className={labelBase}>
+                  Titre du poste <span className="text-red-500">*</span>
+                </label>
                 <input
                   value={form.titre}
                   onChange={(e) => setForm({ ...form, titre: e.target.value })}
                   className={inputBase}
-                  placeholder="Ex: Fullstack Developer (React/Node)"
+                  placeholder={isStage ? "Ex: Stage PFE Développeur React" : "Ex: Fullstack Developer (React/Node)"}
                 />
               </div>
 
               {/* DESCRIPTION */}
               <div>
-                <label className={labelBase}>Description <span className="text-red-500">*</span></label>
+                <label className={labelBase}>
+                  Description <span className="text-red-500">*</span>
+                </label>
                 <textarea
                   rows={4}
                   value={form.description}
@@ -761,13 +972,19 @@ function JobOfferModal({ open, onClose, onSubmit, initialData }) {
                              focus:border-[#6CB33F] dark:focus:border-emerald-500
                              focus:ring-4 focus:ring-[#6CB33F]/15 dark:focus:ring-emerald-500/20
                              outline-none transition-colors"
-                  placeholder="Décrivez la mission, le profil recherché, responsabilités..."
+                  placeholder={
+                    isStage
+                      ? "Décrivez le sujet du stage, les missions, technologies utilisées..."
+                      : "Décrivez la mission, le profil recherché, responsabilités..."
+                  }
                 />
               </div>
 
               {/* LIEU */}
               <div>
-                <label className={labelBase}>Lieu du poste <span className="text-red-500">*</span></label>
+                <label className={labelBase}>
+                  Lieu du poste <span className="text-red-500">*</span>
+                </label>
                 <div className="relative">
                   <span className="absolute left-3 sm:left-4 md:left-5 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500 pointer-events-none select-none text-base">
                     📍
@@ -775,7 +992,7 @@ function JobOfferModal({ open, onClose, onSubmit, initialData }) {
                   <input
                     value={form.lieu}
                     onChange={(e) => setForm({ ...form, lieu: e.target.value })}
-                    placeholder="Ex: Sfax, Tunis, Télétravail..."
+                    placeholder="Ex: Tunis, Sfax, Télétravail, Hybride..."
                     className="w-full h-10 sm:h-11 md:h-12 pl-9 sm:pl-10 md:pl-12 pr-3 sm:pr-4 md:pr-5 rounded-lg sm:rounded-xl md:rounded-full text-sm
                                border border-gray-200 dark:border-gray-600
                                bg-white dark:bg-gray-700
@@ -788,9 +1005,11 @@ function JobOfferModal({ open, onClose, onSubmit, initialData }) {
                 </div>
               </div>
 
-              {/* DATE */}
+              {/* DATE DE CLÔTURE */}
               <div>
-                <label className={labelBase}>Date de clôture <span className="text-red-500">*</span></label>
+                <label className={labelBase}>
+                  Date de clôture <span className="text-red-500">*</span>
+                </label>
                 <input
                   type="date"
                   value={form.dateCloture}
@@ -799,6 +1018,173 @@ function JobOfferModal({ open, onClose, onSubmit, initialData }) {
                   className={inputBase}
                 />
               </div>
+
+              {/* ── JOB-ONLY FIELDS ── */}
+              {!isStage && (
+                <>
+                  {/* SALAIRE + NOMBRE DE POSTES */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-5 md:gap-6">
+                    <div>
+                      <label className={labelBase}>Salaire</label>
+                      <input
+                        value={form.salaire}
+                        onChange={(e) => setForm({ ...form, salaire: e.target.value })}
+                        placeholder="Ex: 2000 TND / 2000-2500"
+                        className={inputBase}
+                      />
+                    </div>
+                    <div>
+                      <label className={labelBase}>Nombre de postes</label>
+                      <input
+                        value={form.nombrePostes}
+                        onChange={(e) => setForm({ ...form, nombrePostes: e.target.value })}
+                        placeholder="Ex: 2, 5, 10..."
+                        className={inputBase}
+                      />
+                    </div>
+                  </div>
+
+                  {/* TYPE DE DIPLÔME + TYPE DE CONTRAT */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-5 md:gap-6">
+                    <div>
+                      <label className={labelBase}>Type de diplôme</label>
+                      <input
+                        value={form.typeDiplome}
+                        onChange={(e) => setForm({ ...form, typeDiplome: e.target.value })}
+                        placeholder="Ex: Licence, Master, Ingénieur..."
+                        className={inputBase}
+                      />
+                    </div>
+                    <div>
+                      <label className={labelBase}>Type de contrat</label>
+                      <div className="relative">
+                        <select
+                          value={form.typeContrat}
+                          onChange={(e) => setForm({ ...form, typeContrat: e.target.value })}
+                          className={selectBase}
+                        >
+                          {CONTRACT_OPTIONS.map((o) => (
+                            <option key={o.value} value={o.value}>{o.label}</option>
+                          ))}
+                        </select>
+                        <span className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-gray-400">▾</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* MOTIF */}
+                  <div>
+                    <label className={labelBase}>Motif</label>
+                    <div className="relative">
+                      <select
+                        value={form.motif}
+                        onChange={(e) => setForm({ ...form, motif: e.target.value })}
+                        className={selectBase}
+                      >
+                        {MOTIF_OPTIONS.map((o) => (
+                          <option key={o.value} value={o.value}>{o.label}</option>
+                        ))}
+                      </select>
+                      <span className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-gray-400">▾</span>
+                    </div>
+                  </div>
+
+                  {/* GENRE */}
+                  <div>
+                    <label className={labelBase}>Genre</label>
+                    <div className="relative">
+                      <select
+                        value={form.genre}
+                        onChange={(e) => setForm({ ...form, genre: e.target.value })}
+                        className={selectBase}
+                      >
+                        {SEXE_OPTIONS.map((o) => (
+                          <option key={o.value} value={o.value}>{o.label}</option>
+                        ))}
+                      </select>
+                      <span className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-gray-400">▾</span>
+                    </div>
+                  </div>
+                </>
+              )}
+
+              {/* ── STAGE-ONLY FIELDS ── */}
+              {isStage && (
+                <>
+                  {/* NOMBRE DE POSTES + TYPE DE DIPLÔME */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-5 md:gap-6">
+                    <div>
+                      <label className={labelBase}>Nombre de postes</label>
+                      <input
+                        value={form.nombrePostes}
+                        onChange={(e) => setForm({ ...form, nombrePostes: e.target.value })}
+                        placeholder="Ex: 2, 5, 10..."
+                        className={inputBase}
+                      />
+                    </div>
+                    <div>
+                      <label className={labelBase}>Type de diplôme</label>
+                      <input
+                        value={form.typeDiplome}
+                        onChange={(e) => setForm({ ...form, typeDiplome: e.target.value })}
+                        placeholder="Ex: Licence, Master, Ingénieur..."
+                        className={inputBase}
+                      />
+                    </div>
+                  </div>
+
+                  {/* TYPE DE STAGE + DURÉE DU STAGE */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-5 md:gap-6">
+                    <div>
+                      <label className={labelBase}>Type de stage</label>
+                      <div className="relative">
+                        <select
+                          value={form.typeStage}
+                          onChange={(e) => setForm({ ...form, typeStage: e.target.value })}
+                          className={selectBase}
+                        >
+                          {STAGE_CONTRAT_OPTIONS.map((o) => (
+                            <option key={o.value} value={o.value}>{o.label}</option>
+                          ))}
+                        </select>
+                        <span className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-gray-400">▾</span>
+                      </div>
+                    </div>
+                    <div>
+                      <label className={labelBase}>Durée du stage</label>
+                      <div className="relative">
+                        <select
+                          value={form.dureeStage}
+                          onChange={(e) => setForm({ ...form, dureeStage: e.target.value })}
+                          className={selectBase}
+                        >
+                          {DUREE_STAGE_OPTIONS.map((o) => (
+                            <option key={o.value} value={o.value}>{o.label}</option>
+                          ))}
+                        </select>
+                        <span className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-gray-400">▾</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* GENRE */}
+                  <div>
+                    <label className={labelBase}>Genre</label>
+                    <div className="relative">
+                      <select
+                        value={form.genre}
+                        onChange={(e) => setForm({ ...form, genre: e.target.value })}
+                        className={selectBase}
+                      >
+                        {SEXE_OPTIONS.map((o) => (
+                          <option key={o.value} value={o.value}>{o.label}</option>
+                        ))}
+                      </select>
+                      <span className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-gray-400">▾</span>
+                    </div>
+                  </div>
+                </>
+              )}
 
               {/* SKILLS */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-5 md:gap-6">
@@ -810,22 +1196,26 @@ function JobOfferModal({ open, onClose, onSubmit, initialData }) {
                     placeholder="React, Node.js, SQL, Docker..."
                     className={inputBase}
                   />
-                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1.5">Séparées par une virgule.</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1.5">
+                    Compétences techniques — séparées par une virgule.
+                  </p>
                 </div>
                 <div>
                   <label className={labelBase}>Soft Skills</label>
                   <input
                     value={form.softSkills}
                     onChange={(e) => setForm({ ...form, softSkills: e.target.value })}
-                    placeholder="Communication, Leadership..."
+                    placeholder="Communication, Leadership, Espri..."
                     className={inputBase}
                   />
-                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1.5">Séparées par une virgule.</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1.5">
+                    Compétences comportementales — séparées par une virgule.
+                  </p>
                 </div>
               </div>
 
-              {/* QUIZ — uniquement en création */}
-              {!isEditing && (
+              {/* QUIZ — uniquement en création et pour les offres d'emploi */}
+              {!isEditing && !isStage && (
                 <div className="border border-gray-200 dark:border-gray-700 rounded-lg sm:rounded-2xl p-4 sm:p-5 space-y-4">
                   <label className="flex items-center gap-3 cursor-pointer select-none">
                     <div className="relative flex-shrink-0">
@@ -898,8 +1288,8 @@ function JobOfferModal({ open, onClose, onSubmit, initialData }) {
                 </div>
               )}
 
-              {/* PONDÉRATIONS */}
-              <div className="border-t border-gray-200 dark:border-gray-700 pt-5 sm:pt-6">
+              {/* PONDÉRATIONS — uniquement pour les offres d'emploi */}
+              {!isStage && <div className="border-t border-gray-200 dark:border-gray-700 pt-5 sm:pt-6">
                 <div className="flex items-center justify-between mb-4">
                   <h3 className="text-xs sm:text-sm font-extrabold text-gray-900 dark:text-white uppercase tracking-wide">
                     Pondérations (0 – 100)
@@ -944,16 +1334,16 @@ function JobOfferModal({ open, onClose, onSubmit, initialData }) {
                     La somme doit être égale à 100%.
                   </p>
                 )}
-              </div>
+              </div>}
             </div>
 
             {/* FOOTER */}
             <div className="mt-6 sm:mt-7 md:mt-8 pt-4 sm:pt-5 md:pt-6 border-t border-gray-200 dark:border-gray-700 flex flex-col sm:flex-row gap-2.5 sm:gap-4">
               <button
                 type="submit"
-                disabled={submitting || !isValidTotal}
+                disabled={submitting || (!isStage && !isValidTotal)}
                 className={`flex-1 h-10 sm:h-11 md:h-12 rounded-lg sm:rounded-xl md:rounded-full font-semibold text-sm transition-colors shadow-sm
-                  ${isValidTotal && !submitting
+                  ${(isStage || isValidTotal) && !submitting
                     ? "bg-[#6CB33F] hover:bg-[#5AA332] dark:bg-emerald-600 dark:hover:bg-emerald-500 text-white"
                     : "bg-gray-300 dark:bg-gray-600 text-gray-500 dark:text-gray-400 cursor-not-allowed"
                   }`}
@@ -961,10 +1351,10 @@ function JobOfferModal({ open, onClose, onSubmit, initialData }) {
                 {submitting
                   ? "Enregistrement..."
                   : isEditing
-                    ? "Mettre à jour"
-                    : generateQuiz
-                      ? `Créer + Quiz`
-                      : "Créer l'offre"}
+                  ? "Mettre à jour"
+                  : !isStage && generateQuiz
+                  ? `Créer + Quiz`
+                  : "Enregistrer"}
               </button>
 
               <button

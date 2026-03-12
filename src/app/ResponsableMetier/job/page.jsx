@@ -23,7 +23,6 @@ import {
   MapPin,
   Tag,
   BrainCircuit,
-  Send,
 } from "lucide-react";
 
 /* ================= UTILS ================= */
@@ -42,19 +41,18 @@ function getJobStatus(job) {
   return "EN_ATTENTE";
 }
 
-function parseSkillsField(value) {
-  if (Array.isArray(value)) return value.map(String).map((x) => x.trim()).filter(Boolean);
-  return String(value || "")
-    .split(",")
-    .map((t) => t.trim())
-    .filter(Boolean);
-}
+/* ================= OPTIONS ================= */
+const MOTIF_OPTIONS = [
+  { value: "NOUVEAU", label: "Nouveau poste" },
+  { value: "REMPLACEMENT", label: "Remplacement" },
+  { value: "RENFORT", label: "Renfort" },
+];
 
-function clamp(n, min, max) {
-  const x = Number(n);
-  if (Number.isNaN(x)) return min;
-  return Math.min(max, Math.max(min, x));
-}
+const SEXE_OPTIONS = [
+  { value: "H", label: "H" },
+  { value: "F", label: "F" },
+  { value: "HF", label: "H/F" },
+];
 
 /* ================= STATUS CONFIG ================= */
 const STATUS_CONFIG = {
@@ -74,7 +72,6 @@ const STATUS_CONFIG = {
     icon: CheckCircle2,
     cardBorder: "border-blue-200 dark:border-blue-800",
   },
-
   EN_ATTENTE: {
     label: "En attente",
     bg: "bg-amber-100 dark:bg-amber-900/30",
@@ -137,17 +134,16 @@ function OriginBadge({ origin }) {
 /* ================= FILTERS ================= */
 const STATUS_TABS = [
   { key: "EN_ATTENTE", label: "En attente" },
-  { key: "VALIDEE",    label: "Validées" },
-  { key: "CONFIRMEE",  label: "Publiées" },
-  { key: "REJETEE",    label: "Rejetées" },
+  { key: "VALIDEE", label: "Validées" },
+  { key: "CONFIRMEE", label: "Publiées" },
+  { key: "REJETEE", label: "Rejetées" },
 ];
 
 const ORIGIN_FILTERS = [
-  { key: "all",      label: "Toutes" },
-  { key: "CREATED",  label: "Créées" },
+  { key: "all", label: "Toutes" },
+  { key: "CREATED", label: "Créées" },
   { key: "ASSIGNED", label: "Assignées" },
 ];
-
 
 /* =================================================================
    PAGE
@@ -213,9 +209,8 @@ export default function ResponsableJobsPage() {
     setExpandedJobs((prev) => ({ ...prev, [jobId]: !prev[jobId] }));
   }
 
-  // ✅ counts inclut VALIDEE et PUBLIEE
   const counts = useMemo(() => {
-    const c = { all: jobs.length, EN_ATTENTE: 0, VALIDEE: 0,  CONFIRMEE: 0, REJETEE: 0 };
+    const c = { all: jobs.length, EN_ATTENTE: 0, VALIDEE: 0, CONFIRMEE: 0, REJETEE: 0 };
     for (const j of jobs) {
       const s = j._status || getJobStatus(j);
       if (c[s] !== undefined) c[s] += 1;
@@ -228,7 +223,10 @@ export default function ResponsableJobsPage() {
     for (const j of jobs) {
       if (j._origin === "CREATED") o.CREATED++;
       if (j._origin === "ASSIGNED") o.ASSIGNED++;
-      if (j._origin === "BOTH") { o.CREATED++; o.ASSIGNED++; }
+      if (j._origin === "BOTH") {
+        o.CREATED++;
+        o.ASSIGNED++;
+      }
     }
     return o;
   }, [jobs]);
@@ -254,8 +252,13 @@ export default function ResponsableJobsPage() {
     return filteredJobs.slice(start, start + pageSize);
   }, [filteredJobs, page]);
 
-  useEffect(() => { setPage(1); }, [activeTab, originFilter]);
-  useEffect(() => { if (page > totalPages) setPage(totalPages); }, [page, totalPages]);
+  useEffect(() => {
+    setPage(1);
+  }, [activeTab, originFilter]);
+
+  useEffect(() => {
+    if (page > totalPages) setPage(totalPages);
+  }, [page, totalPages]);
 
   async function handleCreate(payload) {
     await createJob(payload);
@@ -286,28 +289,39 @@ export default function ResponsableJobsPage() {
   return (
     <div className="min-h-screen bg-[#F0FAF0] dark:bg-gray-950 transition-colors duration-300">
       <div className="max-w-6xl mx-auto px-4 md:px-6 pt-6 md:pt-10 pb-16">
-
-        {/* HEADER */}
         <div className="flex flex-col md:flex-row md:justify-between md:items-start gap-4 md:gap-6 mb-6 md:mb-8">
           <div className="flex-1">
             <h1 className="text-2xl md:text-4xl font-extrabold text-gray-900 dark:text-white leading-tight">
-              Offres Responsable<br className="md:hidden" /> Métier
+              Offres Responsable
+              <br className="md:hidden" />
+              Métier
             </h1>
             <p className="text-xs md:text-sm text-gray-500 dark:text-gray-400 mt-2">
               Tes offres créées + celles assignées
             </p>
             <div className="mt-3 text-xs md:text-sm text-gray-600 dark:text-gray-300 space-y-1">
-              <p>Total : <span className="font-extrabold text-[#6CB33F]">{jobs.length}</span> offre(s)</p>
+              <p>
+                Total : <span className="font-extrabold text-[#6CB33F]">{jobs.length}</span> offre(s)
+              </p>
               <p className="flex flex-wrap gap-1 md:gap-2">
-                <span><span className="font-semibold">Créées :</span> <span className="font-extrabold">{originCounts.CREATED}</span></span>
+                <span>
+                  <span className="font-semibold">Créées :</span>{" "}
+                  <span className="font-extrabold">{originCounts.CREATED}</span>
+                </span>
                 <span>—</span>
-                <span><span className="font-semibold">Assignées :</span> <span className="font-extrabold">{originCounts.ASSIGNED}</span></span>
+                <span>
+                  <span className="font-semibold">Assignées :</span>{" "}
+                  <span className="font-extrabold">{originCounts.ASSIGNED}</span>
+                </span>
               </p>
             </div>
           </div>
 
           <button
-            onClick={() => { setEditingJob(null); setModalOpen(true); }}
+            onClick={() => {
+              setEditingJob(null);
+              setModalOpen(true);
+            }}
             className="bg-[#6CB33F] hover:bg-[#4E8F2F] dark:bg-emerald-600 dark:hover:bg-emerald-500
                        text-white px-4 md:px-6 py-2.5 md:py-3 rounded-lg md:rounded-xl font-extrabold shadow transition-colors
                        flex items-center justify-center gap-2 text-sm md:text-base whitespace-nowrap"
@@ -316,18 +330,13 @@ export default function ResponsableJobsPage() {
           </button>
         </div>
 
-        {/* FILTER BAR — redesigned responsive */}
         <div className="bg-white dark:bg-gray-900/60 border border-gray-200 dark:border-gray-700 rounded-2xl mb-8 overflow-hidden shadow-sm">
-
-          {/* ROW 1 — Origine */}
           <div className="flex flex-col md:flex-row md:items-center gap-2 md:gap-0 border-b border-gray-100 dark:border-gray-700/60 px-3 md:px-0">
-            {/* Label */}
             <div className="md:px-5 md:py-3.5 md:border-r border-gray-100 dark:border-gray-700/60 md:shrink-0">
               <span className="text-xs font-bold uppercase tracking-widest text-gray-400 dark:text-gray-500 whitespace-nowrap">
                 Origine
               </span>
             </div>
-            {/* Buttons */}
             <div className="flex items-center gap-1.5 px-0 md:px-4 py-3 md:py-2.5 flex-wrap">
               {ORIGIN_FILTERS.map((f) => {
                 const active = originFilter === f.key;
@@ -343,11 +352,13 @@ export default function ResponsableJobsPage() {
                     }`}
                   >
                     {f.label}
-                    <span className={`text-xs px-1.5 py-0.5 rounded-full font-bold ${
-                      active
-                        ? "bg-white/20 dark:bg-gray-900/20 text-white dark:text-gray-900"
-                        : "bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400"
-                    }`}>
+                    <span
+                      className={`text-xs px-1.5 py-0.5 rounded-full font-bold ${
+                        active
+                          ? "bg-white/20 dark:bg-gray-900/20 text-white dark:text-gray-900"
+                          : "bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400"
+                      }`}
+                    >
                       {badgeCount}
                     </span>
                   </button>
@@ -356,17 +367,13 @@ export default function ResponsableJobsPage() {
             </div>
           </div>
 
-          {/* ROW 2 — Statut */}
           <div className="flex flex-col md:flex-row md:items-center gap-2 md:gap-0 px-3 md:px-0">
-            {/* Label */}
             <div className="md:px-5 md:py-3.5 md:border-r border-gray-100 dark:border-gray-700/60 md:shrink-0">
               <span className="text-xs font-bold uppercase tracking-widest text-gray-400 dark:text-gray-500 whitespace-nowrap">
                 Statut
               </span>
             </div>
-            {/* Buttons */}
             <div className="flex items-center gap-1 md:gap-1 px-0 md:px-4 py-3 md:py-2.5 flex-wrap overflow-x-auto">
-              {/* Tous */}
               <button
                 type="button"
                 onClick={() => setActiveTab("all")}
@@ -377,31 +384,48 @@ export default function ResponsableJobsPage() {
                 }`}
               >
                 Tous
-                <span className={`text-xs px-1.5 py-0.5 rounded-full font-bold ${
-                  activeTab === "all"
-                    ? "bg-white/25 text-white"
-                    : "bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400"
-                }`}>
+                <span
+                  className={`text-xs px-1.5 py-0.5 rounded-full font-bold ${
+                    activeTab === "all"
+                      ? "bg-white/25 text-white"
+                      : "bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400"
+                  }`}
+                >
                   {counts.all}
                 </span>
               </button>
 
-              {/* Separator */}
               <span className="mx-0.5 h-4 w-px bg-gray-200 dark:bg-gray-700 flex-shrink-0" />
 
               {STATUS_TABS.map((tab) => {
                 const active = activeTab === tab.key;
                 const colorMap = {
-                  EN_ATTENTE: active ? "bg-amber-500 text-white"   : "text-amber-600 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-900/20",
-                  VALIDEE:    active ? "bg-blue-500 text-white"    : "text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20",
-                  CONFIRMEE:  active ? "bg-green-600 text-white"   : "text-green-700 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/20",
-                  REJETEE:    active ? "bg-red-500 text-white"     : "text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20",
+                  EN_ATTENTE: active
+                    ? "bg-amber-500 text-white"
+                    : "text-amber-600 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-900/20",
+                  VALIDEE: active
+                    ? "bg-blue-500 text-white"
+                    : "text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20",
+                  CONFIRMEE: active
+                    ? "bg-green-600 text-white"
+                    : "text-green-700 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/20",
+                  REJETEE: active
+                    ? "bg-red-500 text-white"
+                    : "text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20",
                 };
                 const badgeColor = {
-                  EN_ATTENTE: active ? "bg-white/25 text-white" : "bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300",
-                  VALIDEE:    active ? "bg-white/25 text-white" : "bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300",
-                  CONFIRMEE:  active ? "bg-white/25 text-white" : "bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300",
-                  REJETEE:    active ? "bg-white/25 text-white" : "bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300",
+                  EN_ATTENTE: active
+                    ? "bg-white/25 text-white"
+                    : "bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300",
+                  VALIDEE: active
+                    ? "bg-white/25 text-white"
+                    : "bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300",
+                  CONFIRMEE: active
+                    ? "bg-white/25 text-white"
+                    : "bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300",
+                  REJETEE: active
+                    ? "bg-white/25 text-white"
+                    : "bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300",
                 };
                 return (
                   <button
@@ -421,7 +445,6 @@ export default function ResponsableJobsPage() {
           </div>
         </div>
 
-        {/* JOBS GRID */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
           {paginatedJobs.map((job) => {
             const status = job._status || getJobStatus(job);
@@ -434,7 +457,6 @@ export default function ResponsableJobsPage() {
                 key={job._id}
                 className={`bg-white dark:bg-gray-800 rounded-2xl shadow p-4 md:p-6 flex flex-col hover:shadow-lg transition-all duration-300 border ${cfg.cardBorder}`}
               >
-                {/* Header */}
                 <div className="flex items-start justify-between gap-2 md:gap-3 mb-3">
                   <div className="min-w-0 flex-1">
                     <h3 className="text-lg md:text-xl font-extrabold text-gray-900 dark:text-white truncate">
@@ -447,16 +469,22 @@ export default function ResponsableJobsPage() {
                   </div>
                 </div>
 
-                {/* rejection reason */}
                 {status === "REJETEE" && job.rejectionReason && (
                   <div className="rounded-lg md:rounded-xl border border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-900/20 p-2 md:p-3 mb-3">
-                    <p className="text-xs font-extrabold text-red-600 dark:text-red-400 uppercase mb-1">Motif du rejet</p>
-                    <p className="text-xs md:text-sm text-red-700 dark:text-red-300 line-clamp-2">{job.rejectionReason}</p>
+                    <p className="text-xs font-extrabold text-red-600 dark:text-red-400 uppercase mb-1">
+                      Motif du rejet
+                    </p>
+                    <p className="text-xs md:text-sm text-red-700 dark:text-red-300 line-clamp-2">
+                      {job.rejectionReason}
+                    </p>
                   </div>
                 )}
 
-                {/* Description */}
-                <p className={`text-gray-700 dark:text-gray-200 text-xs md:text-sm mb-2 whitespace-pre-line ${!isExpanded ? "line-clamp-3" : ""}`}>
+                <p
+                  className={`text-gray-700 dark:text-gray-200 text-xs md:text-sm mb-2 whitespace-pre-line ${
+                    !isExpanded ? "line-clamp-3" : ""
+                  }`}
+                >
                   {job.description || "—"}
                 </p>
 
@@ -472,7 +500,6 @@ export default function ResponsableJobsPage() {
 
                 <div className="border-t border-gray-100 dark:border-gray-700 my-3 md:my-4" />
 
-                {/* Meta */}
                 <div className="mt-auto relative">
                   <div className="text-xs md:text-sm text-gray-600 dark:text-gray-300 space-y-1 pr-28 md:pr-32">
                     {job.lieu && (
@@ -516,9 +543,14 @@ export default function ResponsableJobsPage() {
           {filteredJobs.length === 0 && (
             <div className="col-span-full bg-white dark:bg-gray-800 border-2 border-dashed border-[#6CB33F] dark:border-emerald-600 rounded-2xl p-8 md:p-12 text-center">
               <Briefcase className="mx-auto w-8 md:w-10 h-8 md:h-10 text-gray-400 dark:text-gray-500" />
-              <p className="mt-4 text-gray-700 dark:text-gray-200 font-semibold text-sm md:text-base">Aucune offre pour ce filtre.</p>
+              <p className="mt-4 text-gray-700 dark:text-gray-200 font-semibold text-sm md:text-base">
+                Aucune offre pour ce filtre.
+              </p>
               <button
-                onClick={() => { setEditingJob(null); setModalOpen(true); }}
+                onClick={() => {
+                  setEditingJob(null);
+                  setModalOpen(true);
+                }}
                 className="mt-4 inline-flex items-center gap-2 px-4 md:px-5 py-2 md:py-2.5 rounded-full text-xs md:text-sm
                            bg-[#6CB33F] hover:bg-[#4E8F2F]
                            dark:bg-emerald-600 dark:hover:bg-emerald-500
@@ -530,26 +562,28 @@ export default function ResponsableJobsPage() {
           )}
         </div>
 
-        {/* Pagination */}
         {filteredJobs.length > 0 && (
           <div className="mt-8 md:mt-10 flex flex-col md:flex-row md:items-center md:justify-between gap-4 text-xs md:text-sm text-gray-600 dark:text-gray-300">
-            <p>Total : {filteredJobs.length} — Page {page} / {totalPages}</p>
+            <p>
+              Total : {filteredJobs.length} — Page {page} / {totalPages}
+            </p>
             <Pagination currentPage={page} totalPages={totalPages} onPageChange={setPage} />
           </div>
         )}
       </div>
 
-      {/* Modal */}
       <JobOfferModal
         open={modalOpen}
-        onClose={() => { setModalOpen(false); setEditingJob(null); }}
+        onClose={() => {
+          setModalOpen(false);
+          setEditingJob(null);
+        }}
         onSubmit={editingJob ? handleUpdate : handleCreate}
         initialData={editingJob}
       />
     </div>
   );
 }
-
 
 /* =================================================================
    MODAL — Create / Edit Job Offer
@@ -564,6 +598,10 @@ function JobOfferModal({ open, onClose, onSubmit, initialData }) {
     dateCloture: "",
     hardSkills: "",
     softSkills: "",
+    typeDiplome: "",
+    motif: "",
+    sexe: "",
+    nombrePostes: 1,
     scores: {
       skillsFit: 30,
       experienceFit: 30,
@@ -580,32 +618,42 @@ function JobOfferModal({ open, onClose, onSubmit, initialData }) {
   const [numQuestions, setNumQuestions] = useState(25);
 
   const SCORE_ITEMS_MODAL = [
-    { key: "skillsFit",        label: "Skills Fit" },
-    { key: "experienceFit",    label: "Professional Experience Fit" },
-    { key: "projectsFit",      label: "Projects Fit & Impact" },
-    { key: "educationFit",     label: "Education / Certifications" },
+    { key: "skillsFit", label: "Skills Fit" },
+    { key: "experienceFit", label: "Professional Experience Fit" },
+    { key: "projectsFit", label: "Projects Fit & Impact" },
+    { key: "educationFit", label: "Education / Certifications" },
     { key: "communicationFit", label: "Communication / Clarity signals" },
   ];
 
   useEffect(() => {
     if (!open) return;
+
     Promise.resolve().then(() => {
       if (initialData) {
         setForm({
-          titre:       initialData.titre || "",
+          titre: initialData.titre || "",
           description: initialData.description || "",
-          lieu:        initialData.lieu || "",
+          lieu: initialData.lieu || "",
           dateCloture: initialData.dateCloture ? String(initialData.dateCloture).slice(0, 10) : "",
-          hardSkills:  Array.isArray(initialData.hardSkills) ? initialData.hardSkills.join(", ") : initialData.hardSkills || "",
-          softSkills:  Array.isArray(initialData.softSkills) ? initialData.softSkills.join(", ") : initialData.softSkills || "",
+          hardSkills: Array.isArray(initialData.hardSkills)
+            ? initialData.hardSkills.join(", ")
+            : initialData.hardSkills || "",
+          softSkills: Array.isArray(initialData.softSkills)
+            ? initialData.softSkills.join(", ")
+            : initialData.softSkills || "",
+          typeDiplome: initialData.typeDiplome || "",
+          motif: initialData.motif || "",
+          sexe: initialData.sexe || "",
+          nombrePostes: initialData.nombrePostes ?? 1,
           scores: {
-            skillsFit:        initialData?.scores?.skillsFit        ?? 30,
-            experienceFit:    initialData?.scores?.experienceFit    ?? 30,
-            projectsFit:      initialData?.scores?.projectsFit      ?? 20,
-            educationFit:     initialData?.scores?.educationFit     ?? 10,
+            skillsFit: initialData?.scores?.skillsFit ?? 30,
+            experienceFit: initialData?.scores?.experienceFit ?? 30,
+            projectsFit: initialData?.scores?.projectsFit ?? 20,
+            educationFit: initialData?.scores?.educationFit ?? 10,
             communicationFit: initialData?.scores?.communicationFit ?? 10,
           },
         });
+
         setGenerateQuiz(initialData.generateQuiz !== false);
         setNumQuestions(typeof initialData.numQuestions === "number" ? initialData.numQuestions : 25);
       } else {
@@ -613,6 +661,7 @@ function JobOfferModal({ open, onClose, onSubmit, initialData }) {
         setGenerateQuiz(true);
         setNumQuestions(25);
       }
+
       setFormError("");
       setSubmitting(false);
     });
@@ -639,26 +688,40 @@ function JobOfferModal({ open, onClose, onSubmit, initialData }) {
     setNumQuestions(n);
   }
 
+  function handleNombrePostes(val) {
+    let n = parseInt(val, 10);
+    if (isNaN(n) || n < 1) n = 1;
+    setForm((prev) => ({ ...prev, nombrePostes: n }));
+  }
+
   function parseSkills(str) {
-    return String(str || "").split(",").map((t) => t.trim()).filter(Boolean);
+    return String(str || "")
+      .split(",")
+      .map((t) => t.trim())
+      .filter(Boolean);
   }
 
   async function handleSubmit(e) {
     e.preventDefault();
     setFormError("");
-    if (!form.titre.trim())       return setFormError("❌ Le titre du poste est obligatoire.");
+
+    if (!form.titre.trim()) return setFormError("❌ Le titre du poste est obligatoire.");
     if (!form.description.trim()) return setFormError("❌ La description est obligatoire.");
-    if (!form.lieu.trim())        return setFormError("❌ Le lieu du poste est obligatoire.");
-    if (!form.dateCloture)        return setFormError("❌ La date de clôture est obligatoire.");
-    if (!isValidTotal)            return setFormError("❌ La somme des pondérations doit être égale à 100%.");
+    if (!form.lieu.trim()) return setFormError("❌ Le lieu du poste est obligatoire.");
+    if (!form.dateCloture) return setFormError("❌ La date de clôture est obligatoire.");
+    if (!isValidTotal) return setFormError("❌ La somme des pondérations doit être égale à 100%.");
 
     const payload = {
-      titre:        form.titre.trim(),
-      description:  form.description.trim(),
-      lieu:         form.lieu.trim(),
-      dateCloture:  form.dateCloture,
-      hardSkills:   parseSkills(form.hardSkills),
-      softSkills:   parseSkills(form.softSkills),
+      titre: form.titre.trim(),
+      description: form.description.trim(),
+      lieu: form.lieu.trim(),
+      dateCloture: form.dateCloture,
+      hardSkills: parseSkills(form.hardSkills),
+      softSkills: parseSkills(form.softSkills),
+      typeDiplome: form.typeDiplome.trim(),
+      motif: form.motif,
+      sexe: form.sexe,
+      nombrePostes: Number(form.nombrePostes) || 1,
       scores: form.scores,
       ...(!isEditing && {
         generateQuiz,
@@ -692,11 +755,11 @@ function JobOfferModal({ open, onClose, onSubmit, initialData }) {
   return (
     <div
       className="fixed inset-0 z-50 bg-black/40 dark:bg-black/60 flex items-center justify-center p-3 sm:p-4 md:p-6"
-      onMouseDown={(e) => { if (e.target === e.currentTarget) onClose(); }}
+      onMouseDown={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
     >
       <div className="bg-white dark:bg-gray-800 w-full max-w-2xl rounded-2xl sm:rounded-3xl shadow-2xl overflow-hidden max-h-[95vh] flex flex-col transition-colors duration-300">
-
-        {/* HEADER */}
         <div className="px-4 sm:px-6 md:px-8 pt-4 sm:pt-5 md:pt-7 pb-3 sm:pb-4 md:pb-5 border-b border-gray-200 dark:border-gray-700 flex-shrink-0">
           <div className="flex items-start justify-between gap-3 sm:gap-4">
             <div className="flex-1">
@@ -722,21 +785,19 @@ function JobOfferModal({ open, onClose, onSubmit, initialData }) {
           </div>
         </div>
 
-        {/* BODY */}
         <div className="overflow-y-auto">
           <form onSubmit={handleSubmit} noValidate className="px-4 sm:px-6 md:px-8 py-4 sm:py-5 md:py-7">
             <div className="space-y-4 sm:space-y-5 md:space-y-6">
-
-              {/* ERROR */}
               {formError && (
                 <div className="rounded-lg md:rounded-xl border border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-900/30 p-3 text-xs sm:text-sm font-semibold text-red-700 dark:text-red-400">
                   {formError}
                 </div>
               )}
 
-              {/* TITRE */}
               <div>
-                <label className={labelBase}>Titre du poste <span className="text-red-500">*</span></label>
+                <label className={labelBase}>
+                  Titre du poste <span className="text-red-500">*</span>
+                </label>
                 <input
                   value={form.titre}
                   onChange={(e) => setForm({ ...form, titre: e.target.value })}
@@ -745,9 +806,10 @@ function JobOfferModal({ open, onClose, onSubmit, initialData }) {
                 />
               </div>
 
-              {/* DESCRIPTION */}
               <div>
-                <label className={labelBase}>Description <span className="text-red-500">*</span></label>
+                <label className={labelBase}>
+                  Description <span className="text-red-500">*</span>
+                </label>
                 <textarea
                   rows={4}
                   value={form.description}
@@ -765,9 +827,10 @@ function JobOfferModal({ open, onClose, onSubmit, initialData }) {
                 />
               </div>
 
-              {/* LIEU */}
               <div>
-                <label className={labelBase}>Lieu du poste <span className="text-red-500">*</span></label>
+                <label className={labelBase}>
+                  Lieu du poste <span className="text-red-500">*</span>
+                </label>
                 <div className="relative">
                   <span className="absolute left-3 sm:left-4 md:left-5 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500 pointer-events-none select-none text-base">
                     📍
@@ -788,9 +851,10 @@ function JobOfferModal({ open, onClose, onSubmit, initialData }) {
                 </div>
               </div>
 
-              {/* DATE */}
               <div>
-                <label className={labelBase}>Date de clôture <span className="text-red-500">*</span></label>
+                <label className={labelBase}>
+                  Date de clôture <span className="text-red-500">*</span>
+                </label>
                 <input
                   type="date"
                   value={form.dateCloture}
@@ -800,7 +864,6 @@ function JobOfferModal({ open, onClose, onSubmit, initialData }) {
                 />
               </div>
 
-              {/* SKILLS */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-5 md:gap-6">
                 <div>
                   <label className={labelBase}>Hard Skills</label>
@@ -812,6 +875,7 @@ function JobOfferModal({ open, onClose, onSubmit, initialData }) {
                   />
                   <p className="text-xs text-gray-500 dark:text-gray-400 mt-1.5">Séparées par une virgule.</p>
                 </div>
+
                 <div>
                   <label className={labelBase}>Soft Skills</label>
                   <input
@@ -824,7 +888,60 @@ function JobOfferModal({ open, onClose, onSubmit, initialData }) {
                 </div>
               </div>
 
-              {/* QUIZ — uniquement en création */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-5 md:gap-6">
+                <div>
+                  <label className={labelBase}>Nombre de postes</label>
+                  <input
+                    type="number"
+                    min={1}
+                    value={form.nombrePostes}
+                    onChange={(e) => handleNombrePostes(e.target.value)}
+                    className={inputBase}
+                    placeholder="Ex: 1"
+                  />
+                </div>
+
+                <div>
+                  <label className={labelBase}>Type de diplôme</label>
+                  <input
+                    value={form.typeDiplome}
+                    onChange={(e) => setForm({ ...form, typeDiplome: e.target.value })}
+                    className={inputBase}
+                    placeholder="Ex: Licence, Master, Ingénieur..."
+                  />
+                </div>
+
+                <div>
+                  <label className={labelBase}>Motif</label>
+                  <select
+                    value={form.motif}
+                    onChange={(e) => setForm({ ...form, motif: e.target.value })}
+                    className={inputBase}
+                  >
+                    {MOTIF_OPTIONS.map((option) => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className={labelBase}>Genre</label>
+                  <select
+                    value={form.sexe}
+                    onChange={(e) => setForm({ ...form, sexe: e.target.value })}
+                    className={inputBase}
+                  >
+                    {SEXE_OPTIONS.map((option) => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
               {!isEditing && (
                 <div className="border border-gray-200 dark:border-gray-700 rounded-lg sm:rounded-2xl p-4 sm:p-5 space-y-4">
                   <label className="flex items-center gap-3 cursor-pointer select-none">
@@ -835,13 +952,23 @@ function JobOfferModal({ open, onClose, onSubmit, initialData }) {
                         onChange={(e) => setGenerateQuiz(e.target.checked)}
                         className="sr-only"
                       />
-                      <div className={`w-10 h-6 sm:w-11 rounded-full transition-colors duration-200 ${generateQuiz ? "bg-[#6CB33F] dark:bg-emerald-500" : "bg-gray-300 dark:bg-gray-600"}`} />
-                      <div className={`absolute top-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform duration-200 ${generateQuiz ? "translate-x-5 sm:translate-x-6" : "translate-x-1"}`} />
+                      <div
+                        className={`w-10 h-6 sm:w-11 rounded-full transition-colors duration-200 ${
+                          generateQuiz ? "bg-[#6CB33F] dark:bg-emerald-500" : "bg-gray-300 dark:bg-gray-600"
+                        }`}
+                      />
+                      <div
+                        className={`absolute top-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform duration-200 ${
+                          generateQuiz ? "translate-x-5 sm:translate-x-6" : "translate-x-1"
+                        }`}
+                      />
                     </div>
                     <div>
                       <div className="flex items-center gap-2">
                         <BrainCircuit className="h-4 w-4 text-[#6CB33F] dark:text-emerald-400" />
-                        <span className="text-xs sm:text-sm font-extrabold text-gray-900 dark:text-white">Générer un quiz technique</span>
+                        <span className="text-xs sm:text-sm font-extrabold text-gray-900 dark:text-white">
+                          Générer un quiz technique
+                        </span>
                       </div>
                       <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
                         Un quiz IA sera créé automatiquement à la publication.
@@ -862,7 +989,9 @@ function JobOfferModal({ open, onClose, onSubmit, initialData }) {
                                      text-gray-700 dark:text-gray-300 font-bold text-sm
                                      hover:bg-gray-100 dark:hover:bg-gray-700
                                      transition-colors flex items-center justify-center flex-shrink-0"
-                        >−</button>
+                        >
+                          −
+                        </button>
                         <input
                           type="number"
                           min={1}
@@ -884,7 +1013,9 @@ function JobOfferModal({ open, onClose, onSubmit, initialData }) {
                                      text-gray-700 dark:text-gray-300 font-bold text-sm
                                      hover:bg-gray-100 dark:hover:bg-gray-700
                                      transition-colors flex items-center justify-center flex-shrink-0"
-                        >+</button>
+                        >
+                          +
+                        </button>
                         <span className="text-xs text-gray-500 dark:text-gray-400">(max 30)</span>
                       </div>
                     </div>
@@ -898,13 +1029,16 @@ function JobOfferModal({ open, onClose, onSubmit, initialData }) {
                 </div>
               )}
 
-              {/* PONDÉRATIONS */}
               <div className="border-t border-gray-200 dark:border-gray-700 pt-5 sm:pt-6">
                 <div className="flex items-center justify-between mb-4">
                   <h3 className="text-xs sm:text-sm font-extrabold text-gray-900 dark:text-white uppercase tracking-wide">
                     Pondérations (0 – 100)
                   </h3>
-                  <span className={`text-xs sm:text-sm font-extrabold ${isValidTotal ? "text-green-600 dark:text-emerald-400" : "text-red-600 dark:text-red-400"}`}>
+                  <span
+                    className={`text-xs sm:text-sm font-extrabold ${
+                      isValidTotal ? "text-green-600 dark:text-emerald-400" : "text-red-600 dark:text-red-400"
+                    }`}
+                  >
                     Total : {totalWeights}%
                   </span>
                 </div>
@@ -932,7 +1066,9 @@ function JobOfferModal({ open, onClose, onSubmit, initialData }) {
                                        focus:ring-4 focus:ring-[#6CB33F]/15
                                        outline-none transition-colors"
                           />
-                          <span className="text-xs sm:text-sm font-extrabold text-[#4E8F2F] dark:text-emerald-400 w-6">%</span>
+                          <span className="text-xs sm:text-sm font-extrabold text-[#4E8F2F] dark:text-emerald-400 w-6">
+                            %
+                          </span>
                         </div>
                       </div>
                     );
@@ -947,24 +1083,24 @@ function JobOfferModal({ open, onClose, onSubmit, initialData }) {
               </div>
             </div>
 
-            {/* FOOTER */}
             <div className="mt-6 sm:mt-7 md:mt-8 pt-4 sm:pt-5 md:pt-6 border-t border-gray-200 dark:border-gray-700 flex flex-col sm:flex-row gap-2.5 sm:gap-4">
               <button
                 type="submit"
                 disabled={submitting || !isValidTotal}
                 className={`flex-1 h-10 sm:h-11 md:h-12 rounded-lg sm:rounded-xl md:rounded-full font-semibold text-sm transition-colors shadow-sm
-                  ${isValidTotal && !submitting
-                    ? "bg-[#6CB33F] hover:bg-[#5AA332] dark:bg-emerald-600 dark:hover:bg-emerald-500 text-white"
-                    : "bg-gray-300 dark:bg-gray-600 text-gray-500 dark:text-gray-400 cursor-not-allowed"
+                  ${
+                    isValidTotal && !submitting
+                      ? "bg-[#6CB33F] hover:bg-[#5AA332] dark:bg-emerald-600 dark:hover:bg-emerald-500 text-white"
+                      : "bg-gray-300 dark:bg-gray-600 text-gray-500 dark:text-gray-400 cursor-not-allowed"
                   }`}
               >
                 {submitting
                   ? "Enregistrement..."
                   : isEditing
-                    ? "Mettre à jour"
-                    : generateQuiz
-                      ? `Créer + Quiz`
-                      : "Créer l'offre"}
+                  ? "Mettre à jour"
+                  : generateQuiz
+                  ? "Créer + Quiz"
+                  : "Créer l'offre"}
               </button>
 
               <button
