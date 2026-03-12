@@ -292,6 +292,7 @@ export default function Navbar() {
   const [user, setUser] = useState(null);
   const [openMobile, setOpenMobile] = useState(false);
   const [openCandidaturesRM, setOpenCandidaturesRM] = useState(false);
+  const [openFormulairesRM, setOpenFormulairesRM] = useState(false); // ✅ NOUVEAU
   const [openCandidatures, setOpenCandidatures] = useState(false);
   const [openAdmin, setOpenAdmin] = useState(false);
   const [openFormulaires, setOpenFormulaires] = useState(false);
@@ -327,6 +328,7 @@ export default function Navbar() {
   useEffect(() => {
     setOpenMobile(false);
     setOpenCandidaturesRM(false);
+    setOpenFormulairesRM(false); // ✅ NOUVEAU
     setOpenCandidatures(false);
     setOpenAdmin(false);
     setOpenFormulaires(false);
@@ -355,6 +357,7 @@ export default function Navbar() {
     const willOpen = !openNotif;
     setOpenNotif(willOpen);
     setOpenCandidaturesRM(false);
+    setOpenFormulairesRM(false); // ✅ NOUVEAU
     setOpenCandidatures(false);
     setOpenAdmin(false);
     setOpenFormulaires(false);
@@ -409,17 +412,22 @@ export default function Navbar() {
   }, []);
 
   const isActive = (path) => pathname === path;
-  const isAdmin               = user?.role === "ADMIN";
-  const isAssistanteRH        = user?.role === "ASSISTANTE_RH";
+  const isAdmin = user?.role === "ADMIN";
+  const isAssistanteRH = user?.role === "ASSISTANTE_RH";
   const isAssistanceDirection = user?.role === "ASSISTANCE_DIRECTION";
-  const isResponsableRHOPTYLAB   = user?.role === "RESPONSABLE_RH_OPTYLAB";
+  const isResponsableRHOPTYLAB = user?.role === "RESPONSABLE_RH_OPTYLAB";
   const isResponsableRHNORD = user?.role === "RESPONSABLE_RH_NORD";
-  const isDGA               = user?.role === "DGA";
+  const isDGA = user?.role === "DGA";
 
   const isInCandidaturesRM =
     pathname.startsWith("/ResponsableMetier/candidatures") ||
     pathname.startsWith("/ResponsableMetier/candidatures_Analysis") ||
     pathname.startsWith("/ResponsableMetier/list-entretien");
+
+  // ✅ NOUVEAU — section Formulaires RM
+  const isInFormulairesRM =
+    pathname.startsWith("/ResponsableMetier/quiz") ||
+    pathname.startsWith("/fiche_renseignement");
 
   const isInCandidatures =
     pathname.startsWith("/recruiter/candidatures") ||
@@ -435,12 +443,15 @@ export default function Navbar() {
 
   const isInNordCandidatures =
     pathname.startsWith("/Responsable_RH_Nord/candidatures");
+
   const isInNordRecrutement =
     pathname.startsWith("/Responsable_RH_Nord/quiz") ||
-    pathname.startsWith("/Responsable_RH_Nord/job");
+    pathname === "/fiche_renseignement" ||
+    pathname.startsWith("/fiche_renseignement/");
+
   const isInNordEntretiens =
     pathname.startsWith("/Responsable_RH_Nord/list-entretien") ||
-    pathname.startsWith("/fiche_renseignement");
+    pathname.startsWith("/Responsable_RH_Nord/PreInterviewList");
   const isInFiche = pathname.startsWith("/fiche_renseignement");
 
   async function handleLogout() {
@@ -492,6 +503,16 @@ export default function Navbar() {
     </button>
   );
 
+  // ✅ Helper pour fermer tous les dropdowns RM sauf celui passé
+  const closeAllRMDropdowns = (except) => {
+    if (except !== "candidatures") setOpenCandidaturesRM(false);
+    if (except !== "formulaires") setOpenFormulairesRM(false);
+    setOpenCandidatures(false);
+    setOpenAdmin(false);
+    setOpenFormulaires(false);
+    setOpenNotif(false);
+  };
+
   return (
     <>
       <header className="sticky top-0 z-50 backdrop-blur-md bg-white/80 dark:bg-gray-900/85 border-b border-gray-200 dark:border-gray-700 shadow-sm transition-colors duration-300">
@@ -508,16 +529,15 @@ export default function Navbar() {
               {/* ── RESPONSABLE METIER ── */}
               {!isAdmin && !isAssistanteRH && !isAssistanceDirection && !isResponsableRHOPTYLAB && !isResponsableRHNORD && !isDGA && (
                 <>
-                 <Link href="/jobs" className={`${linkBase} ${isActive("/jobs") ? activeLink : inactiveLink}`}>
+                  <Link href="/jobs" className={`${linkBase} ${isActive("/jobs") ? activeLink : inactiveLink}`}>
                     Offres d'emploi
                   </Link>
                   {user && (
                     <>
-                    
                       {/* CANDIDATURES DROPDOWN */}
                       <div className="relative">
                         <button
-                          onClick={() => { setOpenCandidaturesRM((v) => !v); setOpenCandidatures(false); setOpenAdmin(false); setOpenFormulaires(false); setOpenNotif(false); }}
+                          onClick={() => { closeAllRMDropdowns("candidatures"); setOpenCandidaturesRM((v) => !v); }}
                           className={`${linkBase} ${isInCandidaturesRM ? activeLink : inactiveLink}`}
                         >
                           Candidatures ▾
@@ -533,7 +553,6 @@ export default function Navbar() {
                             <Link href="/ResponsableMetier/list-entretien" className={`${dropdownItemBase} ${isActive("/ResponsableMetier/list-entretien") ? dropdownActive : dropdownHover}`}>
                               Liste des entretiens
                             </Link>
-                            
                           </div>
                         )}
                       </div>
@@ -541,12 +560,27 @@ export default function Navbar() {
                       <Link href="/ResponsableMetier/job" className={`${linkBase} ${isActive("/ResponsableMetier/job") ? activeLink : inactiveLink}`}>
                         Mes offres d&apos;emploi
                       </Link>
-                      <Link href="/ResponsableMetier/quiz" className={`${linkBase} ${isActive("/ResponsableMetier/quiz") ? activeLink : inactiveLink}`}>
-                        Mes quizs
-                      </Link>
-                      <Link href="/fiche_renseignement" className={`${linkBase} ${isInFiche ? activeLink : inactiveLink}`}>
-                        Fiches
-                      </Link>
+
+                      {/* ✅ FORMULAIRES DROPDOWN (Quiz + Fiche) */}
+                      <div className="relative">
+                        <button
+                          onClick={() => { closeAllRMDropdowns("formulaires"); setOpenFormulairesRM((v) => !v); }}
+                          className={`${linkBase} ${isInFormulairesRM ? activeLink : inactiveLink}`}
+                        >
+                          Formulaires ▾
+                        </button>
+                        {openFormulairesRM && (
+                          <div className={`${dropdownBase} ${dropdownLight} ${dropdownDark}`}>
+                            <Link href="/ResponsableMetier/quiz" className={`${dropdownItemBase} ${isActive("/ResponsableMetier/quiz") ? dropdownActive : dropdownHover}`}>
+                              Mes quizs
+                            </Link>
+                            <Link href="/fiche_renseignement" className={`${dropdownItemBase} ${isInFiche ? dropdownActive : dropdownHover}`}>
+                              Fiche de renseignement
+                            </Link>
+                          </div>
+                        )}
+                      </div>
+
                       <Link href="/ResponsableMetier/calendar" className={`${linkBase} ${isActive("/ResponsableMetier/calendar") ? activeLink : inactiveLink}`}>
                         Mon calendrier
                       </Link>
@@ -597,7 +631,7 @@ export default function Navbar() {
                 </>
               )}
 
-              {/* ── RESPONSABLE RH NORD ── */}
+              {/* ── RESPONSABLE RH Optylab ── */}
               {isResponsableRHOPTYLAB && (
                 <>
                   <Link href="/RESPONSABLE_RH_OPTYLAB/candidats" className={`${linkBase} ${isActive("/RESPONSABLE_RH_OPTYLAB/candidats") ? activeLink : inactiveLink}`}>
@@ -606,21 +640,21 @@ export default function Navbar() {
                   <Link href="/calendar" className={`${linkBase} ${isActive("/calendar") ? activeLink : inactiveLink}`}>
                     Mon calendrier
                   </Link>
-                   <Link href="/RESPONSABLE_RH_OPTYLAB/entretiens-confirmes" className={`${linkBase} ${isActive("/RESPONSABLE_RH_OPTYLAB/entretiens-confirmes") ? activeLink : inactiveLink}`}>
+                  <Link href="/RESPONSABLE_RH_OPTYLAB/entretiens-confirmes" className={`${linkBase} ${isActive("/RESPONSABLE_RH_OPTYLAB/entretiens-confirmes") ? activeLink : inactiveLink}`}>
                     Entretiens confirmés
                   </Link>
-                 
-                   <Link href="/fiche_renseignement" className={`${linkBase} ${isInFiche ? activeLink : inactiveLink}`}>
+                  <Link href="/fiche_renseignement" className={`${linkBase} ${isInFiche ? activeLink : inactiveLink}`}>
                     Fiche renseignements
                   </Link>
                 </>
               )}
 
-
               {/* ── RESPONSABLE RH NORD ── */}
               {isResponsableRHNORD && (
                 <>
-                  {/* Candidatures dropdown */}
+                  <Link href="/Responsable_RH_Nord/job" className={`${linkBase} ${isActive("/Responsable_RH_Nord/job") ? activeLink : inactiveLink}`}>
+                    Offres d&apos;emploi
+                  </Link>
                   <div className="relative">
                     <button
                       onClick={() => { setOpenNordCandidatures((v) => !v); setOpenNordRecrutement(false); setOpenNordEntretiens(false); setOpenNotif(false); }}
@@ -640,27 +674,25 @@ export default function Navbar() {
                     )}
                   </div>
 
-                  {/* Recrutement dropdown */}
                   <div className="relative">
                     <button
                       onClick={() => { setOpenNordRecrutement((v) => !v); setOpenNordCandidatures(false); setOpenNordEntretiens(false); setOpenNotif(false); }}
                       className={`${linkBase} ${isInNordRecrutement ? activeLink : inactiveLink}`}
                     >
-                      Recrutement ▾
+                      Formulaires ▾
                     </button>
                     {openNordRecrutement && (
                       <div className={`${dropdownBase} ${dropdownLight} ${dropdownDark}`}>
                         <Link href="/Responsable_RH_Nord/quiz" className={`${dropdownItemBase} ${isActive("/Responsable_RH_Nord/quiz") ? dropdownActive : dropdownHover}`}>
                           Quiz
                         </Link>
-                        <Link href="/Responsable_RH_Nord/job" className={`${dropdownItemBase} ${isActive("/Responsable_RH_Nord/job") ? dropdownActive : dropdownHover}`}>
-                          Mes offres d&apos;emploi
+                        <Link href="/fiche_renseignement" className={`${dropdownItemBase} ${isActive("/fiche_renseignement") ? dropdownActive : dropdownHover}`}>
+                          Fiche de renseignement
                         </Link>
                       </div>
                     )}
                   </div>
 
-                  {/* Entretiens dropdown */}
                   <div className="relative">
                     <button
                       onClick={() => { setOpenNordEntretiens((v) => !v); setOpenNordCandidatures(false); setOpenNordRecrutement(false); setOpenNotif(false); }}
@@ -673,22 +705,19 @@ export default function Navbar() {
                         <Link href="/Responsable_RH_Nord/list-entretien" className={`${dropdownItemBase} ${isActive("/Responsable_RH_Nord/list-entretien") ? dropdownActive : dropdownHover}`}>
                           Entretiens confirmés
                         </Link>
-                          <Link href="/Responsable_RH_Nord/PreInterviewList" className={`${linkBase} ${isActive("/Responsable_RH_Nord/PreInterviewList") ? activeLink : inactiveLink}`}>
-                    Pre interview list 
-                  </Link>
-                        <Link href="/fiche_renseignement" className={`${dropdownItemBase} ${isActive("/Responsable_RH_Nord/fiche_renseignement") ? dropdownActive : dropdownHover}`}>
-                          Fiche renseignements
+                        <Link href="/Responsable_RH_Nord/PreInterviewList" className={`${dropdownItemBase} ${isActive("/Responsable_RH_Nord/PreInterviewList") ? dropdownActive : dropdownHover}`}>
+                          Liste des pré-sélections
                         </Link>
                       </div>
                     )}
                   </div>
 
-                  {/* Calendrier lien direct */}
                   <Link href="/Responsable_RH_Nord/calendar" className={`${linkBase} ${isActive("/Responsable_RH_Nord/calendar") ? activeLink : inactiveLink}`}>
                     Calendrier
                   </Link>
                 </>
               )}
+
               {isAdmin && (
                 <>
                   <Link href="/recruiter/dashboard" className={`${linkBase} ${isActive("/recruiter/dashboard") ? activeLink : inactiveLink}`}>
@@ -711,14 +740,13 @@ export default function Navbar() {
                         <Link href="/recruiter/candidatures" className={`${dropdownItemBase} ${isActive("/recruiter/candidatures") ? dropdownActive : dropdownHover}`}>
                           Liste des candidatures
                         </Link>
-                       
                         <Link href="/recruiter/CandidatureAnalysis" className={`${dropdownItemBase} ${isActive("/recruiter/CandidatureAnalysis") ? dropdownActive : dropdownHover}`}>
                           Analyse des candidatures
                         </Link>
                         <Link href="/recruiter/PreInterviewList" className={`${dropdownItemBase} ${isActive("/recruiter/PreInterviewList") ? dropdownActive : dropdownHover}`}>
                           Liste des pré-sélections
                         </Link>
-                          <Link href="/recruiter/list_interview" className={`${dropdownItemBase} ${isActive("/recruiter/list_interview") ? dropdownActive : dropdownHover}`}>
+                        <Link href="/recruiter/list_interview" className={`${dropdownItemBase} ${isActive("/recruiter/list_interview") ? dropdownActive : dropdownHover}`}>
                           Liste d'entretiens
                         </Link>
                         <Link href="/recruiter/tracking" className={`${dropdownItemBase} ${isActive("/recruiter/tracking") ? dropdownActive : dropdownHover}`}>
@@ -744,7 +772,7 @@ export default function Navbar() {
                         <Link href="/recruiter/QuizTechnique" className={`${dropdownItemBase} ${isActive("/recruiter/QuizTechnique") ? dropdownActive : dropdownHover}`}>
                           Quiz Technique
                         </Link>
-                         <Link href="/recruiter/criteres-evaluation" className={`${dropdownItemBase} ${isActive("/recruiter/criteres-evaluation") ? dropdownActive : dropdownHover}`}>
+                        <Link href="/recruiter/criteres-evaluation" className={`${dropdownItemBase} ${isActive("/recruiter/criteres-evaluation") ? dropdownActive : dropdownHover}`}>
                           Critères d'évaluation
                         </Link>
                       </div>
@@ -767,13 +795,12 @@ export default function Navbar() {
                         <Link href="/utilisateurs" className={`${dropdownItemBase} ${isActive("/utilisateurs") ? dropdownActive : dropdownHover}`}>
                           Gestion Responsables
                         </Link>
-                         <Link href="/employees" className={`${dropdownItemBase} ${isActive("/employees") ? dropdownActive : dropdownHover}`}>
-                         Gestion Employés
+                        <Link href="/employees" className={`${dropdownItemBase} ${isActive("/employees") ? dropdownActive : dropdownHover}`}>
+                          Gestion Employés
                         </Link>
                         <Link href="/recruiter/calendar" className={`${dropdownItemBase} ${isActive("/recruiter/calendar") ? dropdownActive : dropdownHover}`}>
-                          Mon Calendirer
+                          Mon Calendrier
                         </Link>
-                       
                       </div>
                     )}
                   </div>
@@ -811,7 +838,6 @@ export default function Navbar() {
 
             {/* MOBILE RIGHT */}
             <div className="md:hidden flex items-center gap-2">
-              {/* ✅ NOTIFICATION BELL MOBILE — ref sur le wrapper global pour close-outside */}
               {user && (
                 <div ref={notifRef}>
                   <BellButton isMobile={true} />
@@ -865,12 +891,25 @@ export default function Navbar() {
                         <Link href="/ResponsableMetier/job" className={`block px-5 py-3.5 rounded-xl font-medium transition ${isActive("/ResponsableMetier/job") ? "bg-[#6CB33F] text-white" : "text-gray-700 dark:text-gray-200 hover:bg-gray-100/70 dark:hover:bg-gray-800/60"}`}>
                           Mes offres d&apos;emploi
                         </Link>
-                        <Link href="/ResponsableMetier/quiz" className={`block px-5 py-3.5 rounded-xl font-medium transition ${isActive("/ResponsableMetier/quiz") ? "bg-[#6CB33F] text-white" : "text-gray-700 dark:text-gray-200 hover:bg-gray-100/70 dark:hover:bg-gray-800/60"}`}>
-                          Mes quizs
-                        </Link>
-                        <Link href="/fiche_renseignement" className={`block px-5 py-3.5 rounded-xl font-medium transition ${isInFiche ? "bg-[#6CB33F] text-white" : "text-gray-700 dark:text-gray-200 hover:bg-gray-100/70 dark:hover:bg-gray-800/60"}`}>
-                          Fiches de renseignement
-                        </Link>
+
+                        {/* ✅ FORMULAIRES MOBILE (Quiz + Fiche) */}
+                        <div>
+                          <button onClick={() => setOpenFormulairesRM(!openFormulairesRM)} className={`w-full text-left px-5 py-3.5 rounded-xl font-medium transition flex items-center justify-between ${isInFormulairesRM ? "bg-[#6CB33F] text-white" : "text-gray-700 dark:text-gray-200 hover:bg-gray-100/70 dark:hover:bg-gray-800/60"}`}>
+                            Formulaires
+                            <span className={`transform transition-transform ${openFormulairesRM ? "rotate-180" : ""}`}>▾</span>
+                          </button>
+                          {openFormulairesRM && (
+                            <div className="pl-4 space-y-1 mt-1">
+                              <Link href="/ResponsableMetier/quiz" className={`block px-5 py-2.5 rounded-lg text-sm transition ${isActive("/ResponsableMetier/quiz") ? "bg-[#6CB33F]/20 text-[#4E8F2F] font-semibold" : "text-gray-600 dark:text-gray-300 hover:bg-gray-100/70 dark:hover:bg-gray-800/60"}`}>
+                                Mes quizs
+                              </Link>
+                              <Link href="/fiche_renseignement" className={`block px-5 py-2.5 rounded-lg text-sm transition ${isInFiche ? "bg-[#6CB33F]/20 text-[#4E8F2F] font-semibold" : "text-gray-600 dark:text-gray-300 hover:bg-gray-100/70 dark:hover:bg-gray-800/60"}`}>
+                                Fiche de renseignement
+                              </Link>
+                            </div>
+                          )}
+                        </div>
+
                         <Link href="/ResponsableMetier/calendar" className={`block px-5 py-3.5 rounded-xl font-medium transition ${isActive("/ResponsableMetier/calendar") ? "bg-[#6CB33F] text-white" : "text-gray-700 dark:text-gray-200 hover:bg-gray-100/70 dark:hover:bg-gray-800/60"}`}>
                           Mon calendrier
                         </Link>
@@ -936,11 +975,13 @@ export default function Navbar() {
                   </>
                 )}
 
-
                 {/* ── RESPONSABLE RH NORD ── */}
                 {isResponsableRHNORD && (
                   <>
-                    {/* Candidatures */}
+                    <Link href="/Responsable_RH_Nord/job" className={`block px-5 py-3.5 rounded-xl font-medium transition ${isActive("/Responsable_RH_Nord/job") ? "bg-[#6CB33F] text-white" : "text-gray-700 dark:text-gray-200 hover:bg-gray-100/70 dark:hover:bg-gray-800/60"}`}>
+                      Offres d&apos;emploi
+                    </Link>
+
                     <div>
                       <button onClick={() => setOpenNordCandidatures(!openNordCandidatures)} className={`w-full text-left px-5 py-3.5 rounded-xl font-medium transition flex items-center justify-between ${isInNordCandidatures ? "bg-[#6CB33F] text-white" : "text-gray-700 dark:text-gray-200 hover:bg-gray-100/70 dark:hover:bg-gray-800/60"}`}>
                         Candidatures
@@ -958,10 +999,9 @@ export default function Navbar() {
                       )}
                     </div>
 
-                    {/* Recrutement */}
                     <div>
                       <button onClick={() => setOpenNordRecrutement(!openNordRecrutement)} className={`w-full text-left px-5 py-3.5 rounded-xl font-medium transition flex items-center justify-between ${isInNordRecrutement ? "bg-[#6CB33F] text-white" : "text-gray-700 dark:text-gray-200 hover:bg-gray-100/70 dark:hover:bg-gray-800/60"}`}>
-                        Recrutement
+                        Formulaires
                         <span className={`transform transition-transform ${openNordRecrutement ? "rotate-180" : ""}`}>▾</span>
                       </button>
                       {openNordRecrutement && (
@@ -969,14 +1009,13 @@ export default function Navbar() {
                           <Link href="/Responsable_RH_Nord/quiz" className={`block px-5 py-2.5 rounded-lg text-sm transition ${isActive("/Responsable_RH_Nord/quiz") ? "bg-[#6CB33F]/20 text-[#4E8F2F] font-semibold" : "text-gray-600 dark:text-gray-300 hover:bg-gray-100/70 dark:hover:bg-gray-800/60"}`}>
                             Quiz
                           </Link>
-                          <Link href="/Responsable_RH_Nord/job" className={`block px-5 py-2.5 rounded-lg text-sm transition ${isActive("/Responsable_RH_Nord/job") ? "bg-[#6CB33F]/20 text-[#4E8F2F] font-semibold" : "text-gray-600 dark:text-gray-300 hover:bg-gray-100/70 dark:hover:bg-gray-800/60"}`}>
-                            Mes offres d&apos;emploi
+                          <Link href="/fiche_renseignement" className={`block px-5 py-2.5 rounded-lg text-sm transition ${(pathname === "/fiche_renseignement" || pathname.startsWith("/fiche_renseignement/")) ? "bg-[#6CB33F]/20 text-[#4E8F2F] font-semibold" : "text-gray-600 dark:text-gray-300 hover:bg-gray-100/70 dark:hover:bg-gray-800/60"}`}>
+                            Fiche de renseignement
                           </Link>
                         </div>
                       )}
                     </div>
 
-                    {/* Entretiens */}
                     <div>
                       <button onClick={() => setOpenNordEntretiens(!openNordEntretiens)} className={`w-full text-left px-5 py-3.5 rounded-xl font-medium transition flex items-center justify-between ${isInNordEntretiens ? "bg-[#6CB33F] text-white" : "text-gray-700 dark:text-gray-200 hover:bg-gray-100/70 dark:hover:bg-gray-800/60"}`}>
                         Entretiens
@@ -987,31 +1026,28 @@ export default function Navbar() {
                           <Link href="/Responsable_RH_Nord/list-entretien" className={`block px-5 py-2.5 rounded-lg text-sm transition ${isActive("/Responsable_RH_Nord/list-entretien") ? "bg-[#6CB33F]/20 text-[#4E8F2F] font-semibold" : "text-gray-600 dark:text-gray-300 hover:bg-gray-100/70 dark:hover:bg-gray-800/60"}`}>
                             Entretiens confirmés
                           </Link>
-                          <Link href="/Responsable_RH_Nord/fiche_renseignement" className={`block px-5 py-2.5 rounded-lg text-sm transition ${isActive("/Responsable_RH_Nord/fiche_renseignement") ? "bg-[#6CB33F]/20 text-[#4E8F2F] font-semibold" : "text-gray-600 dark:text-gray-300 hover:bg-gray-100/70 dark:hover:bg-gray-800/60"}`}>
-                            Fiche renseignements
+                          <Link href="/Responsable_RH_Nord/PreInterviewList" className={`block px-5 py-2.5 rounded-lg text-sm transition ${isActive("/Responsable_RH_Nord/PreInterviewList") ? "bg-[#6CB33F]/20 text-[#4E8F2F] font-semibold" : "text-gray-600 dark:text-gray-300 hover:bg-gray-100/70 dark:hover:bg-gray-800/60"}`}>
+                            Liste des pré-sélections
                           </Link>
                         </div>
                       )}
                     </div>
 
-                    {/* Calendrier */}
                     <Link href="/Responsable_RH_Nord/calendar" className={`block px-5 py-3.5 rounded-xl font-medium transition ${isActive("/Responsable_RH_Nord/calendar") ? "bg-[#6CB33F] text-white" : "text-gray-700 dark:text-gray-200 hover:bg-gray-100/70 dark:hover:bg-gray-800/60"}`}>
                       Mon calendrier
                     </Link>
                   </>
                 )}
+
                 {isAdmin && (
                   <>
                     <Link href="/recruiter/dashboard" className="block px-5 py-3.5 rounded-xl text-gray-700 dark:text-gray-200 hover:bg-gray-100/70 dark:hover:bg-gray-800/60">Tableau de bord</Link>
                     <Link href="/recruiter/jobs" className="block px-5 py-3.5 rounded-xl text-gray-700 dark:text-gray-200 hover:bg-gray-100/70 dark:hover:bg-gray-800/60">Gestion offres</Link>
                     <Link href="/recruiter/candidatures" className="block px-5 py-3.5 rounded-xl text-gray-700 dark:text-gray-200 hover:bg-gray-100/70 dark:hover:bg-gray-800/60">Liste des candidatures</Link>
-                   
-                   
-                     <Link href="/recruiter/list_interview" className="block px-5 py-3.5 rounded-xl text-gray-700 dark:text-gray-200 hover:bg-gray-100/70 dark:hover:bg-gray-800/60">Liste des entretiens</Link>
+                    <Link href="/recruiter/list_interview" className="block px-5 py-3.5 rounded-xl text-gray-700 dark:text-gray-200 hover:bg-gray-100/70 dark:hover:bg-gray-800/60">Liste des entretiens</Link>
                     <Link href="/recruiter/CandidatureAnalysis" className="block px-5 py-3.5 rounded-xl text-gray-700 dark:text-gray-200 hover:bg-gray-100/70 dark:hover:bg-gray-800/60">Analyse des candidatures</Link>
                     <Link href="/recruiter/PreInterviewList" className="block px-5 py-3.5 rounded-xl text-gray-700 dark:text-gray-200 hover:bg-gray-100/70 dark:hover:bg-gray-800/60">Liste des pré-sélections</Link>
                     <Link href="/recruiter/tracking" className="block px-5 py-3.5 rounded-xl text-gray-700 dark:text-gray-200 hover:bg-gray-100/70 dark:hover:bg-gray-800/60">Suivi de recrutement</Link>
-
 
                     <div className="px-5 py-1">
                       <p className="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-1">Formulaires</p>
@@ -1023,13 +1059,12 @@ export default function Navbar() {
                       Quiz Technique
                     </Link>
                     <Link href="/recruiter/criteres-evaluation" className={`${dropdownItemBase} ${isActive("/recruiter/criteres-evaluation") ? dropdownActive : dropdownHover}`}>
-                          Critères d'évaluation
-                        </Link>
+                      Critères d'évaluation
+                    </Link>
                     <Link href="/roles" className="block px-5 py-3.5 rounded-xl text-gray-700 dark:text-gray-200 hover:bg-gray-100/70 dark:hover:bg-gray-800/60">Gestion des rôles</Link>
                     <Link href="/employees" className="block px-5 py-3.5 rounded-xl text-gray-700 dark:text-gray-200 hover:bg-gray-100/70 dark:hover:bg-gray-800/60">Gestion des employés</Link>
                     <Link href="/utilisateurs" className="block px-5 py-3.5 rounded-xl text-gray-700 dark:text-gray-200 hover:bg-gray-100/70 dark:hover:bg-gray-800/60">Gestion des responsables</Link>
-                    <Link href="/recruiter/calendar" className="block px-5 py-3.5 rounded-xl text-gray-700 dark:text-gray-200 hover:bg-gray-100/70 dark:hover:bg-gray-800/60">Mon Calendirer</Link>
-
+                    <Link href="/recruiter/calendar" className="block px-5 py-3.5 rounded-xl text-gray-700 dark:text-gray-200 hover:bg-gray-100/70 dark:hover:bg-gray-800/60">Mon Calendrier</Link>
                   </>
                 )}
 
@@ -1066,7 +1101,7 @@ export default function Navbar() {
         </div>
       )}
 
-      {/* ✅ NOTIFICATION DROPDOWN DESKTOP — fixed, ancré en haut à droite */}
+      {/* ✅ NOTIFICATION DROPDOWN DESKTOP */}
       {openNotif && user && (
         <div
           ref={dropdownRef}

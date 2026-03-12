@@ -222,13 +222,7 @@ export default function ConfirmedInterviewsPage() {
           </div>
         </div>
 
-        {/* Stats */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 mb-6">
-          <StatCard label="Total entretiens"  value={total}            colorClass="text-[#4E8F2F] dark:text-emerald-400" icon={CheckCircle2} />
-          <StatCard label="Candidats uniques" value={uniqueCandidates} colorClass="text-[#4E8F2F] dark:text-emerald-400" icon={User}         />
-          <StatCard label="RH + Tech"         value={counts.rhTech}   colorClass="text-violet-500 dark:text-violet-400"  icon={Calendar}    />
-          <StatCard label="RH seul"           value={counts.rh}       colorClass="text-blue-500 dark:text-blue-400"      icon={Briefcase}   />
-        </div>
+        
 
         {/* Recherche */}
         <div className="bg-white dark:bg-gray-800 rounded-full shadow-sm border border-gray-100 dark:border-gray-700 px-4 sm:px-5 py-3 flex items-center gap-3 mb-4 transition-colors duration-300">
@@ -307,7 +301,7 @@ export default function ConfirmedInterviewsPage() {
                 <table className="w-full text-sm border-collapse" style={{ minWidth: "1180px" }}>
                   <thead className="bg-[#E9F5E3] dark:bg-gray-700 text-[#4E8F2F] dark:text-emerald-400">
                     <tr>
-                      {["#", "Candidat", "Poste", "Date", "Heure", "Lieu", "Type", "Responsable", "Statut"].map(h => (
+                      {[ "Candidat", "Poste", "Date", "Heure", "Lieu", "Type", "Responsable", "Statut"].map(h => (
                         <th key={h} className="text-left px-6 lg:px-8 py-5 font-extrabold uppercase text-xs tracking-wider whitespace-nowrap border-b border-[#d7ebcf] dark:border-gray-600">
                           {h}
                         </th>
@@ -320,24 +314,13 @@ export default function ConfirmedInterviewsPage() {
                       const date = iv.confirmedDate || iv.proposedDate;
                       const time = iv.confirmedTime || iv.proposedTime;
                       const isRhTech = iv.interviewType === "rh_technique" || iv.interviewType === "RH + Tech";
-                      const evenBg = gi % 2 === 0 ? "" : "bg-gray-50/60 dark:bg-gray-750/40";
                       const topBorder = isFirst ? "border-t-2 border-[#c8e6bc] dark:border-gray-600" : "border-t border-gray-100 dark:border-gray-700/50";
 
                       return (
-                        <tr key={String(iv._id)} className={`${evenBg} hover:bg-green-50/50 dark:hover:bg-gray-700/30 transition-colors`}>
-
-                          {isFirst && (
-                            <td rowSpan={rowspan} className={`px-6 lg:px-8 py-4 align-middle border-r border-gray-100 dark:border-gray-700 ${topBorder}`}>
-                              <span className="flex items-center justify-center w-7 h-7 rounded-full bg-[#E9F5E3] dark:bg-emerald-900/30 text-[#4E8F2F] dark:text-emerald-400 font-extrabold text-xs">
-                                {gi + 1}
-                              </span>
-                            </td>
-                          )}
-
+                        <tr key={String(iv._id)} className={` hover:bg-green-50/50 dark:hover:bg-gray-700/30 transition-colors`}>
                           {isFirst && (
                             <td rowSpan={rowspan} className={`px-6 lg:px-8 py-4 align-middle border-r border-gray-100 dark:border-gray-700 ${topBorder}`}>
                               <div className="flex items-center gap-3">
-                                <Avatar name={candidateName} />
                                 <div className="min-w-0">
                                   <p className="font-extrabold text-gray-900 dark:text-white truncate max-w-[160px]">{candidateName || "—"}</p>
                                   <p className="text-xs text-gray-500 dark:text-gray-400 truncate max-w-[160px]">{candidateEmail || ""}</p>

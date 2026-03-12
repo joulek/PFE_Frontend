@@ -6,6 +6,7 @@ import { getPreInterviewList, sendDocuments } from "../../services/candidature.a
 import { getQuizByJob } from "../../services/quiz.api";
 import api from "../../services/api";
 import Link from "next/link";
+import Pagination from "../../components/Pagination";
 
 import {
   UserCheck,
@@ -82,7 +83,7 @@ function formatDate(d) {
 function markSentFiche(id) {
   try {
     localStorage.setItem(`fiche_sent_${id}`, "1");
-  } catch { }
+  } catch {}
 }
 function wasSentFiche(id) {
   try {
@@ -95,7 +96,7 @@ function wasSentFiche(id) {
 function markSentQuiz(id) {
   try {
     localStorage.setItem(`quiz_sent_${id}`, "1");
-  } catch { }
+  } catch {}
 }
 function wasSentQuiz(id) {
   try {
@@ -108,7 +109,7 @@ function wasSentQuiz(id) {
 function markSent(id) {
   try {
     localStorage.setItem(`docs_sent_${id}`, "1");
-  } catch { }
+  } catch {}
 }
 function wasSent(id) {
   try {
@@ -198,7 +199,6 @@ function SendDocumentsModal({ candidature, onClose, onSuccess, initialSentFiche 
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={onClose} />
       <div className="relative bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden border border-gray-100 dark:border-gray-800">
-        {/* Header */}
         <div className="px-6 py-4 border-b border-gray-100 dark:border-gray-800 bg-green-50/60 dark:bg-green-900/10">
           <div className="flex items-center justify-between">
             <div>
@@ -220,7 +220,6 @@ function SendDocumentsModal({ candidature, onClose, onSuccess, initialSentFiche 
           </div>
         </div>
 
-        {/* Body */}
         <div className="px-6 py-5 space-y-5 max-h-[70vh] overflow-y-auto">
           {allSent ? (
             <div className="flex flex-col items-center gap-3 py-6 text-center">
@@ -257,7 +256,6 @@ function SendDocumentsModal({ candidature, onClose, onSuccess, initialSentFiche 
             </div>
           ) : (
             <>
-              {/* Email */}
               <div>
                 <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1.5">
                   <Mail className="w-4 h-4 inline mr-1.5 text-gray-400" />
@@ -272,7 +270,6 @@ function SendDocumentsModal({ candidature, onClose, onSuccess, initialSentFiche 
                 />
               </div>
 
-              {/* Quiz */}
               <div>
                 <p className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
                   <Brain className="w-4 h-4 inline mr-1.5 text-green-600" />
@@ -281,12 +278,13 @@ function SendDocumentsModal({ candidature, onClose, onSuccess, initialSentFiche 
 
                 {quiz ? (
                   <label
-                    className={`flex items-start gap-3 p-4 rounded-xl border-2 cursor-pointer transition-all ${sentQuiz
+                    className={`flex items-start gap-3 p-4 rounded-xl border-2 cursor-pointer transition-all ${
+                      sentQuiz
                         ? "border-green-500 bg-green-50/60 dark:bg-green-900/20 opacity-60 cursor-not-allowed"
                         : includeQuiz
-                          ? "border-green-500 bg-green-50/60 dark:bg-green-900/20"
-                          : "border-gray-200 dark:border-gray-700 hover:border-green-300 dark:hover:border-green-700"
-                      }`}
+                        ? "border-green-500 bg-green-50/60 dark:bg-green-900/20"
+                        : "border-gray-200 dark:border-gray-700 hover:border-green-300 dark:hover:border-green-700"
+                    }`}
                   >
                     <input
                       type="checkbox"
@@ -319,7 +317,6 @@ function SendDocumentsModal({ candidature, onClose, onSuccess, initialSentFiche 
                 )}
               </div>
 
-              {/* Fiches */}
               <div>
                 <p className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
                   <ClipboardList className="w-4 h-4 inline mr-1.5 text-green-600" />
@@ -328,10 +325,11 @@ function SendDocumentsModal({ candidature, onClose, onSuccess, initialSentFiche 
 
                 <div className="space-y-2 max-h-48 overflow-y-auto">
                   <label
-                    className={`flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition-all ${!selectedFicheId
+                    className={`flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition-all ${
+                      !selectedFicheId
                         ? "border-gray-300 bg-gray-50 dark:bg-gray-800 dark:border-gray-700"
                         : "border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600"
-                      }`}
+                    }`}
                   >
                     <input
                       type="radio"
@@ -348,12 +346,13 @@ function SendDocumentsModal({ candidature, onClose, onSuccess, initialSentFiche 
                   {fiches.map((f) => (
                     <label
                       key={f._id}
-                      className={`flex items-start gap-3 p-3 rounded-xl border cursor-pointer transition-all ${sentFiche
+                      className={`flex items-start gap-3 p-3 rounded-xl border cursor-pointer transition-all ${
+                        sentFiche
                           ? "border-green-500 bg-green-50/60 dark:bg-green-900/20 opacity-60 cursor-not-allowed"
                           : selectedFicheId === f._id
-                            ? "border-green-500 bg-green-50/60 dark:bg-green-900/20"
-                            : "border-gray-200 dark:border-gray-700 hover:border-green-300 dark:hover:border-green-700"
-                        }`}
+                          ? "border-green-500 bg-green-50/60 dark:bg-green-900/20"
+                          : "border-gray-200 dark:border-gray-700 hover:border-green-300 dark:hover:border-green-700"
+                      }`}
                     >
                       <input
                         type="radio"
@@ -381,7 +380,6 @@ function SendDocumentsModal({ candidature, onClose, onSuccess, initialSentFiche 
                 </div>
               </div>
 
-              {/* Erreur */}
               {error && (
                 <div className="flex items-center gap-2 p-3 bg-red-50 dark:bg-red-900/20 rounded-xl border border-red-200 dark:border-red-800 text-sm text-red-600 dark:text-red-400">
                   <AlertCircle className="w-4 h-4 shrink-0" />
@@ -389,7 +387,6 @@ function SendDocumentsModal({ candidature, onClose, onSuccess, initialSentFiche 
                 </div>
               )}
 
-              {/* Résumé */}
               {(selectedFicheId || includeQuiz) && !allSent && (
                 <div className="bg-green-50/60 dark:bg-green-900/20 border border-green-100 dark:border-green-800 rounded-xl p-3 text-sm text-green-700 dark:text-green-300">
                   Sera envoyé :{" "}
@@ -419,7 +416,6 @@ function SendDocumentsModal({ candidature, onClose, onSuccess, initialSentFiche 
    MODAL — Planifier Entretien (3 flows)
 ================================================================ */
 
-// ── Flow 1: Téléphonique — juste Valider → CONFIRMED ──
 function TelephoniqueFlow({ candidate, onBack, onClose }) {
   const [creating, setCreating] = useState(false);
   const [created, setCreated] = useState(false);
@@ -487,7 +483,6 @@ function TelephoniqueFlow({ candidate, onBack, onClose }) {
         ← Retour
       </button>
 
-      {/* Header type + date */}
       <div className="flex items-center gap-3 mb-4 p-3 bg-green-50/60 dark:bg-green-900/20 rounded-xl border border-green-100 dark:border-green-800">
         <div className="w-9 h-9 rounded-xl bg-green-600 flex items-center justify-center flex-shrink-0">
           <PhoneCall className="w-4 h-4 text-white" />
@@ -500,7 +495,6 @@ function TelephoniqueFlow({ candidate, onBack, onClose }) {
         </div>
       </div>
 
-      {/* Infos candidat */}
       <div className="mb-6 p-4 bg-white dark:bg-gray-800 rounded-xl border border-gray-100 dark:border-gray-700 shadow-sm">
         <div className="flex items-start gap-3">
           <div className="w-10 h-10 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center text-green-700 dark:text-green-300 font-extrabold text-sm flex-shrink-0">
@@ -526,7 +520,6 @@ function TelephoniqueFlow({ candidate, onBack, onClose }) {
         </div>
       </div>
 
-      {/* Bouton Valider */}
       <button
         onClick={handleValider}
         disabled={creating}
@@ -538,7 +531,6 @@ function TelephoniqueFlow({ candidate, onBack, onClose }) {
     </div>
   );
 }
-
 
 function RHFlow({ candidate, onBack, onClose }) {
   const name =
@@ -614,7 +606,6 @@ function RHFlow({ candidate, onBack, onClose }) {
   );
 }
 
-// ── Flow 3: RH + Technique ──────────────────────────
 function RHTechniqueFlow({ candidate, onBack, onClose }) {
   const [slots, setSlots] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -777,10 +768,11 @@ function RHTechniqueFlow({ candidate, onBack, onClose }) {
                     <button
                       key={`${day}-${s.time}-${i}`}
                       onClick={() => setSelected(s)}
-                      className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all border-2 ${active
+                      className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all border-2 ${
+                        active
                           ? "bg-green-600 text-white border-green-600"
                           : "bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-200 hover:border-green-400 dark:hover:border-green-700"
-                        }`}
+                      }`}
                     >
                       {s.time}
                     </button>
@@ -821,7 +813,6 @@ function RHTechniqueFlow({ candidate, onBack, onClose }) {
   );
 }
 
-// ── Wrapper Modal principal ─────────────────────────────────────
 function EntretienModal({ candidate, onClose, onRHScheduled }) {
   const [step, setStep] = useState("type");
   const name = getName(candidate);
@@ -900,8 +891,7 @@ function NoteStars({ note }) {
         {[1, 2, 3, 4, 5].map((s) => (
           <button key={s} onClick={() => setStars(s)}>
             <Star
-              className={`w-5 h-5 transition-colors ${s <= stars ? "text-yellow-400 fill-yellow-400" : "text-gray-300"
-                }`}
+              className={`w-5 h-5 transition-colors ${s <= stars ? "text-yellow-400 fill-yellow-400" : "text-gray-300"}`}
             />
           </button>
         ))}
@@ -913,7 +903,7 @@ function NoteStars({ note }) {
 /* ================================================================
    TABLE ROW — un candidat = une ligne
 ================================================================ */
-function PreInterviewRow({ c, index }) {
+function PreInterviewRow({ c }) {
   const [sentFiche, setSentFiche] = useState(() => wasSentFiche(c._id));
   const [sentQuiz, setSentQuiz] = useState(() => wasSentQuiz(c._id));
   const [showSendModal, setShowSendModal] = useState(false);
@@ -922,7 +912,6 @@ function PreInterviewRow({ c, index }) {
 
   const name = getName(c);
   const cvUrl = getCvUrl(c);
-  const cvName = getCvName(c);
   const score = getMatchScore(c);
   const jobTitle = safeStr(c?.jobTitle) || "—";
   const email = safeStr(c?.email);
@@ -931,30 +920,37 @@ function PreInterviewRow({ c, index }) {
   const allSent = sentFiche && sentQuiz;
   const anySent = sentFiche || sentQuiz;
 
-  useEffect(() => { if (sentFiche) markSentFiche(c._id); }, [sentFiche, c._id]);
-  useEffect(() => { if (sentQuiz) markSentQuiz(c._id); }, [sentQuiz, c._id]);
-  useEffect(() => { if (allSent) markSent(c._id); }, [allSent, c._id]);
+  useEffect(() => {
+    if (sentFiche) markSentFiche(c._id);
+  }, [sentFiche, c._id]);
+
+  useEffect(() => {
+    if (sentQuiz) markSentQuiz(c._id);
+  }, [sentQuiz, c._id]);
+
+  useEffect(() => {
+    if (allSent) markSent(c._id);
+  }, [allSent, c._id]);
 
   function handleModalSuccess(justSentFiche, justSentQuiz) {
     if (justSentFiche) setSentFiche(true);
     if (justSentQuiz) setSentQuiz(true);
   }
 
-  // Bouton envoi
   let sendBtn;
   if (allSent) {
     sendBtn = (
-      <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 text-xs font-semibold border border-green-200 dark:border-green-800 cursor-default">
+      <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 text-xs font-semibold border border-green-200 dark:border-green-800 cursor-default">
         <CheckCircle2 className="w-3.5 h-3.5" /> Envoyés
       </span>
     );
   } else {
     const label = sentFiche ? "Envoyer Quiz" : sentQuiz ? "Envoyer Fiche" : "Envoyer Quiz";
-    const color = anySent ? "bg-amber-500 hover:bg-amber-600" : "bg-[#4E8F2F] hover:bg-[#3d7024]";
+    const color = anySent ? "bg-amber-500 hover:bg-amber-600" : "bg-[#6CB33F] hover:bg-[#5AA531]";
     sendBtn = (
       <button
         onClick={() => setShowSendModal(true)}
-        className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg ${color} text-white text-xs font-semibold transition-colors`}
+        className={`inline-flex items-center gap-1.5 px-3 py-2 rounded-full ${color} text-white text-xs font-semibold transition-colors shadow-sm`}
       >
         <Send className="w-3.5 h-3.5" />
         {label}
@@ -962,39 +958,30 @@ function PreInterviewRow({ c, index }) {
     );
   }
 
-  // Badges fiche / quiz
   const ficheBadge = sentFiche ? (
-    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 text-[11px] font-bold">
+    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 text-[11px] font-bold">
       <ClipboardList className="w-3 h-3" /> Fiche ✓
     </span>
   ) : null;
 
   const quizBadge = sentQuiz ? (
-    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 text-[11px] font-bold">
+    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 text-[11px] font-bold">
       <Brain className="w-3 h-3" /> Quiz ✓
     </span>
   ) : null;
 
   return (
     <>
-      <tr className="group border-b border-gray-100 dark:border-gray-800 hover:bg-green-50/40 dark:hover:bg-green-900/10 transition-colors">
-        {/* # */}
-        <td className="pl-5 pr-3 py-4 w-10">
-          <span className="w-6 h-6 rounded-full bg-[#6CB33F] text-white text-[11px] font-bold flex items-center justify-center">
-            {index + 1}
-          </span>
-        </td>
-
-        {/* CANDIDAT */}
-        <td className="px-4 py-4 min-w-[200px]">
+      <tr className="group border-b border-[#EDF2E8] dark:border-gray-800 hover:bg-[#FAFDF8] dark:hover:bg-green-900/10 transition-colors">
+        <td className="px-4 py-5 min-w-[230px]">
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center text-green-700 dark:text-green-300 font-extrabold text-base shrink-0">
+            <div className="w-10 h-10 rounded-full bg-[#E9F4E2] dark:bg-green-900/30 flex items-center justify-center text-[#4E8F2F] dark:text-green-300 font-extrabold text-base shrink-0">
               {name?.[0]?.toUpperCase() || "C"}
             </div>
             <div className="min-w-0">
-              <p className="font-bold text-sm text-gray-900 dark:text-white truncate">{name}</p>
+              <p className="font-extrabold text-[15px] text-[#0F172A] dark:text-white truncate">{name}</p>
               {email && (
-                <a href={`mailto:${email}`} className="text-xs text-blue-500 hover:underline truncate block">
+                <a href={`mailto:${email}`} className="text-[13px] text-gray-500 hover:text-[#4E8F2F] hover:underline truncate block">
                   {email}
                 </a>
               )}
@@ -1002,39 +989,36 @@ function PreInterviewRow({ c, index }) {
           </div>
         </td>
 
-        {/* POSTE */}
-        <td className="px-4 py-4 min-w-[160px]">
+        <td className="px-4 py-5 min-w-[180px]">
           <div className="flex items-center gap-2">
-            <Briefcase className="w-3.5 h-3.5 text-gray-400 shrink-0" />
-            <span className="text-sm text-gray-600 dark:text-gray-300 truncate">{jobTitle}</span>
+            <Briefcase className="w-3.5 h-3.5 text-[#6CB33F] shrink-0" />
+            <span className="text-sm text-gray-700 dark:text-gray-300 truncate">{jobTitle}</span>
           </div>
         </td>
 
-        {/* CV */}
-        <td className="px-4 py-4 w-[110px]">
+        <td className="px-4 py-5 w-[120px]">
           {cvUrl ? (
             <a
               href={cvUrl}
               target="_blank"
               rel="noreferrer"
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-200 text-xs font-semibold transition-colors"
+              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-[#E8F2E1] dark:bg-gray-800 hover:bg-[#DDEDD2] dark:hover:bg-gray-700 text-[#4E8F2F] dark:text-green-300 text-xs font-bold transition-colors"
             >
-              <FileText className="w-3.5 h-3.5 text-[#4E8F2F]" /> Voir CV
+              <FileText className="w-3.5 h-3.5" />
+              Voir CV
             </a>
           ) : (
             <span className="text-xs text-gray-400">—</span>
           )}
         </td>
 
-        {/* SCORE */}
-        <td className="px-4 py-4 w-[100px]">
-          <div className={`inline-flex items-center justify-center px-3 py-1 rounded-lg text-sm font-extrabold ${scoreBg(score)}`}>
+        <td className="px-4 py-5 w-[100px]">
+          <div className={`inline-flex items-center justify-center px-3 py-1.5 rounded-full text-sm font-extrabold ${scoreBg(score)}`}>
             {pct(score)}
           </div>
         </td>
 
-        {/* SÉLECTIONNÉ LE */}
-        <td className="px-4 py-4 w-[130px]">
+        <td className="px-4 py-5 w-[140px]">
           {selectedAt ? (
             <div className="flex items-center gap-1.5 text-xs text-gray-500 dark:text-gray-400">
               <Clock className="w-3.5 h-3.5 text-[#6CB33F]" />
@@ -1045,23 +1029,21 @@ function PreInterviewRow({ c, index }) {
           )}
         </td>
 
-        {/* DOCS ENVOYÉS */}
-        <td className="px-4 py-4 w-[120px]">
-          <div className="flex flex-col gap-1">
+        <td className="px-4 py-5 w-[140px]">
+          <div className="flex flex-col gap-1.5">
             {ficheBadge}
             {quizBadge}
             {!ficheBadge && !quizBadge && <span className="text-xs text-gray-400">Aucun</span>}
           </div>
         </td>
 
-        {/* ACTIONS */}
-        <td className="px-4 py-4 pr-5 w-[280px]">
+        <td className="px-4 py-5 pr-6 w-[300px]">
           <div className="flex items-center gap-2 flex-wrap">
             {sendBtn}
 
             <button
               onClick={() => setShowEntretienModal(true)}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold transition-colors"
+              className="inline-flex items-center gap-1.5 px-3 py-2 rounded-full bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold transition-colors shadow-sm"
             >
               <Calendar className="w-3.5 h-3.5" />
               Planifier
@@ -1069,7 +1051,7 @@ function PreInterviewRow({ c, index }) {
 
             <Link
               href={`/recruiter/PreInterviewList/${c._id}/results`}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-200 text-xs font-semibold transition-colors"
+              className="inline-flex items-center gap-1.5 px-3 py-2 rounded-full bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-200 text-xs font-semibold transition-colors"
             >
               <BarChart2 className="w-3.5 h-3.5" />
               Résultats
@@ -1078,24 +1060,29 @@ function PreInterviewRow({ c, index }) {
         </td>
       </tr>
 
-      {showSendModal && createPortal(
-        <SendDocumentsModal
-          candidature={c}
-          onClose={() => setShowSendModal(false)}
-          onSuccess={handleModalSuccess}
-          initialSentFiche={sentFiche}
-          initialSentQuiz={sentQuiz}
-        />,
-        document.body
-      )}
-      {showEntretienModal && createPortal(
-        <EntretienModal
-          candidate={c}
-          onClose={() => setShowEntretienModal(false)}
-          onRHScheduled={(iv) => { setRhInterview(iv); setShowEntretienModal(false); }}
-        />,
-        document.body
-      )}
+      {showSendModal &&
+        createPortal(
+          <SendDocumentsModal
+            candidature={c}
+            onClose={() => setShowSendModal(false)}
+            onSuccess={handleModalSuccess}
+            initialSentFiche={sentFiche}
+            initialSentQuiz={sentQuiz}
+          />,
+          document.body
+        )}
+      {showEntretienModal &&
+        createPortal(
+          <EntretienModal
+            candidate={c}
+            onClose={() => setShowEntretienModal(false)}
+            onRHScheduled={(iv) => {
+              setRhInterview(iv);
+              setShowEntretienModal(false);
+            }}
+          />,
+          document.body
+        )}
     </>
   );
 }
@@ -1107,6 +1094,9 @@ export default function PreInterviewListPage() {
   const [candidates, setCandidates] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
+
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 5;
 
   useEffect(() => {
     async function load() {
@@ -1135,77 +1125,104 @@ export default function PreInterviewListPage() {
     });
   }, [candidates, search]);
 
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [search]);
+
+  const totalPages = Math.max(1, Math.ceil(filtered.length / itemsPerPage));
+
+  const paginatedCandidates = useMemo(() => {
+    const start = (currentPage - 1) * itemsPerPage;
+    const end = start + itemsPerPage;
+    return filtered.slice(start, end);
+  }, [filtered, currentPage]);
+
   if (loading)
     return (
-      <div className="min-h-screen bg-[#F0FAF0] dark:bg-gray-950 flex items-center justify-center">
+      <div className="min-h-screen bg-[#F2FAEF] dark:bg-gray-950 flex items-center justify-center">
         <Loader2 className="w-8 h-8 animate-spin text-[#6CB33F]" />
       </div>
     );
 
   return (
-    <div className="min-h-screen bg-[#F0FAF0] dark:bg-gray-950 transition-colors duration-300">
-      <div className="max-w-[1400px] mx-auto px-6 py-8 space-y-6">
+    <div className="min-h-screen bg-[#F2FAEF] dark:bg-gray-950 transition-colors duration-300">
+      <div className="max-w-[1500px] mx-auto px-6 py-8">
+        <div className="mb-8">
+          <h1 className="flex items-center gap-3 text-3xl sm:text-4xl font-extrabold text-gray-900 dark:text-white mb-6">
+            <UserCheck className="w-8 h-8 text-green-500 shrink-0" />
+            <span>Candidats Pré-sélectionnés</span>
+          </h1>
+        </div>
 
-        {/* Header */}
-        <div className="flex items-center justify-between gap-4 flex-wrap">
-          <div>
-            <h1 className="text-2xl font-extrabold text-gray-900 dark:text-white flex items-center gap-3">
-              <UserCheck className="w-7 h-7 text-[#6CB33F]" />
-              Candidats Pré-sélectionnés
-            </h1>
-            <p className="text-gray-500 dark:text-gray-400 mt-0.5 text-sm">
-              {candidates.length} candidat{candidates.length > 1 ? "s" : ""} prêt{candidates.length > 1 ? "s" : ""} pour entretien
-            </p>
-          </div>
-
-          {/* Search */}
-          <div className="relative w-full sm:w-80">
-            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+        <div className="mb-7">
+          <div className="w-full rounded-[28px] bg-white dark:bg-gray-900 border border-[#DDE7D6] dark:border-gray-800 shadow-[0_2px_8px_rgba(15,23,42,0.05)] px-6 py-4 flex items-center gap-4">
+            <Search className="w-6 h-6 text-[#5C9E35] dark:text-emerald-400 flex-shrink-0" />
             <input
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Rechercher (nom, email, poste)..."
-              className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-sm text-gray-800 dark:text-gray-100 outline-none focus:ring-2 focus:ring-[#6CB33F]/50 transition-colors"
+              className="w-full bg-transparent outline-none text-[16px] text-[#667085] dark:text-gray-300 placeholder:text-[#667085] dark:placeholder:text-gray-400"
             />
           </div>
         </div>
 
-        {/* Tableau */}
         {filtered.length === 0 ? (
           <div className="text-center py-20 text-gray-400">
             <UserCheck className="w-12 h-12 mx-auto mb-3 opacity-30" />
             <p className="font-medium">{search ? "Aucun candidat trouvé" : "Aucun candidat pré-sélectionné"}</p>
           </div>
         ) : (
-          <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-sm overflow-hidden">
+          <div className="bg-white dark:bg-gray-900 rounded-[32px] border border-[#DCE7D5] dark:border-gray-800 shadow-[0_8px_24px_rgba(15,23,42,0.06)] overflow-hidden">
             <div className="overflow-x-auto">
-              <table className="w-full border-collapse">
+              <table className="w-full border-collapse min-w-[1200px]">
                 <thead>
-                  <tr className="bg-[#F0FAF0] dark:bg-green-900/20 border-b border-gray-200 dark:border-gray-800">
-                    <th className="pl-5 pr-3 py-3 text-left w-10"></th>
-                    <th className="px-4 py-3 text-left text-xs font-bold text-[#4E8F2F] dark:text-[#6CB33F] uppercase tracking-wider">Candidat</th>
-                    <th className="px-4 py-3 text-left text-xs font-bold text-[#4E8F2F] dark:text-[#6CB33F] uppercase tracking-wider">Poste</th>
-                    <th className="px-4 py-3 text-left text-xs font-bold text-[#4E8F2F] dark:text-[#6CB33F] uppercase tracking-wider">CV</th>
-                    <th className="px-4 py-3 text-left text-xs font-bold text-[#4E8F2F] dark:text-[#6CB33F] uppercase tracking-wider">Score</th>
-                    <th className="px-4 py-3 text-left text-xs font-bold text-[#4E8F2F] dark:text-[#6CB33F] uppercase tracking-wider">Sélectionné le</th>
-                    <th className="px-4 py-3 text-left text-xs font-bold text-[#4E8F2F] dark:text-[#6CB33F] uppercase tracking-wider">Documents</th>
-                    <th className="px-4 py-3 pr-5 text-left text-xs font-bold text-[#4E8F2F] dark:text-[#6CB33F] uppercase tracking-wider">Actions</th>
+                  <tr className="bg-[#EAF4E4] dark:bg-green-900/20">
+                    <th className="px-4 py-6 text-left text-[13px] font-extrabold text-[#4F8F2F] dark:text-[#6CB33F] uppercase tracking-[0.08em]">
+                      Candidat
+                    </th>
+                    <th className="px-4 py-6 text-left text-[13px] font-extrabold text-[#4F8F2F] dark:text-[#6CB33F] uppercase tracking-[0.08em]">
+                      Poste
+                    </th>
+                    <th className="px-4 py-6 text-left text-[13px] font-extrabold text-[#4F8F2F] dark:text-[#6CB33F] uppercase tracking-[0.08em]">
+                      CV
+                    </th>
+                    <th className="px-4 py-6 text-left text-[13px] font-extrabold text-[#4F8F2F] dark:text-[#6CB33F] uppercase tracking-[0.08em]">
+                      Score
+                    </th>
+                    <th className="px-4 py-6 text-left text-[13px] font-extrabold text-[#4F8F2F] dark:text-[#6CB33F] uppercase tracking-[0.08em]">
+                      Sélectionné le
+                    </th>
+                    <th className="px-4 py-6 text-left text-[13px] font-extrabold text-[#4F8F2F] dark:text-[#6CB33F] uppercase tracking-[0.08em]">
+                      Documents
+                    </th>
+                    <th className="px-4 py-6 pr-6 text-left text-[13px] font-extrabold text-[#4F8F2F] dark:text-[#6CB33F] uppercase tracking-[0.08em]">
+                      Actions
+                    </th>
                   </tr>
                 </thead>
                 <tbody>
-                  {filtered.map((c, i) => (
-                    <PreInterviewRow key={c._id} c={c} index={i} />
+                  {paginatedCandidates.map((c) => (
+                    <PreInterviewRow key={c._id} c={c} />
                   ))}
                 </tbody>
               </table>
             </div>
 
-            {/* Footer résumé */}
-            <div className="px-5 py-3 border-t border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-900/50">
-              <p className="text-xs text-gray-400">
-                {filtered.length} candidat{filtered.length > 1 ? "s" : ""} affiché{filtered.length > 1 ? "s" : ""}
-                {search && ` · filtre : "${search}"`}
-              </p>
+            <div className="px-6 py-4 border-t border-[#EEF2EA] dark:border-gray-800 bg-[#FAFCF8] dark:bg-gray-900/50">
+              <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+                <p className="text-xs text-gray-400">
+                  {filtered.length} candidat{filtered.length > 1 ? "s" : ""} affiché{filtered.length > 1 ? "s" : ""}
+                  {search && ` · filtre : "${search}"`}
+                </p>
+
+                {totalPages > 1 && (
+                  <Pagination
+                    currentPage={currentPage}
+                    totalPages={totalPages}
+                    onPageChange={setCurrentPage}
+                  />
+                )}
+              </div>
             </div>
           </div>
         )}

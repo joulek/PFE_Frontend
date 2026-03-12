@@ -27,8 +27,8 @@ import {
   Send,
 } from "lucide-react";
 
-const OPTY   = "#4E8F2F";
-const OPTY_D = "#3D7524";
+const OPTY   = "#F4F8F1";
+const OPTY_D = "#F4F8F1";
 
 function cn(...a) {
   return a.filter(Boolean).join(" ");

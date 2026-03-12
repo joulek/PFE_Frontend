@@ -137,10 +137,8 @@ export default function CandidatRescheduleInterview({ token }) {
 
           {/* ── Header ── */}
           <div
-            className="rounded-[28px] p-8 shadow-xl"
-            style={{
-              background: "linear-gradient(135deg, #4E8F2F 0%, #5a9e38 50%, #3D7524 100%)",
-            }}
+            className="rounded-[28px] p-8 shadow-xl bg-[#6FB43F] border border-[#E4EBDC] dark:border-gray-800 "
+            
           >
             <p className="text-white/80 text-[11px] font-extrabold uppercase tracking-[0.18em]">
               Proposer une autre date

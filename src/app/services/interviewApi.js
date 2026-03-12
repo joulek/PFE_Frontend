@@ -395,37 +395,13 @@ export async function getMyTelephoniqueInterviews({
   search = "",
 } = {}) {
   const params = new URLSearchParams({
-    page:  String(page),
+    page: String(page),
     limit: String(limit),
     ...(search.trim() ? { search: search.trim() } : {}),
   });
 
-  const url = `${API_BASE}/api/interviewNord/telephonique/my-list?${params}`;
-
-  const token =
-    (typeof localStorage !== "undefined" && localStorage.getItem("token")) ||
-    (typeof sessionStorage !== "undefined" && sessionStorage.getItem("token")) ||
-    "";
-
-  const response = await fetch(url, {
-    headers: {
-      "Content-Type": "application/json",
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-    },
-  });
-
-  // ✅ Vérifier le Content-Type avant de parser en JSON
-  const contentType = response.headers.get("content-type") || "";
-  if (!contentType.includes("application/json")) {
-    const text = await response.text();
-    console.error("❌ Réponse non-JSON reçue pour /telephonique/my-list:", response.status, text.slice(0, 200));
-    throw new Error(`Endpoint introuvable (${response.status}) — vérifiez le montage du router dans server.js`);
-  }
-
-  if (!response.ok) {
-    const data = await response.json();
-    throw new Error(data?.error || `Erreur ${response.status}`);
-  }
-
-  return response.json();
+  const { data } = await api.get(
+    `/api/interviewNord/telephonique/my-list?${params}`
+  );
+  return data;
 }
