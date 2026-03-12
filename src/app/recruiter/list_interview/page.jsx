@@ -29,7 +29,8 @@ const API_BASE = process.env.NEXT_PUBLIC_API_URL;
 function getAuthHeaders() {
   const token =
     (typeof localStorage !== "undefined" && localStorage.getItem("token")) ||
-    (typeof sessionStorage !== "undefined" && sessionStorage.getItem("token")) ||
+    (typeof sessionStorage !== "undefined" &&
+      sessionStorage.getItem("token")) ||
     "";
   return token ? { Authorization: `Bearer ${token}` } : {};
 }
@@ -184,9 +185,11 @@ function resolveTypeConfig(interviewType) {
   // Chercher d'abord la clé exacte
   if (TYPE_CONFIG[interviewType]) return TYPE_CONFIG[interviewType];
   // Sinon chercher en majuscules
-  if (TYPE_CONFIG[interviewType.toUpperCase()]) return TYPE_CONFIG[interviewType.toUpperCase()];
+  if (TYPE_CONFIG[interviewType.toUpperCase()])
+    return TYPE_CONFIG[interviewType.toUpperCase()];
   // Sinon chercher en minuscules
-  if (TYPE_CONFIG[interviewType.toLowerCase()]) return TYPE_CONFIG[interviewType.toLowerCase()];
+  if (TYPE_CONFIG[interviewType.toLowerCase()])
+    return TYPE_CONFIG[interviewType.toLowerCase()];
   // Fallback par défaut
   return {
     label: interviewType,
@@ -214,7 +217,7 @@ function getDGANote(interview) {
   if (!notes.length) return null;
 
   return [...notes].sort(
-    (a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0)
+    (a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0),
   )[0];
 }
 
@@ -237,7 +240,9 @@ function Badge({ label, className = "", dotClass = "" }) {
     <span
       className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold border whitespace-nowrap transition-colors ${className}`}
     >
-      {dotClass ? <span className={`w-2 h-2 rounded-full ${dotClass}`} /> : null}
+      {dotClass ? (
+        <span className={`w-2 h-2 rounded-full ${dotClass}`} />
+      ) : null}
       {label}
     </span>
   );
@@ -345,23 +350,31 @@ function PlanifierModal({ open, onClose, onCreated }) {
       label: "Entretien RH",
       sub: "Planifier + email candidat",
       icon: <Users className="w-5 h-5 text-white" />,
-      action: () => { onClose(); router.push("/recruiter/schedule_interview?type=rh"); },
+      action: () => {
+        onClose();
+        router.push("/recruiter/schedule_interview?type=rh");
+      },
     },
     {
       key: "rh_technique",
       label: "Entretien RH + Technique",
       sub: "Créneaux libres communs",
       icon: <Cpu className="w-5 h-5 text-white" />,
-      action: () => { onClose(); router.push("/recruiter/schedule_interview?type=rh_technique"); },
+      action: () => {
+        onClose();
+        router.push("/recruiter/schedule_interview?type=rh_technique");
+      },
     },
   ];
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-black/50 backdrop-blur-[2px]" onClick={onClose} />
+      <div
+        className="absolute inset-0 bg-black/50 backdrop-blur-[2px]"
+        onClick={onClose}
+      />
 
       <div className="relative w-full max-w-md rounded-3xl bg-[#f8fef5] dark:bg-gray-900 border border-gray-100 dark:border-gray-700 shadow-2xl overflow-hidden">
-
         <div className="flex items-center justify-between px-6 pt-6 pb-1">
           <div>
             <h2 className="text-xl font-extrabold text-gray-900 dark:text-white">
@@ -377,7 +390,6 @@ function PlanifierModal({ open, onClose, onCreated }) {
         </div>
 
         <div className="px-6 pb-6 pt-4">
-
           {step === "type" && (
             <div className="flex flex-col gap-3">
               {TYPES.map((t) => (
@@ -390,8 +402,12 @@ function PlanifierModal({ open, onClose, onCreated }) {
                     {t.icon}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <div className="font-bold text-gray-900 dark:text-white text-sm">{t.label}</div>
-                    <div className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">{t.sub}</div>
+                    <div className="font-bold text-gray-900 dark:text-white text-sm">
+                      {t.label}
+                    </div>
+                    <div className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
+                      {t.sub}
+                    </div>
                   </div>
                   <ChevronRight className="w-4 h-4 text-gray-300 group-hover:text-[#6CB33F] flex-shrink-0 transition-colors" />
                 </button>
@@ -414,7 +430,9 @@ function PlanifierModal({ open, onClose, onCreated }) {
                   <Phone className="w-5 h-5 text-white" />
                 </div>
                 <div>
-                  <div className="font-bold text-gray-900 dark:text-white text-sm">Entretien Téléphonique</div>
+                  <div className="font-bold text-gray-900 dark:text-white text-sm">
+                    Entretien Téléphonique
+                  </div>
                   <div className="text-xs text-gray-400">{today}</div>
                 </div>
               </div>
@@ -462,9 +480,15 @@ function PlanifierModal({ open, onClose, onCreated }) {
                 className="w-full py-3 rounded-2xl bg-[#6CB33F] hover:bg-[#4E8F2F] disabled:opacity-40 disabled:cursor-not-allowed text-white font-bold text-sm flex items-center justify-center gap-2 transition-colors"
               >
                 {saving ? (
-                  <><span className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />Enregistrement...</>
+                  <>
+                    <span className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />
+                    Enregistrement...
+                  </>
                 ) : (
-                  <><CheckCircle2 className="w-4 h-4" />Valider l'entretien téléphonique</>
+                  <>
+                    <CheckCircle2 className="w-4 h-4" />
+                    Valider l'entretien téléphonique
+                  </>
                 )}
               </button>
             </div>
@@ -476,9 +500,12 @@ function PlanifierModal({ open, onClose, onCreated }) {
                 <CheckCircle2 className="w-8 h-8 text-emerald-500" />
               </div>
               <div className="text-center">
-                <p className="font-extrabold text-gray-900 dark:text-white text-lg">Entretien créé !</p>
+                <p className="font-extrabold text-gray-900 dark:text-white text-lg">
+                  Entretien créé !
+                </p>
                 <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                  L'entretien téléphonique est enregistré avec le statut <strong>Confirmé</strong>.
+                  L'entretien téléphonique est enregistré avec le statut{" "}
+                  <strong>Confirmé</strong>.
                 </p>
               </div>
               <button
@@ -489,7 +516,6 @@ function PlanifierModal({ open, onClose, onCreated }) {
               </button>
             </div>
           )}
-
         </div>
       </div>
     </div>
@@ -536,7 +562,8 @@ function CancelInterviewModal({
 
         <div className="px-6 py-5">
           <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
-            Raison de l'annulation <span className="text-gray-400">(optionnel)</span>
+            Raison de l'annulation{" "}
+            <span className="text-gray-400">(optionnel)</span>
           </label>
 
           <textarea
@@ -574,6 +601,7 @@ function CancelInterviewModal({
 }
 
 export default function AdminInterviewList() {
+  console.log("ADMIN INTERVIEW PAGE LOADED");
   const router = useRouter();
 
   const [interviews, setInterviews] = useState([]);
@@ -615,6 +643,7 @@ export default function AdminInterviewList() {
   }, [statusFilter]);
 
   const fetchInterviews = useCallback(async () => {
+    console.log("fetchInterviews appelée");
     setLoading(true);
     setError(null);
 
@@ -626,7 +655,12 @@ export default function AdminInterviewList() {
         ...(debouncedSearch.trim() ? { search: debouncedSearch.trim() } : {}),
       });
 
-      const data = await apiFetch(`/api/interviews/admin/all?${params.toString()}`);
+      const data = await apiFetch(
+        `/api/interviews/admin/all?${params.toString()}`,
+      );
+      console.log("INTERVIEWS API RESPONSE :", data);
+      console.log("LISTE ENTRETIENS :", data.interviews);
+
       setInterviews(data.interviews || []);
       setTotal(data.total || 0);
       setTotalPages(data.totalPages || 1);
@@ -641,6 +675,7 @@ export default function AdminInterviewList() {
     setStatsLoading(true);
     try {
       const data = await apiFetch("/api/interviews/admin/stats");
+      console.log("STATS ENTRETIENS :", data);
       setStats(data.data || {});
     } catch (_) {
       setStats(null);
@@ -650,9 +685,9 @@ export default function AdminInterviewList() {
   }, []);
 
   useEffect(() => {
+    console.log("USEEFFECT FETCH INTERVIEWS");
     fetchInterviews();
   }, [fetchInterviews]);
-
   useEffect(() => {
     fetchStats();
   }, [fetchStats]);
@@ -794,17 +829,19 @@ export default function AdminInterviewList() {
               "PENDING_ADMIN_APPROVAL",
               "CANCELLED",
             ].map((s) => {
-              const cfg = s === "ALL" ? { short: "Tous", dot: null } : STATUS_CONFIG[s];
+              const cfg =
+                s === "ALL" ? { short: "Tous", dot: null } : STATUS_CONFIG[s];
               const isActive = statusFilter === s;
 
               return (
                 <button
                   key={s}
                   onClick={() => setStatusFilter(s)}
-                  className={`inline-flex items-center gap-2 px-4 py-2 rounded-full border text-xs font-semibold transition-colors ${isActive
-                    ? "bg-[#6CB33F] hover:bg-[#4E8F2F] border-[#6CB33F] text-white dark:bg-emerald-600 dark:hover:bg-emerald-500 dark:border-emerald-600"
-                    : "bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-[#4E8F2F] dark:text-emerald-400 hover:bg-green-50 dark:hover:bg-gray-700"
-                    }`}
+                  className={`inline-flex items-center gap-2 px-4 py-2 rounded-full border text-xs font-semibold transition-colors ${
+                    isActive
+                      ? "bg-[#6CB33F] hover:bg-[#4E8F2F] border-[#6CB33F] text-white dark:bg-emerald-600 dark:hover:bg-emerald-500 dark:border-emerald-600"
+                      : "bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-[#4E8F2F] dark:text-emerald-400 hover:bg-green-50 dark:hover:bg-gray-700"
+                  }`}
                 >
                   {cfg.dot ? (
                     <span
@@ -842,7 +879,9 @@ export default function AdminInterviewList() {
               <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
                 Une erreur est survenue
               </h2>
-              <p className="text-gray-600 dark:text-gray-400 max-w-md">{error}</p>
+              <p className="text-gray-600 dark:text-gray-400 max-w-md">
+                {error}
+              </p>
               <button
                 onClick={fetchInterviews}
                 className="mt-2 px-6 py-3 bg-[#6CB33F] hover:bg-[#4E8F2F] dark:bg-emerald-600 dark:hover:bg-emerald-500 text-white rounded-full font-semibold transition-colors"
@@ -915,220 +954,304 @@ export default function AdminInterviewList() {
                       }
                     }
                     return grouped.map((iv) => {
-                    const allIvs = [iv, ...iv.siblings];
-                    const sc = STATUS_CONFIG[iv.status] || {};
-                    // ✅ FIX: utiliser resolveTypeConfig au lieu d'accès direct
-                    const tc = resolveTypeConfig(iv.interviewType);
-                    const dgaNote = getDGANote(iv);
-                    const score = dgaNote
-                      ? dgaNote.evaluationGlobale ?? dgaNote.score ?? null
-                      : null;
-                    const comment = dgaNote ? dgaNote.commentaire || "" : "";
-                    const hasConfirmedDate = !!iv.confirmedDate;
-                    const displayDate = hasConfirmedDate ? iv.confirmedDate : (iv.proposedDate || iv.proposedStart);
-                    const displayTime = hasConfirmedDate ? iv.confirmedTime : (iv.proposedTime || (iv.proposedStart
-                      ? new Date(iv.proposedStart).toLocaleTimeString("fr-FR", {
-                        hour: "2-digit",
-                        minute: "2-digit"
-                      })
-                      : null));
-                    const isCancelled = iv.status === "CANCELLED";
-                    const isExpanded = expandedRow === iv._id;
-                    const hasDGA = iv.allEntretienNotes?.some((n) => /dga/i.test(n.type));
-                    const isActioning = actionLoading?.startsWith(iv._id);
+                      const allIvs = [iv, ...iv.siblings];
+                      const sc = STATUS_CONFIG[iv.status] || {};
+                      const tc = resolveTypeConfig(iv.interviewType);
+                      const dgaNote = getDGANote(iv);
+                      const score = dgaNote
+                        ? (dgaNote.evaluationGlobale ?? dgaNote.score ?? null)
+                        : null;
+                      const comment = dgaNote ? dgaNote.commentaire || "" : "";
+                      const hasConfirmedDate = !!iv.confirmedDate;
+                      const displayDate = hasConfirmedDate
+                        ? iv.confirmedDate
+                        : iv.proposedDate || iv.proposedStart;
+                      const displayTime = hasConfirmedDate
+                        ? iv.confirmedTime
+                        : iv.proposedTime ||
+                          (iv.proposedStart
+                            ? new Date(iv.proposedStart).toLocaleTimeString(
+                                "fr-FR",
+                                {
+                                  hour: "2-digit",
+                                  minute: "2-digit",
+                                },
+                              )
+                            : null);
+                      const isCancelled = iv.status === "CANCELLED";
+                      const isExpanded = expandedRow === iv._id;
+                      const hasDGA = iv.allEntretienNotes?.some((n) =>
+                        /dga/i.test(n.type),
+                      );
+                      const isActioning = actionLoading?.startsWith(iv._id);
 
-                    return (
-                      <React.Fragment key={iv._id}>
-                        <tr
-                          onClick={() => setExpandedRow(isExpanded ? null : iv._id)}
-                          className={`hover:bg-green-50/40 dark:hover:bg-gray-700/40 transition-colors cursor-pointer ${isExpanded ? "bg-green-50/30 dark:bg-gray-700/30" : ""
+                      const responsableItem = allIvs.find(
+                        (siv) =>
+                          siv.responsableName ||
+                          siv.assignedUserName ||
+                          siv.assignedUserEmail ||
+                          siv.responsableEmail,
+                      );
+
+                      const responsableDisplay =
+                        responsableItem?.responsableName ||
+                        responsableItem?.assignedUserName ||
+                        responsableItem?.responsableEmail ||
+                        responsableItem?.assignedUserEmail ||
+                        "—";
+                      const responsableEmailDisplay =
+                        responsableItem?.responsableEmail ||
+                        responsableItem?.assignedUserEmail ||
+                        "—";
+                      return (
+                        <React.Fragment key={iv._id}>
+                          <tr
+                            onClick={() =>
+                              setExpandedRow(isExpanded ? null : iv._id)
+                            }
+                            className={`hover:bg-green-50/40 dark:hover:bg-gray-700/40 transition-colors cursor-pointer ${
+                              isExpanded
+                                ? "bg-green-50/30 dark:bg-gray-700/30"
+                                : ""
                             } ${isCancelled ? "opacity-60" : ""}`}
-                        >
-                          <td className="px-6 lg:px-8 py-5">
-                            <div className="flex items-center gap-3">
-                              <Avatar name={iv.candidateName} />
-                              <div className="min-w-0">
-                                <div className="font-extrabold text-gray-900 dark:text-white">
-                                  {iv.candidateName}
-                                </div>
-                                <div className="text-sm text-gray-600 dark:text-gray-400 truncate">
-                                  {iv.candidateEmail}
+                          >
+                            <td className="px-6 lg:px-8 py-5">
+                              <div className="flex items-center gap-3">
+                                <Avatar name={iv.candidateName} />
+                                <div className="min-w-0">
+                                  <div className="font-extrabold text-gray-900 dark:text-white">
+                                    {iv.candidateName}
+                                  </div>
+                                  <div className="text-sm text-gray-600 dark:text-gray-400 truncate">
+                                    {iv.candidateEmail}
+                                  </div>
                                 </div>
                               </div>
-                            </div>
-                          </td>
+                            </td>
 
-                          <td className="px-6 lg:px-8 py-5">
-                            <span className="flex items-center gap-2 text-gray-700 dark:text-gray-300 font-medium text-xs sm:text-sm">
-                              <Briefcase className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-gray-400 flex-shrink-0" />
-                              <span className="truncate max-w-[100px] sm:max-w-[140px]">
-                                {iv.jobTitle || "—"}
-                              </span>
-                            </span>
-                          </td>
-
-                          <td className="px-6 lg:px-8 py-5">
-                            <div className="flex flex-col gap-1">
-                              {allIvs.map((siv) => {
-                                const stc = resolveTypeConfig(siv.interviewType);
-                                return (
-                                  <Badge key={siv._id} label={stc.label} className={stc.cls} />
-                                );
-                              })}
-                              {hasDGA && !isCancelled && (
-                                <span className="text-[11px] font-semibold text-rose-600 dark:text-rose-300">
-                                  + Note DGA
+                            <td className="px-6 lg:px-8 py-5">
+                              <span className="flex items-center gap-2 text-gray-700 dark:text-gray-300 font-medium text-xs sm:text-sm">
+                                <Briefcase className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-gray-400 flex-shrink-0" />
+                                <span className="truncate max-w-[100px] sm:max-w-[140px]">
+                                  {iv.jobTitle || "—"}
                                 </span>
-                              )}
-                            </div>
-                          </td>
+                              </span>
+                            </td>
 
-                          <td className="px-6 lg:px-8 py-5">
-                            <Badge
-                              label={sc.short || iv.status}
-                              className={sc.color}
-                              dotClass={sc.dot}
-                            />
-                          </td>
-
-                          <td className="px-6 lg:px-8 py-5 text-xs text-gray-600 dark:text-gray-400">
-                            <div className="flex flex-col gap-2">
-                              <div className="flex items-center gap-2">
-                                <span className="w-2 h-2 rounded-full bg-sky-400" />
-                                <span>Planifié {formatDate(iv.createdAt)}</span>
-                              </div>
-
-                              {iv.status === "CONFIRMED" && iv.confirmedDate && (
-                                <div className="flex items-center gap-2 text-emerald-700 dark:text-emerald-300 font-semibold">
-                                  <span className="w-2 h-2 rounded-full bg-emerald-500" />
-                                  <span>Confirmé {formatDate(iv.confirmedDate)}</span>
-                                </div>
-                              )}
-
-                              {iv.status === "CANDIDATE_REQUESTED_RESCHEDULE" && (
-                                <div className="flex items-center gap-2 text-orange-700 dark:text-orange-300">
-                                  <span className="w-2 h-2 rounded-full bg-orange-500" />
-                                  <span>
-                                    Report : {formatDate(iv.candidateProposedDate)}{" "}
-                                    {iv.candidateProposedTime}
+                            <td className="px-6 lg:px-8 py-5">
+                              <div className="flex flex-col gap-1">
+                                {allIvs.map((siv) => {
+                                  const stc = resolveTypeConfig(
+                                    siv.interviewType,
+                                  );
+                                  return (
+                                    <Badge
+                                      key={siv._id}
+                                      label={stc.label}
+                                      className={stc.cls}
+                                    />
+                                  );
+                                })}
+                                {hasDGA && !isCancelled && (
+                                  <span className="text-[11px] font-semibold text-rose-600 dark:text-rose-300">
+                                    + Note DGA
                                   </span>
-                                </div>
-                              )}
-                            </div>
-                          </td>
-
-                          <td className="px-6 lg:px-8 py-5">
-                            {dgaNote ? (
-                              <div className="flex flex-col gap-2">
-                                <ScoreBadge score={score} />
-                                {comment ? (
-                                  <span
-                                    className="text-xs text-gray-500 dark:text-gray-400 truncate max-w-[170px]"
-                                    title={comment}
-                                  >
-                                    {comment}
-                                  </span>
-                                ) : null}
-                              </div>
-                            ) : (
-                              <span className="text-gray-400 dark:text-gray-500 italic">—</span>
-                            )}
-                          </td>
-
-                          <td className="px-6 lg:px-8 py-5 text-right">
-                            <ChevronDown
-                              className={`w-5 h-5 text-gray-400 ml-auto transition-transform ${isExpanded ? "rotate-180" : ""
-                                }`}
-                            />
-                          </td>
-                        </tr>
-
-                        {isExpanded && (
-                          <tr>
-                            <td
-                              colSpan={7}
-                              className="px-6 lg:px-8 pb-6 bg-green-50/20 dark:bg-gray-900/20"
-                            >
-                              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 pt-4">
-                                <DetailCard label="Poste" value={iv.jobTitle || "—"} />
-                                {allIvs.some(siv => isRHPlusTechInterviewFE(siv.interviewType)) && (
-                                  <DetailCard label="Responsable" value={iv.assignedUserEmail || "—"} />
-                                )}
-                                <DetailCard
-                                  label="Date et Heure"
-                                  value={`${formatDate(displayDate)} • ${displayTime || "—"}`}
-                                />
-
-                                {iv.status === "CANDIDATE_REQUESTED_RESCHEDULE" && (
-                                  <DetailCard
-                                    label="Raison report"
-                                    value={iv.candidateRescheduleReason || "Non précisée"}
-                                  />
-                                )}
-
-                                {iv.status === "PENDING_ADMIN_APPROVAL" && (
-                                  <DetailCard
-                                    label="Nouvelle date proposée"
-                                    value={`${formatDate(iv.responsableProposedDate)} ${iv.responsableProposedTime || ""}`}
-                                  />
-                                )}
-
-                                {allIvs.some(siv => siv.status === "CONFIRMED" || siv.status === "PENDING_CANDIDATE_CONFIRMATION") && (
-                                  <DetailCard label="Évaluation">
-                                    <div className="flex flex-col gap-2">
-                                      {allIvs
-                                        .filter(siv => siv.status === "CONFIRMED" || siv.status === "PENDING_CANDIDATE_CONFIRMATION")
-                                        .map((siv) => {
-                                          const stc = resolveTypeConfig(siv.interviewType);
-                                          return (
-                                            <button
-                                              key={siv._id}
-                                              onClick={(e) => {
-                                                e.stopPropagation();
-                                                router.push(`/recruiter/interviews/${siv._id}/evaluation`);
-                                              }}
-                                              className="w-full px-4 py-2.5 rounded-full bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-700 text-blue-700 dark:text-blue-300 font-semibold text-sm hover:bg-blue-100 dark:hover:bg-blue-900/40 transition-colors flex items-center justify-center gap-2"
-                                            >
-                                              <FileText className="w-4 h-4" />
-                                              {stc.label}
-                                            </button>
-                                          );
-                                        })}
-                                    </div>
-                                  </DetailCard>
-                                )}
-
-
-
-                                {iv.status === "PENDING_ADMIN_APPROVAL" && (
-                                  <>
-                                    <DetailCard label="Approbation">
-                                      <button
-                                        disabled={!!isActioning}
-                                        onClick={(e) => handleApprove(iv._id, e)}
-                                        className="w-full px-4 py-2.5 rounded-full bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-700 text-emerald-700 dark:text-emerald-300 font-semibold text-sm hover:bg-emerald-100 dark:hover:bg-emerald-900/40 transition-colors disabled:opacity-50"
-                                      >
-                                        {actionLoading === iv._id + "_approve" ? "…" : "Approuver"}
-                                      </button>
-                                    </DetailCard>
-
-                                    <DetailCard label="Refus">
-                                      <button
-                                        disabled={!!isActioning}
-                                        onClick={(e) => handleReject(iv._id, e)}
-                                        className="w-full px-4 py-2.5 rounded-full bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-700 text-red-700 dark:text-red-300 font-semibold text-sm hover:bg-red-100 dark:hover:bg-red-900/40 transition-colors disabled:opacity-50"
-                                      >
-                                        {actionLoading === iv._id + "_reject" ? "…" : "Rejeter"}
-                                      </button>
-                                    </DetailCard>
-                                  </>
                                 )}
                               </div>
                             </td>
+
+                            <td className="px-6 lg:px-8 py-5">
+                              <Badge
+                                label={sc.short || iv.status}
+                                className={sc.color}
+                                dotClass={sc.dot}
+                              />
+                            </td>
+
+                            <td className="px-6 lg:px-8 py-5 text-xs text-gray-600 dark:text-gray-400">
+                              <div className="flex flex-col gap-2">
+                                <div className="flex items-center gap-2">
+                                  <span className="w-2 h-2 rounded-full bg-sky-400" />
+                                  <span>
+                                    Planifié {formatDate(iv.createdAt)}
+                                  </span>
+                                </div>
+
+                                {iv.status === "CONFIRMED" &&
+                                  iv.confirmedDate && (
+                                    <div className="flex items-center gap-2 text-emerald-700 dark:text-emerald-300 font-semibold">
+                                      <span className="w-2 h-2 rounded-full bg-emerald-500" />
+                                      <span>
+                                        Confirmé {formatDate(iv.confirmedDate)}
+                                      </span>
+                                    </div>
+                                  )}
+
+                                {iv.status ===
+                                  "CANDIDATE_REQUESTED_RESCHEDULE" && (
+                                  <div className="flex items-center gap-2 text-orange-700 dark:text-orange-300">
+                                    <span className="w-2 h-2 rounded-full bg-orange-500" />
+                                    <span>
+                                      Report :{" "}
+                                      {formatDate(iv.candidateProposedDate)}{" "}
+                                      {iv.candidateProposedTime}
+                                    </span>
+                                  </div>
+                                )}
+                              </div>
+                            </td>
+
+                            <td className="px-6 lg:px-8 py-5">
+                              {dgaNote ? (
+                                <div className="flex flex-col gap-2">
+                                  <ScoreBadge score={score} />
+                                  {comment ? (
+                                    <span
+                                      className="text-xs text-gray-500 dark:text-gray-400 truncate max-w-[170px]"
+                                      title={comment}
+                                    >
+                                      {comment}
+                                    </span>
+                                  ) : null}
+                                </div>
+                              ) : (
+                                <span className="text-gray-400 dark:text-gray-500 italic">
+                                  —
+                                </span>
+                              )}
+                            </td>
+
+                            <td className="px-6 lg:px-8 py-5 text-right">
+                              <ChevronDown
+                                className={`w-5 h-5 text-gray-400 ml-auto transition-transform ${
+                                  isExpanded ? "rotate-180" : ""
+                                }`}
+                              />
+                            </td>
                           </tr>
-                        )}
-                      </React.Fragment>
-                    );
+
+                          {isExpanded && (
+                            <tr>
+                              <td
+                                colSpan={7}
+                                className="px-6 lg:px-8 pb-6 bg-green-50/20 dark:bg-gray-900/20"
+                              >
+                                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 pt-4">
+                                  <DetailCard
+                                    label="Poste"
+                                    value={iv.jobTitle || "—"}
+                                  />
+                                  <DetailCard label="Responsable">
+                                    <div className="space-y-1">
+                                      <div className="text-sm font-medium text-gray-800 dark:text-gray-200 break-words">
+                                        {responsableDisplay}
+                                      </div>
+                                      {responsableEmailDisplay !== "—" && (
+                                        <div className="text-sm text-gray-500 dark:text-gray-400 break-words">
+                                          {responsableEmailDisplay}
+                                        </div>
+                                      )}
+                                    </div>
+                                  </DetailCard>
+                                  <DetailCard
+                                    label="Date et Heure"
+                                    value={`${formatDate(displayDate)} • ${displayTime || "—"}`}
+                                  />
+
+                                  {iv.status ===
+                                    "CANDIDATE_REQUESTED_RESCHEDULE" && (
+                                    <DetailCard
+                                      label="Raison report"
+                                      value={
+                                        iv.candidateRescheduleReason ||
+                                        "Non précisée"
+                                      }
+                                    />
+                                  )}
+
+                                  {iv.status === "PENDING_ADMIN_APPROVAL" && (
+                                    <DetailCard
+                                      label="Nouvelle date proposée"
+                                      value={`${formatDate(iv.responsableProposedDate)} ${iv.responsableProposedTime || ""}`}
+                                    />
+                                  )}
+
+                                  {allIvs.some(
+                                    (siv) =>
+                                      siv.status === "CONFIRMED" ||
+                                      siv.status ===
+                                        "PENDING_CANDIDATE_CONFIRMATION",
+                                  ) && (
+                                    <DetailCard label="Évaluation">
+                                      <div className="flex flex-col gap-2">
+                                        {allIvs
+                                          .filter(
+                                            (siv) =>
+                                              siv.status === "CONFIRMED" ||
+                                              siv.status ===
+                                                "PENDING_CANDIDATE_CONFIRMATION",
+                                          )
+                                          .map((siv) => {
+                                            const stc = resolveTypeConfig(
+                                              siv.interviewType,
+                                            );
+                                            return (
+                                              <button
+                                                key={siv._id}
+                                                onClick={(e) => {
+                                                  e.stopPropagation();
+                                                  router.push(
+                                                    `/recruiter/interviews/${siv._id}/evaluation`,
+                                                  );
+                                                }}
+                                                className="w-full px-4 py-2.5 rounded-full bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-700 text-blue-700 dark:text-blue-300 font-semibold text-sm hover:bg-blue-100 dark:hover:bg-blue-900/40 transition-colors flex items-center justify-center gap-2"
+                                              >
+                                                <FileText className="w-4 h-4" />
+                                                {stc.label}
+                                              </button>
+                                            );
+                                          })}
+                                      </div>
+                                    </DetailCard>
+                                  )}
+
+                                  {iv.status === "PENDING_ADMIN_APPROVAL" && (
+                                    <>
+                                      <DetailCard label="Approbation">
+                                        <button
+                                          disabled={!!isActioning}
+                                          onClick={(e) =>
+                                            handleApprove(iv._id, e)
+                                          }
+                                          className="w-full px-4 py-2.5 rounded-full bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-700 text-emerald-700 dark:text-emerald-300 font-semibold text-sm hover:bg-emerald-100 dark:hover:bg-emerald-900/40 transition-colors disabled:opacity-50"
+                                        >
+                                          {actionLoading === iv._id + "_approve"
+                                            ? "…"
+                                            : "Approuver"}
+                                        </button>
+                                      </DetailCard>
+
+                                      <DetailCard label="Refus">
+                                        <button
+                                          disabled={!!isActioning}
+                                          onClick={(e) =>
+                                            handleReject(iv._id, e)
+                                          }
+                                          className="w-full px-4 py-2.5 rounded-full bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-700 text-red-700 dark:text-red-300 font-semibold text-sm hover:bg-red-100 dark:hover:bg-red-900/40 transition-colors disabled:opacity-50"
+                                        >
+                                          {actionLoading === iv._id + "_reject"
+                                            ? "…"
+                                            : "Rejeter"}
+                                        </button>
+                                      </DetailCard>
+                                    </>
+                                  )}
+                                </div>
+                              </td>
+                            </tr>
+                          )}
+                        </React.Fragment>
+                      );
                     });
                   })()}
                 </tbody>
@@ -1140,7 +1263,8 @@ export default function AdminInterviewList() {
         {!loading && !error && interviews.length > 0 && totalPages > 1 && (
           <div className="mt-6 px-4 sm:px-8 py-5 flex flex-col lg:flex-row items-center justify-between gap-4 text-sm text-gray-500 dark:text-gray-400 transition-colors">
             <p className="font-medium">
-              Page {page} sur {totalPages} — Total: {total} entretien{total > 1 ? "s" : ""}
+              Page {page} sur {totalPages} — Total: {total} entretien
+              {total > 1 ? "s" : ""}
             </p>
 
             <div className="flex items-center gap-2 flex-wrap justify-center">
@@ -1152,14 +1276,18 @@ export default function AdminInterviewList() {
                 ← Préc.
               </button>
 
-              {Array.from({ length: Math.min(totalPages, 8) }, (_, i) => i + 1).map((p) => (
+              {Array.from(
+                { length: Math.min(totalPages, 8) },
+                (_, i) => i + 1,
+              ).map((p) => (
                 <button
                   key={p}
                   onClick={() => setPage(p)}
-                  className={`w-10 h-10 rounded-full border font-bold transition-colors ${p === page
-                    ? "bg-[#6CB33F] border-[#6CB33F] text-white dark:bg-emerald-600 dark:border-emerald-600"
-                    : "bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300"
-                    }`}
+                  className={`w-10 h-10 rounded-full border font-bold transition-colors ${
+                    p === page
+                      ? "bg-[#6CB33F] border-[#6CB33F] text-white dark:bg-emerald-600 dark:border-emerald-600"
+                      : "bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300"
+                  }`}
                 >
                   {p}
                 </button>
