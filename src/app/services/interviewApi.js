@@ -294,12 +294,7 @@ export async function saveRhNordNote(interviewId, text) {
  * DELETE /api/interviews/:id/rh-nord-note
  * Supprimer la note RH
  */
-export async function deleteRhNordNote(interviewId) {
-  const { data } = await api.delete(
-    `/api/interviews/${interviewId}/rh-nord-note`
-  );
-  return data;
-}
+
 
 // ══════════════════════════════════════════════
 //  CONSULTATION
@@ -358,7 +353,6 @@ export async function cancelInterview(interviewId, reason) {
   return data;
 }
 
-<<<<<<< HEAD
 // ══════════════════════════════════════════════
 //  RH NORD — Entretiens téléphoniques confirmés
 // ══════════════════════════════════════════════
@@ -435,6 +429,3 @@ export async function getMyTelephoniqueInterviews({
 
   return response.json();
 }
-=======
-
->>>>>>> 38367e70351b131678b33a46e9b596c8b978337a

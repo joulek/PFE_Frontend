@@ -414,6 +414,7 @@ export default function Navbar() {
   const isAssistanceDirection = user?.role === "ASSISTANCE_DIRECTION";
   const isResponsableRHOPTYLAB   = user?.role === "RESPONSABLE_RH_OPTYLAB";
   const isResponsableRHNORD = user?.role === "RESPONSABLE_RH_NORD";
+  const isDGA               = user?.role === "DGA";
 
   const isInCandidaturesRM =
     pathname.startsWith("/ResponsableMetier/candidatures") ||
@@ -505,7 +506,7 @@ export default function Navbar() {
             {/* DESKTOP MENU */}
             <div className="hidden md:flex items-center bg-[#F4F7F5] dark:bg-gray-800/60 rounded-full p-1 gap-1 transition-colors duration-200">
               {/* ── RESPONSABLE METIER ── */}
-              {!isAdmin && !isAssistanteRH && !isAssistanceDirection && !isResponsableRHOPTYLAB && !isResponsableRHNORD && (
+              {!isAdmin && !isAssistanteRH && !isAssistanceDirection && !isResponsableRHOPTYLAB && !isResponsableRHNORD && !isDGA && (
                 <>
                  <Link href="/jobs" className={`${linkBase} ${isActive("/jobs") ? activeLink : inactiveLink}`}>
                     Offres d'emploi
@@ -576,6 +577,18 @@ export default function Navbar() {
               {isAssistanceDirection && (
                 <>
                   <Link href="/entretiens-confirmes" className={`${linkBase} ${isActive("/entretiens-confirmes") ? activeLink : inactiveLink}`}>
+                    Entretiens confirmés
+                  </Link>
+                  <Link href="/calendar" className={`${linkBase} ${isActive("/calendar") ? activeLink : inactiveLink}`}>
+                    Mon calendrier
+                  </Link>
+                </>
+              )}
+
+              {/* ── DGA ── */}
+              {isDGA && (
+                <>
+                  <Link href="/entretiens" className={`${linkBase} ${isActive("/entretiens") ? activeLink : inactiveLink}`}>
                     Entretiens confirmés
                   </Link>
                   <Link href="/calendar" className={`${linkBase} ${isActive("/calendar") ? activeLink : inactiveLink}`}>
@@ -821,7 +834,7 @@ export default function Navbar() {
             <div className="md:hidden pb-5 pt-2">
               <div className="rounded-2xl bg-white/95 dark:bg-gray-900/85 shadow-xl border border-gray-200/70 dark:border-gray-700/60 p-4 space-y-2 backdrop-blur-sm transition-colors duration-200">
                 {/* ── RESPONSABLE METIER ── */}
-                {!isAdmin && !isAssistanteRH && !isAssistanceDirection && !isResponsableRHOPTYLAB && !isResponsableRHNORD && (
+                {!isAdmin && !isAssistanteRH && !isAssistanceDirection && !isResponsableRHOPTYLAB && !isResponsableRHNORD && !isDGA && (
                   <>
                     <Link href="/jobs" className={`block px-5 py-3.5 rounded-xl font-medium transition ${isActive("/jobs") ? "bg-[#6CB33F] text-white" : "text-gray-700 dark:text-gray-200 hover:bg-gray-100/70 dark:hover:bg-gray-800/60"}`}>
                       Offres d'emploi
@@ -904,6 +917,18 @@ export default function Navbar() {
                     </Link>
                     <Link href="/fiche_renseignement" className={`block px-5 py-3.5 rounded-xl font-medium transition ${isInFiche ? "bg-[#6CB33F] text-white" : "text-gray-700 dark:text-gray-200 hover:bg-gray-100/70 dark:hover:bg-gray-800/60"}`}>
                       Fiches de renseignement
+                    </Link>
+                    <Link href="/calendar" className={`block px-5 py-3.5 rounded-xl font-medium transition ${isActive("/calendar") ? "bg-[#6CB33F] text-white" : "text-gray-700 dark:text-gray-200 hover:bg-gray-100/70 dark:hover:bg-gray-800/60"}`}>
+                      Mon calendrier
+                    </Link>
+                  </>
+                )}
+
+                {/* ── DGA ── */}
+                {isDGA && (
+                  <>
+                    <Link href="/entretiens-confirmes" className={`block px-5 py-3.5 rounded-xl font-medium transition ${isActive("/entretiens-confirmes") ? "bg-[#6CB33F] text-white" : "text-gray-700 dark:text-gray-200 hover:bg-gray-100/70 dark:hover:bg-gray-800/60"}`}>
+                      Entretiens confirmés
                     </Link>
                     <Link href="/calendar" className={`block px-5 py-3.5 rounded-xl font-medium transition ${isActive("/calendar") ? "bg-[#6CB33F] text-white" : "text-gray-700 dark:text-gray-200 hover:bg-gray-100/70 dark:hover:bg-gray-800/60"}`}>
                       Mon calendrier

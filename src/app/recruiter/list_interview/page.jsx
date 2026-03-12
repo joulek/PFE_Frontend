@@ -24,6 +24,528 @@ import {
   ArrowLeft,
 } from "lucide-react";
 
+/* ══════════════════════════════════════════════════════════════
+ *  MODAL — Planifier entretien DGA
+ *  Intégré directement dans la colonne "Éval. DGA"
+ * ══════════════════════════════════════════════════════════════ */
+// ── Mini Calendar Picker (standalone, no deps) ──────────────────────────────
+function MiniCalendarPicker({ selectedDate, onSelect }) {
+  const today = new Date();
+  const [viewYear, setViewYear] = useState(selectedDate ? new Date(selectedDate).getFullYear() : today.getFullYear());
+  const [viewMonth, setViewMonth] = useState(selectedDate ? new Date(selectedDate).getMonth() : today.getMonth());
+
+  const MONTHS_FR = ["Janvier","Février","Mars","Avril","Mai","Juin","Juillet","Août","Septembre","Octobre","Novembre","Décembre"];
+  const DAYS_FR = ["Lu","Ma","Me","Je","Ve","Sa","Di"];
+
+  const firstDay = new Date(viewYear, viewMonth, 1);
+  // Monday-based: getDay() returns 0=Sun,1=Mon...6=Sat → convert to 0=Mon..6=Sun
+  const startOffset = (firstDay.getDay() + 6) % 7;
+  const daysInMonth = new Date(viewYear, viewMonth + 1, 0).getDate();
+
+  const selStr = selectedDate || "";
+  const todayStr2 = `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,"0")}-${String(today.getDate()).padStart(2,"0")}`;
+
+  const prevMonth = () => {
+    if (viewMonth === 0) { setViewMonth(11); setViewYear(y => y-1); }
+    else setViewMonth(m => m-1);
+  };
+  const nextMonth = () => {
+    if (viewMonth === 11) { setViewMonth(0); setViewYear(y => y+1); }
+    else setViewMonth(m => m+1);
+  };
+
+  const cells = [];
+  for (let i = 0; i < startOffset; i++) cells.push(null);
+  for (let d = 1; d <= daysInMonth; d++) cells.push(d);
+
+  return (
+    <div className="rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 overflow-hidden shadow-sm">
+      {/* Header nav */}
+      <div className="flex items-center justify-between px-4 py-3 bg-[#6CB33F]">
+        <button onClick={prevMonth} className="w-7 h-7 rounded-full bg-white/20 hover:bg-white/30 flex items-center justify-center text-white transition-colors">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="15 18 9 12 15 6"/></svg>
+        </button>
+        <span className="text-white font-bold text-sm">{MONTHS_FR[viewMonth]} {viewYear}</span>
+        <button onClick={nextMonth} className="w-7 h-7 rounded-full bg-white/20 hover:bg-white/30 flex items-center justify-center text-white transition-colors">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+        </button>
+      </div>
+      {/* Day headers */}
+      <div className="grid grid-cols-7 border-b border-gray-100 dark:border-gray-800">
+        {DAYS_FR.map(d => (
+          <div key={d} className="text-center text-[10px] font-bold text-gray-400 dark:text-gray-500 py-2">{d}</div>
+        ))}
+      </div>
+      {/* Grid */}
+      <div className="grid grid-cols-7 p-2 gap-0.5">
+        {cells.map((day, i) => {
+          if (!day) return <div key={`e-${i}`} />;
+          const dateStr = `${viewYear}-${String(viewMonth+1).padStart(2,"0")}-${String(day).padStart(2,"0")}`;
+          const isToday = dateStr === todayStr2;
+          const isSelected = dateStr === selStr;
+          const isPast = new Date(dateStr) < new Date(todayStr2);
+          return (
+            <button
+              key={dateStr}
+              disabled={isPast}
+              onClick={() => onSelect(dateStr)}
+              className={`
+                w-full aspect-square rounded-xl text-xs font-semibold transition-all
+                ${isSelected ? "bg-[#6CB33F] text-white shadow-sm" :
+                  isToday ? "bg-[#E9F5E3] dark:bg-emerald-900/30 text-[#4E8F2F] dark:text-emerald-400 ring-1 ring-[#6CB33F]/40" :
+                  isPast ? "text-gray-300 dark:text-gray-700 cursor-not-allowed" :
+                  "text-gray-700 dark:text-gray-300 hover:bg-[#F1FAF4] dark:hover:bg-emerald-950/20 hover:text-[#4E8F2F]"}
+              `}
+            >
+              {day}
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function DgaScheduleModal({ interview, onSuccess }) {
+  const [open, setOpen] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [success, setSuccess] = useState(false);
+  const [error, setError] = useState("");
+  const [showCalendar, setShowCalendar] = useState(false);
+
+  // ── Liste des users DGA chargée depuis l'API ──
+  const [dgaUsers, setDgaUsers] = useState([]);
+  const [dgaUsersLoading, setDgaUsersLoading] = useState(false);
+  const [selectedDgaId, setSelectedDgaId] = useState("");
+
+  const hasDga = !!interview?.dgaInterview;
+  const todayStr = () => new Date().toISOString().split("T")[0];
+
+  const [form, setForm] = useState({
+    dgaDate: new Date().toISOString().split("T")[0],
+    dgaTime: "10:00",
+    dgaEmail: "",
+    dgaName: "",
+    location: "",
+    notes: "",
+  });
+
+  const setF = (field) => (e) =>
+    setForm((prev) => ({ ...prev, [field]: e.target.value }));
+
+  // ── Charger les users avec rôle DGA ────────────────────────────
+  const loadDgaUsers = async () => {
+    setDgaUsersLoading(true);
+    try {
+      const token =
+        (typeof localStorage !== "undefined" && localStorage.getItem("token")) ||
+        (typeof sessionStorage !== "undefined" && sessionStorage.getItem("token")) || "";
+
+      // ── Essaie d'abord avec le filtre ?role=DGA ──
+      const res = await fetch(`${API_BASE}/users?role=DGA`, {
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+      });
+
+      if (!res.ok) {
+        // Route non disponible → mode saisie manuelle silencieux
+        console.warn(`[DGA] GET /users?role=DGA → ${res.status}, passage en saisie manuelle`);
+        setDgaUsers([]);
+        return;
+      }
+
+      const data = await res.json();
+      // Supporte { users: [...] } ou { data: [...] } ou tableau direct
+      const raw = data.users || data.data || data || [];
+      const list = Array.isArray(raw) ? raw : [];
+
+      // Filtre côté client en double sécurité (insensible à la casse)
+      const dgas = list.filter((u) =>
+        String(u.role || "").toUpperCase().includes("DGA")
+      );
+
+      setDgaUsers(dgas);
+    } catch (err) {
+      console.warn("[DGA] Erreur chargement users DGA:", err.message);
+      setDgaUsers([]);
+    } finally {
+      setDgaUsersLoading(false);
+    }
+  };
+
+  const handleOpen = (e) => {
+    e.stopPropagation();
+    setError("");
+    setSuccess(false);
+    setSelectedDgaId("");
+    if (interview?.dgaInterview) {
+      const dga = interview.dgaInterview;
+      setForm({
+        dgaDate: dga.date ? new Date(dga.date).toISOString().split("T")[0] : new Date().toISOString().split("T")[0],
+        dgaTime: dga.time || "10:00",
+        dgaEmail: dga.dgaEmail || "",
+        dgaName: dga.dgaName || "",
+        location: dga.location || "",
+        notes: dga.notes || "",
+      });
+    } else {
+      setForm({
+        dgaDate: new Date().toISOString().split("T")[0],
+        dgaTime: "10:00",
+        dgaEmail: "",
+        dgaName: "",
+        location: "",
+        notes: "",
+      });
+    }
+    setShowCalendar(false);
+    setOpen(true);
+    loadDgaUsers();
+  };
+
+  // ── Quand on sélectionne un DGA dans la liste ──────────────────
+  const handleSelectDga = (e) => {
+    const id = e.target.value;
+    setSelectedDgaId(id);
+    if (!id) {
+      setForm((prev) => ({ ...prev, dgaEmail: "", dgaName: "" }));
+      return;
+    }
+    const user = dgaUsers.find((u) => String(u._id) === id);
+    if (user) {
+      const fullName = [user.prenom, user.nom].filter(Boolean).join(" ") || user.name || user.email || "";
+      setForm((prev) => ({
+        ...prev,
+        dgaEmail: user.email || "",
+        dgaName: fullName,
+      }));
+    }
+  };
+
+  const handleSubmit = async (e) => {
+    e.stopPropagation();
+    setError("");
+    if (!form.dgaDate || !form.dgaTime) {
+      setError("La date et l'heure sont obligatoires.");
+      return;
+    }
+    if (!form.dgaEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.dgaEmail)) {
+      setError("Veuillez sélectionner un DGA ou saisir un email valide.");
+      return;
+    }
+    setLoading(true);
+    try {
+      const token =
+        (typeof localStorage !== "undefined" && localStorage.getItem("token")) ||
+        (typeof sessionStorage !== "undefined" && sessionStorage.getItem("token")) || "";
+      const res = await fetch(`${API_BASE}/api/interviews/${interview._id}/schedule-dga`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify(form),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success) throw new Error(data.message || "Erreur.");
+      setSuccess(true);
+      setTimeout(() => {
+        setOpen(false);
+        setSuccess(false);
+        onSuccess?.();
+      }, 1800);
+    } catch (err) {
+      setError(err.message || "Erreur réseau.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Redirige vers /recruiter/calendar avec les paramètres DGA
+  const handleOpenCalendar = (e) => {
+    e.stopPropagation();
+    const params = new URLSearchParams({
+      type:           "entretien_dga",
+      candidateName:  interview?.candidateName  || "",
+      candidateEmail: interview?.candidateEmail || "",
+      jobTitle:       interview?.jobTitle       || "",
+      interviewId:    String(interview?._id     || ""),
+    });
+    window.location.href = `/recruiter/calendar?${params.toString()}`;
+  };
+
+  return (
+    <>
+      {hasDga ? (
+        <button
+          onClick={handleOpen}
+          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold border bg-emerald-50 dark:bg-emerald-950/30 border-emerald-300 dark:border-emerald-700 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-100 dark:hover:bg-emerald-900/40 transition-colors whitespace-nowrap"
+        >
+          <CheckCircle2 className="w-3.5 h-3.5" />
+          Planifié · Modifier
+        </button>
+      ) : (
+        <button
+          onClick={handleOpenCalendar}
+          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold border border-dashed border-gray-300 dark:border-gray-600 text-gray-400 dark:text-gray-500 hover:border-[#6CB33F] hover:text-[#4E8F2F] hover:bg-[#F1FAF4] dark:hover:border-emerald-600 dark:hover:text-emerald-400 transition-all whitespace-nowrap"
+        >
+          <Calendar className="w-3.5 h-3.5" />
+          Planifier DGA
+        </button>
+      )}
+
+      {open && (
+        <div
+          className="fixed inset-0 z-[200] flex items-center justify-center p-4"
+          onClick={(e) => { e.stopPropagation(); if (!loading) setOpen(false); }}
+        >
+          <div className="absolute inset-0 bg-black/50 backdrop-blur-[2px]" />
+          <div
+            className="relative w-full max-w-md rounded-3xl bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-700 shadow-2xl overflow-hidden"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Header */}
+            <div className="bg-gradient-to-r from-[#6CB33F] to-[#4E8F2F] px-6 py-5 flex items-center justify-between">
+              <div>
+                <h2 className="text-lg font-extrabold text-white">
+                  {hasDga ? "Modifier l'entretien DGA" : "Planifier l'entretien DGA"}
+                </h2>
+                <p className="text-xs text-white/75 mt-0.5">
+                  {interview?.candidateName} · {interview?.jobTitle || "Poste"}
+                </p>
+              </div>
+              <button
+                onClick={(e) => { e.stopPropagation(); if (!loading) setOpen(false); }}
+                className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center text-white hover:bg-white/30 transition-colors"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Info band */}
+            <div className="bg-[#F1FAF4] dark:bg-emerald-950/20 border-b border-gray-100 dark:border-gray-700 px-6 py-2.5 flex items-center gap-2 text-xs text-[#388E3C] dark:text-emerald-400 font-medium">
+              <FileText className="w-3.5 h-3.5 flex-shrink-0" />
+              Un email informatif sera envoyé automatiquement au candidat et au DGA.
+            </div>
+
+            {/* Body */}
+            <div className="px-6 pt-5 pb-2 flex flex-col gap-4">
+              {success && (
+                <div className="flex items-center gap-2.5 bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-700 rounded-2xl px-4 py-3 text-emerald-700 dark:text-emerald-300 font-semibold text-sm">
+                  <CheckCircle2 className="w-5 h-5 flex-shrink-0" />
+                  Entretien DGA planifié ! Emails envoyés ✅
+                </div>
+              )}
+              {error && (
+                <div className="bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-700 rounded-2xl px-4 py-3 text-red-700 dark:text-red-300 text-sm">
+                  {error}
+                </div>
+              )}
+
+              {/* ── Sélecteur DGA depuis la BDD ── */}
+              <div className="flex flex-col gap-1">
+                <label className="text-[11px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                  Sélectionner un DGA <span className="text-red-400">*</span>
+                </label>
+                {dgaUsersLoading ? (
+                  <div className="flex items-center gap-2 px-3 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-sm text-gray-400">
+                    <span className="w-4 h-4 border-2 border-gray-300 border-t-[#6CB33F] rounded-full animate-spin flex-shrink-0" />
+                    Chargement des DGA…
+                  </div>
+                ) : dgaUsers.length > 0 ? (
+                  <select
+                    value={selectedDgaId}
+                    onChange={handleSelectDga}
+                    className="w-full rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-gray-800 dark:text-gray-200 px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-[#6CB33F]/20 focus:border-[#6CB33F] transition-colors cursor-pointer"
+                  >
+                    <option value="">— Choisir un DGA —</option>
+                    {dgaUsers.map((u) => {
+                      const fullName = [u.prenom, u.nom].filter(Boolean).join(" ") || u.name || u.email;
+                      return (
+                        <option key={u._id} value={String(u._id)}>
+                          {fullName} ({u.email})
+                        </option>
+                      );
+                    })}
+                  </select>
+                ) : (
+                  <div className="px-3 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-gray-500 dark:text-gray-400 text-xs italic">
+                    Aucun DGA trouvé en base — saisissez manuellement ci-dessous.
+                  </div>
+                )}
+
+                {/* Affichage du DGA sélectionné */}
+                {selectedDgaId && form.dgaEmail && (
+                  <div className="flex items-center gap-2 mt-1 px-3 py-2 rounded-xl bg-[#F1FAF4] dark:bg-emerald-950/20 border border-[#d7ebcf] dark:border-emerald-800">
+                    <div className="w-7 h-7 rounded-full bg-[#6CB33F] flex items-center justify-center text-white font-bold text-xs flex-shrink-0">
+                      {(form.dgaName || form.dgaEmail)[0].toUpperCase()}
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-sm font-semibold text-gray-800 dark:text-gray-200 truncate">{form.dgaName}</p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400 truncate">{form.dgaEmail}</p>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Email manuel (si pas de DGA en base ou saisie manuelle) */}
+              {(!selectedDgaId) && (
+                <div className="flex flex-col gap-1">
+                  <label className="text-[11px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                    Ou saisir email manuellement
+                  </label>
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      placeholder="Nom"
+                      value={form.dgaName}
+                      onChange={setF("dgaName")}
+                      className="w-2/5 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-gray-800 dark:text-gray-200 placeholder-gray-400 px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-[#6CB33F]/20 focus:border-[#6CB33F] transition-colors"
+                    />
+                    <input
+                      type="email"
+                      placeholder="email@dga.com"
+                      value={form.dgaEmail}
+                      onChange={setF("dgaEmail")}
+                      className="flex-1 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-gray-800 dark:text-gray-200 placeholder-gray-400 px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-[#6CB33F]/20 focus:border-[#6CB33F] transition-colors"
+                    />
+                  </div>
+                </div>
+              )}
+
+              {/* ── Date picker calendrier ── */}
+              <div className="flex flex-col gap-1">
+                <label className="text-[11px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                  Date <span className="text-red-400">*</span>
+                </label>
+                {/* Bouton trigger */}
+                <button
+                  type="button"
+                  onClick={() => setShowCalendar(v => !v)}
+                  className="w-full flex items-center gap-2 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 px-3 py-2.5 text-sm text-left outline-none focus:ring-2 focus:ring-[#6CB33F]/20 focus:border-[#6CB33F] transition-colors hover:border-[#6CB33F]/50"
+                >
+                  <Calendar className="w-4 h-4 text-[#6CB33F] flex-shrink-0" />
+                  <span className={form.dgaDate ? "text-gray-800 dark:text-gray-200 font-semibold" : "text-gray-400"}>
+                    {form.dgaDate
+                      ? new Date(form.dgaDate + "T12:00:00").toLocaleDateString("fr-FR", { weekday: "long", day: "numeric", month: "long", year: "numeric" })
+                      : "Choisir une date…"}
+                  </span>
+                  <svg className={`w-4 h-4 text-gray-400 ml-auto transition-transform ${showCalendar ? "rotate-180" : ""}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+                </button>
+                {/* Calendrier inline */}
+                {showCalendar && (
+                  <div className="mt-1">
+                    <MiniCalendarPicker
+                      selectedDate={form.dgaDate}
+                      onSelect={(dateStr) => {
+                        setForm(prev => ({ ...prev, dgaDate: dateStr }));
+                        setShowCalendar(false);
+                      }}
+                    />
+                  </div>
+                )}
+              </div>
+
+              {/* Heure */}
+              <div className="flex flex-col gap-1">
+                <label className="text-[11px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                  Heure <span className="text-red-400">*</span>
+                </label>
+                <div className="flex flex-wrap gap-2">
+                  {["08:00","08:30","09:00","09:30","10:00","10:30","11:00","11:30","14:00","14:30","15:00","15:30","16:00","16:30"].map(t => (
+                    <button
+                      key={t}
+                      type="button"
+                      onClick={() => setForm(prev => ({ ...prev, dgaTime: t }))}
+                      className={`px-3 py-1.5 rounded-xl text-xs font-semibold border transition-all ${
+                        form.dgaTime === t
+                          ? "bg-[#6CB33F] border-[#6CB33F] text-white shadow-sm"
+                          : "border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400 hover:border-[#6CB33F]/50 hover:text-[#4E8F2F] hover:bg-[#F1FAF4] dark:hover:bg-emerald-950/20"
+                      }`}
+                    >
+                      {t}
+                    </button>
+                  ))}
+                </div>
+                {/* Saisie manuelle si heure hors liste */}
+                <input
+                  type="time"
+                  value={form.dgaTime}
+                  onChange={setF("dgaTime")}
+                  className="mt-1 w-36 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-gray-700 dark:text-gray-300 px-3 py-1.5 text-xs outline-none focus:ring-2 focus:ring-[#6CB33F]/20 focus:border-[#6CB33F] transition-colors"
+                />
+              </div>
+
+              {/* Lieu */}
+              <div className="flex flex-col gap-1">
+                <label className="text-[11px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                  Lieu / Salle <span className="text-gray-300 dark:text-gray-600">(optionnel)</span>
+                </label>
+                <input
+                  type="text"
+                  placeholder="Ex : Salle Direction, 3ème étage"
+                  value={form.location}
+                  onChange={setF("location")}
+                  className="w-full rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-gray-800 dark:text-gray-200 placeholder-gray-400 px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-[#6CB33F]/20 focus:border-[#6CB33F] transition-colors"
+                />
+              </div>
+
+              {/* Notes */}
+              <div className="flex flex-col gap-1">
+                <label className="text-[11px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                  Notes <span className="text-gray-300 dark:text-gray-600">(optionnel)</span>
+                </label>
+                <textarea
+                  rows={2}
+                  placeholder="Ex : Merci d'apporter vos diplômes…"
+                  value={form.notes}
+                  onChange={setF("notes")}
+                  className="w-full rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-gray-800 dark:text-gray-200 placeholder-gray-400 px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-[#6CB33F]/20 focus:border-[#6CB33F] transition-colors resize-none"
+                />
+              </div>
+            </div>
+
+            {/* Footer */}
+            <div className="px-6 py-5 flex items-center justify-end gap-3">
+              <button
+                onClick={(e) => { e.stopPropagation(); if (!loading) setOpen(false); }}
+                disabled={loading}
+                className="px-5 py-2.5 rounded-full border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400 font-semibold text-sm hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors disabled:opacity-50"
+              >
+                Annuler
+              </button>
+              <button
+                onClick={handleSubmit}
+                disabled={loading || success}
+                className="inline-flex items-center gap-2 px-6 py-2.5 rounded-full bg-[#6CB33F] hover:bg-[#4E8F2F] disabled:bg-gray-300 dark:disabled:bg-gray-700 text-white font-bold text-sm transition-colors disabled:cursor-not-allowed"
+              >
+                {loading ? (
+                  <>
+                    <span className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />
+                    Envoi…
+                  </>
+                ) : success ? (
+                  <>
+                    <CheckCircle2 className="w-4 h-4" />
+                    Planifié !
+                  </>
+                ) : (
+                  <>
+                    <Calendar className="w-4 h-4" />
+                    {hasDga ? "Mettre à jour" : "Planifier & Notifier"}
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
+  );
+}
+
 const API_BASE = process.env.NEXT_PUBLIC_API_URL;
 
 function getAuthHeaders() {
@@ -1102,23 +1624,27 @@ export default function AdminInterviewList() {
                             </td>
 
                             <td className="px-6 lg:px-8 py-5">
-                              {dgaNote ? (
-                                <div className="flex flex-col gap-2">
-                                  <ScoreBadge score={score} />
-                                  {comment ? (
-                                    <span
-                                      className="text-xs text-gray-500 dark:text-gray-400 truncate max-w-[170px]"
-                                      title={comment}
-                                    >
-                                      {comment}
-                                    </span>
-                                  ) : null}
-                                </div>
-                              ) : (
-                                <span className="text-gray-400 dark:text-gray-500 italic">
-                                  —
-                                </span>
-                              )}
+                              <div className="flex flex-col gap-2">
+                                <DgaScheduleModal
+                                  interview={allIvs.find(siv => siv.dgaInterview) || iv}
+                                  onSuccess={async () => {
+                                    await fetchInterviews();
+                                  }}
+                                />
+                                {dgaNote && (
+                                  <>
+                                    <ScoreBadge score={score} />
+                                    {comment ? (
+                                      <span
+                                        className="text-xs text-gray-500 dark:text-gray-400 truncate max-w-[170px]"
+                                        title={comment}
+                                      >
+                                        {comment}
+                                      </span>
+                                    ) : null}
+                                  </>
+                                )}
+                              </div>
                             </td>
 
                             <td className="px-6 lg:px-8 py-5 text-right">

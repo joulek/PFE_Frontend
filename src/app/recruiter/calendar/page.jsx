@@ -1,24 +1,21 @@
-"use client";
-// app/recruiter/calendar/page.jsx — VERSION GOOGLE CALENDAR
-// ─────────────────────────────────────────────────────────────────────────────
-// Quand on arrive depuis "Entretien RH" dans la liste pré-sélection,
-// l'URL contient : ?newEvent=1&type=entretien_rh&candidateName=...&candidateEmail=...
-// → Le calendrier s'ouvre et le formulaire "Nouvel événement" s'affiche
-//   automatiquement pré-rempli avec les infos du candidat.
-// Après création → email automatique au candidat (via POST /calendar/events/interview)
-// ─────────────────────────────────────────────────────────────────────────────
+// app/recruiter/calendar/page.jsx
+// Server Component — PAS de "use client" ici !
+// Passe les searchParams directement au CalendarRouter client
 
 import { Suspense } from "react";
-import GoogleCalendarWithInterview from "../../components/GoogleCalendarWithInterview";
+import CalendarRouter from "../../components/CalendarRouter";
 
-export default function CalendarPage() {
+export default async function CalendarPage({ searchParams }) {
+  // In Next.js 15, searchParams is a Promise — must be awaited
+  const { type = null } = await searchParams;
+
   return (
     <Suspense fallback={
       <div className="flex items-center justify-center h-screen">
-        <div className="animate-spin w-8 h-8 border-4 border-green-500 border-t-transparent rounded-full"/>
+        <div className="animate-spin w-8 h-8 border-4 border-[#6CB33F] border-t-transparent rounded-full"/>
       </div>
     }>
-      <GoogleCalendarWithInterview />
+      <CalendarRouter initialType={type} />
     </Suspense>
   );
 }

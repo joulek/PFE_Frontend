@@ -20,6 +20,7 @@ export function middleware(req) {
   const isResponsableRHOPTYLAB   = role === "RESPONSABLE_RH_OPTYLAB";
   const isResponsableRHNord      = role === "RESPONSABLE_RH_NORD";
   const isResponsableMetier      = role === "RESPONSABLE_METIER";
+  const isDGA                    = role === "DGA";
 
   const isRecruiterPath   = pathname.startsWith("/recruiter");
   const isResponsablePath =
@@ -27,6 +28,7 @@ export function middleware(req) {
     pathname.startsWith("/responsableMetier");
 
   const isAssistanceDirPath     = pathname.startsWith("/entretiens-confirmes");
+  const isDGAPath               = pathname.startsWith("/entretiens");
   const isFichesPath            = pathname.startsWith("/fiche_renseignement");
   const isResponsableRHOPTYLABPath = pathname.startsWith("/RESPONSABLE_RH_OPTYLAB");
   const isResponsableRHNordPath    = pathname.startsWith("/RESPONSABLE_RH_NORD");
@@ -67,12 +69,12 @@ export function middleware(req) {
   // /employees + /roles → ADMIN + ASSISTANTE_RH uniquement
   if (isSharedRHPath && token && !isAdmin && !isAssistanteRH) return redirect("/unauthorized");
 
-  // /calendar → ADMIN + ASSISTANTE_RH + ASSISTANCE_DIRECTION + RESPONSABLE_RH_OPTYLAB
-  if (isCalendarPath && token && !isAdmin && !isAssistanteRH && !isAssistanceDirection && !isResponsableRHOPTYLAB && !isResponsableRHNord) return redirect("/unauthorized");
+  // /calendar → ADMIN + ASSISTANTE_RH + ASSISTANCE_DIRECTION + RESPONSABLE_RH_OPTYLAB + DGA
+  if (isCalendarPath && token && !isAdmin && !isAssistanteRH && !isAssistanceDirection && !isResponsableRHOPTYLAB && !isResponsableRHNord && !isDGA) return redirect("/unauthorized");
 
-  // /entretiens-confirmes/* → ASSISTANCE_DIRECTION + ADMIN uniquement
-  if (isAssistanceDirPath && token && !isAdmin && !isAssistanceDirection) return redirect("/unauthorized");
-
+  // /entretiens-confirmes/* → ASSISTANCE_DIRECTION + ADMIN + DGA
+  if (isAssistanceDirPath && token && !isAdmin && !isAssistanceDirection ) return redirect("/unauthorized");
+ if (isDGAPath && token && !isDGA ) return redirect("/unauthorized");
   // /fiche_renseignement → RESPONSABLE_METIER + RESPONSABLE_RH_NORD + RESPONSABLE_RH_OPTYLAB + ADMIN
   if (isFichesPath && token && !isResponsableMetier && !isResponsableRHNord && !isResponsableRHOPTYLAB && !isAdmin) return redirect("/unauthorized");
 

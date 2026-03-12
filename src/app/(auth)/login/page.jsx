@@ -64,6 +64,8 @@ export default function LoginPage() {
         router.replace("/RESPONSABLE_RH_OPTYLAB/candidats");
       } else if (role === "RESPONSABLE_RH_NORD") {
         router.replace("/Responsable_RH_Nord/candidatures");
+      } else if (role === "DGA") {
+        router.replace("/entretiens-confirmes");
       } else {
         router.replace("/ResponsableMetier/candidatures");
       }
