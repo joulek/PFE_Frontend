@@ -5,13 +5,13 @@ import { getPreInterviewNordList, sendDocuments } from "../../services/candidatu
 import { getQuizByJob } from "../../services/quiz.api";
 import api from "../../services/api";
 import Link from "next/link";
+import Pagination from "../../components/Pagination";
 
 import {
   UserCheck,
   FileText,
   Search,
   Calendar,
-  ArrowLeft,
   Mail,
   Phone,
   Clock,
@@ -72,33 +72,61 @@ function scoreBg(s) {
 }
 function formatDate(d) {
   if (!d) return "—";
-  return new Date(d).toLocaleDateString("fr-FR", { day: "2-digit", month: "short", year: "numeric" });
+  return new Date(d).toLocaleDateString("fr-FR", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  });
 }
 
 // ── localStorage pour persister "envoyé" entre refreshes ──
 function markSentFiche(id) {
-  try { localStorage.setItem(`fiche_sent_${id}`, "1"); } catch { }
+  try {
+    localStorage.setItem(`fiche_sent_${id}`, "1");
+  } catch {}
 }
 function wasSentFiche(id) {
-  try { return localStorage.getItem(`fiche_sent_${id}`) === "1"; } catch { return false; }
+  try {
+    return localStorage.getItem(`fiche_sent_${id}`) === "1";
+  } catch {
+    return false;
+  }
 }
 function markSentQuiz(id) {
-  try { localStorage.setItem(`quiz_sent_${id}`, "1"); } catch { }
+  try {
+    localStorage.setItem(`quiz_sent_${id}`, "1");
+  } catch {}
 }
 function wasSentQuiz(id) {
-  try { return localStorage.getItem(`quiz_sent_${id}`) === "1"; } catch { return false; }
+  try {
+    return localStorage.getItem(`quiz_sent_${id}`) === "1";
+  } catch {
+    return false;
+  }
 }
 function markSent(id) {
-  try { localStorage.setItem(`docs_sent_${id}`, "1"); } catch { }
+  try {
+    localStorage.setItem(`docs_sent_${id}`, "1");
+  } catch {}
 }
 function wasSent(id) {
-  try { return localStorage.getItem(`docs_sent_${id}`) === "1"; } catch { return false; }
+  try {
+    return localStorage.getItem(`docs_sent_${id}`) === "1";
+  } catch {
+    return false;
+  }
 }
 
 /* ================================================================
    MODAL — Envoyer Fiche + Quiz
 ================================================================ */
-function SendDocumentsModal({ candidature, onClose, onSuccess, initialSentFiche = false, initialSentQuiz = false }) {
+function SendDocumentsModal({
+  candidature,
+  onClose,
+  onSuccess,
+  initialSentFiche = false,
+  initialSentQuiz = false,
+}) {
   const [fiches, setFiches] = useState([]);
   const [quiz, setQuiz] = useState(null);
   const [loadingData, setLoadingData] = useState(true);
@@ -137,7 +165,8 @@ function SendDocumentsModal({ candidature, onClose, onSuccess, initialSentFiche 
     load();
   }, [candidature, initialSentQuiz]);
 
-  const canSend = email.trim() && (selectedFicheId || includeQuiz) && !sending && !(sentFiche && sentQuiz);
+  const canSend =
+    email.trim() && (selectedFicheId || includeQuiz) && !sending && !(sentFiche && sentQuiz);
   const allSent = sentFiche && sentQuiz;
 
   async function handleSend() {
@@ -175,7 +204,6 @@ function SendDocumentsModal({ candidature, onClose, onSuccess, initialSentFiche 
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={onClose} />
       <div className="relative bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden border border-gray-100 dark:border-gray-800">
-        {/* Header */}
         <div className="px-6 py-4 border-b border-gray-100 dark:border-gray-800 bg-green-50/60 dark:bg-green-900/10">
           <div className="flex items-center justify-between">
             <div>
@@ -196,14 +224,15 @@ function SendDocumentsModal({ candidature, onClose, onSuccess, initialSentFiche 
           </div>
         </div>
 
-        {/* Body */}
         <div className="px-6 py-5 space-y-5 max-h-[70vh] overflow-y-auto">
           {allSent ? (
             <div className="flex flex-col items-center gap-3 py-6 text-center">
               <div className="w-16 h-16 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
                 <CheckCircle2 className="w-9 h-9 text-green-600 dark:text-green-400" />
               </div>
-              <h3 className="text-lg font-extrabold text-gray-900 dark:text-white">Tout envoyé !</h3>
+              <h3 className="text-lg font-extrabold text-gray-900 dark:text-white">
+                Tout envoyé !
+              </h3>
               <div className="flex gap-2 flex-wrap justify-center">
                 {sentFiche && (
                   <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 rounded-full text-sm font-medium">
@@ -233,7 +262,6 @@ function SendDocumentsModal({ candidature, onClose, onSuccess, initialSentFiche 
             </div>
           ) : (
             <>
-              {/* Email */}
               <div>
                 <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1.5">
                   <Mail className="w-4 h-4 inline mr-1.5 text-gray-400" />
@@ -248,7 +276,6 @@ function SendDocumentsModal({ candidature, onClose, onSuccess, initialSentFiche 
                 />
               </div>
 
-              {/* Quiz */}
               <div>
                 <p className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
                   <Brain className="w-4 h-4 inline mr-1.5 text-green-600" />
@@ -260,8 +287,8 @@ function SendDocumentsModal({ candidature, onClose, onSuccess, initialSentFiche 
                       sentQuiz
                         ? "border-green-500 bg-green-50/60 dark:bg-green-900/20 opacity-60 cursor-not-allowed"
                         : includeQuiz
-                          ? "border-green-500 bg-green-50/60 dark:bg-green-900/20"
-                          : "border-gray-200 dark:border-gray-700 hover:border-green-300 dark:hover:border-green-700"
+                        ? "border-green-500 bg-green-50/60 dark:bg-green-900/20"
+                        : "border-gray-200 dark:border-gray-700 hover:border-green-300 dark:hover:border-green-700"
                     }`}
                   >
                     <input
@@ -283,7 +310,8 @@ function SendDocumentsModal({ candidature, onClose, onSuccess, initialSentFiche 
                         )}
                       </div>
                       <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
-                        {quiz.totalQuestions || 0} questions · ~{Math.ceil((quiz.totalQuestions || 0) * 2)} min
+                        {quiz.totalQuestions || 0} questions · ~
+                        {Math.ceil((quiz.totalQuestions || 0) * 2)} min
                       </p>
                     </div>
                   </label>
@@ -295,7 +323,6 @@ function SendDocumentsModal({ candidature, onClose, onSuccess, initialSentFiche 
                 )}
               </div>
 
-              {/* Fiches */}
               <div>
                 <p className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
                   <ClipboardList className="w-4 h-4 inline mr-1.5 text-green-600" />
@@ -318,8 +345,11 @@ function SendDocumentsModal({ candidature, onClose, onSuccess, initialSentFiche 
                       disabled={sentFiche}
                       className="w-4 h-4 disabled:opacity-50"
                     />
-                    <span className="text-sm text-gray-500 dark:text-gray-400">Ne pas envoyer de fiche</span>
+                    <span className="text-sm text-gray-500 dark:text-gray-400">
+                      Ne pas envoyer de fiche
+                    </span>
                   </label>
+
                   {fiches.map((f) => (
                     <label
                       key={f._id}
@@ -327,8 +357,8 @@ function SendDocumentsModal({ candidature, onClose, onSuccess, initialSentFiche 
                         sentFiche
                           ? "border-green-500 bg-green-50/60 dark:bg-green-900/20 opacity-60 cursor-not-allowed"
                           : selectedFicheId === f._id
-                            ? "border-green-500 bg-green-50/60 dark:bg-green-900/20"
-                            : "border-gray-200 dark:border-gray-700 hover:border-green-300 dark:hover:border-green-700"
+                          ? "border-green-500 bg-green-50/60 dark:bg-green-900/20"
+                          : "border-gray-200 dark:border-gray-700 hover:border-green-300 dark:hover:border-green-700"
                       }`}
                     >
                       <input
@@ -342,22 +372,27 @@ function SendDocumentsModal({ candidature, onClose, onSuccess, initialSentFiche 
                       />
                       <div className="flex-1">
                         <div className="flex items-center gap-2">
-                          <p className="font-semibold text-sm text-gray-800 dark:text-gray-200">{f.title}</p>
+                          <p className="font-semibold text-sm text-gray-800 dark:text-gray-200">
+                            {f.title}
+                          </p>
                           {sentFiche && selectedFicheId === f._id && (
                             <span className="inline-flex items-center gap-1 px-2 py-1 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 rounded-full text-xs font-bold">
                               <CheckCircle2 className="w-3 h-3" /> Envoyée
                             </span>
                           )}
                         </div>
-                        {f.description && <p className="text-xs text-gray-500 mt-0.5">{f.description}</p>}
-                        <p className="text-xs text-gray-400 mt-0.5">{f.questions?.length || 0} questions</p>
+                        {f.description && (
+                          <p className="text-xs text-gray-500 mt-0.5">{f.description}</p>
+                        )}
+                        <p className="text-xs text-gray-400 mt-0.5">
+                          {f.questions?.length || 0} questions
+                        </p>
                       </div>
                     </label>
                   ))}
                 </div>
               </div>
 
-              {/* Erreur */}
               {error && (
                 <div className="flex items-center gap-2 p-3 bg-red-50 dark:bg-red-900/20 rounded-xl border border-red-200 dark:border-red-800 text-sm text-red-600 dark:text-red-400">
                   <AlertCircle className="w-4 h-4 shrink-0" />
@@ -365,7 +400,6 @@ function SendDocumentsModal({ candidature, onClose, onSuccess, initialSentFiche 
                 </div>
               )}
 
-              {/* Résumé */}
               {(selectedFicheId || includeQuiz) && !allSent && (
                 <div className="bg-green-50/60 dark:bg-green-900/20 border border-green-100 dark:border-green-800 rounded-xl p-3 text-sm text-green-700 dark:text-green-300">
                   Sera envoyé :{" "}
@@ -394,8 +428,6 @@ function SendDocumentsModal({ candidature, onClose, onSuccess, initialSentFiche 
 /* ================================================================
    MODAL — Planifier Entretien (2 flows)
 ================================================================ */
-
-// ── Flow 1: Téléphonique — confirmation directe ──────────────────────────
 function TelephoniqueFlow({ candidate, onBack, onClose }) {
   const [confirming, setConfirming] = useState(false);
   const [done, setDone] = useState(false);
@@ -420,13 +452,15 @@ function TelephoniqueFlow({ candidate, onBack, onClose }) {
     setConfirming(true);
     setError("");
     try {
-      // ✅ FIX : bonne route backend
       await api.patch(`/api/interviewNord/confirm-telephonique/${candidate._id}`);
       setDone(true);
       setTimeout(() => onClose(), 1200);
     } catch (e) {
       console.error("confirmInterview error:", e?.response?.status, e?.response?.data);
-      const msg = e?.response?.data?.error || e?.response?.data?.message || "Erreur lors de la confirmation. Réessayez.";
+      const msg =
+        e?.response?.data?.error ||
+        e?.response?.data?.message ||
+        "Erreur lors de la confirmation. Réessayez.";
       setError(msg);
     } finally {
       setConfirming(false);
@@ -442,7 +476,6 @@ function TelephoniqueFlow({ candidate, onBack, onClose }) {
         ← Retour
       </button>
 
-      {/* Header entretien */}
       <div className="flex items-center gap-3 mb-4 p-3 bg-green-50/60 dark:bg-green-900/20 rounded-xl border border-green-100 dark:border-green-800">
         <div className="w-9 h-9 rounded-xl bg-green-600 flex items-center justify-center flex-shrink-0">
           <PhoneCall className="w-4 h-4 text-white" />
@@ -461,14 +494,15 @@ function TelephoniqueFlow({ candidate, onBack, onClose }) {
         </div>
       </div>
 
-      {/* Fiche candidat */}
       <div className="mb-6 p-4 bg-white dark:bg-gray-800 rounded-xl border border-gray-100 dark:border-gray-700 shadow-sm">
         <div className="flex items-start gap-3">
           <div className="w-10 h-10 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center text-green-700 dark:text-green-300 font-extrabold text-sm flex-shrink-0">
             {name?.[0]?.toUpperCase() || "C"}
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-extrabold text-gray-800 dark:text-white truncate">{name}</p>
+            <p className="text-sm font-extrabold text-gray-800 dark:text-white truncate">
+              {name}
+            </p>
             <div className="mt-2 space-y-2">
               <div className="flex items-center gap-2 text-xs text-gray-600 dark:text-gray-300 break-all">
                 <Mail className="w-3.5 h-3.5 text-green-600 flex-shrink-0" />
@@ -487,7 +521,6 @@ function TelephoniqueFlow({ candidate, onBack, onClose }) {
         </div>
       </div>
 
-      {/* Succès */}
       {done && (
         <div className="flex items-center gap-2 p-3 mb-4 bg-green-50 dark:bg-green-900/20 rounded-xl border border-green-200 dark:border-green-800 text-sm text-green-700 dark:text-green-300">
           <CheckCircle2 className="w-4 h-4 shrink-0" />
@@ -495,7 +528,6 @@ function TelephoniqueFlow({ candidate, onBack, onClose }) {
         </div>
       )}
 
-      {/* Erreur */}
       {error && (
         <div className="flex items-center gap-2 p-3 mb-4 bg-red-50 dark:bg-red-900/20 rounded-xl border border-red-200 dark:border-red-800 text-sm text-red-600 dark:text-red-400">
           <AlertCircle className="w-4 h-4 shrink-0" />
@@ -503,7 +535,6 @@ function TelephoniqueFlow({ candidate, onBack, onClose }) {
         </div>
       )}
 
-      {/* Bouton valider */}
       <button
         onClick={confirmInterview}
         disabled={confirming || done}
@@ -511,8 +542,6 @@ function TelephoniqueFlow({ candidate, onBack, onClose }) {
       >
         {confirming ? (
           <Loader2 className="w-4 h-4 animate-spin" />
-        ) : done ? (
-          <CheckCircle2 className="w-4 h-4" />
         ) : (
           <CheckCircle2 className="w-4 h-4" />
         )}
@@ -521,7 +550,7 @@ function TelephoniqueFlow({ candidate, onBack, onClose }) {
     </div>
   );
 }
-// ── Flow 2: Entretien RH ──────────────────────────
+
 function RHFlow({ candidate, onBack, onClose }) {
   const name =
     candidate?.fullName || `${candidate?.prenom || ""} ${candidate?.nom || ""}`.trim() || "Candidat";
@@ -544,7 +573,10 @@ function RHFlow({ candidate, onBack, onClose }) {
 
   return (
     <div className="p-5">
-      <button onClick={onBack} className="text-xs text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 flex items-center gap-1 mb-4">
+      <button
+        onClick={onBack}
+        className="text-xs text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 flex items-center gap-1 mb-4"
+      >
         ← Retour
       </button>
 
@@ -554,7 +586,9 @@ function RHFlow({ candidate, onBack, onClose }) {
         </div>
         <div>
           <p className="text-sm font-bold text-gray-800 dark:text-white">Entretien RH</p>
-          <p className="text-xs text-gray-500 dark:text-gray-400">Planifier depuis votre calendrier Google</p>
+          <p className="text-xs text-gray-500 dark:text-gray-400">
+            Planifier depuis votre calendrier Google
+          </p>
         </div>
       </div>
 
@@ -578,9 +612,11 @@ function RHFlow({ candidate, onBack, onClose }) {
 
       <div className="mb-6 p-3 bg-green-50/60 dark:bg-green-900/20 rounded-xl border border-green-100 dark:border-green-800">
         <p className="text-xs text-green-800 dark:text-green-200 leading-relaxed">
-          Vous allez être redirigé vers votre <strong>calendrier Google</strong> pour créer l&apos;événement directement.
+          Vous allez être redirigé vers votre <strong>calendrier Google</strong> pour créer
+          l&apos;événement directement.
           <span className="mt-1 block text-green-700/70 dark:text-green-300/70">
-            Le formulaire sera pré-rempli avec les informations du candidat. Une fois l&apos;entretien créé, un email sera envoyé automatiquement.
+            Le formulaire sera pré-rempli avec les informations du candidat. Une fois
+            l&apos;entretien créé, un email sera envoyé automatiquement.
           </span>
         </p>
       </div>
@@ -596,14 +632,23 @@ function RHFlow({ candidate, onBack, onClose }) {
   );
 }
 
-// ── Wrapper Modal principal ─────────────────────────────────────
 function EntretienModal({ candidate, onClose, onRHScheduled }) {
   const [step, setStep] = useState("type");
   const name = getName(candidate);
 
   const types = [
-    { id: "telephonique", label: "Entretien Téléphonique", icon: PhoneCall, desc: "Valider l'entretien téléphonique" },
-    { id: "rh", label: "Entretien RH", icon: Users, desc: "Planifier + email candidat" },
+    {
+      id: "telephonique",
+      label: "Entretien Téléphonique",
+      icon: PhoneCall,
+      desc: "Valider l'entretien téléphonique",
+    },
+    {
+      id: "rh",
+      label: "Entretien RH",
+      icon: Users,
+      desc: "Planifier + email candidat",
+    },
   ];
 
   return (
@@ -614,8 +659,12 @@ function EntretienModal({ candidate, onClose, onRHScheduled }) {
         <div className="px-6 py-5 bg-green-50/60 dark:bg-green-900/10 border-b border-gray-100 dark:border-gray-800">
           <div className="flex items-center justify-between gap-3">
             <div className="min-w-0">
-              <h2 className="text-gray-900 dark:text-white font-extrabold text-lg truncate">Planifier un entretien</h2>
-              <p className="text-gray-500 dark:text-gray-400 text-sm mt-0.5 truncate">{name}</p>
+              <h2 className="text-gray-900 dark:text-white font-extrabold text-lg truncate">
+                Planifier un entretien
+              </h2>
+              <p className="text-gray-500 dark:text-gray-400 text-sm mt-0.5 truncate">
+                {name}
+              </p>
             </div>
             <button
               onClick={onClose}
@@ -638,8 +687,12 @@ function EntretienModal({ candidate, onClose, onRHScheduled }) {
                   <t.icon className="w-5 h-5 text-white" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="font-extrabold text-gray-900 dark:text-white text-sm">{t.label}</p>
-                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{t.desc}</p>
+                  <p className="font-extrabold text-gray-900 dark:text-white text-sm">
+                    {t.label}
+                  </p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                    {t.desc}
+                  </p>
                 </div>
                 <ChevronRight className="w-4 h-4 text-gray-400 group-hover:text-green-600 transition-colors flex-shrink-0" />
               </button>
@@ -671,12 +724,16 @@ function NoteStars({ note }) {
   const [stars, setStars] = useState(0);
   return (
     <div className="flex items-center gap-2 mb-4">
-      <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">Appréciation :</span>
+      <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">
+        Appréciation :
+      </span>
       <div className="flex gap-1">
         {[1, 2, 3, 4, 5].map((s) => (
           <button key={s} onClick={() => setStars(s)}>
             <Star
-              className={`w-5 h-5 transition-colors ${s <= stars ? "text-yellow-400 fill-yellow-400" : "text-gray-300"}`}
+              className={`w-5 h-5 transition-colors ${
+                s <= stars ? "text-yellow-400 fill-yellow-400" : "text-gray-300"
+              }`}
             />
           </button>
         ))}
@@ -686,9 +743,9 @@ function NoteStars({ note }) {
 }
 
 /* ================================================================
-   TABLE ROW — ligne de candidat (modals gérés dans la page parente)
+   TABLE ROW
 ================================================================ */
-function PreInterviewRow({ c, index, onOpenSendModal, onOpenEntretienModal }) {
+function PreInterviewRow({ c, onOpenSendModal, onOpenEntretienModal }) {
   const sentFiche = wasSentFiche(c._id);
   const sentQuiz = wasSentQuiz(c._id);
 
@@ -702,23 +759,25 @@ function PreInterviewRow({ c, index, onOpenSendModal, onOpenEntretienModal }) {
   const allSent = sentFiche && sentQuiz;
   const anySent = sentFiche || sentQuiz;
 
-  function getDocumentsBadge() {
-    if (allSent) return <span className="text-xs font-semibold text-green-600 dark:text-green-400 flex items-center gap-1"><CheckCircle2 className="w-3.5 h-3.5" /> Envoyés</span>;
-    if (sentFiche) return <span className="text-xs text-amber-600 dark:text-amber-400 flex items-center gap-1"><ClipboardList className="w-3.5 h-3.5" /> Fiche ✓</span>;
-    if (sentQuiz) return <span className="text-xs text-amber-600 dark:text-amber-400 flex items-center gap-1"><Brain className="w-3.5 h-3.5" /> Quiz ✓</span>;
-    return <span className="text-xs text-gray-400">Aucun</span>;
-  }
-
-  function getSendButton() {
-    if (allSent) return null;
-    const label = sentFiche && !sentQuiz ? "Envoyer Quiz"
-      : sentQuiz && !sentFiche ? "Envoyer Fiche"
+  let sendBtn;
+  if (allSent) {
+    sendBtn = (
+      <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 text-xs font-semibold border border-green-200 dark:border-green-800 cursor-default">
+        <CheckCircle2 className="w-3.5 h-3.5" /> Envoyés
+      </span>
+    );
+  } else {
+    const label =
+      sentFiche && !sentQuiz
+        ? "Envoyer Quiz"
+        : sentQuiz && !sentFiche
+        ? "Envoyer Fiche"
         : "Envoyer Fiche / Quiz";
-    const color = anySent ? "bg-amber-500 hover:bg-amber-600" : "bg-green-600 hover:bg-green-700";
-    return (
+    const color = anySent ? "bg-amber-500 hover:bg-amber-600" : "bg-[#6CB33F] hover:bg-[#5AA531]";
+    sendBtn = (
       <button
         onClick={() => onOpenSendModal(c)}
-        className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg ${color} text-white text-xs font-semibold transition whitespace-nowrap`}
+        className={`inline-flex items-center gap-1.5 px-3 py-2 rounded-full ${color} text-white text-xs font-semibold transition-colors shadow-sm`}
       >
         <Send className="w-3.5 h-3.5" />
         {label}
@@ -726,41 +785,58 @@ function PreInterviewRow({ c, index, onOpenSendModal, onOpenEntretienModal }) {
     );
   }
 
+  const ficheBadge = sentFiche ? (
+    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 text-[11px] font-bold">
+      <ClipboardList className="w-3 h-3" /> Fiche ✓
+    </span>
+  ) : null;
+
+  const quizBadge = sentQuiz ? (
+    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 text-[11px] font-bold">
+      <Brain className="w-3 h-3" /> Quiz ✓
+    </span>
+  ) : null;
+
   return (
-    <tr className="border-b border-gray-100 dark:border-gray-700 hover:bg-green-50/40 dark:hover:bg-green-900/10 transition-colors">
-      {/* CANDIDAT */}
-      <td className="px-4 py-4">
+    <tr className="group border-b border-[#EDF2E8] dark:border-gray-800 hover:bg-[#FAFDF8] dark:hover:bg-green-900/10 transition-colors">
+      <td className="px-4 py-5 min-w-[230px]">
         <div className="flex items-center gap-3">
-          <div className="relative shrink-0">
-            <div className="w-10 h-10 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center text-green-700 dark:text-green-300 font-extrabold text-base">
-              {name?.[0]?.toUpperCase() || "C"}
-            </div>
-            <span className="absolute -top-1 -left-1 w-5 h-5 rounded-full bg-green-600 text-white text-[10px] font-bold flex items-center justify-center">
-              {index + 1}
-            </span>
+          <div className="w-10 h-10 rounded-full bg-[#E9F4E2] dark:bg-green-900/30 flex items-center justify-center text-[#4E8F2F] dark:text-green-300 font-extrabold text-base shrink-0">
+            {name?.[0]?.toUpperCase() || "C"}
           </div>
           <div className="min-w-0">
-            <p className="font-bold text-gray-900 dark:text-white text-sm truncate">{name}</p>
+            <p className="font-extrabold text-[15px] text-[#0F172A] dark:text-white truncate">
+              {name}
+            </p>
             {email && (
-              <a href={`mailto:${email}`} className="text-xs text-blue-500 hover:underline truncate block">{email}</a>
+              <a
+                href={`mailto:${email}`}
+                className="text-[13px] text-gray-500 hover:text-[#4E8F2F] hover:underline truncate block"
+              >
+                {email}
+              </a>
             )}
           </div>
         </div>
       </td>
 
-      {/* POSTE */}
-      <td className="px-4 py-4">
-        <div className="flex items-center gap-1.5 text-sm text-gray-600 dark:text-gray-300">
-          <Briefcase className="w-3.5 h-3.5 text-gray-400 shrink-0" />
-          <span className="truncate max-w-[180px]">{jobTitle}</span>
+      <td className="px-4 py-5 min-w-[180px]">
+        <div className="flex items-center gap-2">
+          <Briefcase className="w-3.5 h-3.5 text-[#6CB33F] shrink-0" />
+          <span className="text-sm text-gray-700 dark:text-gray-300 truncate">
+            {jobTitle}
+          </span>
         </div>
       </td>
 
-      {/* CV */}
-      <td className="px-4 py-4">
+      <td className="px-4 py-5 w-[120px]">
         {cvUrl ? (
-          <a href={cvUrl} target="_blank" rel="noreferrer"
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-xs font-semibold text-gray-700 dark:text-gray-200 hover:border-green-400 hover:text-green-700 transition">
+          <a
+            href={cvUrl}
+            target="_blank"
+            rel="noreferrer"
+            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-[#E8F2E1] dark:bg-gray-800 hover:bg-[#DDEDD2] dark:hover:bg-gray-700 text-[#4E8F2F] dark:text-green-300 text-xs font-bold transition-colors"
+          >
             <FileText className="w-3.5 h-3.5" />
             Voir CV
           </a>
@@ -769,18 +845,20 @@ function PreInterviewRow({ c, index, onOpenSendModal, onOpenEntretienModal }) {
         )}
       </td>
 
-      {/* SCORE */}
-      <td className="px-4 py-4">
-        <span className={`inline-flex items-center px-3 py-1 rounded-lg text-sm font-extrabold ${scoreBg(score)}`}>
+      <td className="px-4 py-5 w-[100px]">
+        <div
+          className={`inline-flex items-center justify-center px-3 py-1.5 rounded-full text-sm font-extrabold ${scoreBg(
+            score
+          )}`}
+        >
           {pct(score)}
-        </span>
+        </div>
       </td>
 
-      {/* SÉLECTIONNÉ LE */}
-      <td className="px-4 py-4">
+      <td className="px-4 py-5 w-[140px]">
         {selectedAt ? (
-          <div className="flex items-center gap-1.5 text-xs text-gray-500 dark:text-gray-400 whitespace-nowrap">
-            <Clock className="w-3.5 h-3.5 text-green-500 shrink-0" />
+          <div className="flex items-center gap-1.5 text-xs text-gray-500 dark:text-gray-400">
+            <Clock className="w-3.5 h-3.5 text-[#6CB33F]" />
             {formatDate(selectedAt)}
           </div>
         ) : (
@@ -788,25 +866,29 @@ function PreInterviewRow({ c, index, onOpenSendModal, onOpenEntretienModal }) {
         )}
       </td>
 
-      {/* DOCUMENTS */}
-      <td className="px-4 py-4">{getDocumentsBadge()}</td>
+      <td className="px-4 py-5 w-[140px]">
+        <div className="flex flex-col gap-1.5">
+          {ficheBadge}
+          {quizBadge}
+          {!ficheBadge && !quizBadge && <span className="text-xs text-gray-400">Aucun</span>}
+        </div>
+      </td>
 
-      {/* ACTIONS */}
-      <td className="px-4 py-4">
-        <div className="flex flex-col gap-1.5 items-start">
-          <div className="flex items-center gap-1.5">
-            {getSendButton()}
-            <button
-              onClick={() => onOpenEntretienModal(c)}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold transition whitespace-nowrap"
-            >
-              <Calendar className="w-3.5 h-3.5" />
-              Planifier
-            </button>
-          </div>
+      <td className="px-4 py-5 pr-6 w-[320px]">
+        <div className="flex items-center gap-2 flex-wrap">
+          {sendBtn}
+
+          <button
+            onClick={() => onOpenEntretienModal(c)}
+            className="inline-flex items-center gap-1.5 px-3 py-2 rounded-full bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold transition-colors shadow-sm"
+          >
+            <Calendar className="w-3.5 h-3.5" />
+            Planifier
+          </button>
+
           <Link
             href={`/Responsable_RH_Nord/PreInterviewList/${c._id}/results`}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-200 text-xs font-semibold transition whitespace-nowrap"
+            className="inline-flex items-center gap-1.5 px-3 py-2 rounded-full bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-200 text-xs font-semibold transition-colors"
           >
             <BarChart2 className="w-3.5 h-3.5" />
             Résultats
@@ -820,20 +902,21 @@ function PreInterviewRow({ c, index, onOpenSendModal, onOpenEntretienModal }) {
 /* ================================================================
    PAGE PRINCIPALE
 ================================================================ */
-
 const LS_PREINTERVIEW_KEY = "preinterview_candidates_list";
 
 function getStoredCandidates() {
   try {
     const raw = localStorage.getItem(LS_PREINTERVIEW_KEY);
     return raw ? JSON.parse(raw) : null;
-  } catch { return null; }
+  } catch {
+    return null;
+  }
 }
 
 function saveStoredCandidates(candidates) {
   try {
     localStorage.setItem(LS_PREINTERVIEW_KEY, JSON.stringify(candidates));
-  } catch { }
+  } catch {}
 }
 
 export default function PreInterviewListPage() {
@@ -845,6 +928,9 @@ export default function PreInterviewListPage() {
   const [entretienModalCandidate, setEntretienModalCandidate] = useState(null);
   const [sentMap, setSentMap] = useState({});
 
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
+
   useEffect(() => {
     async function load() {
       try {
@@ -854,14 +940,24 @@ export default function PreInterviewListPage() {
           setCandidates(stored);
           setLoading(false);
         }
+
         const res = await getPreInterviewNordList();
         const fresh = Array.isArray(res?.data) ? res.data : [];
+
         if (stored && stored.length > 0) {
           const storedIds = new Set(stored.map((c) => c._id));
           const newFromApi = fresh.filter((c) => !storedIds.has(c._id));
           const updated = stored.map((c) => {
             const fromApi = fresh.find((f) => f._id === c._id);
-            if (fromApi) return { ...fromApi, preInterviewNord: { ...fromApi.preInterviewNord, status: "SELECTED" } };
+            if (fromApi) {
+              return {
+                ...fromApi,
+                preInterviewNord: {
+                  ...fromApi.preInterviewNord,
+                  status: "SELECTED",
+                },
+              };
+            }
             return c;
           });
           const merged = [...updated, ...newFromApi];
@@ -894,6 +990,18 @@ export default function PreInterviewListPage() {
     });
   }, [candidates, search]);
 
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [search]);
+
+  const totalPages = Math.max(1, Math.ceil(filtered.length / itemsPerPage));
+
+  const paginatedCandidates = useMemo(() => {
+    const start = (currentPage - 1) * itemsPerPage;
+    const end = start + itemsPerPage;
+    return filtered.slice(start, end);
+  }, [filtered, currentPage]);
+
   function handleModalSuccess(candidateId, justSentFiche, justSentQuiz) {
     setSentMap((prev) => {
       const cur = prev[candidateId] || {};
@@ -909,66 +1017,77 @@ export default function PreInterviewListPage() {
     setSendModalCandidate(null);
   }
 
-  if (loading)
+  if (loading) {
     return (
-      <div className="min-h-screen bg-[#F0FAF0] dark:bg-gray-950 flex items-center justify-center">
-        <Loader2 className="w-8 h-8 animate-spin text-green-500" />
+      <div className="min-h-screen bg-[#F2FAEF] dark:bg-gray-950 flex items-center justify-center">
+        <Loader2 className="w-8 h-8 animate-spin text-[#6CB33F]" />
       </div>
     );
+  }
 
   return (
-    <div className="min-h-screen bg-[#F0FAF0] dark:bg-gray-950 transition-colors duration-300">
-      <div className="max-w-7xl mx-auto px-4 py-8 space-y-6">
+    <div className="min-h-screen bg-[#F2FAEF] dark:bg-gray-950 transition-colors duration-300">
+      <div className="max-w-[1500px] mx-auto px-6 py-8">
+        <div className="mb-8">
+          <h1 className="flex items-center gap-3 text-3xl sm:text-4xl font-extrabold text-gray-900 dark:text-white mb-6">
+            <UserCheck className="w-8 h-8 text-green-500 shrink-0" />
+            <span>Candidats Pré-sélectionnés</span>
+          </h1>
+        </div>
 
-        {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div>
-            <h1 className="text-3xl font-extrabold text-gray-900 dark:text-white flex items-center gap-3">
-              <UserCheck className="w-8 h-8 text-green-500" />
-              Candidats Pré-sélectionnés
-            </h1>
-            <p className="text-gray-500 dark:text-gray-400 mt-1">
-              {candidates.length} candidat{candidates.length > 1 ? "s" : ""} prêt{candidates.length > 1 ? "s" : ""} pour entretien
-            </p>
-          </div>
-          <div className="relative w-full sm:w-72">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+        <div className="mb-7">
+          <div className="w-full rounded-[28px] bg-white dark:bg-gray-900 border border-[#DDE7D6] dark:border-gray-800 shadow-[0_2px_8px_rgba(15,23,42,0.05)] px-6 py-4 flex items-center gap-4">
+            <Search className="w-6 h-6 text-[#5C9E35] dark:text-emerald-400 flex-shrink-0" />
             <input
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Rechercher (nom, email, poste)..."
-              className="w-full pl-9 pr-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-sm text-gray-800 dark:text-gray-100 outline-none focus:ring-2 focus:ring-green-400 transition-colors"
+              className="w-full bg-transparent outline-none text-[16px] text-[#667085] dark:text-gray-300 placeholder:text-[#667085] dark:placeholder:text-gray-400"
             />
           </div>
         </div>
 
-        {/* Tableau */}
         {filtered.length === 0 ? (
-          <div className="text-center py-16 text-gray-400">
+          <div className="text-center py-20 text-gray-400">
             <UserCheck className="w-12 h-12 mx-auto mb-3 opacity-30" />
-            <p className="font-medium">{search ? "Aucun candidat trouvé" : "Aucun candidat pré-sélectionné"}</p>
+            <p className="font-medium">
+              {search ? "Aucun candidat trouvé" : "Aucun candidat pré-sélectionné"}
+            </p>
           </div>
         ) : (
-          <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700 shadow-sm overflow-hidden">
+          <div className="bg-white dark:bg-gray-900 rounded-[32px] border border-[#DCE7D5] dark:border-gray-800 shadow-[0_8px_24px_rgba(15,23,42,0.06)] overflow-hidden">
             <div className="overflow-x-auto">
-              <table className="w-full">
+              <table className="w-full border-collapse min-w-[1200px]">
                 <thead>
-                  <tr className="border-b border-gray-100 dark:border-gray-700 bg-gray-50/60 dark:bg-gray-800">
-                    <th className="px-4 py-3 text-left text-xs font-bold text-green-700 dark:text-green-400 uppercase tracking-wider">Candidat</th>
-                    <th className="px-4 py-3 text-left text-xs font-bold text-green-700 dark:text-green-400 uppercase tracking-wider">Poste</th>
-                    <th className="px-4 py-3 text-left text-xs font-bold text-green-700 dark:text-green-400 uppercase tracking-wider">CV</th>
-                    <th className="px-4 py-3 text-left text-xs font-bold text-green-700 dark:text-green-400 uppercase tracking-wider">Score</th>
-                    <th className="px-4 py-3 text-left text-xs font-bold text-green-700 dark:text-green-400 uppercase tracking-wider">Sélectionné le</th>
-                    <th className="px-4 py-3 text-left text-xs font-bold text-green-700 dark:text-green-400 uppercase tracking-wider">Documents</th>
-                    <th className="px-4 py-3 text-left text-xs font-bold text-green-700 dark:text-green-400 uppercase tracking-wider">Actions</th>
+                  <tr className="bg-[#EAF4E4] dark:bg-green-900/20">
+                    <th className="px-4 py-6 text-left text-[13px] font-extrabold text-[#4F8F2F] dark:text-[#6CB33F] uppercase tracking-[0.08em]">
+                      Candidat
+                    </th>
+                    <th className="px-4 py-6 text-left text-[13px] font-extrabold text-[#4F8F2F] dark:text-[#6CB33F] uppercase tracking-[0.08em]">
+                      Poste
+                    </th>
+                    <th className="px-4 py-6 text-left text-[13px] font-extrabold text-[#4F8F2F] dark:text-[#6CB33F] uppercase tracking-[0.08em]">
+                      CV
+                    </th>
+                    <th className="px-4 py-6 text-left text-[13px] font-extrabold text-[#4F8F2F] dark:text-[#6CB33F] uppercase tracking-[0.08em]">
+                      Score
+                    </th>
+                    <th className="px-4 py-6 text-left text-[13px] font-extrabold text-[#4F8F2F] dark:text-[#6CB33F] uppercase tracking-[0.08em]">
+                      Sélectionné le
+                    </th>
+                    <th className="px-4 py-6 text-left text-[13px] font-extrabold text-[#4F8F2F] dark:text-[#6CB33F] uppercase tracking-[0.08em]">
+                      Documents
+                    </th>
+                    <th className="px-4 py-6 pr-6 text-left text-[13px] font-extrabold text-[#4F8F2F] dark:text-[#6CB33F] uppercase tracking-[0.08em]">
+                      Actions
+                    </th>
                   </tr>
                 </thead>
                 <tbody>
-                  {filtered.map((c, i) => (
+                  {paginatedCandidates.map((c) => (
                     <PreInterviewRow
                       key={c._id}
                       c={c}
-                      index={i}
                       onOpenSendModal={setSendModalCandidate}
                       onOpenEntretienModal={setEntretienModalCandidate}
                     />
@@ -976,14 +1095,28 @@ export default function PreInterviewListPage() {
                 </tbody>
               </table>
             </div>
-            <div className="px-4 py-3 border-t border-gray-100 dark:border-gray-700 text-xs text-gray-400 dark:text-gray-500">
-              {filtered.length} candidat{filtered.length > 1 ? "s" : ""} affiché{filtered.length > 1 ? "s" : ""}
+
+            <div className="px-6 py-4 border-t border-[#EEF2EA] dark:border-gray-800 bg-[#FAFCF8] dark:bg-gray-900/50">
+              <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+                <p className="text-xs text-gray-400">
+                  {filtered.length} candidat{filtered.length > 1 ? "s" : ""} affiché
+                  {filtered.length > 1 ? "s" : ""}
+                  {search && ` · filtre : "${search}"`}
+                </p>
+
+                {totalPages > 1 && (
+                  <Pagination
+                    currentPage={currentPage}
+                    totalPages={totalPages}
+                    onPageChange={setCurrentPage}
+                  />
+                )}
+              </div>
             </div>
           </div>
         )}
       </div>
 
-      {/* ── MODALS EN DEHORS DU TABLEAU ── */}
       {sendModalCandidate && (
         <SendDocumentsModal
           candidature={sendModalCandidate}
@@ -995,6 +1128,7 @@ export default function PreInterviewListPage() {
           initialSentQuiz={wasSentQuiz(sendModalCandidate._id)}
         />
       )}
+
       {entretienModalCandidate && (
         <EntretienModal
           candidate={entretienModalCandidate}
