@@ -752,6 +752,9 @@ export default function Navbar() {
                         <Link href="/recruiter/tracking" className={`${dropdownItemBase} ${isActive("/recruiter/tracking") ? dropdownActive : dropdownHover}`}>
                           Suivi de recrutement
                         </Link>
+                        <Link href="/recruiter/candidatures-confirmees" className={`${dropdownItemBase} ${isActive("/recruiter/candidatures-confirmees") ? dropdownActive : dropdownHover}`}>
+                          Candidatures confirmées
+                        </Link>
                       </div>
                     )}
                   </div>
@@ -1048,6 +1051,7 @@ export default function Navbar() {
                     <Link href="/recruiter/CandidatureAnalysis" className="block px-5 py-3.5 rounded-xl text-gray-700 dark:text-gray-200 hover:bg-gray-100/70 dark:hover:bg-gray-800/60">Analyse des candidatures</Link>
                     <Link href="/recruiter/PreInterviewList" className="block px-5 py-3.5 rounded-xl text-gray-700 dark:text-gray-200 hover:bg-gray-100/70 dark:hover:bg-gray-800/60">Liste des pré-sélections</Link>
                     <Link href="/recruiter/tracking" className="block px-5 py-3.5 rounded-xl text-gray-700 dark:text-gray-200 hover:bg-gray-100/70 dark:hover:bg-gray-800/60">Suivi de recrutement</Link>
+                    <Link href="/recruiter/candidatures-confirmees" className="block px-5 py-3.5 rounded-xl text-gray-700 dark:text-gray-200 hover:bg-gray-100/70 dark:hover:bg-gray-800/60">Candidatures confirmées</Link>
 
                     <div className="px-5 py-1">
                       <p className="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-1">Formulaires</p>

@@ -935,38 +935,23 @@ export default function PreInterviewListPage() {
     async function load() {
       try {
         setLoading(true);
+
+        // Affichage immédiat depuis le cache pendant que l'API charge
         const stored = getStoredCandidates();
         if (stored && stored.length > 0) {
           setCandidates(stored);
           setLoading(false);
         }
 
+        // ✅ L'API est la SEULE source de vérité
+        // On écrase toujours le localStorage avec les données fraîches
+        // Cela évite les "candidats fantômes" (supprimés ou dé-sélectionnés)
+        // qui causaient des 404 sur /candidatures/:id
         const res = await getPreInterviewNordList();
         const fresh = Array.isArray(res?.data) ? res.data : [];
 
-        if (stored && stored.length > 0) {
-          const storedIds = new Set(stored.map((c) => c._id));
-          const newFromApi = fresh.filter((c) => !storedIds.has(c._id));
-          const updated = stored.map((c) => {
-            const fromApi = fresh.find((f) => f._id === c._id);
-            if (fromApi) {
-              return {
-                ...fromApi,
-                preInterviewNord: {
-                  ...fromApi.preInterviewNord,
-                  status: "SELECTED",
-                },
-              };
-            }
-            return c;
-          });
-          const merged = [...updated, ...newFromApi];
-          setCandidates(merged);
-          saveStoredCandidates(merged);
-        } else {
-          setCandidates(fresh);
-          saveStoredCandidates(fresh);
-        }
+        setCandidates(fresh);
+        saveStoredCandidates(fresh);
       } catch (e) {
         console.error("Erreur chargement pré-entretien:", e?.message);
         const stored = getStoredCandidates();

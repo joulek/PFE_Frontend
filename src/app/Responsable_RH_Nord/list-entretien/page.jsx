@@ -20,10 +20,10 @@ import {
   PhoneCall,
 } from "lucide-react";
 import {
-  getMyInterviews,
   getMyInterviewsStats,
   getMyTelephoniqueInterviews,
 } from "../../services/interviewApi";
+import api from "../../services/api";
 
 // ─────────────────────────────────────────────────────────
 //  STATUTS
@@ -223,58 +223,54 @@ export default function ResponsableMetierInterviewList() {
 
   useEffect(() => { setPage(1); }, [statusFilter]);
 
-  // ── Fetch entretiens (RH+Tech + Téléphoniques fusionnés) ──
- // ── Fetch entretiens (RH+Tech + Téléphoniques fusionnés) ──
-  // CORRECTION : ajout de logs, suppression du filtre trop strict sur status pour téléphoniques
+  // ── Fetch entretiens (RH Nord planifiés + Téléphoniques confirmés) ──
   const fetchInterviews = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
-      // 1. Entretiens RH+Tech classiques
-      const rhTechData = await getMyInterviews({
-        page,
-        limit: LIMIT,
-        status: statusFilter,
-        search: debouncedSearch.trim(),
-      });
-      const rhTechList = (rhTechData.interviews || []).filter(iv =>
-        isRHTechInterview(iv.interviewType)
-      );
+      // 1. ✅ Entretiens RH Nord planifiés via Google Calendar
+      //    → GET /api/interviewNord/interview-nord/list
+      let rhNordList = [];
+      try {
+        const params = new URLSearchParams({ page, limit: LIMIT });
+        if (statusFilter && statusFilter !== "ALL") params.append("status", statusFilter);
+        if (debouncedSearch.trim()) params.append("search", debouncedSearch.trim());
 
-      // 2. Entretiens téléphoniques confirmés
-      // ✅ FIX : on les charge pour TOUS les filtres (plus seulement ALL/CONFIRMED)
-      // Le filtre de statut ne s'applique pas côté téléphonique (toujours CONFIRMED)
+        const rhNordRes = await api.get(`/api/interviewNord/interview-nord/list?${params}`);
+        rhNordList = rhNordRes.data?.interviews || [];
+        console.log("📅 Entretiens RH Nord chargés:", rhNordList.length);
+      } catch (rhErr) {
+        console.error("❌ Erreur chargement entretiens RH Nord:", rhErr);
+      }
+
+      // 2. ✅ Entretiens téléphoniques confirmés
+      //    → GET /api/interviewNord/telephonique/my-list
       let telList = [];
       try {
         const telData = await getMyTelephoniqueInterviews({
-          page:   1,
-          limit:  50,
+          page: 1,
+          limit: 50,
           search: debouncedSearch.trim(),
         });
-
         telList = telData.interviews || [];
 
-        // ✅ FIX : si un filtre de statut autre que ALL/CONFIRMED est actif,
-        // on exclut les téléphoniques (ils sont toujours CONFIRMED)
+        // Les téléphoniques sont toujours CONFIRMED — les exclure si filtre autre
         if (statusFilter !== "ALL" && statusFilter !== "CONFIRMED") {
           telList = [];
         }
-
         console.log("📞 Téléphoniques chargés:", telList.length);
       } catch (telErr) {
-        // ✅ FIX : log visible au lieu d'avaler silencieusement l'erreur
         console.error("❌ Erreur chargement téléphoniques:", telErr);
       }
 
-      // 3. Fusion par candidatureId — une seule ligne si même candidat a tél + RH+Tech
+      // 3. Fusion : une seule ligne si même candidature a tél + RH planifié
       const telByCandidatureId = {};
       for (const tel of telList) {
         const key = String(tel.candidatureId || tel._id);
         telByCandidatureId[key] = tel;
       }
 
-      // Enrichir les RH+Tech avec leur entretien téléphonique associé
-      const enrichedRhTech = rhTechList.map((iv) => {
+      const enrichedRhNord = rhNordList.map((iv) => {
         const key = iv.candidatureId ? String(iv.candidatureId) : null;
         const tel = key ? telByCandidatureId[key] : null;
         if (tel) {
@@ -284,10 +280,10 @@ export default function ResponsableMetierInterviewList() {
         return iv;
       });
 
-      // Téléphoniques restants (sans RH+Tech associé)
+      // Téléphoniques sans entretien RH planifié associé
       const remainingTel = Object.values(telByCandidatureId);
 
-      const merged = [...enrichedRhTech, ...remainingTel].sort((a, b) => {
+      const merged = [...enrichedRhNord, ...remainingTel].sort((a, b) => {
         const da = new Date(a.confirmedDate || a.proposedDate || a.confirmedAt || 0);
         const db = new Date(b.confirmedDate || b.proposedDate || b.confirmedAt || 0);
         return db - da;

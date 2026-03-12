@@ -714,7 +714,7 @@ function EmptyContent({ icon: Icon, title, text, iconClass = "" }) {
 
 export default function CandidateResultsPage() {
   const params = useParams();
-  const candidatureId = params?.candidatureId;
+  const candidatureId = params?.candidatureId ?? params?.id;
 
   const [quiz, setQuiz] = useState(null);
   const [fiche, setFiche] = useState(null);
@@ -723,55 +723,91 @@ export default function CandidateResultsPage() {
   const [quizQuestions, setQuizQuestions] = useState([]);
   const [activeView, setActiveView] = useState("quiz");
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
     if (!candidatureId) return;
 
     async function fetchAll() {
       setLoading(true);
+      setError(null);
       try {
-        const [cRes, qRes, fRes] = await Promise.all([
+        // ✅ Fetches séparés : un échec sur candidature n'empêche pas le reste
+        const [cResult, qResult, fResult] = await Promise.allSettled([
           api.get(`/candidatures/${candidatureId}`),
           api.get(`/quiz-submissions/candidature/${candidatureId}`),
           api.get(`/fiche-submissions/candidature/${candidatureId}`),
         ]);
 
-        setCandidature(cRes.data);
-
-        const quizzes = Array.isArray(qRes.data)
-          ? qRes.data
-          : Array.isArray(qRes.data?.submissions)
-          ? qRes.data.submissions
-          : [];
-        const latestQuiz = quizzes[0] || null;
-        setQuiz(latestQuiz);
-
-        if (latestQuiz?.quizId) {
-          const qqRes = await api.get(`/quizzes/${latestQuiz.quizId}`);
-          setQuizQuestions(qqRes.data?.questions || []);
+        // Candidature
+        if (cResult.status === "fulfilled") {
+          setCandidature(cResult.value.data);
         } else {
+          console.error("Erreur chargement candidature :", cResult.reason?.response?.status, cResult.reason?.message);
+          setError(`Candidature introuvable (${cResult.reason?.response?.status ?? "erreur réseau"})`);
+        }
+
+        // Quiz submissions
+        if (qResult.status === "fulfilled") {
+          const quizzes = Array.isArray(qResult.value.data)
+            ? qResult.value.data
+            : Array.isArray(qResult.value.data?.submissions)
+            ? qResult.value.data.submissions
+            : [];
+          const latestQuiz = quizzes[0] || null;
+          setQuiz(latestQuiz);
+
+          if (latestQuiz?.quizId) {
+            try {
+              const qqRes = await api.get(`/quizzes/${latestQuiz.quizId}`);
+              setQuizQuestions(qqRes.data?.questions || []);
+            } catch (err) {
+              console.error("Erreur chargement questions quiz :", err);
+              setQuizQuestions([]);
+            }
+          } else {
+            setQuizQuestions([]);
+          }
+        } else {
+          console.error("Erreur chargement quiz submissions :", qResult.reason?.message);
+          setQuiz(null);
           setQuizQuestions([]);
         }
 
-        const fiches = Array.isArray(fRes.data)
-          ? fRes.data
-          : Array.isArray(fRes.data?.submissions)
-          ? fRes.data.submissions
-          : [];
-        const latestFiche = fiches[0] || null;
-        setFiche(latestFiche);
+        // Fiche submissions
+        if (fResult.status === "fulfilled") {
+          const fiches = Array.isArray(fResult.value.data)
+            ? fResult.value.data
+            : Array.isArray(fResult.value.data?.submissions)
+            ? fResult.value.data.submissions
+            : [];
+          const latestFiche = fiches[0] || null;
+          setFiche(latestFiche);
 
-        if (latestFiche?.ficheId) {
-          try {
-            const ficheRes = await api.get(`/fiches/${latestFiche.ficheId}`);
-            setFicheDefinition(ficheRes.data || null);
-          } catch (err) {
-            console.error("Erreur chargement fiche definition :", err);
+          if (latestFiche?.ficheId) {
+            try {
+              const ficheRes = await api.get(`/fiches/${latestFiche.ficheId}`);
+              setFicheDefinition(ficheRes.data || null);
+            } catch (err) {
+              console.error("Erreur chargement fiche definition :", err);
+              setFicheDefinition(null);
+            }
+          } else {
             setFicheDefinition(null);
           }
         } else {
+          console.error("Erreur chargement fiche submissions :", fResult.reason?.message);
+          setFiche(null);
           setFicheDefinition(null);
         }
+
+        // Onglet actif par défaut
+        const latestQuiz = qResult.status === "fulfilled"
+          ? (Array.isArray(qResult.value.data) ? qResult.value.data : qResult.value.data?.submissions ?? [])[0] ?? null
+          : null;
+        const latestFiche = fResult.status === "fulfilled"
+          ? (Array.isArray(fResult.value.data) ? fResult.value.data : fResult.value.data?.submissions ?? [])[0] ?? null
+          : null;
 
         if (latestQuiz) {
           setActiveView("quiz");
@@ -781,7 +817,8 @@ export default function CandidateResultsPage() {
           setActiveView("quiz");
         }
       } catch (err) {
-        console.error(err);
+        console.error("Erreur inattendue fetchAll :", err);
+        setError("Une erreur inattendue s'est produite.");
       } finally {
         setLoading(false);
       }
@@ -814,6 +851,22 @@ export default function CandidateResultsPage() {
     return (
       <div className="min-h-screen bg-[#f5faf3] dark:bg-slate-950 flex items-center justify-center">
         <Loader2 className="w-10 h-10 animate-spin text-green-600 dark:text-green-400" />
+      </div>
+    );
+  }
+
+  if (error && !candidature) {
+    return (
+      <div className="min-h-screen bg-[#f5faf3] dark:bg-slate-950 flex items-center justify-center px-4">
+        <div className="bg-white dark:bg-slate-900 rounded-2xl border border-red-200 dark:border-red-800 p-10 text-center max-w-md w-full shadow-md">
+          <div className="w-14 h-14 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center mx-auto mb-4">
+            <XCircle className="w-7 h-7 text-red-500 dark:text-red-400" />
+          </div>
+          <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-2">Candidature introuvable</h2>
+          <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">{error}</p>
+          <p className="text-xs text-gray-400 dark:text-gray-500 font-mono break-all">ID : {candidatureId}</p>
+          <button onClick={() => window.history.back()} className="mt-6 px-5 py-2.5 bg-green-600 hover:bg-green-700 text-white rounded-full text-sm font-semibold transition-colors">← Retour</button>
+        </div>
       </div>
     );
   }
