@@ -1140,12 +1140,35 @@ export default function AdminInterviewList() {
   const [totalPages, setTotalPages] = useState(1);
   const [total, setTotal] = useState(0);
   const [expandedRow, setExpandedRow] = useState(null);
+  const [evaluationsCache, setEvaluationsCache] = useState({}); // { [interviewId]: evalData | null }
 
   const [cancelModalOpen, setCancelModalOpen] = useState(false);
   const [cancelInterviewId, setCancelInterviewId] = useState(null);
   const [cancelReason, setCancelReason] = useState("");
 
   const [planifierOpen, setPlanifierOpen] = useState(false);
+  const [confirmingAdmin, setConfirmingAdmin] = useState(null);
+
+  async function handleConfirmAdmin(candidatureId, e) {
+    e.stopPropagation();
+    if (!candidatureId || confirmingAdmin) return;
+    setConfirmingAdmin(candidatureId);
+    try {
+      await apiFetch(`/candidatures/${candidatureId}/confirm-admin`, { method: "PATCH" });
+      // Mettre à jour localement sans refetch
+      setInterviews(prev =>
+        prev.map(iv =>
+          (iv.candidatureId === candidatureId || String(iv._id) === candidatureId)
+            ? { ...iv, adminConfirmed: true }
+            : iv
+        )
+      );
+    } catch (err) {
+      alert("Erreur confirmation : " + (err.message || "Impossible"));
+    } finally {
+      setConfirmingAdmin(null);
+    }
+  }
 
   const LIMIT = 10;
   const debounceRef = useRef(null);
@@ -1183,7 +1206,15 @@ export default function AdminInterviewList() {
       console.log("INTERVIEWS API RESPONSE :", data);
       console.log("LISTE ENTRETIENS :", data.interviews);
 
-      setInterviews(data.interviews || []);
+      // ── Déduplique par _id pour éviter les clés React dupliquées ──
+      const raw = data.interviews || [];
+      const deduped = Array.from(
+        new Map(raw.map(iv => [String(iv._id), iv])).values()
+      );
+      if (deduped.length !== raw.length) {
+        console.warn(`[Admin] Doublons détectés et supprimés : ${raw.length - deduped.length} doublons`);
+      }
+      setInterviews(deduped);
       setTotal(data.total || 0);
       setTotalPages(data.totalPages || 1);
     } catch (err) {
@@ -1192,6 +1223,17 @@ export default function AdminInterviewList() {
       setLoading(false);
     }
   }, [page, statusFilter, debouncedSearch]);
+
+  // ── Charge l'évaluation d'un entretien RH+Tech si pas déjà en cache ──
+  const fetchEvaluationIfNeeded = useCallback(async (interviewId) => {
+    if (evaluationsCache[interviewId] !== undefined) return; // déjà chargé
+    try {
+      const data = await apiFetch(`/api/interviews/${interviewId}/evaluation`);
+      setEvaluationsCache(prev => ({ ...prev, [interviewId]: data?.evaluation || null }));
+    } catch {
+      setEvaluationsCache(prev => ({ ...prev, [interviewId]: null }));
+    }
+  }, [evaluationsCache]);
 
   const fetchStats = useCallback(async () => {
     setStatsLoading(true);
@@ -1454,6 +1496,9 @@ export default function AdminInterviewList() {
                     <th className="text-left px-6 lg:px-8 py-5 font-extrabold uppercase text-xs tracking-wider">
                       Éval. DGA
                     </th>
+                    <th className="text-left px-6 lg:px-8 py-5 font-extrabold uppercase text-xs tracking-wider">
+                      Confirmer
+                    </th>
                     <th className="text-right px-6 lg:px-8 py-5 font-extrabold uppercase text-xs tracking-wider">
                       Détails
                     </th>
@@ -1462,21 +1507,34 @@ export default function AdminInterviewList() {
 
                 <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
                   {(() => {
-                    // ✅ Grouper par candidat + poste
+                    // ✅ Grouper par candidat + poste — déduplique les _id identiques
                     const grouped = [];
                     const seen = new Map();
+                    const seenIds = new Set();
                     for (const iv of interviews) {
+                      const idStr = String(iv._id);
+                      if (seenIds.has(idStr)) continue; // skip doublons d_id
+                      seenIds.add(idStr);
                       const key = `${iv.candidateEmail}__${iv.jobTitle || ""}`;
                       if (seen.has(key)) {
                         seen.get(key).siblings.push(iv);
                       } else {
-                        const group = { ...iv, siblings: [] };
+                        const group = { ...iv, siblings: [], _groupKey: key };
                         seen.set(key, group);
                         grouped.push(group);
                       }
                     }
                     return grouped.map((iv) => {
                       const allIvs = [iv, ...iv.siblings];
+                      // ✅ Chercher dgaInterview et allEntretienNotes dans TOUS les entretiens du groupe
+                      const ivWithDga = allIvs.find(siv => siv.dgaInterview);
+                      // Déduplique les notes par _id (même candidatureId partagé entre entretiens du groupe)
+                      const allGroupNotes = Array.from(
+                        new Map(
+                          allIvs.flatMap(siv => siv.allEntretienNotes || [])
+                               .map(n => [String(n._id || n.createdAt), n])
+                        ).values()
+                      );
                       const sc = STATUS_CONFIG[iv.status] || {};
                       const tc = resolveTypeConfig(iv.interviewType);
                       const dgaNote = getDGANote(iv);
@@ -1502,9 +1560,7 @@ export default function AdminInterviewList() {
                             : null);
                       const isCancelled = iv.status === "CANCELLED";
                       const isExpanded = expandedRow === iv._id;
-                      const hasDGA = iv.allEntretienNotes?.some((n) =>
-                        /dga/i.test(n.type),
-                      );
+                      const hasDGA = allGroupNotes.some((n) => /dga/i.test(n.type));
                       const isActioning = actionLoading?.startsWith(iv._id);
 
                       const responsableItem = allIvs.find(
@@ -1526,11 +1582,20 @@ export default function AdminInterviewList() {
                         responsableItem?.assignedUserEmail ||
                         "—";
                       return (
-                        <React.Fragment key={iv._id}>
+                        <React.Fragment key={iv._groupKey || String(iv._id)}>
                           <tr
-                            onClick={() =>
-                              setExpandedRow(isExpanded ? null : iv._id)
-                            }
+                            onClick={() => {
+                              const newExpanded = isExpanded ? null : iv._id;
+                              setExpandedRow(newExpanded);
+                              // Charger les évaluations des entretiens rh_technique du groupe
+                              if (newExpanded) {
+                                allIvs.forEach(siv => {
+                                  if (isRHPlusTechInterviewFE(siv.interviewType)) {
+                                    fetchEvaluationIfNeeded(String(siv._id));
+                                  }
+                                });
+                              }
+                            }}
                             className={`hover:bg-green-50/40 dark:hover:bg-gray-700/40 transition-colors cursor-pointer ${
                               isExpanded
                                 ? "bg-green-50/30 dark:bg-gray-700/30"
@@ -1625,12 +1690,27 @@ export default function AdminInterviewList() {
 
                             <td className="px-6 lg:px-8 py-5">
                               <div className="flex flex-col gap-2">
-                                <DgaScheduleModal
-                                  interview={allIvs.find(siv => siv.dgaInterview) || iv}
-                                  onSuccess={async () => {
-                                    await fetchInterviews();
-                                  }}
-                                />
+                                {hasDGA && !isCancelled ? (
+                                  /* Note DGA présente → bouton Voir détails */
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setExpandedRow(isExpanded ? null : iv._id);
+                                    }}
+                                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold border bg-emerald-50 dark:bg-emerald-950/30 border-emerald-300 dark:border-emerald-700 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-100 dark:hover:bg-emerald-900/40 transition-colors whitespace-nowrap"
+                                  >
+                                    <FileText className="w-3.5 h-3.5" />
+                                    {isExpanded ? "Masquer détails" : "Voir détails"}
+                                  </button>
+                                ) : (
+                                  /* Pas encore de note DGA → bouton Planifier/Modifier normal */
+                                  <DgaScheduleModal
+                                    interview={ivWithDga || iv}
+                                    onSuccess={async () => {
+                                      await fetchInterviews();
+                                    }}
+                                  />
+                                )}
                                 {dgaNote && (
                                   <>
                                     <ScoreBadge score={score} />
@@ -1647,6 +1727,26 @@ export default function AdminInterviewList() {
                               </div>
                             </td>
 
+                            <td className="px-6 lg:px-8 py-5">
+                              {iv.adminConfirmed ? (
+                                <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-200 bg-emerald-50 dark:border-emerald-700 dark:bg-emerald-950/30 px-3 py-1.5 text-xs font-bold text-emerald-700 dark:text-emerald-300 whitespace-nowrap">
+                                  <CheckCircle2 className="w-3.5 h-3.5" />
+                                  Confirmé
+                                </span>
+                              ) : (
+                                <button
+                                  onClick={(e) => handleConfirmAdmin(iv.candidatureId || String(iv._id), e)}
+                                  disabled={confirmingAdmin === (iv.candidatureId || String(iv._id))}
+                                  className="inline-flex items-center gap-1.5 rounded-full border border-[#6CB33F] bg-[#E9F5E3] hover:bg-[#6CB33F] hover:text-white px-3 py-1.5 text-xs font-bold text-[#4E8F2F] disabled:opacity-50 disabled:cursor-not-allowed transition-all whitespace-nowrap"
+                                >
+                                  {confirmingAdmin === (iv.candidatureId || String(iv._id))
+                                    ? <RefreshCcw className="w-3.5 h-3.5 animate-spin" />
+                                    : <CheckCircle2 className="w-3.5 h-3.5" />}
+                                  Confirmer
+                                </button>
+                              )}
+                            </td>
+
                             <td className="px-6 lg:px-8 py-5 text-right">
                               <ChevronDown
                                 className={`w-5 h-5 text-gray-400 ml-auto transition-transform ${
@@ -1659,7 +1759,7 @@ export default function AdminInterviewList() {
                           {isExpanded && (
                             <tr>
                               <td
-                                colSpan={7}
+                                colSpan={8}
                                 className="px-6 lg:px-8 pb-6 bg-green-50/20 dark:bg-gray-900/20"
                               >
                                 <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 pt-4">
@@ -1679,10 +1779,7 @@ export default function AdminInterviewList() {
                                       )}
                                     </div>
                                   </DetailCard>
-                                  <DetailCard
-                                    label="Date et Heure"
-                                    value={`${formatDate(displayDate)} • ${displayTime || "—"}`}
-                                  />
+                                 
 
                                   {iv.status ===
                                     "CANDIDATE_REQUESTED_RESCHEDULE" && (
@@ -1705,8 +1802,7 @@ export default function AdminInterviewList() {
                                   {allIvs.some(
                                     (siv) =>
                                       siv.status === "CONFIRMED" ||
-                                      siv.status ===
-                                        "PENDING_CANDIDATE_CONFIRMATION",
+                                      siv.status === "PENDING_CANDIDATE_CONFIRMATION",
                                   ) && (
                                     <DetailCard label="Évaluation">
                                       <div className="flex flex-col gap-2">
@@ -1714,32 +1810,92 @@ export default function AdminInterviewList() {
                                           .filter(
                                             (siv) =>
                                               siv.status === "CONFIRMED" ||
-                                              siv.status ===
-                                                "PENDING_CANDIDATE_CONFIRMATION",
+                                              siv.status === "PENDING_CANDIDATE_CONFIRMATION",
                                           )
                                           .map((siv) => {
-                                            const stc = resolveTypeConfig(
-                                              siv.interviewType,
-                                            );
+                                            const stc = resolveTypeConfig(siv.interviewType);
+                                            const isRHT = isRHPlusTechInterviewFE(siv.interviewType);
+                                            const evalData = evaluationsCache[String(siv._id)];
+                                            const hasEval = isRHT && evalData !== undefined && evalData !== null;
+                                            const evalLoading = isRHT && evaluationsCache[String(siv._id)] === undefined;
+
                                             return (
-                                              <button
-                                                key={siv._id}
-                                                onClick={(e) => {
-                                                  e.stopPropagation();
-                                                  router.push(
-                                                    `/recruiter/interviews/${siv._id}/evaluation`,
-                                                  );
-                                                }}
-                                                className="w-full px-4 py-2.5 rounded-full bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-700 text-blue-700 dark:text-blue-300 font-semibold text-sm hover:bg-blue-100 dark:hover:bg-blue-900/40 transition-colors flex items-center justify-center gap-2"
-                                              >
-                                                <FileText className="w-4 h-4" />
-                                                {stc.label}
-                                              </button>
+                                              <div key={siv._id} className="flex flex-col gap-1.5">
+                                                <button
+                                                  onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    router.push(`/recruiter/interviews/${siv._id}/evaluation`);
+                                                  }}
+                                                  className={`w-full px-4 py-2.5 rounded-full border font-semibold text-sm transition-colors flex items-center justify-center gap-2 ${
+                                                    hasEval
+                                                      ? "bg-emerald-50 dark:bg-emerald-950/30 border-emerald-300 dark:border-emerald-700 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-100"
+                                                      : "bg-blue-50 dark:bg-blue-950/30 border-blue-200 dark:border-blue-700 text-blue-700 dark:text-blue-300 hover:bg-blue-100"
+                                                  }`}
+                                                >
+                                                  <FileText className="w-4 h-4" />
+                                                  {stc.label}
+                                                  {hasEval && <CheckCircle2 className="w-3.5 h-3.5 ml-auto text-emerald-500" />}
+                                                  {evalLoading && isRHT && <span className="w-3 h-3 border-2 border-blue-300 border-t-blue-600 rounded-full animate-spin ml-auto" />}
+                                                </button>
+                                                {/* Résumé évaluation RH+Tech si disponible */}
+                                                {hasEval && (
+                                                  <div className="rounded-xl bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-200 dark:border-emerald-800 px-3 py-2 text-xs">
+                                                    {evalData.evaluationGlobale != null && (
+                                                      <div className="flex items-center gap-2 mb-1">
+                                                        <span className="font-bold text-emerald-700 dark:text-emerald-400">Score global :</span>
+                                                        <span className="font-extrabold text-emerald-800 dark:text-emerald-300">{evalData.evaluationGlobale}/5</span>
+                                                        <span className="text-amber-500">{"★".repeat(Math.round(evalData.evaluationGlobale))}{"☆".repeat(5 - Math.round(evalData.evaluationGlobale))}</span>
+                                                      </div>
+                                                    )}
+                                                    {evalData.decision && (
+                                                      <div className="flex items-center gap-2 mb-1">
+                                                        <span className="font-bold text-gray-600 dark:text-gray-400">Décision :</span>
+                                                        <span className={`font-semibold px-2 py-0.5 rounded-full text-[10px] uppercase tracking-wider ${
+                                                          evalData.decision === "retenu" || evalData.decision === "RETENU"
+                                                            ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300"
+                                                            : evalData.decision === "refuse" || evalData.decision === "REFUSE"
+                                                            ? "bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300"
+                                                            : "bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300"
+                                                        }`}>{evalData.decision}</span>
+                                                      </div>
+                                                    )}
+                                                    {evalData.commentaire && (
+                                                      <p className="text-gray-600 dark:text-gray-400 italic truncate" title={evalData.commentaire}>"{evalData.commentaire}"</p>
+                                                    )}
+                                                  </div>
+                                                )}
+                                              </div>
                                             );
                                           })}
                                       </div>
                                     </DetailCard>
                                   )}
+
+                                  {/* ── Notes DGA ── */}
+                                  {(() => {
+                                    const dgaNotes = allGroupNotes.filter(n => /dga/i.test(n.type));
+                                    if (!dgaNotes.length) return null;
+                                    return (
+                                      <DetailCard label="Notes DGA">
+                                        <div className="flex flex-col gap-2">
+                                          {dgaNotes.map((n, i) => (
+                                            <div key={n._id || i} className="rounded-xl bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800 px-3 py-2.5">
+                                              <p className="text-sm text-gray-800 dark:text-gray-200 leading-relaxed whitespace-pre-wrap">{n.note || "—"}</p>
+                                              <div className="flex items-center gap-2 mt-1.5 flex-wrap">
+                                                {n.stars > 0 && (
+                                                  <span className="text-[11px] text-amber-500">{"★".repeat(n.stars)}{"☆".repeat(5 - n.stars)}</span>
+                                                )}
+                                                {n.createdAt && (
+                                                  <span className="text-[11px] text-gray-400">{formatDate(n.createdAt)}</span>
+                                                )}
+                                                <span className="text-[10px] font-bold uppercase tracking-wider text-amber-600 dark:text-amber-400 bg-amber-100 dark:bg-amber-900/40 rounded-full px-2 py-0.5">DGA</span>
+                                              </div>
+                                            </div>
+                                          ))}
+                                        </div>
+                                      </DetailCard>
+                                    );
+                                  })()}
 
                                   {iv.status === "PENDING_ADMIN_APPROVAL" && (
                                     <>
