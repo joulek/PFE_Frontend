@@ -1627,18 +1627,21 @@ export default function AdminInterviewList() {
 
                             <td className="px-6 lg:px-8 py-5">
                               <div className="flex flex-col gap-1">
-                                {allIvs.map((siv) => {
-                                  const stc = resolveTypeConfig(
-                                    siv.interviewType,
-                                  );
-                                  return (
-                                    <Badge
-                                      key={siv._id}
-                                      label={stc.label}
-                                      className={stc.cls}
-                                    />
-                                  );
-                                })}
+                                {allIvs
+                                  .filter((siv) => {
+                                    const t = String(siv.interviewType || "").toLowerCase();
+                                    return t !== "entretien_nord" && t !== "nord";
+                                  })
+                                  .map((siv) => {
+                                    const stc = resolveTypeConfig(siv.interviewType);
+                                    return (
+                                      <Badge
+                                        key={siv._id}
+                                        label={stc.label}
+                                        className={stc.cls}
+                                      />
+                                    );
+                                  })}
                                 {hasDGA && !isCancelled && (
                                   <span className="text-[11px] font-semibold text-rose-600 dark:text-rose-300">
                                     + Note DGA
