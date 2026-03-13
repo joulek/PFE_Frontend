@@ -17,6 +17,7 @@ import {
   Flag,
   Clock,
   ChevronRight,
+  ChevronLeft,
 } from "lucide-react";
 
 /* ================================================================
@@ -493,18 +494,37 @@ export default function CandidatQuizClient() {
 
           {/* Bottom actions */}
           <div className="mt-8 flex items-center justify-between gap-3 flex-wrap">
-            <button
-              onClick={handleFlag}
-              className={`inline-flex items-center gap-2 px-4 py-2 rounded-2xl border font-bold transition ${flagged.has(currentOrder)
-                  ? "border-yellow-400 bg-yellow-50 dark:bg-yellow-900/20 text-yellow-700 dark:text-yellow-300"
-                  : "border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800"
-                }`}
-            >
-              <Flag className="w-4 h-4" />
-              Marquer
-            </button>
+            <div className="flex items-center gap-2 flex-wrap">
+              <button
+                onClick={handleFlag}
+                className={`inline-flex items-center gap-2 px-4 py-2 rounded-2xl border font-bold transition ${flagged.has(currentOrder)
+                    ? "border-yellow-400 bg-yellow-50 dark:bg-yellow-900/20 text-yellow-700 dark:text-yellow-300"
+                    : "border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800"
+                  }`}
+              >
+                <Flag className="w-4 h-4" />
+                Marquer
+              </button>
+
+              <button
+                onClick={() => setShowOverview(true)}
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-700 dark:text-gray-200 font-bold hover:bg-gray-50 dark:hover:bg-gray-800 transition"
+              >
+                Vue d&apos;ensemble
+              </button>
+            </div>
 
             <div className="flex items-center gap-3">
+
+              {currentIndex > 0 && (
+                <button
+                  onClick={goPrev}
+                  className="inline-flex items-center gap-2 px-4 py-2.5 rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-700 dark:text-gray-200 font-bold transition hover:bg-gray-50 dark:hover:bg-gray-800"
+                >
+                  <ChevronLeft className="w-4 h-4" />
+                  Précédent
+                </button>
+              )}
 
               {currentIndex < totalQuestions - 1 ? (
                 <button
