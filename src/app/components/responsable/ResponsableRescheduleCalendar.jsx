@@ -13,6 +13,7 @@ import {
 
 function TimePickModal({ open, date, onClose, onSubmit, loading, error, ok }) {
   const [timeFrom, setTimeFrom] = useState("11:00");
+
   if (!open) return null;
 
   const dateFR = date
@@ -26,17 +27,13 @@ function TimePickModal({ open, date, onClose, onSubmit, loading, error, ok }) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      {/* Overlay */}
       <div
         className="absolute inset-0 bg-black/45 backdrop-blur-[2px]"
         onClick={onClose}
       />
 
-      {/* Modal */}
       <div className="relative w-full max-w-lg overflow-hidden rounded-[28px] bg-white dark:bg-gray-900 shadow-[0_30px_80px_rgba(0,0,0,0.25)] border border-emerald-100/60 dark:border-gray-800">
-        {/* Header (premium) */}
         <div className="relative px-8 py-7 text-white text-center bg-[#22a06b]">
-          {/* subtle highlight */}
           <div className="pointer-events-none absolute inset-0 opacity-30 bg-gradient-to-b from-white/25 to-transparent" />
 
           <p className="text-white/90 text-[12px] font-extrabold uppercase tracking-[0.18em]">
@@ -53,7 +50,6 @@ function TimePickModal({ open, date, onClose, onSubmit, loading, error, ok }) {
             </p>
           )}
 
-          {/* Close */}
           <button
             onClick={onClose}
             className="absolute top-5 right-5 w-11 h-11 rounded-full bg-white/15 hover:bg-white/25 border border-white/20 backdrop-blur flex items-center justify-center transition"
@@ -63,9 +59,7 @@ function TimePickModal({ open, date, onClose, onSubmit, loading, error, ok }) {
           </button>
         </div>
 
-        {/* Body */}
         <div className="px-8 py-7 space-y-5">
-          {/* Info card */}
           <div className="flex items-center gap-4 p-5 rounded-2xl bg-emerald-50/80 dark:bg-emerald-500/10 border border-emerald-100 dark:border-emerald-500/20">
             <div className="w-12 h-12 rounded-2xl bg-[#22a06b] flex items-center justify-center shadow-[0_8px_24px_rgba(34,160,107,0.35)]">
               <CalendarClock className="w-6 h-6 text-white" />
@@ -80,7 +74,6 @@ function TimePickModal({ open, date, onClose, onSubmit, loading, error, ok }) {
             </div>
           </div>
 
-          {/* Time field */}
           <div className="space-y-2">
             <label className="block text-[12px] font-extrabold text-gray-500 dark:text-gray-300 uppercase tracking-wider">
               Heure
@@ -105,12 +98,11 @@ function TimePickModal({ open, date, onClose, onSubmit, loading, error, ok }) {
             </p>
           </div>
 
-          {/* Success / Error */}
           {ok ? (
             <div className="flex gap-3 p-4 rounded-2xl bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-100 dark:border-emerald-500/20">
               <CheckCircle2 className="w-5 h-5 text-emerald-600 mt-0.5" />
               <div className="text-sm font-extrabold text-emerald-700 dark:text-emerald-300">
-                Nouvelle date envoyée 
+                Nouvelle date envoyée
               </div>
             </div>
           ) : null}
@@ -124,7 +116,6 @@ function TimePickModal({ open, date, onClose, onSubmit, loading, error, ok }) {
             </div>
           ) : null}
 
-          {/* CTA */}
           <button
             onClick={() => onSubmit(timeFrom)}
             disabled={!date || !timeFrom || loading || ok}
@@ -136,8 +127,6 @@ function TimePickModal({ open, date, onClose, onSubmit, loading, error, ok }) {
             {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : null}
             {loading ? "Envoi..." : "Envoyer la nouvelle date"}
           </button>
-
-         
         </div>
       </div>
     </div>
@@ -189,28 +178,9 @@ export default function ResponsableRescheduleCalendar({ token }) {
   }
 
   return (
-    <div className="relative space-y-6">
-      {/* Banner */}
-      <div className="px-1">
-        <div className="flex items-center gap-3 px-5 py-4 bg-[#22a06b] text-white rounded-2xl shadow-lg">
-          <span className="relative flex-shrink-0 w-3 h-3">
-            <span className="absolute inset-0 rounded-full bg-white animate-ping opacity-60" />
-            <span className="relative block w-3 h-3 rounded-full bg-white" />
-          </span>
-          <div className="flex-1 min-w-0">
-            <p className="text-base sm:text-lg font-extrabold">
-              Cliquez sur une date dans votre calendrier pour proposer un créneau
-            </p>
-            <p className="text-sm text-white/90 truncate">
-              (Selon votre disponibilité Outlook)
-            </p>
-          </div>
-        </div>
-      </div>
-
-      {/* Calendrier */}
-      <div className="w-full" style={{ height: "calc(100vh - 220px)" }}>
-        <GoogleCalendar  onDateSelect={handleDateSelect} />
+    <div className="w-full min-h-screen overflow-hidden bg-transparent">
+      <div className="w-full h-[calc(100vh-140px)] min-h-[700px]">
+        <GoogleCalendar onDateSelect={handleDateSelect} />
       </div>
 
       <TimePickModal

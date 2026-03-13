@@ -122,20 +122,7 @@ export default function ConfirmedCandidaturesPage() {
           </p>
         </div>
 
-        {/* Stats */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4 mb-6">
-          {[
-            { label: "Admin + DGA",   value: bothConfirmed, color: "text-[#4E8F2F]",   icon: CheckCircle2 },
-            { label: "Admin seulement", value: adminOnly,   color: "text-blue-500",    icon: User },
-            { label: "DGA seulement",   value: dgaOnly,     color: "text-amber-500",   icon: Shield },
-          ].map(s => (
-            <div key={s.label} className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 p-4 shadow-sm">
-              <span className={s.color}><s.icon className="w-5 h-5 mb-3" /></span>
-              <div className="text-2xl font-extrabold text-gray-900 dark:text-white leading-none">{s.value}</div>
-              <div className="text-[11px] uppercase tracking-wider font-bold text-gray-500 mt-1">{s.label}</div>
-            </div>
-          ))}
-        </div>
+        
 
         {/* Filtres + Recherche */}
         <div className="flex flex-col sm:flex-row gap-3 mb-6">
@@ -202,7 +189,7 @@ export default function ConfirmedCandidaturesPage() {
               <table className="w-full text-sm border-collapse" style={{ minWidth: "900px" }}>
                 <thead className="bg-[#E9F5E3] dark:bg-gray-700 text-[#4E8F2F] dark:text-emerald-400">
                   <tr>
-                    {["#", "Candidat", "Poste", "Confirmation Admin", "Confirmation DGA", "Date candidature"].map(h => (
+                    {[ "Candidat", "Poste", "Confirmation Admin", "Confirmation DGA", "Date candidature"].map(h => (
                       <th key={h} className="text-left px-5 py-4 font-extrabold uppercase text-xs tracking-wider border-b border-[#d4edc4] dark:border-gray-600 whitespace-nowrap">
                         {h}
                       </th>
@@ -216,12 +203,7 @@ export default function ConfirmedCandidaturesPage() {
                         idx % 2 !== 0 ? "bg-gray-50/50 dark:bg-gray-750/30" : ""
                       } hover:bg-[#F0FAF0] dark:hover:bg-gray-700/30 transition-colors`}>
 
-                      {/* # */}
-                      <td className="px-5 py-4">
-                        <span className="flex items-center justify-center w-7 h-7 rounded-full font-extrabold text-xs bg-[#E9F5E3] dark:bg-emerald-900/30 text-[#4E8F2F]">
-                          {idx + 1}
-                        </span>
-                      </td>
+                    
 
                       {/* Candidat */}
                       <td className="px-5 py-4">

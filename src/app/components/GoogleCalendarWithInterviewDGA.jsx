@@ -86,33 +86,7 @@ export default function GoogleCalendarWithInterviewDGA() {
     <div className="relative">
 
       {/* ── Bannière : candidat DGA en attente ────────────────────────────── */}
-      {candidateCtx && !showModal && (
-        <div className="px-4 pt-3 pb-0">
-          <div className="flex items-center gap-3 px-4 py-3 bg-[#6CB33F] text-white rounded-2xl shadow-lg">
-            <span className="relative flex-shrink-0 w-3 h-3">
-              <span className="absolute inset-0 rounded-full bg-white animate-ping opacity-60" />
-              <span className="relative block w-3 h-3 rounded-full bg-white" />
-            </span>
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-bold">
-                Cliquez sur une date pour planifier l&apos;entretien DGA
-              </p>
-              <p className="text-xs text-green-100 truncate">
-                {candidateCtx.candidateName}
-                {candidateCtx.jobTitle ? ` · ${candidateCtx.jobTitle}` : ""}
-              </p>
-            </div>
-            <button
-              onClick={() => setCandidateCtx(null)}
-              className="w-7 h-7 rounded-full bg-white/20 hover:bg-white/30 flex items-center justify-center flex-shrink-0 transition-colors"
-            >
-              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
-          </div>
-        </div>
-      )}
+    
 
       {/* ── Calendrier Google ──────────────────────────────────────────────── */}
       <GoogleCalendar

@@ -10,25 +10,39 @@ import {
   Loader2,
   Eye,
   GripVertical,
-  Briefcase,
-  GraduationCap,
-  Users,
 } from "lucide-react";
 import { getRecruitmentTracking } from "../../services/job.api";
 import Pagination from "../../components/Pagination";
 
+// ✅ FIX: Gestion robuste des dates MongoDB (ISOString, $date, timestamp, etc.)
+function parseDate(date) {
+  if (!date) return null;
+  // MongoDB peut renvoyer { $date: "..." } ou { $date: { $numberLong: "..." } }
+  const raw = date?.$date?.$numberLong
+    ? new Date(Number(date.$date.$numberLong))
+    : date?.$date
+    ? new Date(date.$date)
+    : new Date(date);
+  return isNaN(raw.getTime()) ? null : raw;
+}
+
 function formatDate(date) {
-  if (!date) return "—";
-  return new Date(date).toLocaleDateString("fr-FR");
+  const d = parseDate(date);
+  if (!d) return "—";
+  return d.toLocaleDateString("fr-FR");
 }
 
 function formatDateWithTime(date) {
-  if (!date) return "—";
-  const d = new Date(date);
-  return d.toLocaleDateString("fr-FR") + " " + d.toLocaleTimeString("fr-FR", {
-    hour: "2-digit",
-    minute: "2-digit",
-  });
+  const d = parseDate(date);
+  if (!d) return "—";
+  return (
+    d.toLocaleDateString("fr-FR") +
+    " " +
+    d.toLocaleTimeString("fr-FR", {
+      hour: "2-digit",
+      minute: "2-digit",
+    })
+  );
 }
 
 function getStatusBadge(status) {
@@ -85,7 +99,6 @@ const DEFAULT_COLUMNS = [
 
 const PAGE_SIZE = 10;
 
-
 export default function RecruitmentTrackingPage() {
   const router = useRouter();
   const [jobs, setJobs] = useState([]);
@@ -134,15 +147,6 @@ export default function RecruitmentTrackingPage() {
     }
   }
 
-  const stats = useMemo(() => {
-    return {
-      total: jobs.length,
-      recrutement: jobs.filter((j) => !j.typeOffre || j.typeOffre !== "STAGE")
-        .length,
-      stages: jobs.filter((j) => j.typeOffre === "STAGE").length,
-    };
-  }, [jobs]);
-
   const filtered = useMemo(() => {
     let result = [...jobs];
 
@@ -159,7 +163,9 @@ export default function RecruitmentTrackingPage() {
     }
 
     if (typeFilter === "RECRUTEMENT") {
-      result = result.filter((job) => !job.typeOffre || job.typeOffre !== "STAGE");
+      result = result.filter(
+        (job) => !job.typeOffre || job.typeOffre !== "STAGE"
+      );
     } else if (typeFilter === "STAGES") {
       result = result.filter((job) => job.typeOffre === "STAGE");
     }
@@ -169,8 +175,9 @@ export default function RecruitmentTrackingPage() {
       let bVal = b[sortConfig.key];
 
       if (sortConfig.key === "createdAt" || sortConfig.key === "dateCloture") {
-        aVal = new Date(aVal) || 0;
-        bVal = new Date(bVal) || 0;
+        // ✅ FIX: utiliser parseDate pour trier correctement
+        aVal = parseDate(aVal)?.getTime() || 0;
+        bVal = parseDate(bVal)?.getTime() || 0;
       } else if (sortConfig.key === "nombrePostes") {
         aVal = Number(aVal) || 0;
         bVal = Number(bVal) || 0;
@@ -186,7 +193,11 @@ export default function RecruitmentTrackingPage() {
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const paginatedJobs = useMemo(
-    () => filtered.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE),
+    () =>
+      filtered.slice(
+        (currentPage - 1) * PAGE_SIZE,
+        currentPage * PAGE_SIZE
+      ),
     [filtered, currentPage]
   );
 
@@ -197,7 +208,8 @@ export default function RecruitmentTrackingPage() {
   function handleSort(key) {
     setSortConfig((prev) => ({
       key,
-      direction: prev.key === key && prev.direction === "asc" ? "desc" : "asc",
+      direction:
+        prev.key === key && prev.direction === "asc" ? "desc" : "asc",
     }));
   }
 
@@ -236,7 +248,7 @@ export default function RecruitmentTrackingPage() {
   function exportToCSV() {
     const visibleColumns = columns.filter((col) => col.visible);
     const headers = visibleColumns.map((col) => col.label);
-    const SEPARATOR = ";"; // ← point-virgule pour Excel FR
+    const SEPARATOR = ";";
 
     const escapeCell = (value) => {
       const str = value === null || value === undefined ? "" : String(value);
@@ -246,18 +258,34 @@ export default function RecruitmentTrackingPage() {
     const rows = filtered.map((job) =>
       visibleColumns.map((col) => {
         switch (col.id) {
-          case "titre": return escapeCell(`${job.titre || ""}${job.lieu ? ` (${job.lieu})` : ""}`);
-          case "nombrePostes": return escapeCell(job.nombrePostes ?? "");
-          case "departement": return escapeCell(job.departement ?? "");
-          case "societe": return escapeCell(job.societe ?? "");
-          case "sexe": return escapeCell(prettySexe(job.sexe));
-          case "typeDiplome": return escapeCell(job.typeDiplome ?? "");
-          case "status": return escapeCell(job.status ?? "");
-          case "dateCloture": return escapeCell(formatDate(job.dateCloture));
-          case "motif": return escapeCell(job.motif ?? "");
-          case "createdByUser": return escapeCell(job.createdByUser ?? "");
-          case "createdAt": return escapeCell(formatDateWithTime(job.createdAt));
-          default: return escapeCell(job[col.id] ?? "");
+          case "titre":
+            return escapeCell(
+              `${job.titre || ""}${job.lieu ? ` (${job.lieu})` : ""}`
+            );
+          case "nombrePostes":
+            return escapeCell(job.nombrePostes ?? "");
+          case "departement":
+            return escapeCell(job.departement ?? "");
+          case "societe":
+            return escapeCell(job.societe ?? "");
+          case "sexe":
+            return escapeCell(prettySexe(job.sexe));
+          case "typeDiplome":
+            return escapeCell(job.typeDiplome ?? "");
+          case "status":
+            return escapeCell(job.status ?? "");
+          case "dateCloture":
+            // ✅ FIX: utiliser parseDate
+            return escapeCell(formatDate(job.dateCloture));
+          case "motif":
+            return escapeCell(job.motif ?? "");
+          case "createdByUser":
+            return escapeCell(job.createdByUser ?? "");
+          case "createdAt":
+            // ✅ FIX: utiliser parseDate pour éviter ##########
+            return escapeCell(formatDateWithTime(job.createdAt));
+          default:
+            return escapeCell(job[col.id] ?? "");
         }
       })
     );
@@ -267,11 +295,16 @@ export default function RecruitmentTrackingPage() {
       ...rows.map((row) => row.join(SEPARATOR)),
     ].join("\n");
 
-    const blob = new Blob(["\uFEFF" + csvContent], { type: "text/csv;charset=utf-8;" });
+    // ✅ BOM UTF-8 pour Excel FR
+    const blob = new Blob(["\uFEFF" + csvContent], {
+      type: "text/csv;charset=utf-8;",
+    });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `suivi-recrutement-${new Date().toISOString().split("T")[0]}.csv`;
+    a.download = `suivi-recrutement-${
+      new Date().toISOString().split("T")[0]
+    }.csv`;
     a.click();
     URL.revokeObjectURL(url);
   }
@@ -391,7 +424,6 @@ export default function RecruitmentTrackingPage() {
           </button>
         </div>
 
-
         {error && (
           <div className="mb-5 rounded-2xl border border-red-200 dark:border-red-900/40 bg-red-50 dark:bg-red-950/20 px-5 py-3 text-sm font-semibold text-red-700 dark:text-red-400">
             {error}
@@ -407,13 +439,16 @@ export default function RecruitmentTrackingPage() {
                     <th
                       key={col.id}
                       draggable
-                      onDragStart={(e) => handleDragStart(e, visibleIndices[idx])}
+                      onDragStart={(e) =>
+                        handleDragStart(e, visibleIndices[idx])
+                      }
                       onDragOver={handleDragOver}
                       onDrop={(e) => handleDrop(e, visibleIndices[idx])}
-                      className={`px-6 py-4 text-left text-xs font-extrabold uppercase tracking-wider text-[#3d7a1a] dark:text-emerald-400 whitespace-nowrap cursor-move select-none transition-all ${draggedIndex === visibleIndices[idx]
+                      className={`px-6 py-4 text-left text-xs font-extrabold uppercase tracking-wider text-[#3d7a1a] dark:text-emerald-400 whitespace-nowrap cursor-move select-none transition-all ${
+                        draggedIndex === visibleIndices[idx]
                           ? "opacity-50 bg-yellow-100 dark:bg-yellow-900/30"
                           : "hover:bg-[#d9f0cd] dark:hover:bg-gray-700/50"
-                        }`}
+                      }`}
                     >
                       <div className="flex items-center justify-between gap-2">
                         <span className="flex items-center gap-2">
@@ -494,7 +529,10 @@ export default function RecruitmentTrackingPage() {
 
                         if (col.id === "nombrePostes") {
                           return (
-                            <td key={col.id} className="px-6 py-5 whitespace-nowrap">
+                            <td
+                              key={col.id}
+                              className="px-6 py-5 whitespace-nowrap"
+                            >
                               <span className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-[#E9F5E3] dark:bg-emerald-950/40 text-[#4E8F2F] dark:text-emerald-300 font-bold text-sm">
                                 {job.nombrePostes || "—"}
                               </span>
@@ -515,7 +553,10 @@ export default function RecruitmentTrackingPage() {
 
                         if (col.id === "societe") {
                           return (
-                            <td key={col.id} className="px-6 py-5 whitespace-nowrap">
+                            <td
+                              key={col.id}
+                              className="px-6 py-5 whitespace-nowrap"
+                            >
                               {job.societe ? (
                                 <span className="inline-flex text-xs font-semibold px-3 py-1 rounded-full bg-[#e8f5e1] dark:bg-emerald-900/30 text-[#3d7a1a] dark:text-emerald-400 border border-[#b8dda0] dark:border-emerald-800">
                                   {job.societe}
@@ -553,7 +594,10 @@ export default function RecruitmentTrackingPage() {
 
                         if (col.id === "status") {
                           return (
-                            <td key={col.id} className="px-6 py-5 whitespace-nowrap">
+                            <td
+                              key={col.id}
+                              className="px-6 py-5 whitespace-nowrap"
+                            >
                               {getStatusBadge(job.status)}
                             </td>
                           );
@@ -565,6 +609,7 @@ export default function RecruitmentTrackingPage() {
                               key={col.id}
                               className="px-6 py-5 text-sm text-gray-500 dark:text-gray-400 whitespace-nowrap"
                             >
+                              {/* ✅ FIX: parseDate utilisé */}
                               {formatDate(job.dateCloture)}
                             </td>
                           );
@@ -576,6 +621,7 @@ export default function RecruitmentTrackingPage() {
                               key={col.id}
                               className="px-6 py-5 text-sm text-gray-500 dark:text-gray-400 whitespace-nowrap"
                             >
+                              {/* ✅ FIX: parseDate utilisé */}
                               {formatDateWithTime(job.createdAt)}
                             </td>
                           );
@@ -583,7 +629,10 @@ export default function RecruitmentTrackingPage() {
 
                         if (col.id === "createdByUser") {
                           return (
-                            <td key={col.id} className="px-6 py-5 whitespace-nowrap">
+                            <td
+                              key={col.id}
+                              className="px-6 py-5 whitespace-nowrap"
+                            >
                               <div>
                                 <p className="text-sm font-semibold text-gray-900 dark:text-white">
                                   {job.createdByUser}
@@ -624,7 +673,8 @@ export default function RecruitmentTrackingPage() {
           </div>
 
           <div className="sm:hidden px-5 py-3 text-xs text-gray-500 dark:text-gray-400 border-t border-gray-100 dark:border-gray-800">
-            Astuce : glissez les en-têtes pour réorganiser, cliquez l'oeil pour masquer.
+            Astuce : glissez les en-têtes pour réorganiser, cliquez l'oeil pour
+            masquer.
           </div>
         </div>
 

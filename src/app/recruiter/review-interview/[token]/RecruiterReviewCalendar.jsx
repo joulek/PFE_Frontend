@@ -1,79 +1,230 @@
 "use client";
 // app/recruiter/review-interview/[token]/RecruiterReviewCalendar.jsx
-//
-// Page ouverte depuis l'email du recruteur quand le responsable a proposé
-// une nouvelle date. Le recruteur peut :
-//   ✅ Accepter → event Outlook créé + email candidat
-//   🔁 Proposer autre date → depuis son calendrier → email responsable
 
 import { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { CheckCircle2, Loader2, Calendar, Clock, User, Briefcase, XCircle } from "lucide-react";
+import {
+  CheckCircle2,
+  Loader2,
+  Calendar,
+  Clock,
+  User,
+  Briefcase,
+  XCircle,
+  Info,
+  ArrowLeftRight,
+} from "lucide-react";
 import OutlookCalendar from "../../../components/Googlecalendar";
 import api from "../../../services/api";
+
+/* ── Modal détails entretien ───────────────────────────────────────────── */
+function InterviewDetailsModal({
+  open,
+  interview,
+  onClose,
+  onAccept,
+  accepting,
+  acceptErr,
+}) {
+  if (!open || !interview) return null;
+
+  return (
+    <div className="fixed inset-0 z-[70] flex items-center justify-center p-4">
+      <div
+        className="absolute inset-0 bg-black/45 backdrop-blur-sm"
+        onClick={onClose}
+      />
+      <div className="relative w-full max-w-2xl rounded-[28px] bg-white dark:bg-gray-900 shadow-2xl border border-gray-200 dark:border-gray-800 overflow-hidden">
+        <div className="px-6 sm:px-8 py-6 bg-[#6CB33F]">
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <p className="text-white/75 text-[11px] font-bold uppercase tracking-[0.16em]">
+                Entretien RH + Technique
+              </p>
+              <h2 className="mt-1 text-white text-2xl font-extrabold">
+                Détails de la proposition
+              </h2>
+              <p className="mt-1 text-white/85 text-sm">
+                Vérifiez les informations puis acceptez cette date si elle vous convient.
+              </p>
+            </div>
+
+            <button
+              onClick={onClose}
+              className="w-10 h-10 rounded-full bg-white/15 hover:bg-white/25 text-white flex items-center justify-center transition-colors shrink-0"
+            >
+              <XCircle className="w-5 h-5" />
+            </button>
+          </div>
+        </div>
+
+        <div className="p-6 sm:p-8">
+          <div className="grid sm:grid-cols-2 gap-4">
+            <InfoCard
+              icon={<User className="w-4 h-4" />}
+              label="Candidat"
+              value={interview.candidateName || "—"}
+            />
+            <InfoCard
+              icon={<Briefcase className="w-4 h-4" />}
+              label="Poste"
+              value={interview.jobTitle || "—"}
+            />
+            <InfoCard
+              icon={<Calendar className="w-4 h-4" />}
+              label="Date proposée"
+              value={interview.date || "—"}
+            />
+            <InfoCard
+              icon={<Clock className="w-4 h-4" />}
+              label="Heure"
+              value={interview.time || "—"}
+            />
+          </div>
+
+          {acceptErr && (
+            <div className="mt-5 flex items-center gap-3 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-red-700 dark:border-red-900/40 dark:bg-red-950/30 dark:text-red-300">
+              <XCircle className="w-5 h-5 shrink-0" />
+              <p className="text-sm font-medium">{acceptErr}</p>
+            </div>
+          )}
+
+          <div className="mt-6 flex flex-col sm:flex-row gap-3 justify-end">
+            <button
+              onClick={onClose}
+              className="px-5 py-3 rounded-xl border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-200 font-semibold hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+            >
+              Fermer
+            </button>
+
+            <button
+              onClick={onAccept}
+              disabled={accepting}
+              className="px-5 py-3 rounded-xl bg-[#6CB33F] hover:bg-[#5AA531] text-white font-bold flex items-center justify-center gap-2 disabled:opacity-60 transition-colors"
+            >
+              {accepting ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <CheckCircle2 className="w-4 h-4" />
+              )}
+              {accepting ? "Acceptation..." : "Accepter cette date"}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function InfoCard({ icon, label, value }) {
+  return (
+    <div className="rounded-2xl border border-[#DCE7D5] dark:border-gray-800 bg-[#F8FBF6] dark:bg-gray-800/60 px-4 py-4">
+      <div className="flex items-center gap-2 text-[#5C9E35] dark:text-emerald-400 mb-2">
+        {icon}
+        <span className="text-[11px] font-bold uppercase tracking-[0.12em] text-gray-500 dark:text-gray-400">
+          {label}
+        </span>
+      </div>
+      <p className="text-[17px] font-extrabold text-[#0F172A] dark:text-white break-words">
+        {value}
+      </p>
+    </div>
+  );
+}
 
 /* ── Modal choix heure après clic sur date ─────────────────────────────── */
 function TimePickModal({ open, date, onClose, onSubmit, loading, error, ok }) {
   const [time, setTime] = useState("10:00");
 
+  useEffect(() => {
+    if (open) {
+      setTime("10:00");
+    }
+  }, [open]);
+
   if (!open) return null;
 
   const dateFR = date
     ? new Date(date + "T12:00:00").toLocaleDateString("fr-FR", {
-        weekday: "long", day: "numeric", month: "long", year: "numeric",
-      })
+      weekday: "long",
+      day: "numeric",
+      month: "long",
+      year: "numeric",
+    })
     : "";
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative w-full max-w-md rounded-3xl bg-white dark:bg-gray-900 shadow-2xl overflow-hidden">
-
-        {/* Header */}
-        <div className="px-6 py-5 bg-gradient-to-r from-[#4E8F2F] to-[#3d7524] text-white">
-          <p className="text-white/70 text-[11px] font-bold uppercase tracking-wider mb-1">
+    <div className="fixed inset-0 z-[80] flex items-center justify-center p-4">
+      <div
+        className="absolute inset-0 bg-black/40 backdrop-blur-sm"
+        onClick={onClose}
+      />
+      <div className="relative w-full max-w-md rounded-[28px] bg-white dark:bg-gray-900 shadow-2xl overflow-hidden border border-gray-200 dark:border-gray-800">
+        <div className="px-6 py-5 bg-[#6CB33F] text-white">
+          <p className="text-white/75 text-[11px] font-bold uppercase tracking-[0.16em] mb-1">
             Contre-proposition
           </p>
-          <h2 className="text-white font-extrabold text-xl">Proposer ce créneau</h2>
-          {dateFR && <p className="text-white/80 text-sm mt-1 font-semibold capitalize">📅 {dateFR}</p>}
+          <h2 className="text-white font-extrabold text-xl">
+            Proposer ce créneau
+          </h2>
+          {dateFR && (
+            <p className="text-white/85 text-sm mt-1 font-semibold capitalize">
+              {dateFR}
+            </p>
+          )}
         </div>
 
-        {/* Body */}
         <div className="p-6 space-y-4">
           <div>
-            <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">
-              🕐 Heure de début (durée 1h)
+            <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">
+              Heure de début
             </label>
             <input
               type="time"
               value={time}
               onChange={(e) => setTime(e.target.value)}
-              className="w-full px-4 py-3.5 border-2 border-gray-200 dark:border-gray-700 rounded-xl bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-white text-lg font-semibold focus:border-[#4E8F2F] outline-none"
+              className="w-full px-4 py-3.5 border border-gray-200 dark:border-gray-700 rounded-xl bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-white text-lg font-semibold outline-none focus:ring-2 focus:ring-[#6CB33F]"
             />
+            <p className="mt-2 text-xs text-gray-400">
+              Durée estimée : 1 heure
+            </p>
           </div>
 
           {ok && (
-            <div className="flex items-center gap-3 p-4 rounded-2xl bg-green-50 dark:bg-green-900/20 border border-green-200">
+            <div className="flex items-center gap-3 p-4 rounded-2xl bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800">
               <CheckCircle2 className="w-5 h-5 text-green-600 flex-shrink-0" />
-              <p className="text-sm font-bold text-green-700">Contre-proposition envoyée au responsable ✅</p>
+              <p className="text-sm font-bold text-green-700 dark:text-green-300">
+                Contre-proposition envoyée au responsable
+              </p>
             </div>
           )}
+
           {error && (
-            <div className="flex items-center gap-3 p-4 rounded-2xl bg-red-50 dark:bg-red-900/20 border border-red-200">
+            <div className="flex items-center gap-3 p-4 rounded-2xl bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800">
               <XCircle className="w-5 h-5 text-red-500 flex-shrink-0" />
-              <p className="text-sm font-bold text-red-700">{error}</p>
+              <p className="text-sm font-bold text-red-700 dark:text-red-300">
+                {error}
+              </p>
             </div>
           )}
 
           <div className="flex gap-3">
-            <button onClick={onClose}
-              className="flex-1 py-3 rounded-xl border-2 border-gray-200 text-gray-600 font-semibold text-sm hover:bg-gray-50 transition-colors">
+            <button
+              onClick={onClose}
+              className="flex-1 py-3 rounded-xl border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-200 font-semibold text-sm hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+            >
               Annuler
             </button>
-            <button onClick={() => onSubmit(time)}
+            <button
+              onClick={() => onSubmit(time)}
               disabled={!date || !time || loading || ok}
-              className="flex-[2] py-3 rounded-xl bg-[#4E8F2F] hover:bg-[#3d7524] text-white font-bold text-sm flex items-center justify-center gap-2 disabled:opacity-50 transition-colors">
-              {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Calendar className="w-4 h-4" />}
+              className="flex-[2] py-3 rounded-xl bg-[#6CB33F] hover:bg-[#5AA531] text-white font-bold text-sm flex items-center justify-center gap-2 disabled:opacity-50 transition-colors"
+            >
+              {loading ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <Calendar className="w-4 h-4" />
+              )}
               {loading ? "Envoi..." : "Proposer ce créneau"}
             </button>
           </div>
@@ -85,44 +236,49 @@ function TimePickModal({ open, date, onClose, onSubmit, loading, error, ok }) {
 
 /* ── Page principale ─────────────────────────────────────────────────────── */
 export default function RecruiterReviewCalendar({ token }) {
-  const router       = useRouter();
+  const router = useRouter();
   const searchParams = useSearchParams();
-  const autoAccept   = searchParams.get("action") === "accept";
+  const autoAccept = searchParams.get("action") === "accept";
 
-  const [interview, setInterview]     = useState(null);
+  const [interview, setInterview] = useState(null);
   const [loadingInfo, setLoadingInfo] = useState(true);
-  const [infoError, setInfoError]     = useState(null);
+  const [infoError, setInfoError] = useState(null);
 
-  // Accept state
-  const [accepting, setAccepting]     = useState(false);
-  const [acceptOk,  setAcceptOk]      = useState(false);
-  const [acceptErr, setAcceptErr]     = useState(null);
+  const [accepting, setAccepting] = useState(false);
+  const [acceptOk, setAcceptOk] = useState(false);
+  const [acceptErr, setAcceptErr] = useState(null);
 
-  // Propose modal state
   const [clickedDate, setClickedDate] = useState(null);
-  const [modalOpen,   setModalOpen]   = useState(false);
-  const [proposing,   setProposing]   = useState(false);
-  const [proposeOk,   setProposeOk]   = useState(false);
-  const [proposeErr,  setProposeErr]  = useState(null);
+  const [timeModalOpen, setTimeModalOpen] = useState(false);
+  const [detailsModalOpen, setDetailsModalOpen] = useState(false);
+  const [proposing, setProposing] = useState(false);
+  const [proposeOk, setProposeOk] = useState(false);
+  const [proposeErr, setProposeErr] = useState(null);
 
-  // ── Fetch interview info ──────────────────────────────────────────────────
   useEffect(() => {
     async function load() {
       try {
-        // ✅ Essaye d'abord RH-tech, puis fallback RH (recruiterActionToken)
         let data;
         try {
-          const res = await api.get(`/api/calendar/rh-tech/recruiter/review/${token}`);
+          const res = await api.get(
+            `/api/calendar/rh-tech/recruiter/review/${token}`
+          );
           data = res.data;
         } catch (e) {
           if (e?.response?.status === 404) {
-            const res2 = await api.get(`/api/calendar/interview/recruiter-review/${token}`);
+            const res2 = await api.get(
+              `/api/calendar/interview/recruiter-review/${token}`
+            );
             data = res2.data;
-          } else throw e;
+          } else {
+            throw e;
+          }
         }
         setInterview(data.interview);
       } catch (e) {
-        setInfoError(e?.response?.data?.message || "Lien invalide ou expiré");
+        setInfoError(
+          e?.response?.data?.message || "Lien invalide ou expiré"
+        );
       } finally {
         setLoadingInfo(false);
       }
@@ -130,7 +286,6 @@ export default function RecruiterReviewCalendar({ token }) {
     load();
   }, [token]);
 
-  // ── Auto-accept si ?action=accept dans l'URL ──────────────────────────────
   useEffect(() => {
     if (autoAccept && interview && !acceptOk && !accepting) {
       handleAccept();
@@ -138,21 +293,23 @@ export default function RecruiterReviewCalendar({ token }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [autoAccept, interview]);
 
-  // ── Accepter la date proposée ─────────────────────────────────────────────
   async function handleAccept() {
     setAccepting(true);
     setAcceptErr(null);
     try {
-      // ✅ Essaye RH-tech d'abord, puis fallback RH
       try {
         await api.post(`/api/calendar/rh-tech/recruiter/accept/${token}`);
       } catch (e) {
         if (e?.response?.status === 404) {
-          await api.get(`/api/calendar/interview/recruiter-confirm-slot/${token}?redirect=/recruiter/calendar`);
-        } else throw e;
+          await api.get(
+            `/api/calendar/interview/recruiter-confirm-slot/${token}?redirect=/recruiter/calendar`
+          );
+        } else {
+          throw e;
+        }
       }
       setAcceptOk(true);
-      setTimeout(() => router.push("/recruiter/calendar?accepted=1"), 3000);
+      setTimeout(() => router.push("/recruiter/calendar?accepted=1"), 2500);
     } catch (e) {
       setAcceptErr(e?.response?.data?.message || "Erreur serveur");
     } finally {
@@ -160,23 +317,24 @@ export default function RecruiterReviewCalendar({ token }) {
     }
   }
 
-  // ── Sélection d'une date sur le calendrier ────────────────────────────────
   function handleDateSelect(date) {
     const d = date instanceof Date ? date : new Date(date);
-    const dateStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+    const dateStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(
+      2,
+      "0"
+    )}-${String(d.getDate()).padStart(2, "0")}`;
+
     setClickedDate(dateStr);
     setProposeOk(false);
     setProposeErr(null);
-    setModalOpen(true);
+    setTimeModalOpen(true);
   }
 
-  // ── Soumettre contre-proposition ──────────────────────────────────────────
   async function handlePropose(time) {
     if (!clickedDate || !time) return;
     setProposing(true);
     setProposeErr(null);
     try {
-      // ✅ Essaye RH-tech d'abord, puis fallback RH
       try {
         await api.post(`/api/calendar/rh-tech/recruiter/propose/${token}`, {
           proposedDate: clickedDate,
@@ -185,11 +343,20 @@ export default function RecruiterReviewCalendar({ token }) {
       } catch (e) {
         if (e?.response?.status === 404) {
           const startISO = `${clickedDate}T${time}:00`;
-          await api.post(`/api/calendar/interview/recruiter-propose-from-review/${token}`, { startISO });
-        } else throw e;
+          await api.post(
+            `/api/calendar/interview/recruiter-propose-from-review/${token}`,
+            { startISO }
+          );
+        } else {
+          throw e;
+        }
       }
+
       setProposeOk(true);
-      setTimeout(() => { setModalOpen(false); router.push("/recruiter/calendar?proposed=1"); }, 2500);
+      setTimeout(() => {
+        setTimeModalOpen(false);
+        router.push("/recruiter/calendar?proposed=1");
+      }, 2200);
     } catch (e) {
       setProposeErr(e?.response?.data?.message || "Erreur serveur");
     } finally {
@@ -197,169 +364,135 @@ export default function RecruiterReviewCalendar({ token }) {
     }
   }
 
-  // ── Loading ───────────────────────────────────────────────────────────────
-  if (loadingInfo) return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-950 flex items-center justify-center">
-      <div className="flex flex-col items-center gap-3">
-        <Loader2 className="w-10 h-10 animate-spin text-[#4E8F2F]" />
-        <p className="text-sm text-gray-500">Chargement...</p>
-      </div>
-    </div>
-  );
-
-  // ── Erreur ────────────────────────────────────────────────────────────────
-  if (infoError) return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-950 flex items-center justify-center">
-      <div className="text-center max-w-sm px-4">
-        <XCircle className="w-14 h-14 text-red-400 mx-auto mb-4" />
-        <h2 className="text-lg font-bold text-gray-800 dark:text-white mb-2">Lien invalide</h2>
-        <p className="text-sm text-gray-500">{infoError}</p>
-      </div>
-    </div>
-  );
-
-  // ── Succès acceptation ────────────────────────────────────────────────────
-  if (acceptOk) return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-950 flex items-center justify-center">
-      <div className="text-center max-w-sm px-4">
-        <div className="w-20 h-20 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center mx-auto mb-5">
-          <CheckCircle2 className="w-10 h-10 text-green-500" />
+  if (loadingInfo) {
+    return (
+      <div className="min-h-screen bg-[#F2FAEF] dark:bg-gray-950 flex items-center justify-center">
+        <div className="flex flex-col items-center gap-3">
+          <Loader2 className="w-10 h-10 animate-spin text-[#6CB33F]" />
+          <p className="text-sm text-gray-500 dark:text-gray-400">
+            Chargement...
+          </p>
         </div>
-        <h2 className="text-xl font-extrabold text-gray-900 dark:text-white mb-2">Date acceptée ✅</h2>
-        <p className="text-sm text-gray-500 mb-1">
-          L'événement a été créé dans Outlook.<br/>
-          Un email a été envoyé au candidat pour confirmation.
-        </p>
-        <p className="text-xs text-gray-400">Redirection vers votre calendrier...</p>
       </div>
-    </div>
-  );
+    );
+  }
 
-  // ── Page principale ───────────────────────────────────────────────────────
+  if (infoError) {
+    return (
+      <div className="min-h-screen bg-[#F2FAEF] dark:bg-gray-950 flex items-center justify-center">
+        <div className="text-center max-w-sm px-4">
+          <XCircle className="w-14 h-14 text-red-400 mx-auto mb-4" />
+          <h2 className="text-lg font-bold text-gray-800 dark:text-white mb-2">
+            Lien invalide
+          </h2>
+          <p className="text-sm text-gray-500 dark:text-gray-400">
+            {infoError}
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  if (acceptOk) {
+    return (
+      <div className="min-h-screen bg-[#F2FAEF] dark:bg-gray-950 flex items-center justify-center">
+        <div className="text-center max-w-sm px-4">
+          <div className="w-20 h-20 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center mx-auto mb-5">
+            <CheckCircle2 className="w-10 h-10 text-green-500" />
+          </div>
+          <h2 className="text-xl font-extrabold text-gray-900 dark:text-white mb-2">
+            Date acceptée
+          </h2>
+          <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">
+            L'événement a été créé dans Outlook et un email a été envoyé au candidat.
+          </p>
+          <p className="text-xs text-gray-400 dark:text-gray-500">
+            Redirection vers votre calendrier...
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-950">
+    <div className="min-h-screen bg-[#F2FAEF] dark:bg-gray-950">
+      <div className="w-full px-4 sm:px-6 py-6">
+        {/* Bandeau léger */}
+        <div className="max-w-[1700px] mx-auto mb-4">
+          <div className="rounded-[28px] bg-white dark:bg-gray-900 border border-[#DCE7D5] dark:border-gray-800 shadow-[0_6px_18px_rgba(15,23,42,0.05)] px-5 sm:px-6 py-4">
 
-      {/* Header */}
-      <div className="bg-gradient-to-br from-[#4E8F2F] via-[#5a9e38] to-[#3d7524] px-6 py-8 relative overflow-hidden">
-        <div className="absolute -top-12 -right-12 w-48 h-48 bg-white/10 rounded-full blur-3xl" />
-        <div className="absolute -bottom-12 -left-12 w-40 h-40 bg-white/10 rounded-full blur-2xl" />
+            <div className="flex flex-col xl:flex-row xl:items-center xl:justify-between gap-3">
 
-        <div className="relative max-w-4xl mx-auto">
-          <p className="text-white/60 text-[11px] font-bold uppercase tracking-wider mb-1">
-            Entretien RH + Technique — Action requise
-          </p>
-          <h1 className="text-2xl font-extrabold text-white mb-1">
-            Nouvelle date proposée
-          </h1>
-          <p className="text-white/70 text-sm">
-            Le responsable métier a proposé un nouveau créneau. Acceptez ou proposez une autre date.
-          </p>
+              <div>
+                <p className="text-[10px] font-bold uppercase tracking-[0.15em] text-[#6CB33F]">
+                  Entretien RH + Technique — Action requise
+                </p>
 
-          {/* Infos entretien */}
-          {interview && (
-            <div className="mt-5 grid grid-cols-2 md:grid-cols-4 gap-3">
-              <div className="bg-white/15 rounded-xl p-3 flex items-center gap-2">
-                <User className="w-4 h-4 text-white/70 flex-shrink-0" />
-                <div>
-                  <p className="text-white/60 text-[10px] font-bold uppercase">Candidat</p>
-                  <p className="text-white font-semibold text-sm">{interview.candidateName}</p>
-                </div>
+                <h1 className="mt-1 text-[24px] sm:text-[28px] font-extrabold text-[#0F172A] dark:text-white leading-tight">
+                  Nouvelle date proposée
+                </h1>
+
+                <p className="mt-1 text-xs text-gray-500 dark:text-gray-400 max-w-xl">
+                  Le calendrier reste visible sur toute la page. Les détails et la validation sont déplacés dans un modal.
+                </p>
               </div>
-              <div className="bg-white/15 rounded-xl p-3 flex items-center gap-2">
-                <Briefcase className="w-4 h-4 text-white/70 flex-shrink-0" />
-                <div>
-                  <p className="text-white/60 text-[10px] font-bold uppercase">Poste</p>
-                  <p className="text-white font-semibold text-sm">{interview.jobTitle}</p>
+
+              <div className="flex flex-col sm:flex-row gap-2 xl:justify-end">
+
+                <button
+                  onClick={() => setDetailsModalOpen(true)}
+                  className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-[#6CB33F] hover:bg-[#5AA531] text-white font-semibold text-sm transition-colors shadow-sm"
+                >
+                  <Info className="w-4 h-4" />
+                  Voir les détails
+                </button>
+
+                <div className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl border border-[#DCE7D5] dark:border-gray-700 bg-[#F8FBF6] dark:bg-gray-800 text-[#0F172A] dark:text-white text-sm font-medium">
+                  <ArrowLeftRight className="w-4 h-4 text-[#6CB33F]" />
+                  Cliquez sur le calendrier
                 </div>
+
               </div>
-              <div className="bg-white/15 rounded-xl p-3 flex items-center gap-2">
-                <Calendar className="w-4 h-4 text-white/70 flex-shrink-0" />
-                <div>
-                  <p className="text-white/60 text-[10px] font-bold uppercase">Date proposée</p>
-                  <p className="text-white font-semibold text-sm">{interview.date}</p>
-                </div>
-              </div>
-              <div className="bg-white/15 rounded-xl p-3 flex items-center gap-2">
-                <Clock className="w-4 h-4 text-white/70 flex-shrink-0" />
-                <div>
-                  <p className="text-white/60 text-[10px] font-bold uppercase">Heure</p>
-                  <p className="text-white font-semibold text-sm">{interview.time}</p>
-                </div>
-              </div>
+
             </div>
-          )}
+          </div>
         </div>
-      </div>
 
-      {/* Actions */}
-      <div className="max-w-4xl mx-auto px-4 py-5 space-y-4">
-
-        {/* Erreur acceptation */}
+        {/* Erreur acceptation légère */}
         {acceptErr && (
-          <div className="flex items-center gap-3 p-4 rounded-2xl bg-red-50 dark:bg-red-900/20 border border-red-200">
-            <XCircle className="w-5 h-5 text-red-500 flex-shrink-0" />
-            <p className="text-sm font-medium text-red-700">{acceptErr}</p>
+          <div className="max-w-[1700px] mx-auto mb-4">
+            <div className="flex items-center gap-3 p-4 rounded-2xl bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-900/40">
+              <XCircle className="w-5 h-5 text-red-500 flex-shrink-0" />
+              <p className="text-sm font-medium text-red-700 dark:text-red-300">
+                {acceptErr}
+              </p>
+            </div>
           </div>
         )}
 
-        {/* Deux boutons d'action */}
-        <div className="grid md:grid-cols-2 gap-4">
-
-          {/* ✅ Accepter */}
-          <button onClick={handleAccept} disabled={accepting || acceptOk}
-            className="flex items-center gap-4 p-5 rounded-2xl bg-white dark:bg-gray-800 border-2 border-[#4E8F2F] hover:bg-[#F0FAF0] dark:hover:bg-[#4E8F2F]/10 transition-all shadow-sm disabled:opacity-50">
-            <div className="w-12 h-12 rounded-xl bg-[#4E8F2F] flex items-center justify-center flex-shrink-0">
-              {accepting
-                ? <Loader2 className="w-6 h-6 text-white animate-spin" />
-                : <CheckCircle2 className="w-6 h-6 text-white" />
-              }
-            </div>
-            <div className="text-left">
-              <p className="font-extrabold text-gray-900 dark:text-white">
-                {accepting ? "Acceptation en cours..." : "✅ Accepter cette date"}
-              </p>
-              <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
-                Crée l'événement Outlook + email au candidat
-              </p>
-            </div>
-          </button>
-
-          {/* 🔁 Proposer autre date */}
-          <div className="flex items-center gap-4 p-5 rounded-2xl bg-white dark:bg-gray-800 border-2 border-gray-200 dark:border-gray-700 shadow-sm">
-            <div className="w-12 h-12 rounded-xl bg-gray-100 dark:bg-gray-700 flex items-center justify-center flex-shrink-0">
-              <Calendar className="w-6 h-6 text-gray-600 dark:text-gray-300" />
-            </div>
-            <div className="text-left">
-              <p className="font-extrabold text-gray-900 dark:text-white">🔁 Proposer une autre date</p>
-              <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
-                Cliquez sur une date dans votre calendrier ci-dessous
-              </p>
-            </div>
+        {/* Calendrier plein largeur */}
+        <div className="max-w-[1700px] mx-auto">
+          <div className="rounded-[30px] overflow-hidden border border-[#DCE7D5] dark:border-gray-800 shadow-[0_8px_24px_rgba(15,23,42,0.06)] bg-white dark:bg-gray-900">
+            <OutlookCalendar onDateSelect={handleDateSelect} />
           </div>
         </div>
-
-        {/* Bannière calendrier */}
-        <div className="flex items-center gap-3 px-4 py-3 bg-[#4E8F2F] text-white rounded-2xl shadow-lg">
-          <span className="relative flex-shrink-0 w-3 h-3">
-            <span className="absolute inset-0 rounded-full bg-white animate-ping opacity-60" />
-            <span className="relative block w-3 h-3 rounded-full bg-white" />
-          </span>
-          <p className="text-sm font-bold">
-            Cliquez sur une date dans votre calendrier pour proposer un autre créneau
-          </p>
-        </div>
       </div>
 
-      {/* Calendrier Outlook */}
-      <div className="max-w-4xl mx-auto">
-        <OutlookCalendar onDateSelect={handleDateSelect} />
-      </div>
+      {/* Modal détails + accepter */}
+      <InterviewDetailsModal
+        open={detailsModalOpen}
+        interview={interview}
+        onClose={() => setDetailsModalOpen(false)}
+        onAccept={handleAccept}
+        accepting={accepting}
+        acceptErr={acceptErr}
+      />
 
       {/* Modal contre-proposition */}
       <TimePickModal
-        open={modalOpen}
+        open={timeModalOpen}
         date={clickedDate}
-        onClose={() => setModalOpen(false)}
+        onClose={() => setTimeModalOpen(false)}
         onSubmit={handlePropose}
         loading={proposing}
         error={proposeErr}

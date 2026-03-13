@@ -42,3 +42,60 @@ export const getPreInterviewCandidates = async () => {
   );
   return data;
 };
+
+export async function getDgaMyInterviews({
+  page = 1,
+  limit = 15,
+  search = "",
+} = {}) {
+  const params = new URLSearchParams({
+    page: String(page),
+    limit: String(limit),
+  });
+
+  if (search.trim()) params.set("search", search.trim());
+
+  const { data } = await api.get(
+    `/api/interviews/dga/my-interviews?${params.toString()}`
+  );
+  return data;
+}
+
+export async function confirmDgaInterview(candidatureId) {
+  const { data } = await api.patch(
+    `/candidatures/${candidatureId}/confirm-dga`
+  );
+  return data;
+}
+
+export async function getInterviewNotes(candidatureId) {
+  const { data } = await api.get(`/api/interviews/${candidatureId}/notes`);
+  return data;
+}
+
+export async function createInterviewNote(candidatureId, payload) {
+  const { data } = await api.post(
+    `/api/interviews/${candidatureId}/notes`,
+    payload
+  );
+  return data;
+}
+
+export async function updateInterviewNote(candidatureId, noteId, payload) {
+  const { data } = await api.patch(
+    `/api/interviews/${candidatureId}/notes/${noteId}`,
+    payload
+  );
+  return data;
+}
+
+export async function deleteInterviewNote(candidatureId, noteId) {
+  const { data } = await api.delete(
+    `/api/interviews/${candidatureId}/notes/${noteId}`
+  );
+  return data;
+}
+
+
+
+
