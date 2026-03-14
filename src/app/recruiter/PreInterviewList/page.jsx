@@ -41,26 +41,64 @@ function safeStr(v) {
   if (v === null || v === undefined) return "";
   return typeof v === "string" ? v.trim() : String(v).trim();
 }
+
 function pct(score) {
   if (typeof score !== "number") return "—";
   const val = score > 1 ? score : score * 100;
   return `${Math.round(val)}%`;
 }
+
+/**
+ * ✅ Résout les données depuis les 3 structures possibles :
+ * C) extracted.parsed.X         (nouveau format direct)
+ * A) extracted.parsed.manual.X  (ancien code { manual:{...} })
+ * B) extracted.parsed.parsed.X  (FastAPI wrappé)
+ */
+function getParsedData(c) {
+  const raw = c?.extracted?.parsed;
+  if (!raw) return {};
+  return raw.manual || raw.parsed || raw;
+}
+
 function getName(c) {
+  // 1. Champs résolus par le backend (agrégat MongoDB)
   const f = safeStr(c?.fullName);
   if (f) return f;
   const b = `${safeStr(c?.prenom)} ${safeStr(c?.nom)}`.trim();
-  return b || safeStr(c?.email) || "Candidat";
+  if (b) return b;
+  // 2. Fallback depuis extracted
+  const p = getParsedData(c);
+  return safeStr(p?.nom) || safeStr(p?.full_name) || safeStr(c?.email) || "Candidat";
 }
+
+function getEmail(c) {
+  if (c?.email) return safeStr(c.email);
+  const p = getParsedData(c);
+  return safeStr(p?.email) || safeStr(p?.personal_info?.email) || "";
+}
+
+function getPhone(c) {
+  if (c?.telephone) return safeStr(c.telephone);
+  const p = getParsedData(c);
+  return (
+    safeStr(p?.telephone) ||
+    safeStr(p?.personal_info?.telephone) ||
+    safeStr(p?.personal_info?.phone) ||
+    ""
+  );
+}
+
 function getCvUrl(c) {
   const u = safeStr(c?.cv?.fileUrl);
   if (!u) return null;
   if (u.startsWith("http")) return u;
   return `${API_BASE}${u.startsWith("/") ? "" : "/"}${u}`;
 }
+
 function getCvName(c) {
   return safeStr(c?.cv?.originalName) || "CV.pdf";
 }
+
 function getMatchScore(c) {
   const j = c?.analysis?.jobMatch;
   if (!j) return null;
@@ -68,56 +106,26 @@ function getMatchScore(c) {
   if (typeof s !== "number") return null;
   return s > 1 ? s / 100 : s;
 }
+
 function scoreBg(s) {
   if (s === null) return "bg-gray-100 text-gray-500";
   if (s >= 0.75) return "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400";
   if (s >= 0.45) return "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400";
   return "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400";
 }
+
 function formatDate(d) {
   if (!d) return "—";
   return new Date(d).toLocaleDateString("fr-FR", { day: "2-digit", month: "short", year: "numeric" });
 }
 
 // ── localStorage pour persister "envoyé" entre refreshes ──
-function markSentFiche(id) {
-  try {
-    localStorage.setItem(`fiche_sent_${id}`, "1");
-  } catch {}
-}
-function wasSentFiche(id) {
-  try {
-    return localStorage.getItem(`fiche_sent_${id}`) === "1";
-  } catch {
-    return false;
-  }
-}
-
-function markSentQuiz(id) {
-  try {
-    localStorage.setItem(`quiz_sent_${id}`, "1");
-  } catch {}
-}
-function wasSentQuiz(id) {
-  try {
-    return localStorage.getItem(`quiz_sent_${id}`) === "1";
-  } catch {
-    return false;
-  }
-}
-
-function markSent(id) {
-  try {
-    localStorage.setItem(`docs_sent_${id}`, "1");
-  } catch {}
-}
-function wasSent(id) {
-  try {
-    return localStorage.getItem(`docs_sent_${id}`) === "1";
-  } catch {
-    return false;
-  }
-}
+function markSentFiche(id) { try { localStorage.setItem(`fiche_sent_${id}`, "1"); } catch {} }
+function wasSentFiche(id) { try { return localStorage.getItem(`fiche_sent_${id}`) === "1"; } catch { return false; } }
+function markSentQuiz(id) { try { localStorage.setItem(`quiz_sent_${id}`, "1"); } catch {} }
+function wasSentQuiz(id) { try { return localStorage.getItem(`quiz_sent_${id}`) === "1"; } catch { return false; } }
+function markSent(id) { try { localStorage.setItem(`docs_sent_${id}`, "1"); } catch {} }
+function wasSent(id) { try { return localStorage.getItem(`docs_sent_${id}`) === "1"; } catch { return false; } }
 
 /* ================================================================
    MODAL — Envoyer Fiche + Quiz
@@ -128,7 +136,7 @@ function SendDocumentsModal({ candidature, onClose, onSuccess, initialSentFiche 
   const [loadingData, setLoadingData] = useState(true);
   const [selectedFicheId, setSelectedFicheId] = useState("");
   const [includeQuiz, setIncludeQuiz] = useState(false);
-  const [email, setEmail] = useState(safeStr(candidature?.email));
+  const [email, setEmail] = useState(getEmail(candidature));
   const [sending, setSending] = useState(false);
   const [sentFiche, setSentFiche] = useState(initialSentFiche);
   const [sentQuiz, setSentQuiz] = useState(initialSentQuiz);
@@ -178,14 +186,8 @@ function SendDocumentsModal({ candidature, onClose, onSuccess, initialSentFiche 
       let justSentFiche = false;
       let justSentQuiz = false;
 
-      if (res.data?.sentFiche && !sentFiche) {
-        setSentFiche(true);
-        justSentFiche = true;
-      }
-      if (res.data?.sentQuiz && !sentQuiz) {
-        setSentQuiz(true);
-        justSentQuiz = true;
-      }
+      if (res.data?.sentFiche && !sentFiche) { setSentFiche(true); justSentFiche = true; }
+      if (res.data?.sentQuiz && !sentQuiz) { setSentQuiz(true); justSentQuiz = true; }
 
       onSuccess?.(justSentFiche, justSentQuiz);
     } catch (e) {
@@ -210,11 +212,7 @@ function SendDocumentsModal({ candidature, onClose, onSuccess, initialSentFiche 
                 à <span className="font-semibold text-gray-700 dark:text-gray-300">{name}</span>
               </p>
             </div>
-
-            <button
-              onClick={onClose}
-              className="w-9 h-9 rounded-full hover:bg-white/70 dark:hover:bg-gray-800 flex items-center justify-center transition-colors"
-            >
+            <button onClick={onClose} className="w-9 h-9 rounded-full hover:bg-white/70 dark:hover:bg-gray-800 flex items-center justify-center transition-colors">
               <X className="w-5 h-5 text-gray-500" />
             </button>
           </div>
@@ -239,13 +237,8 @@ function SendDocumentsModal({ candidature, onClose, onSuccess, initialSentFiche 
                   </span>
                 )}
               </div>
-              <p className="text-sm text-gray-400">
-                Email envoyé à <strong>{email}</strong>
-              </p>
-              <button
-                onClick={onClose}
-                className="mt-2 px-6 py-2.5 bg-green-600 hover:bg-green-700 text-white rounded-full font-semibold text-sm transition-colors"
-              >
+              <p className="text-sm text-gray-400">Email envoyé à <strong>{email}</strong></p>
+              <button onClick={onClose} className="mt-2 px-6 py-2.5 bg-green-600 hover:bg-green-700 text-white rounded-full font-semibold text-sm transition-colors">
                 Fermer
               </button>
             </div>
@@ -275,29 +268,17 @@ function SendDocumentsModal({ candidature, onClose, onSuccess, initialSentFiche 
                   <Brain className="w-4 h-4 inline mr-1.5 text-green-600" />
                   Quiz technique
                 </p>
-
                 {quiz ? (
-                  <label
-                    className={`flex items-start gap-3 p-4 rounded-xl border-2 cursor-pointer transition-all ${
-                      sentQuiz
-                        ? "border-green-500 bg-green-50/60 dark:bg-green-900/20 opacity-60 cursor-not-allowed"
-                        : includeQuiz
-                        ? "border-green-500 bg-green-50/60 dark:bg-green-900/20"
-                        : "border-gray-200 dark:border-gray-700 hover:border-green-300 dark:hover:border-green-700"
-                    }`}
-                  >
-                    <input
-                      type="checkbox"
-                      checked={includeQuiz}
-                      onChange={(e) => setIncludeQuiz(e.target.checked)}
-                      disabled={sentQuiz}
-                      className="mt-0.5 accent-green-600 w-4 h-4 shrink-0 disabled:opacity-50 disabled:cursor-not-allowed"
-                    />
+                  <label className={`flex items-start gap-3 p-4 rounded-xl border-2 cursor-pointer transition-all ${
+                    sentQuiz ? "border-green-500 bg-green-50/60 dark:bg-green-900/20 opacity-60 cursor-not-allowed"
+                    : includeQuiz ? "border-green-500 bg-green-50/60 dark:bg-green-900/20"
+                    : "border-gray-200 dark:border-gray-700 hover:border-green-300 dark:hover:border-green-700"
+                  }`}>
+                    <input type="checkbox" checked={includeQuiz} onChange={(e) => setIncludeQuiz(e.target.checked)} disabled={sentQuiz}
+                      className="mt-0.5 accent-green-600 w-4 h-4 shrink-0 disabled:opacity-50 disabled:cursor-not-allowed" />
                     <div className="flex-1">
                       <div className="flex items-center gap-2">
-                        <p className="font-semibold text-sm text-gray-800 dark:text-gray-200">
-                          {quiz.jobTitle || "Quiz technique"}
-                        </p>
+                        <p className="font-semibold text-sm text-gray-800 dark:text-gray-200">{quiz.jobTitle || "Quiz technique"}</p>
                         {sentQuiz && (
                           <span className="inline-flex items-center gap-1 px-2 py-1 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 rounded-full text-xs font-bold">
                             <CheckCircle2 className="w-3 h-3" /> Envoyé
@@ -322,47 +303,22 @@ function SendDocumentsModal({ candidature, onClose, onSuccess, initialSentFiche 
                   <ClipboardList className="w-4 h-4 inline mr-1.5 text-green-600" />
                   Fiche de renseignement
                 </p>
-
                 <div className="space-y-2 max-h-48 overflow-y-auto">
-                  <label
-                    className={`flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition-all ${
-                      !selectedFicheId
-                        ? "border-gray-300 bg-gray-50 dark:bg-gray-800 dark:border-gray-700"
-                        : "border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600"
-                    }`}
-                  >
-                    <input
-                      type="radio"
-                      name="fiche"
-                      value=""
-                      checked={!selectedFicheId}
-                      onChange={() => setSelectedFicheId("")}
-                      disabled={sentFiche}
-                      className="w-4 h-4 disabled:opacity-50"
-                    />
+                  <label className={`flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition-all ${
+                    !selectedFicheId ? "border-gray-300 bg-gray-50 dark:bg-gray-800 dark:border-gray-700"
+                    : "border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600"
+                  }`}>
+                    <input type="radio" name="fiche" value="" checked={!selectedFicheId} onChange={() => setSelectedFicheId("")} disabled={sentFiche} className="w-4 h-4 disabled:opacity-50" />
                     <span className="text-sm text-gray-500 dark:text-gray-400">Ne pas envoyer de fiche</span>
                   </label>
-
                   {fiches.map((f) => (
-                    <label
-                      key={f._id}
-                      className={`flex items-start gap-3 p-3 rounded-xl border cursor-pointer transition-all ${
-                        sentFiche
-                          ? "border-green-500 bg-green-50/60 dark:bg-green-900/20 opacity-60 cursor-not-allowed"
-                          : selectedFicheId === f._id
-                          ? "border-green-500 bg-green-50/60 dark:bg-green-900/20"
-                          : "border-gray-200 dark:border-gray-700 hover:border-green-300 dark:hover:border-green-700"
-                      }`}
-                    >
-                      <input
-                        type="radio"
-                        name="fiche"
-                        value={f._id}
-                        checked={selectedFicheId === f._id}
-                        onChange={() => setSelectedFicheId(f._id)}
-                        disabled={sentFiche}
-                        className="mt-0.5 accent-green-600 w-4 h-4 shrink-0 disabled:opacity-50 disabled:cursor-not-allowed"
-                      />
+                    <label key={f._id} className={`flex items-start gap-3 p-3 rounded-xl border cursor-pointer transition-all ${
+                      sentFiche ? "border-green-500 bg-green-50/60 dark:bg-green-900/20 opacity-60 cursor-not-allowed"
+                      : selectedFicheId === f._id ? "border-green-500 bg-green-50/60 dark:bg-green-900/20"
+                      : "border-gray-200 dark:border-gray-700 hover:border-green-300 dark:hover:border-green-700"
+                    }`}>
+                      <input type="radio" name="fiche" value={f._id} checked={selectedFicheId === f._id} onChange={() => setSelectedFicheId(f._id)} disabled={sentFiche}
+                        className="mt-0.5 accent-green-600 w-4 h-4 shrink-0 disabled:opacity-50 disabled:cursor-not-allowed" />
                       <div className="flex-1">
                         <div className="flex items-center gap-2">
                           <p className="font-semibold text-sm text-gray-800 dark:text-gray-200">{f.title}</p>
@@ -391,16 +347,12 @@ function SendDocumentsModal({ candidature, onClose, onSuccess, initialSentFiche 
                 <div className="bg-green-50/60 dark:bg-green-900/20 border border-green-100 dark:border-green-800 rounded-xl p-3 text-sm text-green-700 dark:text-green-300">
                   Sera envoyé :{" "}
                   {[includeQuiz && !sentQuiz && "Quiz technique", selectedFicheId && !sentFiche && "Fiche de renseignement"]
-                    .filter(Boolean)
-                    .join(" + ")}
+                    .filter(Boolean).join(" + ")}
                 </div>
               )}
 
-              <button
-                onClick={handleSend}
-                disabled={!canSend}
-                className="w-full py-3 rounded-xl bg-green-600 hover:bg-green-700 text-white font-extrabold text-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-              >
+              <button onClick={handleSend} disabled={!canSend}
+                className="w-full py-3 rounded-xl bg-green-600 hover:bg-green-700 text-white font-extrabold text-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2">
                 {sending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
                 {sending ? "Envoi en cours..." : "Envoyer"}
               </button>
@@ -415,24 +367,14 @@ function SendDocumentsModal({ candidature, onClose, onSuccess, initialSentFiche 
 /* ================================================================
    MODAL — Planifier Entretien (3 flows)
 ================================================================ */
-
 function TelephoniqueFlow({ candidate, onBack, onClose }) {
   const [creating, setCreating] = useState(false);
   const [created, setCreated] = useState(false);
 
-  const name =
-    candidate?.fullName ||
-    `${candidate?.prenom || ""} ${candidate?.nom || ""}`.trim() ||
-    "Candidat";
-  const email = safeStr(candidate?.email) || "Email non renseigné";
-  const phone =
-    safeStr(candidate?.telephone) ||
-    safeStr(candidate?.phone) ||
-    safeStr(candidate?.personalInfoForm?.telephone) ||
-    safeStr(candidate?.personalInfoForm?.phone) ||
-    safeStr(candidate?.extracted?.parsed?.telephone) ||
-    safeStr(candidate?.extracted?.parsed?.phone) ||
-    "Téléphone non renseigné";
+  // ✅ Utilise les helpers unifiés
+  const name = getName(candidate);
+  const email = getEmail(candidate) || "Email non renseigné";
+  const phone = getPhone(candidate) || "Téléphone non renseigné";
   const jobTitle = safeStr(candidate?.jobTitle) || "Poste non renseigné";
 
   async function handleValider() {
@@ -464,10 +406,7 @@ function TelephoniqueFlow({ candidate, onBack, onClose }) {
         <p className="text-sm text-gray-500 dark:text-gray-400 mb-5">
           L'entretien téléphonique est enregistré avec le statut <strong className="text-green-600">Confirmé</strong>.
         </p>
-        <button
-          onClick={onClose}
-          className="px-6 py-2.5 rounded-xl bg-green-600 hover:bg-green-700 text-white font-bold text-sm transition-colors"
-        >
+        <button onClick={onClose} className="px-6 py-2.5 rounded-xl bg-green-600 hover:bg-green-700 text-white font-bold text-sm transition-colors">
           Fermer
         </button>
       </div>
@@ -476,10 +415,7 @@ function TelephoniqueFlow({ candidate, onBack, onClose }) {
 
   return (
     <div className="p-5">
-      <button
-        onClick={onBack}
-        className="text-xs text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 flex items-center gap-1 mb-4"
-      >
+      <button onClick={onBack} className="text-xs text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 flex items-center gap-1 mb-4">
         ← Retour
       </button>
 
@@ -520,11 +456,8 @@ function TelephoniqueFlow({ candidate, onBack, onClose }) {
         </div>
       </div>
 
-      <button
-        onClick={handleValider}
-        disabled={creating}
-        className="w-full py-3 rounded-xl bg-green-600 hover:bg-green-700 text-white text-sm font-bold disabled:opacity-50 flex items-center justify-center gap-2 transition-colors"
-      >
+      <button onClick={handleValider} disabled={creating}
+        className="w-full py-3 rounded-xl bg-green-600 hover:bg-green-700 text-white text-sm font-bold disabled:opacity-50 flex items-center justify-center gap-2 transition-colors">
         {creating ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}
         {creating ? "Création..." : "Valider l'entretien"}
       </button>
@@ -533,10 +466,10 @@ function TelephoniqueFlow({ candidate, onBack, onClose }) {
 }
 
 function RHFlow({ candidate, onBack, onClose }) {
-  const name =
-    candidate?.fullName || `${candidate?.prenom || ""} ${candidate?.nom || ""}`.trim() || "Candidat";
-  const email = candidate?.email || "";
-  const jobTitle = candidate?.jobTitle || "";
+  // ✅ Utilise les helpers unifiés
+  const name = getName(candidate);
+  const email = getEmail(candidate);
+  const jobTitle = safeStr(candidate?.jobTitle) || "";
   const candidId = candidate?._id || "";
 
   function openCalendar() {
@@ -590,15 +523,13 @@ function RHFlow({ candidate, onBack, onClose }) {
         <p className="text-xs text-green-800 dark:text-green-200 leading-relaxed">
           Vous allez être redirigé vers votre <strong>calendrier Outlook</strong> pour créer l&apos;événement directement.
           <span className="mt-1 block text-green-700/70 dark:text-green-300/70">
-            Le formulaire sera pré-rempli avec les informations du candidat. Une fois l&apos;entretien créé, un email sera envoyé automatiquement.
+            Le formulaire sera pré-rempli avec les informations du candidat.
           </span>
         </p>
       </div>
 
-      <button
-        onClick={openCalendar}
-        className="w-full py-3.5 rounded-xl bg-green-600 hover:bg-green-700 text-white font-bold text-sm flex items-center justify-center gap-2 transition-colors shadow-sm"
-      >
+      <button onClick={openCalendar}
+        className="w-full py-3.5 rounded-xl bg-green-600 hover:bg-green-700 text-white font-bold text-sm flex items-center justify-center gap-2 transition-colors shadow-sm">
         <Calendar className="w-4 h-4" />
         Ouvrir le calendrier &amp; Créer l&apos;entretien
       </button>
@@ -614,71 +545,49 @@ function RHTechniqueFlow({ candidate, onBack, onClose }) {
   const [done, setDone] = useState(false);
   const [error, setError] = useState("");
 
-  useEffect(() => {
-    fetchAvailability();
-  }, [candidate?._id, candidate?.jobOfferId]);
+  useEffect(() => { fetchAvailability(); }, [candidate?._id, candidate?.jobOfferId]);
 
   async function fetchAvailability() {
     setLoading(true);
     setError("");
     setSelected(null);
     setDone(false);
-
     try {
       const candidatureId = candidate?._id;
       const jobOfferId = candidate?.jobOfferId;
-
       if (!candidatureId || !jobOfferId) {
         setSlots([]);
         setError("Candidature/jobOfferId manquant.");
         setLoading(false);
         return;
       }
-
       const r = await api.get("/api/calendar/rh-tech-slots", {
         params: { candidatureId, jobOfferId, days: 7 },
       });
-
       const got = r?.data?.slots || [];
       setSlots(Array.isArray(got) ? got : []);
     } catch (e) {
-      console.error(e);
       setSlots([]);
       setError(e?.response?.data?.message || e?.message || "Erreur lors du chargement des créneaux");
     }
-
     setLoading(false);
   }
 
   async function handleSchedule() {
     if (!selected) return;
-
     setSaving(true);
     setError("");
-
     try {
-      const candidatureId = candidate?._id;
-      const jobOfferId = candidate?.jobOfferId;
-
-      if (!candidatureId || !jobOfferId) {
-        setError("Candidature/jobOfferId manquant.");
-        setSaving(false);
-        return;
-      }
-
       await api.post("/api/calendar/rh-tech/schedule", {
-        candidatureId,
-        jobOfferId,
+        candidatureId: candidate?._id,
+        jobOfferId: candidate?.jobOfferId,
         proposedDate: selected.date,
         proposedTime: selected.time,
       });
-
       setDone(true);
     } catch (e) {
-      console.error(e);
       setError(e?.response?.data?.message || e?.message || "Erreur");
     }
-
     setSaving(false);
   }
 
@@ -690,9 +599,7 @@ function RHTechniqueFlow({ candidate, onBack, onClose }) {
       if (!acc[day]) acc[day] = [];
       acc[day].push(s);
     }
-    Object.keys(acc).forEach((day) => {
-      acc[day].sort((a, b) => String(a.time).localeCompare(String(b.time)));
-    });
+    Object.keys(acc).forEach((day) => { acc[day].sort((a, b) => String(a.time).localeCompare(String(b.time))); });
     return acc;
   }, [slots]);
 
@@ -702,19 +609,9 @@ function RHTechniqueFlow({ candidate, onBack, onClose }) {
         <div className="w-16 h-16 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center mx-auto mb-4">
           <CheckCircle2 className="w-8 h-8 text-green-600 dark:text-green-400" />
         </div>
-
         <h3 className="font-bold text-gray-800 dark:text-white text-lg mb-1">Demande envoyée !</h3>
-        <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">
-          Email envoyé au Responsable Métier pour confirmation.
-        </p>
-        <p className="text-xs text-gray-400 dark:text-gray-500">
-          S&apos;il accepte → email automatique au candidat avec les détails.
-        </p>
-
-        <button
-          onClick={onClose}
-          className="mt-5 inline-flex items-center justify-center px-4 py-2 rounded-xl bg-green-600 hover:bg-green-700 text-white font-bold text-sm transition-colors"
-        >
+        <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">Email envoyé au Responsable Métier pour confirmation.</p>
+        <button onClick={onClose} className="mt-5 inline-flex items-center justify-center px-4 py-2 rounded-xl bg-green-600 hover:bg-green-700 text-white font-bold text-sm transition-colors">
           Fermer
         </button>
       </div>
@@ -726,7 +623,6 @@ function RHTechniqueFlow({ candidate, onBack, onClose }) {
       <button onClick={onBack} className="text-xs text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 flex items-center gap-1 mb-4">
         ← Retour
       </button>
-
       <div className="flex items-center gap-3 mb-4 p-3 bg-green-50/60 dark:bg-green-900/20 rounded-xl border border-green-100 dark:border-green-800">
         <div className="w-9 h-9 rounded-xl bg-green-600 flex items-center justify-center flex-shrink-0">
           <UserCog className="w-4 h-4 text-white" />
@@ -745,35 +641,24 @@ function RHTechniqueFlow({ candidate, onBack, onClose }) {
       ) : slots.length === 0 ? (
         <div className="py-6 text-center">
           <p className="text-sm text-gray-500 dark:text-gray-400 mb-3">Aucun créneau commun trouvé cette semaine.</p>
-          <button onClick={fetchAvailability} className="text-xs text-green-600 hover:underline">
-            Réessayer
-          </button>
+          <button onClick={fetchAvailability} className="text-xs text-green-600 hover:underline">Réessayer</button>
         </div>
       ) : (
         <div className="max-h-72 overflow-y-auto space-y-3 mb-4 pr-1">
           {Object.entries(slotsByDay).map(([day, daySlots]) => (
             <div key={day}>
               <p className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">
-                {new Date(day).toLocaleDateString("fr-FR", {
-                  weekday: "long",
-                  day: "numeric",
-                  month: "long",
-                })}
+                {new Date(day).toLocaleDateString("fr-FR", { weekday: "long", day: "numeric", month: "long" })}
               </p>
-
               <div className="flex flex-wrap gap-2">
                 {daySlots.map((s, i) => {
                   const active = selected?.date === s.date && selected?.time === s.time;
                   return (
-                    <button
-                      key={`${day}-${s.time}-${i}`}
-                      onClick={() => setSelected(s)}
+                    <button key={`${day}-${s.time}-${i}`} onClick={() => setSelected(s)}
                       className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all border-2 ${
-                        active
-                          ? "bg-green-600 text-white border-green-600"
-                          : "bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-200 hover:border-green-400 dark:hover:border-green-700"
-                      }`}
-                    >
+                        active ? "bg-green-600 text-white border-green-600"
+                        : "bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-200 hover:border-green-400 dark:hover:border-green-700"
+                      }`}>
                       {s.time}
                     </button>
                   );
@@ -789,8 +674,7 @@ function RHTechniqueFlow({ candidate, onBack, onClose }) {
           <div className="min-w-0">
             <p className="text-xs text-gray-500 dark:text-gray-400">Créneau sélectionné</p>
             <p className="text-sm font-bold text-gray-800 dark:text-white truncate">
-              {new Date(selected.date).toLocaleDateString("fr-FR", { weekday: "long", day: "numeric", month: "long" })} à{" "}
-              {selected.time}
+              {new Date(selected.date).toLocaleDateString("fr-FR", { weekday: "long", day: "numeric", month: "long" })} à {selected.time}
             </p>
           </div>
           <button onClick={() => setSelected(null)} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200">
@@ -801,11 +685,8 @@ function RHTechniqueFlow({ candidate, onBack, onClose }) {
 
       {error && <p className="text-xs text-red-500 mb-2">{error}</p>}
 
-      <button
-        onClick={handleSchedule}
-        disabled={!selected || saving}
-        className="w-full py-3 rounded-xl bg-green-600 hover:bg-green-700 text-white font-bold text-sm flex items-center justify-center gap-2 disabled:opacity-40 transition-colors"
-      >
+      <button onClick={handleSchedule} disabled={!selected || saving}
+        className="w-full py-3 rounded-xl bg-green-600 hover:bg-green-700 text-white font-bold text-sm flex items-center justify-center gap-2 disabled:opacity-40 transition-colors">
         {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
         {saving ? "Envoi..." : "Envoyer au Responsable pour confirmation"}
       </button>
@@ -826,7 +707,6 @@ function EntretienModal({ candidate, onClose, onRHScheduled }) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose} />
-
       <div className="relative bg-white dark:bg-gray-900 rounded-3xl shadow-2xl w-full max-w-md overflow-hidden border border-gray-100 dark:border-gray-800">
         <div className="px-6 py-5 bg-green-50/60 dark:bg-green-900/10 border-b border-gray-100 dark:border-gray-800">
           <div className="flex items-center justify-between gap-3">
@@ -834,11 +714,7 @@ function EntretienModal({ candidate, onClose, onRHScheduled }) {
               <h2 className="text-gray-900 dark:text-white font-extrabold text-lg truncate">Planifier un entretien</h2>
               <p className="text-gray-500 dark:text-gray-400 text-sm mt-0.5 truncate">{name}</p>
             </div>
-
-            <button
-              onClick={onClose}
-              className="w-9 h-9 rounded-full hover:bg-white/70 dark:hover:bg-gray-800 flex items-center justify-center transition-colors shrink-0"
-            >
+            <button onClick={onClose} className="w-9 h-9 rounded-full hover:bg-white/70 dark:hover:bg-gray-800 flex items-center justify-center transition-colors shrink-0">
               <X className="w-4.5 h-4.5 text-gray-600 dark:text-gray-300" />
             </button>
           </div>
@@ -847,20 +723,15 @@ function EntretienModal({ candidate, onClose, onRHScheduled }) {
         {step === "type" && (
           <div className="p-5 space-y-3">
             {types.map((t) => (
-              <button
-                key={t.id}
-                onClick={() => setStep(t.id)}
-                className="w-full flex items-center gap-4 p-4 rounded-2xl border border-gray-200 dark:border-gray-800 hover:border-green-300 dark:hover:border-green-700 hover:bg-green-50/60 dark:hover:bg-green-900/10 transition-all group text-left"
-              >
+              <button key={t.id} onClick={() => setStep(t.id)}
+                className="w-full flex items-center gap-4 p-4 rounded-2xl border border-gray-200 dark:border-gray-800 hover:border-green-300 dark:hover:border-green-700 hover:bg-green-50/60 dark:hover:bg-green-900/10 transition-all group text-left">
                 <div className="w-11 h-11 rounded-xl bg-green-600 flex items-center justify-center shadow-sm flex-shrink-0">
                   <t.icon className="w-5 h-5 text-white" />
                 </div>
-
                 <div className="flex-1 min-w-0">
                   <p className="font-extrabold text-gray-900 dark:text-white text-sm">{t.label}</p>
                   <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{t.desc}</p>
                 </div>
-
                 <ChevronRight className="w-4 h-4 text-gray-400 group-hover:text-green-600 transition-colors flex-shrink-0" />
               </button>
             ))}
@@ -868,40 +739,15 @@ function EntretienModal({ candidate, onClose, onRHScheduled }) {
         )}
 
         {step === "telephonique" && <TelephoniqueFlow candidate={candidate} onBack={() => setStep("type")} onClose={onClose} />}
-        {step === "rh" && (
-          <RHFlow
-            candidate={candidate}
-            onBack={() => setStep("type")}
-            onClose={onClose}
-            onScheduled={onRHScheduled}
-          />
-        )}
+        {step === "rh" && <RHFlow candidate={candidate} onBack={() => setStep("type")} onClose={onClose} onScheduled={onRHScheduled} />}
         {step === "rh_technique" && <RHTechniqueFlow candidate={candidate} onBack={() => setStep("type")} onClose={onClose} />}
       </div>
     </div>
   );
 }
 
-function NoteStars({ note }) {
-  const [stars, setStars] = useState(0);
-  return (
-    <div className="flex items-center gap-2 mb-4">
-      <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">Appréciation :</span>
-      <div className="flex gap-1">
-        {[1, 2, 3, 4, 5].map((s) => (
-          <button key={s} onClick={() => setStars(s)}>
-            <Star
-              className={`w-5 h-5 transition-colors ${s <= stars ? "text-yellow-400 fill-yellow-400" : "text-gray-300"}`}
-            />
-          </button>
-        ))}
-      </div>
-    </div>
-  );
-}
-
 /* ================================================================
-   TABLE ROW — un candidat = une ligne
+   TABLE ROW
 ================================================================ */
 function PreInterviewRow({ c }) {
   const [sentFiche, setSentFiche] = useState(() => wasSentFiche(c._id));
@@ -910,27 +756,20 @@ function PreInterviewRow({ c }) {
   const [showEntretienModal, setShowEntretienModal] = useState(false);
   const [rhInterview, setRhInterview] = useState(c?.latestRhInterview || null);
 
+  // ✅ Utilise les helpers unifiés
   const name = getName(c);
   const cvUrl = getCvUrl(c);
   const score = getMatchScore(c);
   const jobTitle = safeStr(c?.jobTitle) || "—";
-  const email = safeStr(c?.email);
+  const email = getEmail(c);
   const selectedAt = c?.preInterview?.selectedAt;
 
   const allSent = sentFiche && sentQuiz;
   const anySent = sentFiche || sentQuiz;
 
-  useEffect(() => {
-    if (sentFiche) markSentFiche(c._id);
-  }, [sentFiche, c._id]);
-
-  useEffect(() => {
-    if (sentQuiz) markSentQuiz(c._id);
-  }, [sentQuiz, c._id]);
-
-  useEffect(() => {
-    if (allSent) markSent(c._id);
-  }, [allSent, c._id]);
+  useEffect(() => { if (sentFiche) markSentFiche(c._id); }, [sentFiche, c._id]);
+  useEffect(() => { if (sentQuiz) markSentQuiz(c._id); }, [sentQuiz, c._id]);
+  useEffect(() => { if (allSent) markSent(c._id); }, [allSent, c._id]);
 
   function handleModalSuccess(justSentFiche, justSentQuiz) {
     if (justSentFiche) setSentFiche(true);
@@ -948,10 +787,8 @@ function PreInterviewRow({ c }) {
     const label = sentFiche ? "Envoyer Quiz" : sentQuiz ? "Envoyer Fiche" : "Envoyer Quiz";
     const color = anySent ? "bg-amber-500 hover:bg-amber-600" : "bg-[#6CB33F] hover:bg-[#5AA531]";
     sendBtn = (
-      <button
-        onClick={() => setShowSendModal(true)}
-        className={`inline-flex items-center gap-1.5 px-3 py-2 rounded-full ${color} text-white text-xs font-semibold transition-colors shadow-sm`}
-      >
+      <button onClick={() => setShowSendModal(true)}
+        className={`inline-flex items-center gap-1.5 px-3 py-2 rounded-full ${color} text-white text-xs font-semibold transition-colors shadow-sm`}>
         <Send className="w-3.5 h-3.5" />
         {label}
       </button>
@@ -998,12 +835,8 @@ function PreInterviewRow({ c }) {
 
         <td className="px-4 py-5 w-[120px]">
           {cvUrl ? (
-            <a
-              href={cvUrl}
-              target="_blank"
-              rel="noreferrer"
-              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-[#E8F2E1] dark:bg-gray-800 hover:bg-[#DDEDD2] dark:hover:bg-gray-700 text-[#4E8F2F] dark:text-green-300 text-xs font-bold transition-colors"
-            >
+            <a href={cvUrl} target="_blank" rel="noreferrer"
+              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-[#E8F2E1] dark:bg-gray-800 hover:bg-[#DDEDD2] dark:hover:bg-gray-700 text-[#4E8F2F] dark:text-green-300 text-xs font-bold transition-colors">
               <FileText className="w-3.5 h-3.5" />
               Voir CV
             </a>
@@ -1040,19 +873,13 @@ function PreInterviewRow({ c }) {
         <td className="px-4 py-5 pr-6 w-[300px]">
           <div className="flex items-center gap-2 flex-wrap">
             {sendBtn}
-
-            <button
-              onClick={() => setShowEntretienModal(true)}
-              className="inline-flex items-center gap-1.5 px-3 py-2 rounded-full bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold transition-colors shadow-sm"
-            >
+            <button onClick={() => setShowEntretienModal(true)}
+              className="inline-flex items-center gap-1.5 px-3 py-2 rounded-full bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold transition-colors shadow-sm">
               <Calendar className="w-3.5 h-3.5" />
               Planifier
             </button>
-
-            <Link
-              href={`/recruiter/PreInterviewList/${c._id}/results`}
-              className="inline-flex items-center gap-1.5 px-3 py-2 rounded-full bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-200 text-xs font-semibold transition-colors"
-            >
+            <Link href={`/recruiter/PreInterviewList/${c._id}/results`}
+              className="inline-flex items-center gap-1.5 px-3 py-2 rounded-full bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-200 text-xs font-semibold transition-colors">
               <BarChart2 className="w-3.5 h-3.5" />
               Résultats
             </Link>
@@ -1060,41 +887,27 @@ function PreInterviewRow({ c }) {
         </td>
       </tr>
 
-      {showSendModal &&
-        createPortal(
-          <SendDocumentsModal
-            candidature={c}
-            onClose={() => setShowSendModal(false)}
-            onSuccess={handleModalSuccess}
-            initialSentFiche={sentFiche}
-            initialSentQuiz={sentQuiz}
-          />,
-          document.body
-        )}
-      {showEntretienModal &&
-        createPortal(
-          <EntretienModal
-            candidate={c}
-            onClose={() => setShowEntretienModal(false)}
-            onRHScheduled={(iv) => {
-              setRhInterview(iv);
-              setShowEntretienModal(false);
-            }}
-          />,
-          document.body
-        )}
+      {showSendModal && createPortal(
+        <SendDocumentsModal candidature={c} onClose={() => setShowSendModal(false)} onSuccess={handleModalSuccess}
+          initialSentFiche={sentFiche} initialSentQuiz={sentQuiz} />,
+        document.body
+      )}
+      {showEntretienModal && createPortal(
+        <EntretienModal candidate={c} onClose={() => setShowEntretienModal(false)}
+          onRHScheduled={(iv) => { setRhInterview(iv); setShowEntretienModal(false); }} />,
+        document.body
+      )}
     </>
   );
 }
 
 /* ================================================================
-   PAGE PRINCIPALE — TABLEAU
+   PAGE PRINCIPALE
 ================================================================ */
 export default function PreInterviewListPage() {
   const [candidates, setCandidates] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
-
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 5;
 
@@ -1119,22 +932,19 @@ export default function PreInterviewListPage() {
     if (!q) return candidates;
     return candidates.filter((c) => {
       const n = getName(c).toLowerCase();
-      const e = safeStr(c?.email).toLowerCase();
+      const e = getEmail(c).toLowerCase();
       const j = safeStr(c?.jobTitle).toLowerCase();
       return n.includes(q) || e.includes(q) || j.includes(q);
     });
   }, [candidates, search]);
 
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [search]);
+  useEffect(() => { setCurrentPage(1); }, [search]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / itemsPerPage));
 
   const paginatedCandidates = useMemo(() => {
     const start = (currentPage - 1) * itemsPerPage;
-    const end = start + itemsPerPage;
-    return filtered.slice(start, end);
+    return filtered.slice(start, start + itemsPerPage);
   }, [filtered, currentPage]);
 
   if (loading)
@@ -1157,12 +967,9 @@ export default function PreInterviewListPage() {
         <div className="mb-7">
           <div className="w-full rounded-[28px] bg-white dark:bg-gray-900 border border-[#DDE7D6] dark:border-gray-800 shadow-[0_2px_8px_rgba(15,23,42,0.05)] px-6 py-4 flex items-center gap-4">
             <Search className="w-6 h-6 text-[#5C9E35] dark:text-emerald-400 flex-shrink-0" />
-            <input
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
+            <input value={search} onChange={(e) => setSearch(e.target.value)}
               placeholder="Rechercher (nom, email, poste)..."
-              className="w-full bg-transparent outline-none text-[16px] text-[#667085] dark:text-gray-300 placeholder:text-[#667085] dark:placeholder:text-gray-400"
-            />
+              className="w-full bg-transparent outline-none text-[16px] text-[#667085] dark:text-gray-300 placeholder:text-[#667085] dark:placeholder:text-gray-400" />
           </div>
         </div>
 
@@ -1177,27 +984,11 @@ export default function PreInterviewListPage() {
               <table className="w-full border-collapse min-w-[1200px]">
                 <thead>
                   <tr className="bg-[#EAF4E4] dark:bg-green-900/20">
-                    <th className="px-4 py-6 text-left text-[13px] font-extrabold text-[#4F8F2F] dark:text-[#6CB33F] uppercase tracking-[0.08em]">
-                      Candidat
-                    </th>
-                    <th className="px-4 py-6 text-left text-[13px] font-extrabold text-[#4F8F2F] dark:text-[#6CB33F] uppercase tracking-[0.08em]">
-                      Poste
-                    </th>
-                    <th className="px-4 py-6 text-left text-[13px] font-extrabold text-[#4F8F2F] dark:text-[#6CB33F] uppercase tracking-[0.08em]">
-                      CV
-                    </th>
-                    <th className="px-4 py-6 text-left text-[13px] font-extrabold text-[#4F8F2F] dark:text-[#6CB33F] uppercase tracking-[0.08em]">
-                      Score
-                    </th>
-                    <th className="px-4 py-6 text-left text-[13px] font-extrabold text-[#4F8F2F] dark:text-[#6CB33F] uppercase tracking-[0.08em]">
-                      Sélectionné le
-                    </th>
-                    <th className="px-4 py-6 text-left text-[13px] font-extrabold text-[#4F8F2F] dark:text-[#6CB33F] uppercase tracking-[0.08em]">
-                      Documents
-                    </th>
-                    <th className="px-4 py-6 pr-6 text-left text-[13px] font-extrabold text-[#4F8F2F] dark:text-[#6CB33F] uppercase tracking-[0.08em]">
-                      Actions
-                    </th>
+                    {["Candidat", "Poste", "CV", "Score", "Sélectionné le", "Documents", "Actions"].map((h) => (
+                      <th key={h} className="px-4 py-6 text-left text-[13px] font-extrabold text-[#4F8F2F] dark:text-[#6CB33F] uppercase tracking-[0.08em]">
+                        {h}
+                      </th>
+                    ))}
                   </tr>
                 </thead>
                 <tbody>
@@ -1214,13 +1005,8 @@ export default function PreInterviewListPage() {
                   {filtered.length} candidat{filtered.length > 1 ? "s" : ""} affiché{filtered.length > 1 ? "s" : ""}
                   {search && ` · filtre : "${search}"`}
                 </p>
-
                 {totalPages > 1 && (
-                  <Pagination
-                    currentPage={currentPage}
-                    totalPages={totalPages}
-                    onPageChange={setCurrentPage}
-                  />
+                  <Pagination currentPage={currentPage} totalPages={totalPages} onPageChange={setCurrentPage} />
                 )}
               </div>
             </div>
