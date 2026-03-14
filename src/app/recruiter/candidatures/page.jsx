@@ -16,9 +16,6 @@ import {
   Briefcase,
   GraduationCap,
   Users,
-  CheckCircle2,
-  XCircle,
-  Clock,
 } from "lucide-react";
 
 /* ================= CONFIG ================= */
@@ -40,40 +37,57 @@ function safeStr(v) {
   return String(v);
 }
 
+/**
+ * ✅ Toutes les données sont dans extracted.parsed (structure unique)
+ * Le backend résout déjà fullName / email / telephone / linkedin
+ * dans les agrégats MongoDB et les retourne à la racine du document.
+ * Ces helpers lisent d'abord les champs résolus par le backend,
+ * puis tombent sur extracted.parsed en fallback.
+ */
+function getParsed(c) {
+  return c?.extracted?.parsed || {};
+}
+
 function getFullName(c) {
-  const extracted = c?.extracted || {};
-  const parsed = c?.parsed || {};
+  const p = getParsed(c);
   return (
     safeStr(c?.fullName) ||
-    `${safeStr(c?.prenom)} ${safeStr(c?.nom)}`.trim() ||
-    safeStr(extracted?.manual?.nom) ||
-    safeStr(parsed?.manual?.nom) ||
+    safeStr(c?.prenom && c?.nom ? `${c.prenom} ${c.nom}`.trim() : "") ||
+    safeStr(p?.nom) ||
+    safeStr(p?.full_name) ||
+    safeStr(p?.personal_info?.full_name) ||
     "Candidat"
   );
 }
 
 function getEmail(c) {
+  const p = getParsed(c);
   return (
     safeStr(c?.email) ||
-    safeStr(c?.extracted?.manual?.email) ||
-    safeStr(c?.parsed?.manual?.email) ||
+    safeStr(p?.email) ||
+    safeStr(p?.personal_info?.email) ||
     ""
   );
 }
 
 function getPhone(c) {
+  const p = getParsed(c);
   return (
     safeStr(c?.telephone) ||
-    safeStr(c?.personalInfoForm?.telephone) ||
-    safeStr(c?.extracted?.parsed?.telephone) ||
+    safeStr(p?.telephone) ||
+    safeStr(p?.personal_info?.telephone) ||
+    safeStr(p?.personal_info?.phone) ||
     ""
   );
 }
 
 function getLinkedIn(c) {
+  const p = getParsed(c);
   const url =
-    safeStr(c?.personalInfoForm?.linkedin) ||
-    safeStr(c?.extracted?.parsed?.reseaux_sociaux?.linkedin);
+    safeStr(c?.linkedin) ||
+    safeStr(p?.reseaux_sociaux?.linkedin) ||
+    safeStr(p?.personal_info?.linkedin) ||
+    "";
   if (!url) return "";
   return url.startsWith("http") ? url : `https://${url}`;
 }
@@ -175,7 +189,6 @@ export default function CandidaturesUnifiedPage() {
     [candidaturesOffres, candidaturesSpontanees]
   );
 
-  // Counts per tab
   const counts = useMemo(
     () => ({
       TOUS: allCandidatures.length,
@@ -254,10 +267,8 @@ export default function CandidaturesUnifiedPage() {
               >
                 <Icon size={15} />
                 {label}
-                <span
-                  className={`inline-flex items-center justify-center w-5 h-5 rounded-full text-xs font-bold
-                    ${active ? "bg-white/25 text-white" : "bg-[#E9F5E3] dark:bg-gray-700 text-[#4E8F2F] dark:text-emerald-400"}`}
-                >
+                <span className={`inline-flex items-center justify-center w-5 h-5 rounded-full text-xs font-bold
+                  ${active ? "bg-white/25 text-white" : "bg-[#E9F5E3] dark:bg-gray-700 text-[#4E8F2F] dark:text-emerald-400"}`}>
                   {counts[key]}
                 </span>
               </button>
@@ -289,10 +300,8 @@ export default function CandidaturesUnifiedPage() {
                 {q ? `Aucun résultat pour "${q}".` : "Aucune candidature dans cette catégorie."}
               </p>
               {q && (
-                <button
-                  onClick={() => setQ("")}
-                  className="px-6 py-2 bg-[#6CB33F] hover:bg-[#4E8F2F] text-white rounded-full font-semibold transition-colors"
-                >
+                <button onClick={() => setQ("")}
+                  className="px-6 py-2 bg-[#6CB33F] hover:bg-[#4E8F2F] text-white rounded-full font-semibold transition-colors">
                   Effacer la recherche
                 </button>
               )}
@@ -304,14 +313,9 @@ export default function CandidaturesUnifiedPage() {
         {!loading && filtered.length > 0 && (
           <div className="md:hidden space-y-4">
             {paginated.map((c) => (
-              <div
-                key={c._id}
-                className="bg-white dark:bg-gray-800 rounded-3xl shadow border border-[#E9F5E3] dark:border-gray-700 p-5"
-              >
+              <div key={c._id} className="bg-white dark:bg-gray-800 rounded-3xl shadow border border-[#E9F5E3] dark:border-gray-700 p-5">
                 <div className="flex items-start justify-between gap-3 mb-3">
-                  <div className="font-extrabold text-gray-900 dark:text-white text-lg">
-                    {getFullName(c)}
-                  </div>
+                  <div className="font-extrabold text-gray-900 dark:text-white text-lg">{getFullName(c)}</div>
                   {c.status && <StatusBadge status={c.status} />}
                 </div>
 
@@ -327,8 +331,7 @@ export default function CandidaturesUnifiedPage() {
                 )}
                 {getLinkedIn(c) && (
                   <a href={getLinkedIn(c)} target="_blank" rel="noopener noreferrer"
-                    className="text-sm text-[#4E8F2F] dark:text-emerald-400 underline flex items-center gap-1 mb-2"
-                  >
+                    className="text-sm text-[#4E8F2F] dark:text-emerald-400 underline flex items-center gap-1 mb-2">
                     <Linkedin size={14} className="flex-shrink-0" /> Profil LinkedIn
                   </a>
                 )}
@@ -338,12 +341,11 @@ export default function CandidaturesUnifiedPage() {
                     {getPoste(c)}
                   </span>
                   {showSource && (
-                    <span className={`text-xs font-medium px-2 py-1 rounded-full ${c._source === "OFFRES"
-                        ? "bg-blue-50 text-blue-600 dark:bg-blue-900/20 dark:text-blue-300"
-                        : c._source === "STAGE"
-                          ? "bg-purple-50 text-purple-600 dark:bg-purple-900/20 dark:text-purple-300"
-                          : "bg-gray-100 text-gray-500 dark:bg-gray-700 dark:text-gray-400"
-                      }`}>
+                    <span className={`text-xs font-medium px-2 py-1 rounded-full ${
+                      c._source === "OFFRES" ? "bg-blue-50 text-blue-600 dark:bg-blue-900/20 dark:text-blue-300"
+                      : c._source === "STAGE" ? "bg-purple-50 text-purple-600 dark:bg-purple-900/20 dark:text-purple-300"
+                      : "bg-gray-100 text-gray-500 dark:bg-gray-700 dark:text-gray-400"
+                    }`}>
                       {c._source === "OFFRES" ? "Offre" : c._source === "STAGE" ? "Stage" : "Spontanée"}
                     </span>
                   )}
@@ -356,16 +358,13 @@ export default function CandidaturesUnifiedPage() {
                   <div className="flex items-center gap-2">
                     {getCvUrl(c) && (
                       <a href={getCvUrl(c)} target="_blank" rel="noopener noreferrer"
-                        className="inline-flex items-center gap-1 bg-[#E9F5E3] dark:bg-gray-700 border border-[#d7ebcf] dark:border-gray-600 text-[#4E8F2F] dark:text-emerald-400 font-bold px-3 py-1.5 rounded-full text-xs hover:bg-[#d7ebcf] transition-colors"
-                      >
+                        className="inline-flex items-center gap-1 bg-[#E9F5E3] dark:bg-gray-700 border border-[#d7ebcf] dark:border-gray-600 text-[#4E8F2F] dark:text-emerald-400 font-bold px-3 py-1.5 rounded-full text-xs hover:bg-[#d7ebcf] transition-colors">
                         Voir CV
                       </a>
                     )}
                     {c._source !== "OFFRES" && (
-                      <button
-                        onClick={() => router.push(`/recruiter/candidatures/${c._id}`)}
-                        className="h-8 w-8 flex items-center justify-center rounded-full bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
-                      >
+                      <button onClick={() => router.push(`/recruiter/candidatures/${c._id}`)}
+                        className="h-8 w-8 flex items-center justify-center rounded-full bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors">
                         <Eye size={14} className="text-gray-600 dark:text-gray-300" />
                       </button>
                     )}
@@ -405,25 +404,29 @@ export default function CandidaturesUnifiedPage() {
                 </thead>
                 <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
                   {paginated.map((c) => (
-                    <tr
-                      key={c._id}
-                      className="hover:bg-green-50/40 dark:hover:bg-gray-700/40 transition-colors"
-                    >
+                    <tr key={c._id} className="hover:bg-green-50/40 dark:hover:bg-gray-700/40 transition-colors">
+
+                      {/* NOM */}
                       <td className="px-6 py-5 font-extrabold text-gray-900 dark:text-white whitespace-nowrap">
                         {getFullName(c)}
                       </td>
+
+                      {/* EMAIL */}
                       <td className="px-6 py-5 text-gray-600 dark:text-gray-300">
                         {getEmail(c) || "—"}
                       </td>
+
+                      {/* TÉLÉPHONE */}
                       <td className="px-6 py-5 text-gray-600 dark:text-gray-300 whitespace-nowrap">
                         {getPhone(c) || "—"}
                       </td>
+
+                      {/* LINKEDIN */}
                       {showLinkedIn && (
                         <td className="px-6 py-5">
                           {getLinkedIn(c) ? (
                             <a href={getLinkedIn(c)} target="_blank" rel="noopener noreferrer"
-                              className="text-[#4E8F2F] dark:text-emerald-400 underline hover:text-[#3a6b23] transition-colors"
-                            >
+                              className="text-[#4E8F2F] dark:text-emerald-400 underline hover:text-[#3a6b23] transition-colors">
                               Profil
                             </a>
                           ) : (
@@ -431,50 +434,60 @@ export default function CandidaturesUnifiedPage() {
                           )}
                         </td>
                       )}
+
+                      {/* POSTE */}
                       <td className="px-6 py-5">
                         <span className="inline-flex items-center px-3 py-1 rounded-full bg-[#E9F5E3] dark:bg-gray-700 text-[#4E8F2F] dark:text-emerald-400 text-xs font-semibold border border-[#d7ebcf] dark:border-gray-600 max-w-[180px] truncate">
                           {getPoste(c)}
                         </span>
                       </td>
+
+                      {/* TYPE */}
                       {showSource && (
                         <td className="px-6 py-5">
-                          <span className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold ${c._source === "OFFRES"
-                              ? "bg-blue-50 text-blue-600 dark:bg-blue-900/20 dark:text-blue-300"
-                              : c._source === "STAGE"
-                                ? "bg-purple-50 text-purple-600 dark:bg-purple-900/20 dark:text-purple-300"
-                                : "bg-gray-100 text-gray-500 dark:bg-gray-700 dark:text-gray-400"
-                            }`}>
-                            {c._source === "OFFRES" ? <><Briefcase size={11} /> Offre</> : c._source === "STAGE" ? <><GraduationCap size={11} /> Stage</> : "Spontanée"}
+                          <span className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold ${
+                            c._source === "OFFRES" ? "bg-blue-50 text-blue-600 dark:bg-blue-900/20 dark:text-blue-300"
+                            : c._source === "STAGE" ? "bg-purple-50 text-purple-600 dark:bg-purple-900/20 dark:text-purple-300"
+                            : "bg-gray-100 text-gray-500 dark:bg-gray-700 dark:text-gray-400"
+                          }`}>
+                            {c._source === "OFFRES" ? <><Briefcase size={11} /> Offre</>
+                             : c._source === "STAGE" ? <><GraduationCap size={11} /> Stage</>
+                             : "Spontanée"}
                           </span>
                         </td>
                       )}
+
+                      {/* STATUT */}
                       {showStatus && (
                         <td className="px-6 py-5">
                           {c.status ? <StatusBadge status={c.status} /> : <span className="text-gray-400">—</span>}
                         </td>
                       )}
+
+                      {/* DATE */}
                       <td className="px-6 py-5 text-gray-500 dark:text-gray-400 whitespace-nowrap">
                         {formatDate(c?.createdAt)}
                       </td>
+
+                      {/* CV */}
                       <td className="px-6 py-5 text-center">
                         {getCvUrl(c) ? (
                           <a href={getCvUrl(c)} target="_blank" rel="noopener noreferrer"
-                            className="inline-flex items-center gap-1.5 bg-[#E9F5E3] dark:bg-gray-700 border border-[#d7ebcf] dark:border-gray-600 text-[#4E8F2F] dark:text-emerald-400 font-bold px-4 py-2 rounded-full text-xs hover:bg-[#d7ebcf] dark:hover:bg-gray-600 transition-colors whitespace-nowrap"
-                          >
+                            className="inline-flex items-center gap-1.5 bg-[#E9F5E3] dark:bg-gray-700 border border-[#d7ebcf] dark:border-gray-600 text-[#4E8F2F] dark:text-emerald-400 font-bold px-4 py-2 rounded-full text-xs hover:bg-[#d7ebcf] dark:hover:bg-gray-600 transition-colors whitespace-nowrap">
                             Voir CV
                           </a>
                         ) : (
                           <span className="text-gray-400">—</span>
                         )}
                       </td>
+
+                      {/* ACTION */}
                       {showAction && (
                         <td className="px-6 py-5 text-center">
                           {c._source !== "OFFRES" ? (
-                            <button
-                              onClick={() => router.push(`/recruiter/candidatures/${c._id}`)}
+                            <button onClick={() => router.push(`/recruiter/candidatures/${c._id}`)}
                               className="h-9 w-9 inline-flex items-center justify-center rounded-full bg-gray-100 dark:bg-gray-700 hover:bg-[#E9F5E3] dark:hover:bg-gray-600 text-gray-500 dark:text-gray-400 hover:text-[#4E8F2F] transition-colors"
-                              title="Voir le détail"
-                            >
+                              title="Voir le détail">
                               <Eye size={15} />
                             </button>
                           ) : (
@@ -496,11 +509,7 @@ export default function CandidaturesUnifiedPage() {
             <p className="font-medium">
               Total : {filtered.length} candidature{filtered.length > 1 ? "s" : ""}
             </p>
-            <Pagination
-              currentPage={page}
-              totalPages={totalPages}
-              onPageChange={setPage}
-            />
+            <Pagination currentPage={page} totalPages={totalPages} onPageChange={setPage} />
           </div>
         )}
 

@@ -31,11 +31,28 @@ import {
 // ── Mini Calendar Picker (standalone, no deps) ──────────────────────────────
 function MiniCalendarPicker({ selectedDate, onSelect }) {
   const today = new Date();
-  const [viewYear, setViewYear] = useState(selectedDate ? new Date(selectedDate).getFullYear() : today.getFullYear());
-  const [viewMonth, setViewMonth] = useState(selectedDate ? new Date(selectedDate).getMonth() : today.getMonth());
+  const [viewYear, setViewYear] = useState(
+    selectedDate ? new Date(selectedDate).getFullYear() : today.getFullYear(),
+  );
+  const [viewMonth, setViewMonth] = useState(
+    selectedDate ? new Date(selectedDate).getMonth() : today.getMonth(),
+  );
 
-  const MONTHS_FR = ["Janvier","Février","Mars","Avril","Mai","Juin","Juillet","Août","Septembre","Octobre","Novembre","Décembre"];
-  const DAYS_FR = ["Lu","Ma","Me","Je","Ve","Sa","Di"];
+  const MONTHS_FR = [
+    "Janvier",
+    "Février",
+    "Mars",
+    "Avril",
+    "Mai",
+    "Juin",
+    "Juillet",
+    "Août",
+    "Septembre",
+    "Octobre",
+    "Novembre",
+    "Décembre",
+  ];
+  const DAYS_FR = ["Lu", "Ma", "Me", "Je", "Ve", "Sa", "Di"];
 
   const firstDay = new Date(viewYear, viewMonth, 1);
   // Monday-based: getDay() returns 0=Sun,1=Mon...6=Sat → convert to 0=Mon..6=Sun
@@ -43,15 +60,19 @@ function MiniCalendarPicker({ selectedDate, onSelect }) {
   const daysInMonth = new Date(viewYear, viewMonth + 1, 0).getDate();
 
   const selStr = selectedDate || "";
-  const todayStr2 = `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,"0")}-${String(today.getDate()).padStart(2,"0")}`;
+  const todayStr2 = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
 
   const prevMonth = () => {
-    if (viewMonth === 0) { setViewMonth(11); setViewYear(y => y-1); }
-    else setViewMonth(m => m-1);
+    if (viewMonth === 0) {
+      setViewMonth(11);
+      setViewYear((y) => y - 1);
+    } else setViewMonth((m) => m - 1);
   };
   const nextMonth = () => {
-    if (viewMonth === 11) { setViewMonth(0); setViewYear(y => y+1); }
-    else setViewMonth(m => m+1);
+    if (viewMonth === 11) {
+      setViewMonth(0);
+      setViewYear((y) => y + 1);
+    } else setViewMonth((m) => m + 1);
   };
 
   const cells = [];
@@ -60,30 +81,62 @@ function MiniCalendarPicker({ selectedDate, onSelect }) {
 
   return (
     <div className="rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 overflow-hidden shadow-sm">
-      {/* Header nav */}
       <div className="flex items-center justify-between px-4 py-3 bg-[#6CB33F]">
-        <button onClick={prevMonth} className="w-7 h-7 rounded-full bg-white/20 hover:bg-white/30 flex items-center justify-center text-white transition-colors">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="15 18 9 12 15 6"/></svg>
+        <button
+          onClick={prevMonth}
+          className="w-7 h-7 rounded-full bg-white/20 hover:bg-white/30 flex items-center justify-center text-white transition-colors"
+        >
+          <svg
+            width="14"
+            height="14"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2.5"
+          >
+            <polyline points="15 18 9 12 15 6" />
+          </svg>
         </button>
-        <span className="text-white font-bold text-sm">{MONTHS_FR[viewMonth]} {viewYear}</span>
-        <button onClick={nextMonth} className="w-7 h-7 rounded-full bg-white/20 hover:bg-white/30 flex items-center justify-center text-white transition-colors">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+        <span className="text-white font-bold text-sm">
+          {MONTHS_FR[viewMonth]} {viewYear}
+        </span>
+        <button
+          onClick={nextMonth}
+          className="w-7 h-7 rounded-full bg-white/20 hover:bg-white/30 flex items-center justify-center text-white transition-colors"
+        >
+          <svg
+            width="14"
+            height="14"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2.5"
+          >
+            <polyline points="9 18 15 12 9 6" />
+          </svg>
         </button>
       </div>
-      {/* Day headers */}
+
       <div className="grid grid-cols-7 border-b border-gray-100 dark:border-gray-800">
-        {DAYS_FR.map(d => (
-          <div key={d} className="text-center text-[10px] font-bold text-gray-400 dark:text-gray-500 py-2">{d}</div>
+        {DAYS_FR.map((d) => (
+          <div
+            key={d}
+            className="text-center text-[10px] font-bold text-gray-400 dark:text-gray-500 py-2"
+          >
+            {d}
+          </div>
         ))}
       </div>
-      {/* Grid */}
+
       <div className="grid grid-cols-7 p-2 gap-0.5">
         {cells.map((day, i) => {
           if (!day) return <div key={`e-${i}`} />;
-          const dateStr = `${viewYear}-${String(viewMonth+1).padStart(2,"0")}-${String(day).padStart(2,"0")}`;
+
+          const dateStr = `${viewYear}-${String(viewMonth + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
           const isToday = dateStr === todayStr2;
           const isSelected = dateStr === selStr;
           const isPast = new Date(dateStr) < new Date(todayStr2);
+
           return (
             <button
               key={dateStr}
@@ -91,10 +144,15 @@ function MiniCalendarPicker({ selectedDate, onSelect }) {
               onClick={() => onSelect(dateStr)}
               className={`
                 w-full aspect-square rounded-xl text-xs font-semibold transition-all
-                ${isSelected ? "bg-[#6CB33F] text-white shadow-sm" :
-                  isToday ? "bg-[#E9F5E3] dark:bg-emerald-900/30 text-[#4E8F2F] dark:text-emerald-400 ring-1 ring-[#6CB33F]/40" :
-                  isPast ? "text-gray-300 dark:text-gray-700 cursor-not-allowed" :
-                  "text-gray-700 dark:text-gray-300 hover:bg-[#F1FAF4] dark:hover:bg-emerald-950/20 hover:text-[#4E8F2F]"}
+                ${
+                  isSelected
+                    ? "bg-[#6CB33F] text-white shadow-sm"
+                    : isToday
+                      ? "bg-[#E9F5E3] dark:bg-emerald-900/30 text-[#4E8F2F] dark:text-emerald-400 ring-1 ring-[#6CB33F]/40"
+                      : isPast
+                        ? "text-gray-300 dark:text-gray-700 cursor-not-allowed"
+                        : "text-gray-700 dark:text-gray-300 hover:bg-[#F1FAF4] dark:hover:bg-emerald-950/20 hover:text-[#4E8F2F]"
+                }
               `}
             >
               {day}
@@ -113,13 +171,11 @@ function DgaScheduleModal({ interview, onSuccess }) {
   const [error, setError] = useState("");
   const [showCalendar, setShowCalendar] = useState(false);
 
-  // ── Liste des users DGA chargée depuis l'API ──
   const [dgaUsers, setDgaUsers] = useState([]);
   const [dgaUsersLoading, setDgaUsersLoading] = useState(false);
   const [selectedDgaId, setSelectedDgaId] = useState("");
 
   const hasDga = !!interview?.dgaInterview;
-  const todayStr = () => new Date().toISOString().split("T")[0];
 
   const [form, setForm] = useState({
     dgaDate: new Date().toISOString().split("T")[0],
@@ -130,18 +186,21 @@ function DgaScheduleModal({ interview, onSuccess }) {
     notes: "",
   });
 
-  const setF = (field) => (e) =>
-    setForm((prev) => ({ ...prev, [field]: e.target.value }));
+  const setF =
+    (field) =>
+    (e) =>
+      setForm((prev) => ({ ...prev, [field]: e.target.value }));
 
-  // ── Charger les users avec rôle DGA ────────────────────────────
   const loadDgaUsers = async () => {
     setDgaUsersLoading(true);
     try {
       const token =
-        (typeof localStorage !== "undefined" && localStorage.getItem("token")) ||
-        (typeof sessionStorage !== "undefined" && sessionStorage.getItem("token")) || "";
+        (typeof localStorage !== "undefined" &&
+          localStorage.getItem("token")) ||
+        (typeof sessionStorage !== "undefined" &&
+          sessionStorage.getItem("token")) ||
+        "";
 
-      // ── Essaie d'abord avec le filtre ?role=DGA ──
       const res = await fetch(`${API_BASE}/users?role=DGA`, {
         headers: {
           "Content-Type": "application/json",
@@ -150,20 +209,19 @@ function DgaScheduleModal({ interview, onSuccess }) {
       });
 
       if (!res.ok) {
-        // Route non disponible → mode saisie manuelle silencieux
-        console.warn(`[DGA] GET /users?role=DGA → ${res.status}, passage en saisie manuelle`);
+        console.warn(
+          `[DGA] GET /users?role=DGA → ${res.status}, passage en saisie manuelle`,
+        );
         setDgaUsers([]);
         return;
       }
 
       const data = await res.json();
-      // Supporte { users: [...] } ou { data: [...] } ou tableau direct
       const raw = data.users || data.data || data || [];
       const list = Array.isArray(raw) ? raw : [];
 
-      // Filtre côté client en double sécurité (insensible à la casse)
       const dgas = list.filter((u) =>
-        String(u.role || "").toUpperCase().includes("DGA")
+        String(u.role || "").toUpperCase().includes("DGA"),
       );
 
       setDgaUsers(dgas);
@@ -180,10 +238,13 @@ function DgaScheduleModal({ interview, onSuccess }) {
     setError("");
     setSuccess(false);
     setSelectedDgaId("");
+
     if (interview?.dgaInterview) {
       const dga = interview.dgaInterview;
       setForm({
-        dgaDate: dga.date ? new Date(dga.date).toISOString().split("T")[0] : new Date().toISOString().split("T")[0],
+        dgaDate: dga.date
+          ? new Date(dga.date).toISOString().split("T")[0]
+          : new Date().toISOString().split("T")[0],
         dgaTime: dga.time || "10:00",
         dgaEmail: dga.dgaEmail || "",
         dgaName: dga.dgaName || "",
@@ -200,22 +261,29 @@ function DgaScheduleModal({ interview, onSuccess }) {
         notes: "",
       });
     }
+
     setShowCalendar(false);
     setOpen(true);
     loadDgaUsers();
   };
 
-  // ── Quand on sélectionne un DGA dans la liste ──────────────────
   const handleSelectDga = (e) => {
     const id = e.target.value;
     setSelectedDgaId(id);
+
     if (!id) {
       setForm((prev) => ({ ...prev, dgaEmail: "", dgaName: "" }));
       return;
     }
+
     const user = dgaUsers.find((u) => String(u._id) === id);
     if (user) {
-      const fullName = [user.prenom, user.nom].filter(Boolean).join(" ") || user.name || user.email || "";
+      const fullName =
+        [user.prenom, user.nom].filter(Boolean).join(" ") ||
+        user.name ||
+        user.email ||
+        "";
+
       setForm((prev) => ({
         ...prev,
         dgaEmail: user.email || "",
@@ -227,29 +295,41 @@ function DgaScheduleModal({ interview, onSuccess }) {
   const handleSubmit = async (e) => {
     e.stopPropagation();
     setError("");
+
     if (!form.dgaDate || !form.dgaTime) {
       setError("La date et l'heure sont obligatoires.");
       return;
     }
+
     if (!form.dgaEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.dgaEmail)) {
       setError("Veuillez sélectionner un DGA ou saisir un email valide.");
       return;
     }
+
     setLoading(true);
     try {
       const token =
-        (typeof localStorage !== "undefined" && localStorage.getItem("token")) ||
-        (typeof sessionStorage !== "undefined" && sessionStorage.getItem("token")) || "";
-      const res = await fetch(`${API_BASE}/api/interviews/${interview._id}/schedule-dga`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        (typeof localStorage !== "undefined" &&
+          localStorage.getItem("token")) ||
+        (typeof sessionStorage !== "undefined" &&
+          sessionStorage.getItem("token")) ||
+        "";
+
+      const res = await fetch(
+        `${API_BASE}/api/interviews/${interview._id}/schedule-dga`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          },
+          body: JSON.stringify(form),
         },
-        body: JSON.stringify(form),
-      });
+      );
+
       const data = await res.json();
       if (!res.ok || !data.success) throw new Error(data.message || "Erreur.");
+
       setSuccess(true);
       setTimeout(() => {
         setOpen(false);
@@ -263,15 +343,14 @@ function DgaScheduleModal({ interview, onSuccess }) {
     }
   };
 
-  // Redirige vers /recruiter/calendar avec les paramètres DGA
   const handleOpenCalendar = (e) => {
     e.stopPropagation();
     const params = new URLSearchParams({
-      type:           "entretien_dga",
-      candidateName:  interview?.candidateName  || "",
+      type: "entretien_dga",
+      candidateName: interview?.candidateName || "",
       candidateEmail: interview?.candidateEmail || "",
-      jobTitle:       interview?.jobTitle       || "",
-      interviewId:    String(interview?._id     || ""),
+      jobTitle: interview?.jobTitle || "",
+      interviewId: String(interview?._id || ""),
     });
     window.location.href = `/recruiter/calendar?${params.toString()}`;
   };
@@ -298,228 +377,298 @@ function DgaScheduleModal({ interview, onSuccess }) {
 
       {open && (
         <div
-          className="fixed inset-0 z-[200] flex items-center justify-center p-4"
-          onClick={(e) => { e.stopPropagation(); if (!loading) setOpen(false); }}
+          className="fixed inset-0 z-[200] flex items-center justify-center p-3 sm:p-4"
+          onClick={(e) => {
+            e.stopPropagation();
+            if (!loading) setOpen(false);
+          }}
         >
           <div className="absolute inset-0 bg-black/50 backdrop-blur-[2px]" />
+
           <div
-            className="relative w-full max-w-md rounded-3xl bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-700 shadow-2xl overflow-hidden"
+            className="relative w-full max-w-5xl max-h-[92vh] rounded-3xl bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-700 shadow-2xl overflow-hidden flex flex-col"
             onClick={(e) => e.stopPropagation()}
           >
-            {/* Header */}
-            <div className="bg-gradient-to-r from-[#6CB33F] to-[#4E8F2F] px-6 py-5 flex items-center justify-between">
-              <div>
-                <h2 className="text-lg font-extrabold text-white">
-                  {hasDga ? "Modifier l'entretien DGA" : "Planifier l'entretien DGA"}
+            <div className="bg-gradient-to-r from-[#6CB33F] to-[#4E8F2F] px-5 sm:px-6 py-4 sm:py-5 flex items-start justify-between gap-4">
+              <div className="min-w-0">
+                <h2 className="text-lg sm:text-xl font-extrabold text-white">
+                  {hasDga
+                    ? "Modifier l'entretien DGA"
+                    : "Planifier l'entretien DGA"}
                 </h2>
-                <p className="text-xs text-white/75 mt-0.5">
+                <p className="text-xs sm:text-sm text-white/80 mt-1 truncate">
                   {interview?.candidateName} · {interview?.jobTitle || "Poste"}
                 </p>
               </div>
+
               <button
-                onClick={(e) => { e.stopPropagation(); if (!loading) setOpen(false); }}
-                className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center text-white hover:bg-white/30 transition-colors"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  if (!loading) setOpen(false);
+                }}
+                className="w-9 h-9 rounded-full bg-white/20 flex items-center justify-center text-white hover:bg-white/30 transition-colors flex-shrink-0"
               >
                 <X className="w-4 h-4" />
               </button>
             </div>
 
-            {/* Info band */}
-            <div className="bg-[#F1FAF4] dark:bg-emerald-950/20 border-b border-gray-100 dark:border-gray-700 px-6 py-2.5 flex items-center gap-2 text-xs text-[#388E3C] dark:text-emerald-400 font-medium">
-              <FileText className="w-3.5 h-3.5 flex-shrink-0" />
-              Un email informatif sera envoyé automatiquement au candidat et au DGA.
+            <div className="bg-[#F1FAF4] dark:bg-emerald-950/20 border-b border-gray-100 dark:border-gray-700 px-5 sm:px-6 py-3 flex items-center gap-2 text-xs sm:text-sm text-[#388E3C] dark:text-emerald-400 font-medium">
+              <FileText className="w-4 h-4 flex-shrink-0" />
+              Un email informatif sera envoyé automatiquement au candidat et au
+              DGA.
             </div>
 
-            {/* Body */}
-            <div className="px-6 pt-5 pb-2 flex flex-col gap-4">
-              {success && (
-                <div className="flex items-center gap-2.5 bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-700 rounded-2xl px-4 py-3 text-emerald-700 dark:text-emerald-300 font-semibold text-sm">
-                  <CheckCircle2 className="w-5 h-5 flex-shrink-0" />
-                  Entretien DGA planifié ! Emails envoyés ✅
+            <div className="flex-1 overflow-y-auto px-5 sm:px-6 py-5">
+              {(success || error) && (
+                <div className="mb-5 space-y-3">
+                  {success && (
+                    <div className="flex items-center gap-2.5 bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-700 rounded-2xl px-4 py-3 text-emerald-700 dark:text-emerald-300 font-semibold text-sm">
+                      <CheckCircle2 className="w-5 h-5 flex-shrink-0" />
+                      Entretien DGA planifié ! Emails envoyés ✅
+                    </div>
+                  )}
+
+                  {error && (
+                    <div className="bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-700 rounded-2xl px-4 py-3 text-red-700 dark:text-red-300 text-sm">
+                      {error}
+                    </div>
+                  )}
                 </div>
               )}
-              {error && (
-                <div className="bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-700 rounded-2xl px-4 py-3 text-red-700 dark:text-red-300 text-sm">
-                  {error}
-                </div>
-              )}
 
-              {/* ── Sélecteur DGA depuis la BDD ── */}
-              <div className="flex flex-col gap-1">
-                <label className="text-[11px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                  Sélectionner un DGA <span className="text-red-400">*</span>
-                </label>
-                {dgaUsersLoading ? (
-                  <div className="flex items-center gap-2 px-3 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-sm text-gray-400">
-                    <span className="w-4 h-4 border-2 border-gray-300 border-t-[#6CB33F] rounded-full animate-spin flex-shrink-0" />
-                    Chargement des DGA…
-                  </div>
-                ) : dgaUsers.length > 0 ? (
-                  <select
-                    value={selectedDgaId}
-                    onChange={handleSelectDga}
-                    className="w-full rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-gray-800 dark:text-gray-200 px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-[#6CB33F]/20 focus:border-[#6CB33F] transition-colors cursor-pointer"
-                  >
-                    <option value="">— Choisir un DGA —</option>
-                    {dgaUsers.map((u) => {
-                      const fullName = [u.prenom, u.nom].filter(Boolean).join(" ") || u.name || u.email;
-                      return (
-                        <option key={u._id} value={String(u._id)}>
-                          {fullName} ({u.email})
-                        </option>
-                      );
-                    })}
-                  </select>
-                ) : (
-                  <div className="px-3 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-gray-500 dark:text-gray-400 text-xs italic">
-                    Aucun DGA trouvé en base — saisissez manuellement ci-dessous.
-                  </div>
-                )}
+              <div className="grid grid-cols-1 xl:grid-cols-2 gap-5">
+                <div className="flex flex-col gap-4">
+                  <div className="flex flex-col gap-1">
+                    <label className="text-[11px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                      Sélectionner un DGA{" "}
+                      <span className="text-red-400">*</span>
+                    </label>
 
-                {/* Affichage du DGA sélectionné */}
-                {selectedDgaId && form.dgaEmail && (
-                  <div className="flex items-center gap-2 mt-1 px-3 py-2 rounded-xl bg-[#F1FAF4] dark:bg-emerald-950/20 border border-[#d7ebcf] dark:border-emerald-800">
-                    <div className="w-7 h-7 rounded-full bg-[#6CB33F] flex items-center justify-center text-white font-bold text-xs flex-shrink-0">
-                      {(form.dgaName || form.dgaEmail)[0].toUpperCase()}
+                    {dgaUsersLoading ? (
+                      <div className="flex items-center gap-2 px-3 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-sm text-gray-400">
+                        <span className="w-4 h-4 border-2 border-gray-300 border-t-[#6CB33F] rounded-full animate-spin flex-shrink-0" />
+                        Chargement des DGA…
+                      </div>
+                    ) : dgaUsers.length > 0 ? (
+                      <select
+                        value={selectedDgaId}
+                        onChange={handleSelectDga}
+                        className="w-full rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-gray-800 dark:text-gray-200 px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-[#6CB33F]/20 focus:border-[#6CB33F] transition-colors cursor-pointer"
+                      >
+                        <option value="">— Choisir un DGA —</option>
+                        {dgaUsers.map((u) => {
+                          const fullName =
+                            [u.prenom, u.nom].filter(Boolean).join(" ") ||
+                            u.name ||
+                            u.email;
+                          return (
+                            <option key={u._id} value={String(u._id)}>
+                              {fullName} ({u.email})
+                            </option>
+                          );
+                        })}
+                      </select>
+                    ) : (
+                      <div className="px-3 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-gray-500 dark:text-gray-400 text-xs italic">
+                        Aucun DGA trouvé en base — saisissez manuellement
+                        ci-dessous.
+                      </div>
+                    )}
+
+                    {selectedDgaId && form.dgaEmail && (
+                      <div className="flex items-center gap-2 mt-1 px-3 py-2 rounded-xl bg-[#F1FAF4] dark:bg-emerald-950/20 border border-[#d7ebcf] dark:border-emerald-800">
+                        <div className="w-8 h-8 rounded-full bg-[#6CB33F] flex items-center justify-center text-white font-bold text-xs flex-shrink-0">
+                          {(form.dgaName || form.dgaEmail)[0].toUpperCase()}
+                        </div>
+                        <div className="min-w-0">
+                          <p className="text-sm font-semibold text-gray-800 dark:text-gray-200 truncate">
+                            {form.dgaName}
+                          </p>
+                          <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
+                            {form.dgaEmail}
+                          </p>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {!selectedDgaId && (
+                    <div className="flex flex-col gap-1">
+                      <label className="text-[11px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                        Ou saisir email manuellement
+                      </label>
+                      <div className="grid grid-cols-1 sm:grid-cols-[0.9fr_1.3fr] gap-2">
+                        <input
+                          type="text"
+                          placeholder="Nom"
+                          value={form.dgaName}
+                          onChange={setF("dgaName")}
+                          className="w-full rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-gray-800 dark:text-gray-200 placeholder-gray-400 px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-[#6CB33F]/20 focus:border-[#6CB33F] transition-colors"
+                        />
+                        <input
+                          type="email"
+                          placeholder="email@dga.com"
+                          value={form.dgaEmail}
+                          onChange={setF("dgaEmail")}
+                          className="w-full rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-gray-800 dark:text-gray-200 placeholder-gray-400 px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-[#6CB33F]/20 focus:border-[#6CB33F] transition-colors"
+                        />
+                      </div>
                     </div>
-                    <div className="min-w-0">
-                      <p className="text-sm font-semibold text-gray-800 dark:text-gray-200 truncate">{form.dgaName}</p>
-                      <p className="text-xs text-gray-500 dark:text-gray-400 truncate">{form.dgaEmail}</p>
-                    </div>
-                  </div>
-                )}
-              </div>
+                  )}
 
-              {/* Email manuel (si pas de DGA en base ou saisie manuelle) */}
-              {(!selectedDgaId) && (
-                <div className="flex flex-col gap-1">
-                  <label className="text-[11px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                    Ou saisir email manuellement
-                  </label>
-                  <div className="flex gap-2">
+                  <div className="flex flex-col gap-1">
+                    <label className="text-[11px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                      Lieu / Salle{" "}
+                      <span className="text-gray-300 dark:text-gray-600">
+                        (optionnel)
+                      </span>
+                    </label>
                     <input
                       type="text"
-                      placeholder="Nom"
-                      value={form.dgaName}
-                      onChange={setF("dgaName")}
-                      className="w-2/5 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-gray-800 dark:text-gray-200 placeholder-gray-400 px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-[#6CB33F]/20 focus:border-[#6CB33F] transition-colors"
+                      placeholder="Ex : Salle Direction, 3ème étage"
+                      value={form.location}
+                      onChange={setF("location")}
+                      className="w-full rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-gray-800 dark:text-gray-200 placeholder-gray-400 px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-[#6CB33F]/20 focus:border-[#6CB33F] transition-colors"
                     />
-                    <input
-                      type="email"
-                      placeholder="email@dga.com"
-                      value={form.dgaEmail}
-                      onChange={setF("dgaEmail")}
-                      className="flex-1 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-gray-800 dark:text-gray-200 placeholder-gray-400 px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-[#6CB33F]/20 focus:border-[#6CB33F] transition-colors"
+                  </div>
+
+                  <div className="flex flex-col gap-1">
+                    <label className="text-[11px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                      Notes{" "}
+                      <span className="text-gray-300 dark:text-gray-600">
+                        (optionnel)
+                      </span>
+                    </label>
+                    <textarea
+                      rows={5}
+                      placeholder="Ex : Merci d'apporter vos diplômes…"
+                      value={form.notes}
+                      onChange={setF("notes")}
+                      className="w-full rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-gray-800 dark:text-gray-200 placeholder-gray-400 px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-[#6CB33F]/20 focus:border-[#6CB33F] transition-colors resize-none"
                     />
                   </div>
                 </div>
-              )}
 
-              {/* ── Date picker calendrier ── */}
-              <div className="flex flex-col gap-1">
-                <label className="text-[11px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                  Date <span className="text-red-400">*</span>
-                </label>
-                {/* Bouton trigger */}
-                <button
-                  type="button"
-                  onClick={() => setShowCalendar(v => !v)}
-                  className="w-full flex items-center gap-2 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 px-3 py-2.5 text-sm text-left outline-none focus:ring-2 focus:ring-[#6CB33F]/20 focus:border-[#6CB33F] transition-colors hover:border-[#6CB33F]/50"
-                >
-                  <Calendar className="w-4 h-4 text-[#6CB33F] flex-shrink-0" />
-                  <span className={form.dgaDate ? "text-gray-800 dark:text-gray-200 font-semibold" : "text-gray-400"}>
-                    {form.dgaDate
-                      ? new Date(form.dgaDate + "T12:00:00").toLocaleDateString("fr-FR", { weekday: "long", day: "numeric", month: "long", year: "numeric" })
-                      : "Choisir une date…"}
-                  </span>
-                  <svg className={`w-4 h-4 text-gray-400 ml-auto transition-transform ${showCalendar ? "rotate-180" : ""}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="6 9 12 15 18 9"/></svg>
-                </button>
-                {/* Calendrier inline */}
-                {showCalendar && (
-                  <div className="mt-1">
-                    <MiniCalendarPicker
-                      selectedDate={form.dgaDate}
-                      onSelect={(dateStr) => {
-                        setForm(prev => ({ ...prev, dgaDate: dateStr }));
-                        setShowCalendar(false);
-                      }}
-                    />
-                  </div>
-                )}
-              </div>
+                <div className="flex flex-col gap-4">
+                  <div className="flex flex-col gap-1">
+                    <label className="text-[11px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                      Date <span className="text-red-400">*</span>
+                    </label>
 
-              {/* Heure */}
-              <div className="flex flex-col gap-1">
-                <label className="text-[11px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                  Heure <span className="text-red-400">*</span>
-                </label>
-                <div className="flex flex-wrap gap-2">
-                  {["08:00","08:30","09:00","09:30","10:00","10:30","11:00","11:30","14:00","14:30","15:00","15:30","16:00","16:30"].map(t => (
                     <button
-                      key={t}
                       type="button"
-                      onClick={() => setForm(prev => ({ ...prev, dgaTime: t }))}
-                      className={`px-3 py-1.5 rounded-xl text-xs font-semibold border transition-all ${
-                        form.dgaTime === t
-                          ? "bg-[#6CB33F] border-[#6CB33F] text-white shadow-sm"
-                          : "border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400 hover:border-[#6CB33F]/50 hover:text-[#4E8F2F] hover:bg-[#F1FAF4] dark:hover:bg-emerald-950/20"
-                      }`}
+                      onClick={() => setShowCalendar((v) => !v)}
+                      className="w-full flex items-center gap-2 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 px-3 py-2.5 text-sm text-left outline-none focus:ring-2 focus:ring-[#6CB33F]/20 focus:border-[#6CB33F] transition-colors hover:border-[#6CB33F]/50"
                     >
-                      {t}
+                      <Calendar className="w-4 h-4 text-[#6CB33F] flex-shrink-0" />
+                      <span
+                        className={
+                          form.dgaDate
+                            ? "text-gray-800 dark:text-gray-200 font-semibold"
+                            : "text-gray-400"
+                        }
+                      >
+                        {form.dgaDate
+                          ? new Date(
+                              form.dgaDate + "T12:00:00",
+                            ).toLocaleDateString("fr-FR", {
+                              weekday: "long",
+                              day: "numeric",
+                              month: "long",
+                              year: "numeric",
+                            })
+                          : "Choisir une date…"}
+                      </span>
+                      <svg
+                        className={`w-4 h-4 text-gray-400 ml-auto transition-transform ${showCalendar ? "rotate-180" : ""}`}
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2.5"
+                      >
+                        <polyline points="6 9 12 15 18 9" />
+                      </svg>
                     </button>
-                  ))}
+
+                    {showCalendar && (
+                      <div className="mt-1">
+                        <MiniCalendarPicker
+                          selectedDate={form.dgaDate}
+                          onSelect={(dateStr) => {
+                            setForm((prev) => ({ ...prev, dgaDate: dateStr }));
+                            setShowCalendar(false);
+                          }}
+                        />
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="flex flex-col gap-1">
+                    <label className="text-[11px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                      Heure <span className="text-red-400">*</span>
+                    </label>
+
+                    <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
+                      {[
+                        "08:00",
+                        "08:30",
+                        "09:00",
+                        "09:30",
+                        "10:00",
+                        "10:30",
+                        "11:00",
+                        "11:30",
+                        "14:00",
+                        "14:30",
+                        "15:00",
+                        "15:30",
+                        "16:00",
+                        "16:30",
+                      ].map((t) => (
+                        <button
+                          key={t}
+                          type="button"
+                          onClick={() =>
+                            setForm((prev) => ({ ...prev, dgaTime: t }))
+                          }
+                          className={`px-3 py-2 rounded-xl text-xs font-semibold border transition-all ${
+                            form.dgaTime === t
+                              ? "bg-[#6CB33F] border-[#6CB33F] text-white shadow-sm"
+                              : "border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400 hover:border-[#6CB33F]/50 hover:text-[#4E8F2F] hover:bg-[#F1FAF4] dark:hover:bg-emerald-950/20"
+                          }`}
+                        >
+                          {t}
+                        </button>
+                      ))}
+                    </div>
+
+                    <input
+                      type="time"
+                      value={form.dgaTime}
+                      onChange={setF("dgaTime")}
+                      className="mt-2 w-full sm:w-44 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-gray-700 dark:text-gray-300 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-[#6CB33F]/20 focus:border-[#6CB33F] transition-colors"
+                    />
+                  </div>
                 </div>
-                {/* Saisie manuelle si heure hors liste */}
-                <input
-                  type="time"
-                  value={form.dgaTime}
-                  onChange={setF("dgaTime")}
-                  className="mt-1 w-36 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-gray-700 dark:text-gray-300 px-3 py-1.5 text-xs outline-none focus:ring-2 focus:ring-[#6CB33F]/20 focus:border-[#6CB33F] transition-colors"
-                />
-              </div>
-
-              {/* Lieu */}
-              <div className="flex flex-col gap-1">
-                <label className="text-[11px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                  Lieu / Salle <span className="text-gray-300 dark:text-gray-600">(optionnel)</span>
-                </label>
-                <input
-                  type="text"
-                  placeholder="Ex : Salle Direction, 3ème étage"
-                  value={form.location}
-                  onChange={setF("location")}
-                  className="w-full rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-gray-800 dark:text-gray-200 placeholder-gray-400 px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-[#6CB33F]/20 focus:border-[#6CB33F] transition-colors"
-                />
-              </div>
-
-              {/* Notes */}
-              <div className="flex flex-col gap-1">
-                <label className="text-[11px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                  Notes <span className="text-gray-300 dark:text-gray-600">(optionnel)</span>
-                </label>
-                <textarea
-                  rows={2}
-                  placeholder="Ex : Merci d'apporter vos diplômes…"
-                  value={form.notes}
-                  onChange={setF("notes")}
-                  className="w-full rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-gray-800 dark:text-gray-200 placeholder-gray-400 px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-[#6CB33F]/20 focus:border-[#6CB33F] transition-colors resize-none"
-                />
               </div>
             </div>
 
-            {/* Footer */}
-            <div className="px-6 py-5 flex items-center justify-end gap-3">
+            <div className="px-5 sm:px-6 py-4 border-t border-gray-100 dark:border-gray-700 flex flex-col sm:flex-row items-stretch sm:items-center justify-end gap-3">
               <button
-                onClick={(e) => { e.stopPropagation(); if (!loading) setOpen(false); }}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  if (!loading) setOpen(false);
+                }}
                 disabled={loading}
                 className="px-5 py-2.5 rounded-full border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400 font-semibold text-sm hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors disabled:opacity-50"
               >
                 Annuler
               </button>
+
               <button
                 onClick={handleSubmit}
                 disabled={loading || success}
-                className="inline-flex items-center gap-2 px-6 py-2.5 rounded-full bg-[#6CB33F] hover:bg-[#4E8F2F] disabled:bg-gray-300 dark:disabled:bg-gray-700 text-white font-bold text-sm transition-colors disabled:cursor-not-allowed"
+                className="inline-flex items-center justify-center gap-2 px-6 py-2.5 rounded-full bg-[#6CB33F] hover:bg-[#4E8F2F] disabled:bg-gray-300 dark:disabled:bg-gray-700 text-white font-bold text-sm transition-colors disabled:cursor-not-allowed"
               >
                 {loading ? (
                   <>
@@ -626,9 +775,7 @@ const STATUS_CONFIG = {
   },
 };
 
-// ✅ FIX: TYPE_CONFIG complet — toutes les variantes possibles couvertes
 const TYPE_CONFIG = {
-  // ── Entretien RH ──
   RH: {
     label: "Entretien RH",
     cls: "text-[#4E8F2F] dark:text-emerald-400 bg-[#E9F5E3] dark:bg-gray-700 border-[#d7ebcf] dark:border-gray-600",
@@ -637,8 +784,6 @@ const TYPE_CONFIG = {
     label: "Entretien RH",
     cls: "text-[#4E8F2F] dark:text-emerald-400 bg-[#E9F5E3] dark:bg-gray-700 border-[#d7ebcf] dark:border-gray-600",
   },
-
-  // ── Entretien RH + Technique ──
   rh_technique: {
     label: "RH + Tech",
     cls: "text-violet-700 dark:text-violet-300 bg-violet-50 dark:bg-violet-950/30 border-violet-200 dark:border-violet-700",
@@ -655,8 +800,6 @@ const TYPE_CONFIG = {
     label: "RH + Tech",
     cls: "text-violet-700 dark:text-violet-300 bg-violet-50 dark:bg-violet-950/30 border-violet-200 dark:border-violet-700",
   },
-
-  // ── Technique ──
   TECHNIQUE: {
     label: "Technique",
     cls: "text-pink-700 dark:text-pink-300 bg-pink-50 dark:bg-pink-950/30 border-pink-200 dark:border-pink-700",
@@ -665,8 +808,6 @@ const TYPE_CONFIG = {
     label: "Technique",
     cls: "text-pink-700 dark:text-pink-300 bg-pink-50 dark:bg-pink-950/30 border-pink-200 dark:border-pink-700",
   },
-
-  // ── DGA ──
   DGA: {
     label: "DGA",
     cls: "text-rose-700 dark:text-rose-300 bg-rose-50 dark:bg-rose-950/30 border-rose-200 dark:border-rose-700",
@@ -675,8 +816,6 @@ const TYPE_CONFIG = {
     label: "DGA",
     cls: "text-rose-700 dark:text-rose-300 bg-rose-50 dark:bg-rose-950/30 border-rose-200 dark:border-rose-700",
   },
-
-  // ── Téléphonique ──
   telephonique: {
     label: "Téléphonique",
     cls: "text-sky-700 dark:text-sky-300 bg-sky-50 dark:bg-sky-950/30 border-sky-200 dark:border-sky-700",
@@ -695,7 +834,6 @@ const TYPE_CONFIG = {
   },
 };
 
-// ✅ FIX: Fonction de résolution robuste du type (insensible à la casse)
 function isRHPlusTechInterviewFE(type) {
   if (!type) return false;
   const n = String(type).toLowerCase().trim();
@@ -704,15 +842,11 @@ function isRHPlusTechInterviewFE(type) {
 
 function resolveTypeConfig(interviewType) {
   if (!interviewType) return TYPE_CONFIG.RH;
-  // Chercher d'abord la clé exacte
   if (TYPE_CONFIG[interviewType]) return TYPE_CONFIG[interviewType];
-  // Sinon chercher en majuscules
   if (TYPE_CONFIG[interviewType.toUpperCase()])
     return TYPE_CONFIG[interviewType.toUpperCase()];
-  // Sinon chercher en minuscules
   if (TYPE_CONFIG[interviewType.toLowerCase()])
     return TYPE_CONFIG[interviewType.toLowerCase()];
-  // Fallback par défaut
   return {
     label: interviewType,
     cls: "text-gray-700 dark:text-gray-300 bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700",
@@ -762,9 +896,7 @@ function Badge({ label, className = "", dotClass = "" }) {
     <span
       className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold border whitespace-nowrap transition-colors ${className}`}
     >
-      {dotClass ? (
-        <span className={`w-2 h-2 rounded-full ${dotClass}`} />
-      ) : null}
+      {dotClass ? <span className={`w-2 h-2 rounded-full ${dotClass}`} /> : null}
       {label}
     </span>
   );
@@ -845,7 +977,6 @@ function PlanifierModal({ open, onClose, onCreated }) {
             hour: "2-digit",
             minute: "2-digit",
           }),
-          // ✅ FIX: interviewType explicitement envoyé
           interviewType: "telephonique",
           notes: note.trim(),
         }),
@@ -1140,7 +1271,7 @@ export default function AdminInterviewList() {
   const [totalPages, setTotalPages] = useState(1);
   const [total, setTotal] = useState(0);
   const [expandedRow, setExpandedRow] = useState(null);
-  const [evaluationsCache, setEvaluationsCache] = useState({}); // { [interviewId]: evalData | null }
+  const [evaluationsCache, setEvaluationsCache] = useState({});
 
   const [cancelModalOpen, setCancelModalOpen] = useState(false);
   const [cancelInterviewId, setCancelInterviewId] = useState(null);
@@ -1154,14 +1285,15 @@ export default function AdminInterviewList() {
     if (!candidatureId || confirmingAdmin) return;
     setConfirmingAdmin(candidatureId);
     try {
-      await apiFetch(`/candidatures/${candidatureId}/confirm-admin`, { method: "PATCH" });
-      // Mettre à jour localement sans refetch
-      setInterviews(prev =>
-        prev.map(iv =>
-          (iv.candidatureId === candidatureId || String(iv._id) === candidatureId)
+      await apiFetch(`/candidatures/${candidatureId}/confirm-admin`, {
+        method: "PATCH",
+      });
+      setInterviews((prev) =>
+        prev.map((iv) =>
+          iv.candidatureId === candidatureId || String(iv._id) === candidatureId
             ? { ...iv, adminConfirmed: true }
-            : iv
-        )
+            : iv,
+        ),
       );
     } catch (err) {
       alert("Erreur confirmation : " + (err.message || "Impossible"));
@@ -1206,13 +1338,14 @@ export default function AdminInterviewList() {
       console.log("INTERVIEWS API RESPONSE :", data);
       console.log("LISTE ENTRETIENS :", data.interviews);
 
-      // ── Déduplique par _id pour éviter les clés React dupliquées ──
       const raw = data.interviews || [];
       const deduped = Array.from(
-        new Map(raw.map(iv => [String(iv._id), iv])).values()
+        new Map(raw.map((iv) => [String(iv._id), iv])).values(),
       );
       if (deduped.length !== raw.length) {
-        console.warn(`[Admin] Doublons détectés et supprimés : ${raw.length - deduped.length} doublons`);
+        console.warn(
+          `[Admin] Doublons détectés et supprimés : ${raw.length - deduped.length} doublons`,
+        );
       }
       setInterviews(deduped);
       setTotal(data.total || 0);
@@ -1224,16 +1357,21 @@ export default function AdminInterviewList() {
     }
   }, [page, statusFilter, debouncedSearch]);
 
-  // ── Charge l'évaluation d'un entretien RH+Tech si pas déjà en cache ──
-  const fetchEvaluationIfNeeded = useCallback(async (interviewId) => {
-    if (evaluationsCache[interviewId] !== undefined) return; // déjà chargé
-    try {
-      const data = await apiFetch(`/api/interviews/${interviewId}/evaluation`);
-      setEvaluationsCache(prev => ({ ...prev, [interviewId]: data?.evaluation || null }));
-    } catch {
-      setEvaluationsCache(prev => ({ ...prev, [interviewId]: null }));
-    }
-  }, [evaluationsCache]);
+  const fetchEvaluationIfNeeded = useCallback(
+    async (interviewId) => {
+      if (evaluationsCache[interviewId] !== undefined) return;
+      try {
+        const data = await apiFetch(`/api/interviews/${interviewId}/evaluation`);
+        setEvaluationsCache((prev) => ({
+          ...prev,
+          [interviewId]: data?.evaluation || null,
+        }));
+      } catch {
+        setEvaluationsCache((prev) => ({ ...prev, [interviewId]: null }));
+      }
+    },
+    [evaluationsCache],
+  );
 
   const fetchStats = useCallback(async () => {
     setStatsLoading(true);
@@ -1252,6 +1390,7 @@ export default function AdminInterviewList() {
     console.log("USEEFFECT FETCH INTERVIEWS");
     fetchInterviews();
   }, [fetchInterviews]);
+
   useEffect(() => {
     fetchStats();
   }, [fetchStats]);
@@ -1507,14 +1646,15 @@ export default function AdminInterviewList() {
 
                 <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
                   {(() => {
-                    // ✅ Grouper par candidat + poste — déduplique les _id identiques
                     const grouped = [];
                     const seen = new Map();
                     const seenIds = new Set();
+
                     for (const iv of interviews) {
                       const idStr = String(iv._id);
-                      if (seenIds.has(idStr)) continue; // skip doublons d_id
+                      if (seenIds.has(idStr)) continue;
                       seenIds.add(idStr);
+
                       const key = `${iv.candidateEmail}__${iv.jobTitle || ""}`;
                       if (seen.has(key)) {
                         seen.get(key).siblings.push(iv);
@@ -1524,17 +1664,18 @@ export default function AdminInterviewList() {
                         grouped.push(group);
                       }
                     }
+
                     return grouped.map((iv) => {
                       const allIvs = [iv, ...iv.siblings];
-                      // ✅ Chercher dgaInterview et allEntretienNotes dans TOUS les entretiens du groupe
-                      const ivWithDga = allIvs.find(siv => siv.dgaInterview);
-                      // Déduplique les notes par _id (même candidatureId partagé entre entretiens du groupe)
+                      const ivWithDga = allIvs.find((siv) => siv.dgaInterview);
                       const allGroupNotes = Array.from(
                         new Map(
-                          allIvs.flatMap(siv => siv.allEntretienNotes || [])
-                               .map(n => [String(n._id || n.createdAt), n])
-                        ).values()
+                          allIvs
+                            .flatMap((siv) => siv.allEntretienNotes || [])
+                            .map((n) => [String(n._id || n.createdAt), n]),
+                        ).values(),
                       );
+
                       const sc = STATUS_CONFIG[iv.status] || {};
                       const tc = resolveTypeConfig(iv.interviewType);
                       const dgaNote = getDGANote(iv);
@@ -1581,15 +1722,16 @@ export default function AdminInterviewList() {
                         responsableItem?.responsableEmail ||
                         responsableItem?.assignedUserEmail ||
                         "—";
+
                       return (
                         <React.Fragment key={iv._groupKey || String(iv._id)}>
                           <tr
                             onClick={() => {
                               const newExpanded = isExpanded ? null : iv._id;
                               setExpandedRow(newExpanded);
-                              // Charger les évaluations des entretiens rh_technique du groupe
+
                               if (newExpanded) {
-                                allIvs.forEach(siv => {
+                                allIvs.forEach((siv) => {
                                   if (isRHPlusTechInterviewFE(siv.interviewType)) {
                                     fetchEvaluationIfNeeded(String(siv._id));
                                   }
@@ -1629,11 +1771,15 @@ export default function AdminInterviewList() {
                               <div className="flex flex-col gap-1">
                                 {allIvs
                                   .filter((siv) => {
-                                    const t = String(siv.interviewType || "").toLowerCase();
+                                    const t = String(
+                                      siv.interviewType || "",
+                                    ).toLowerCase();
                                     return t !== "entretien_nord" && t !== "nord";
                                   })
                                   .map((siv) => {
-                                    const stc = resolveTypeConfig(siv.interviewType);
+                                    const stc = resolveTypeConfig(
+                                      siv.interviewType,
+                                    );
                                     return (
                                       <Badge
                                         key={siv._id}
@@ -1662,9 +1808,7 @@ export default function AdminInterviewList() {
                               <div className="flex flex-col gap-2">
                                 <div className="flex items-center gap-2">
                                   <span className="w-2 h-2 rounded-full bg-sky-400" />
-                                  <span>
-                                    Planifié {formatDate(iv.createdAt)}
-                                  </span>
+                                  <span>Planifié {formatDate(iv.createdAt)}</span>
                                 </div>
 
                                 {iv.status === "CONFIRMED" &&
@@ -1694,7 +1838,6 @@ export default function AdminInterviewList() {
                             <td className="px-6 lg:px-8 py-5">
                               <div className="flex flex-col gap-2">
                                 {hasDGA && !isCancelled ? (
-                                  /* Note DGA présente → bouton Voir détails */
                                   <button
                                     onClick={(e) => {
                                       e.stopPropagation();
@@ -1703,10 +1846,11 @@ export default function AdminInterviewList() {
                                     className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold border bg-emerald-50 dark:bg-emerald-950/30 border-emerald-300 dark:border-emerald-700 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-100 dark:hover:bg-emerald-900/40 transition-colors whitespace-nowrap"
                                   >
                                     <FileText className="w-3.5 h-3.5" />
-                                    {isExpanded ? "Masquer détails" : "Voir détails"}
+                                    {isExpanded
+                                      ? "Masquer détails"
+                                      : "Voir détails"}
                                   </button>
                                 ) : (
-                                  /* Pas encore de note DGA → bouton Planifier/Modifier normal */
                                   <DgaScheduleModal
                                     interview={ivWithDga || iv}
                                     onSuccess={async () => {
@@ -1714,6 +1858,7 @@ export default function AdminInterviewList() {
                                     }}
                                   />
                                 )}
+
                                 {dgaNote && (
                                   <>
                                     <ScoreBadge score={score} />
@@ -1738,13 +1883,24 @@ export default function AdminInterviewList() {
                                 </span>
                               ) : (
                                 <button
-                                  onClick={(e) => handleConfirmAdmin(iv.candidatureId || String(iv._id), e)}
-                                  disabled={confirmingAdmin === (iv.candidatureId || String(iv._id))}
+                                  onClick={(e) =>
+                                    handleConfirmAdmin(
+                                      iv.candidatureId || String(iv._id),
+                                      e,
+                                    )
+                                  }
+                                  disabled={
+                                    confirmingAdmin ===
+                                    (iv.candidatureId || String(iv._id))
+                                  }
                                   className="inline-flex items-center gap-1.5 rounded-full border border-[#6CB33F] bg-[#E9F5E3] hover:bg-[#6CB33F] hover:text-white px-3 py-1.5 text-xs font-bold text-[#4E8F2F] disabled:opacity-50 disabled:cursor-not-allowed transition-all whitespace-nowrap"
                                 >
-                                  {confirmingAdmin === (iv.candidatureId || String(iv._id))
-                                    ? <RefreshCcw className="w-3.5 h-3.5 animate-spin" />
-                                    : <CheckCircle2 className="w-3.5 h-3.5" />}
+                                  {confirmingAdmin ===
+                                  (iv.candidatureId || String(iv._id)) ? (
+                                    <RefreshCcw className="w-3.5 h-3.5 animate-spin" />
+                                  ) : (
+                                    <CheckCircle2 className="w-3.5 h-3.5" />
+                                  )}
                                   Confirmer
                                 </button>
                               )}
@@ -1770,6 +1926,7 @@ export default function AdminInterviewList() {
                                     label="Poste"
                                     value={iv.jobTitle || "—"}
                                   />
+
                                   <DetailCard label="Responsable">
                                     <div className="space-y-1">
                                       <div className="text-sm font-medium text-gray-800 dark:text-gray-200 break-words">
@@ -1782,7 +1939,6 @@ export default function AdminInterviewList() {
                                       )}
                                     </div>
                                   </DetailCard>
-                                 
 
                                   {iv.status ===
                                     "CANDIDATE_REQUESTED_RESCHEDULE" && (
@@ -1805,7 +1961,8 @@ export default function AdminInterviewList() {
                                   {allIvs.some(
                                     (siv) =>
                                       siv.status === "CONFIRMED" ||
-                                      siv.status === "PENDING_CANDIDATE_CONFIRMATION",
+                                      siv.status ===
+                                        "PENDING_CANDIDATE_CONFIRMATION",
                                   ) && (
                                     <DetailCard label="Évaluation">
                                       <div className="flex flex-col gap-2">
@@ -1813,21 +1970,40 @@ export default function AdminInterviewList() {
                                           .filter(
                                             (siv) =>
                                               siv.status === "CONFIRMED" ||
-                                              siv.status === "PENDING_CANDIDATE_CONFIRMATION",
+                                              siv.status ===
+                                                "PENDING_CANDIDATE_CONFIRMATION",
                                           )
                                           .map((siv) => {
-                                            const stc = resolveTypeConfig(siv.interviewType);
-                                            const isRHT = isRHPlusTechInterviewFE(siv.interviewType);
-                                            const evalData = evaluationsCache[String(siv._id)];
-                                            const hasEval = isRHT && evalData !== undefined && evalData !== null;
-                                            const evalLoading = isRHT && evaluationsCache[String(siv._id)] === undefined;
+                                            const stc = resolveTypeConfig(
+                                              siv.interviewType,
+                                            );
+                                            const isRHT =
+                                              isRHPlusTechInterviewFE(
+                                                siv.interviewType,
+                                              );
+                                            const evalData =
+                                              evaluationsCache[String(siv._id)];
+                                            const hasEval =
+                                              isRHT &&
+                                              evalData !== undefined &&
+                                              evalData !== null;
+                                            const evalLoading =
+                                              isRHT &&
+                                              evaluationsCache[
+                                                String(siv._id)
+                                              ] === undefined;
 
                                             return (
-                                              <div key={siv._id} className="flex flex-col gap-1.5">
+                                              <div
+                                                key={siv._id}
+                                                className="flex flex-col gap-1.5"
+                                              >
                                                 <button
                                                   onClick={(e) => {
                                                     e.stopPropagation();
-                                                    router.push(`/recruiter/interviews/${siv._id}/evaluation`);
+                                                    router.push(
+                                                      `/recruiter/interviews/${siv._id}/evaluation`,
+                                                    );
                                                   }}
                                                   className={`w-full px-4 py-2.5 rounded-full border font-semibold text-sm transition-colors flex items-center justify-center gap-2 ${
                                                     hasEval
@@ -1837,33 +2013,74 @@ export default function AdminInterviewList() {
                                                 >
                                                   <FileText className="w-4 h-4" />
                                                   {stc.label}
-                                                  {hasEval && <CheckCircle2 className="w-3.5 h-3.5 ml-auto text-emerald-500" />}
-                                                  {evalLoading && isRHT && <span className="w-3 h-3 border-2 border-blue-300 border-t-blue-600 rounded-full animate-spin ml-auto" />}
+                                                  {hasEval && (
+                                                    <CheckCircle2 className="w-3.5 h-3.5 ml-auto text-emerald-500" />
+                                                  )}
+                                                  {evalLoading && isRHT && (
+                                                    <span className="w-3 h-3 border-2 border-blue-300 border-t-blue-600 rounded-full animate-spin ml-auto" />
+                                                  )}
                                                 </button>
-                                                {/* Résumé évaluation RH+Tech si disponible */}
+
                                                 {hasEval && (
                                                   <div className="rounded-xl bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-200 dark:border-emerald-800 px-3 py-2 text-xs">
-                                                    {evalData.evaluationGlobale != null && (
+                                                    {evalData.evaluationGlobale !=
+                                                      null && (
                                                       <div className="flex items-center gap-2 mb-1">
-                                                        <span className="font-bold text-emerald-700 dark:text-emerald-400">Score global :</span>
-                                                        <span className="font-extrabold text-emerald-800 dark:text-emerald-300">{evalData.evaluationGlobale}/5</span>
-                                                        <span className="text-amber-500">{"★".repeat(Math.round(evalData.evaluationGlobale))}{"☆".repeat(5 - Math.round(evalData.evaluationGlobale))}</span>
+                                                        <span className="font-bold text-emerald-700 dark:text-emerald-400">
+                                                          Score global :
+                                                        </span>
+                                                        <span className="font-extrabold text-emerald-800 dark:text-emerald-300">
+                                                          {evalData.evaluationGlobale}
+                                                          /5
+                                                        </span>
+                                                        <span className="text-amber-500">
+                                                          {"★".repeat(
+                                                            Math.round(
+                                                              evalData.evaluationGlobale,
+                                                            ),
+                                                          )}
+                                                          {"☆".repeat(
+                                                            5 -
+                                                              Math.round(
+                                                                evalData.evaluationGlobale,
+                                                              ),
+                                                          )}
+                                                        </span>
                                                       </div>
                                                     )}
+
                                                     {evalData.decision && (
                                                       <div className="flex items-center gap-2 mb-1">
-                                                        <span className="font-bold text-gray-600 dark:text-gray-400">Décision :</span>
-                                                        <span className={`font-semibold px-2 py-0.5 rounded-full text-[10px] uppercase tracking-wider ${
-                                                          evalData.decision === "retenu" || evalData.decision === "RETENU"
-                                                            ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300"
-                                                            : evalData.decision === "refuse" || evalData.decision === "REFUSE"
-                                                            ? "bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300"
-                                                            : "bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300"
-                                                        }`}>{evalData.decision}</span>
+                                                        <span className="font-bold text-gray-600 dark:text-gray-400">
+                                                          Décision :
+                                                        </span>
+                                                        <span
+                                                          className={`font-semibold px-2 py-0.5 rounded-full text-[10px] uppercase tracking-wider ${
+                                                            evalData.decision ===
+                                                              "retenu" ||
+                                                            evalData.decision ===
+                                                              "RETENU"
+                                                              ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300"
+                                                              : evalData.decision ===
+                                                                    "refuse" ||
+                                                                  evalData.decision ===
+                                                                    "REFUSE"
+                                                                ? "bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300"
+                                                                : "bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300"
+                                                          }`}
+                                                        >
+                                                          {evalData.decision}
+                                                        </span>
                                                       </div>
                                                     )}
+
                                                     {evalData.commentaire && (
-                                                      <p className="text-gray-600 dark:text-gray-400 italic truncate" title={evalData.commentaire}>"{evalData.commentaire}"</p>
+                                                      <p
+                                                        className="text-gray-600 dark:text-gray-400 italic truncate"
+                                                        title={evalData.commentaire}
+                                                      >
+                                                        "{evalData.commentaire}"
+                                                      </p>
                                                     )}
                                                   </div>
                                                 )}
@@ -1874,24 +2091,38 @@ export default function AdminInterviewList() {
                                     </DetailCard>
                                   )}
 
-                                  {/* ── Notes DGA ── */}
                                   {(() => {
-                                    const dgaNotes = allGroupNotes.filter(n => /dga/i.test(n.type));
+                                    const dgaNotes = allGroupNotes.filter((n) =>
+                                      /dga/i.test(n.type),
+                                    );
                                     if (!dgaNotes.length) return null;
+
                                     return (
                                       <DetailCard label="Notes DGA">
                                         <div className="flex flex-col gap-2">
                                           {dgaNotes.map((n, i) => (
-                                            <div key={n._id || i} className="rounded-xl bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800 px-3 py-2.5">
-                                              <p className="text-sm text-gray-800 dark:text-gray-200 leading-relaxed whitespace-pre-wrap">{n.note || "—"}</p>
+                                            <div
+                                              key={n._id || i}
+                                              className="rounded-xl bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800 px-3 py-2.5"
+                                            >
+                                              <p className="text-sm text-gray-800 dark:text-gray-200 leading-relaxed whitespace-pre-wrap">
+                                                {n.note || "—"}
+                                              </p>
                                               <div className="flex items-center gap-2 mt-1.5 flex-wrap">
                                                 {n.stars > 0 && (
-                                                  <span className="text-[11px] text-amber-500">{"★".repeat(n.stars)}{"☆".repeat(5 - n.stars)}</span>
+                                                  <span className="text-[11px] text-amber-500">
+                                                    {"★".repeat(n.stars)}
+                                                    {"☆".repeat(5 - n.stars)}
+                                                  </span>
                                                 )}
                                                 {n.createdAt && (
-                                                  <span className="text-[11px] text-gray-400">{formatDate(n.createdAt)}</span>
+                                                  <span className="text-[11px] text-gray-400">
+                                                    {formatDate(n.createdAt)}
+                                                  </span>
                                                 )}
-                                                <span className="text-[10px] font-bold uppercase tracking-wider text-amber-600 dark:text-amber-400 bg-amber-100 dark:bg-amber-900/40 rounded-full px-2 py-0.5">DGA</span>
+                                                <span className="text-[10px] font-bold uppercase tracking-wider text-amber-600 dark:text-amber-400 bg-amber-100 dark:bg-amber-900/40 rounded-full px-2 py-0.5">
+                                                  DGA
+                                                </span>
                                               </div>
                                             </div>
                                           ))}
@@ -1961,22 +2192,21 @@ export default function AdminInterviewList() {
                 ← Préc.
               </button>
 
-              {Array.from(
-                { length: Math.min(totalPages, 8) },
-                (_, i) => i + 1,
-              ).map((p) => (
-                <button
-                  key={p}
-                  onClick={() => setPage(p)}
-                  className={`w-10 h-10 rounded-full border font-bold transition-colors ${
-                    p === page
-                      ? "bg-[#6CB33F] border-[#6CB33F] text-white dark:bg-emerald-600 dark:border-emerald-600"
-                      : "bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300"
-                  }`}
-                >
-                  {p}
-                </button>
-              ))}
+              {Array.from({ length: Math.min(totalPages, 8) }, (_, i) => i + 1).map(
+                (p) => (
+                  <button
+                    key={p}
+                    onClick={() => setPage(p)}
+                    className={`w-10 h-10 rounded-full border font-bold transition-colors ${
+                      p === page
+                        ? "bg-[#6CB33F] border-[#6CB33F] text-white dark:bg-emerald-600 dark:border-emerald-600"
+                        : "bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300"
+                    }`}
+                  >
+                    {p}
+                  </button>
+                ),
+              )}
 
               <button
                 onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
