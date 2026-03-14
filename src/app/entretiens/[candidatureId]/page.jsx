@@ -859,6 +859,7 @@ export default function EntretienDetailPage() {
   const [error, setError] = useState(null);
   const [activeTab, setActiveTab] = useState("matching");
   const [confirming, setConfirming] = useState(false);
+  const [confirmError, setConfirmError] = useState("");
 
   const fetchDetail = useCallback(async () => {
     if (!candidatureId) return;
@@ -892,14 +893,29 @@ export default function EntretienDetailPage() {
   }, [fetchDetail]);
 
   const handleConfirm = async () => {
-    if (!iv?.candidatureId || confirming) return;
+    if (!iv?._id || iv?.dgaConfirmed || confirming) return;
 
     try {
+      setConfirmError("");
       setConfirming(true);
-      await confirmDgaInterview(iv.candidatureId);
-      setIv((prev) => ({ ...prev, dgaConfirmed: true }));
+
+      const res = await confirmDgaInterview(String(iv._id));
+
+      if (res?.success || res?.alreadyConfirmed || res?.dgaConfirmed) {
+        setIv((prev) => ({
+          ...prev,
+          dgaConfirmed: true,
+          status:
+            prev?.status === "DGA_CONFIRMED"
+              ? prev.status
+              : "DGA_CONFIRMED",
+        }));
+      }
     } catch (e) {
       console.error("Erreur confirmation DGA:", e);
+      setConfirmError(
+        e?.response?.data?.message || "Erreur lors de la confirmation."
+      );
     } finally {
       setConfirming(false);
     }
@@ -963,6 +979,7 @@ export default function EntretienDetailPage() {
   const lieu = dga?.location || iv.location;
   const phone = iv?.candidatePhone || iv?.phone || iv?.candidate?.phone || null;
   const cvUrl = resolveCvUrl(iv?.cvUrl);
+  const isConfirmed = !!iv?.dgaConfirmed;
 
   return (
     <div className="min-h-screen bg-[#F4FAF1] dark:bg-gray-950 text-[#173B20] dark:text-white">
@@ -975,6 +992,12 @@ export default function EntretienDetailPage() {
           <ArrowLeft className="h-4 w-4" />
           Retour aux entretiens
         </button>
+
+        {confirmError && (
+          <div className="mb-4 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-700 dark:border-red-900/40 dark:bg-red-950/20 dark:text-red-300">
+            {confirmError}
+          </div>
+        )}
 
         <div className="overflow-hidden rounded-[32px] border border-[#D6E7CE] bg-[#EEF7E9] shadow-sm dark:border-[#2B3F2E] dark:bg-[#101A12]">
           <div className="border-b border-[#D6E7CE] px-5 py-6 sm:px-7 sm:py-7 dark:border-[#263A29]">
@@ -1007,28 +1030,7 @@ export default function EntretienDetailPage() {
                 </div>
               </div>
 
-              <div className="flex flex-wrap items-center gap-3 lg:justify-end">
-                {iv.dgaConfirmed ? (
-                  <span className="inline-flex items-center gap-2 rounded-full bg-[#E8F5E0] px-5 py-3 text-sm font-extrabold text-[#4E8F2F] dark:bg-[#1D331E] dark:text-[#A7E08D]">
-                    <CheckCircle className="w-4 h-4" />
-                    Candidature confirmée
-                  </span>
-                ) : (
-                  <button
-                    type="button"
-                    onClick={handleConfirm}
-                    disabled={confirming}
-                    className="inline-flex items-center gap-2 rounded-full bg-[#10B866] hover:bg-[#0FA05A] px-5 py-3 text-sm font-extrabold text-white transition-colors disabled:cursor-not-allowed disabled:opacity-60"
-                  >
-                    {confirming ? (
-                      <RefreshCw className="w-4 h-4 animate-spin" />
-                    ) : (
-                      <CheckCircle2 className="w-4 h-4" />
-                    )}
-                    Confirmer la candidature
-                  </button>
-                )}
-              </div>
+         
             </div>
           </div>
 

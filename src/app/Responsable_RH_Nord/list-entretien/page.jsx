@@ -441,16 +441,21 @@ export default function ResponsableMetierInterviewList() {
                         ? new Date(iv.proposedStart).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" })
                         : null));
 
-                    // Bouton évaluation
-                    const showEvalRHTech = isRHTech && (iv.status === "CONFIRMED" || iv.status === "PENDING_CANDIDATE_CONFIRMATION");
+                    // Bouton évaluation — ✅ CORRECTED pour Responsable RH Nord
+                    // RH Nord a que des entretiens RH simples (pas RH+Tech)
+                    const isRHSimple = iv.interviewType === "RH" || iv.interviewType === "rh";
+                    const showEvalRH = (isRHSimple || isRHTech) && (iv.status === "CONFIRMED" || iv.status === "PENDING_CANDIDATE_CONFIRMATION");
                     const showEvalTel = isTelephonique;
-                    const showEval = showEvalRHTech || showEvalTel || hasBoth;
+                    const showEval = showEvalRH || showEvalTel || hasBoth;
 
-                    const evalUrlRHTech = `/Responsable_RH_Nord/interviews/${iv._id}/evaluation`;
+                    // ✅ URLs correctes par type
+                    const evalUrlRH = isRHTech 
+                      ? `/Responsable_RH_Nord/interviews/${iv._id}/evaluation?type=rh_tech`
+                      : `/Responsable_RH_Nord/interviews/${iv._id}/evaluation?type=rh`;
                     const evalUrlTel = isTelephonique
                       ? `/Responsable_RH_Nord/interviews/${iv._id}/evaluation-telephonique`
                       : iv._telEntry ? `/Responsable_RH_Nord/interviews/${iv._telEntry._id}/evaluation-telephonique` : null;
-                    const evalUrl = isTelephonique ? evalUrlTel : evalUrlRHTech;
+                    const evalUrl = isTelephonique ? evalUrlTel : evalUrlRH;
 
                     return (
                       <React.Fragment key={iv._id}>
@@ -512,13 +517,17 @@ export default function ResponsableMetierInterviewList() {
                           {/* Évaluation — un ou deux boutons */}
                           <td className="px-3 sm:px-4 md:px-6 lg:px-8 py-3 sm:py-5">
                             <div className="flex flex-col gap-1.5">
-                              {(showEvalRHTech || hasBoth) && (
+                              {(showEvalRH || hasBoth) && (
                                 <button
-                                  onClick={(e) => { e.stopPropagation(); router.push(evalUrlRHTech); }}
-                                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-xs font-semibold transition-colors whitespace-nowrap text-violet-700 dark:text-violet-300 bg-violet-50 dark:bg-violet-950/30 border-violet-200 dark:border-violet-700 hover:bg-violet-100 dark:hover:bg-violet-900/40"
+                                  onClick={(e) => { e.stopPropagation(); router.push(evalUrlRH); }}
+                                  className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-xs font-semibold transition-colors whitespace-nowrap ${
+                                    isRHTech
+                                      ? "text-violet-700 dark:text-violet-300 bg-violet-50 dark:bg-violet-950/30 border-violet-200 dark:border-violet-700 hover:bg-violet-100 dark:hover:bg-violet-900/40"
+                                      : "text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/30 border-emerald-200 dark:border-emerald-700 hover:bg-emerald-100 dark:hover:bg-emerald-900/40"
+                                  }`}
                                 >
                                   <FileText className="w-3.5 h-3.5" />
-                                  RH + Tech
+                                  {isRHTech ? "RH + Tech" : "RH"}
                                 </button>
                               )}
                               {(showEvalTel || hasBoth) && evalUrlTel && (

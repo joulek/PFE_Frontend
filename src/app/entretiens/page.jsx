@@ -97,23 +97,45 @@ export default function EntretiensPage() {
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState(null);
   const [confirming, setConfirming] = useState(null);
+  const [confirmError, setConfirmError] = useState("");
 
-  const handleConfirmDGA = async (e, candidatureId) => {
+  const handleConfirmDGA = async (e, interviewId) => {
     e.stopPropagation();
-    if (!candidatureId || confirming) return;
+    if (!interviewId) return;
+
+    const currentInterview = interviews.find(
+      (iv) => String(iv._id) === String(interviewId)
+    );
+
+    if (!currentInterview || currentInterview.dgaConfirmed || confirming) return;
 
     try {
-      setConfirming(candidatureId);
-      await confirmDgaInterview(candidatureId);
-      setInterviews((prev) =>
-        prev.map((iv) =>
-          iv.candidatureId === candidatureId
-            ? { ...iv, dgaConfirmed: true }
-            : iv
-        )
-      );
+      setConfirmError("");
+      setConfirming(interviewId);
+
+      const res = await confirmDgaInterview(interviewId);
+
+      if (res?.success || res?.alreadyConfirmed || res?.dgaConfirmed) {
+        setInterviews((prev) =>
+          prev.map((iv) =>
+            String(iv._id) === String(interviewId)
+              ? {
+                  ...iv,
+                  dgaConfirmed: true,
+                  status:
+                    iv.status === "DGA_CONFIRMED"
+                      ? iv.status
+                      : "DGA_CONFIRMED",
+                }
+              : iv
+          )
+        );
+      }
     } catch (err) {
       console.error("Erreur confirmation DGA:", err);
+      setConfirmError(
+        err?.response?.data?.message || "Erreur lors de la confirmation."
+      );
     } finally {
       setConfirming(null);
     }
@@ -201,6 +223,12 @@ export default function EntretiensPage() {
           </button>
         </div>
 
+        {confirmError && (
+          <div className="mb-4 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-700 dark:border-red-900/40 dark:bg-red-950/20 dark:text-red-300">
+            {confirmError}
+          </div>
+        )}
+
         <div className="text-sm font-medium text-gray-500 mb-4">
           {!loading && `${total} résultat${total > 1 ? "s" : ""}`}
         </div>
@@ -266,14 +294,17 @@ export default function EntretiensPage() {
                       const time = dga?.time || iv.confirmedTime;
                       const lieu = dga?.location || iv.location;
                       const id = iv.candidatureId || String(iv._id);
+                      const interviewId = String(iv._id);
+                      const isConfirmed = !!iv.dgaConfirmed;
+                      const isLoadingConfirm = confirming === interviewId;
 
                       return (
                         <tr
                           key={String(iv._id)}
                           onClick={() => handleRowClick(iv)}
                           className={`${
-                            idx % 2 !== 0 ? "bg-gray-50/60 dark:bg-gray-750/40" : ""
-                          } hover:bg-[#F0FAF0] dark:hover:bg-gray-700/30 transition-colors border-t border-gray-100 dark:border-gray-700/50 cursor-pointer`}
+                            idx % 2 !== 0 ? "bg-gray-50/60 dark:bg-gray-800" : "dark:bg-gray-800"
+                          } hover:bg-[#F0FAF0] dark:hover:bg-gray-700/40 transition-colors border-t border-gray-100 dark:border-gray-700/50 cursor-pointer`}
                         >
                           <td className="px-5 py-4 align-middle">
                             <div className="flex items-center gap-3">
@@ -365,7 +396,7 @@ export default function EntretiensPage() {
                                 Voir
                               </button>
 
-                              {iv.dgaConfirmed ? (
+                              {isConfirmed ? (
                                 <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-[12px] font-semibold text-emerald-700 dark:border-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-300">
                                   <CheckCircle className="w-3.5 h-3.5" />
                                   Confirmé
@@ -373,11 +404,11 @@ export default function EntretiensPage() {
                               ) : (
                                 <button
                                   type="button"
-                                  onClick={(e) => handleConfirmDGA(e, iv.candidatureId)}
-                                  disabled={confirming === iv.candidatureId}
+                                  onClick={(e) => handleConfirmDGA(e, interviewId)}
+                                  disabled={isLoadingConfirm || isConfirmed}
                                   className="inline-flex items-center gap-1.5 rounded-full border border-emerald-300 bg-emerald-50 hover:bg-emerald-500 hover:text-white hover:border-emerald-500 px-3 py-1.5 text-[12px] font-semibold text-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
                                 >
-                                  {confirming === iv.candidatureId ? (
+                                  {isLoadingConfirm ? (
                                     <RefreshCw className="w-3.5 h-3.5 animate-spin" />
                                   ) : (
                                     <CheckCircle2 className="w-3.5 h-3.5" />
@@ -400,6 +431,9 @@ export default function EntretiensPage() {
                   const date = dga?.date || iv.confirmedDate;
                   const time = dga?.time || iv.confirmedTime;
                   const id = iv.candidatureId || String(iv._id);
+                  const interviewId = String(iv._id);
+                  const isConfirmed = !!iv.dgaConfirmed;
+                  const isLoadingConfirm = confirming === interviewId;
 
                   return (
                     <div
@@ -439,7 +473,7 @@ export default function EntretiensPage() {
                             Voir le dossier →
                           </span>
 
-                          {iv.dgaConfirmed ? (
+                          {isConfirmed ? (
                             <span className="inline-flex items-center gap-1 text-xs font-semibold text-emerald-700 dark:text-emerald-400">
                               <CheckCircle className="w-3.5 h-3.5" />
                               Confirmé
@@ -447,11 +481,11 @@ export default function EntretiensPage() {
                           ) : (
                             <button
                               type="button"
-                              onClick={(e) => handleConfirmDGA(e, iv.candidatureId)}
-                              disabled={confirming === iv.candidatureId}
-                              className="inline-flex items-center gap-1 text-xs font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-full px-2.5 py-1 hover:bg-emerald-500 hover:text-white hover:border-emerald-500 disabled:opacity-50 transition-all"
+                              onClick={(e) => handleConfirmDGA(e, interviewId)}
+                              disabled={isLoadingConfirm || isConfirmed}
+                              className="inline-flex items-center gap-1 text-xs font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-full px-2.5 py-1 hover:bg-emerald-500 hover:text-white hover:border-emerald-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
                             >
-                              {confirming === iv.candidatureId ? (
+                              {isLoadingConfirm ? (
                                 <RefreshCw className="w-3 h-3 animate-spin" />
                               ) : (
                                 <CheckCircle2 className="w-3 h-3" />
@@ -482,4 +516,4 @@ export default function EntretiensPage() {
       </div>
     </div>
   );
-}  
+}

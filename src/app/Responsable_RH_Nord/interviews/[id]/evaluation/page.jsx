@@ -226,7 +226,7 @@ export default function InterviewEvaluationPage() {
                 </p>
                 <div className="mt-2 flex flex-wrap gap-2">
                   <span className="inline-flex items-center rounded-full border border-violet-200 dark:border-violet-700 bg-violet-50 dark:bg-violet-900/20 px-3 sm:px-4 py-1 text-xs sm:text-sm font-semibold text-violet-700 dark:text-violet-300">
-                    {interview?.interviewType || "RH + Tech"}
+                    Entretien RH Nord
                   </span>
                 </div>
                 <p className="mt-2 sm:mt-3 text-xs text-gray-500 dark:text-gray-400">

@@ -1,35 +1,34 @@
 import api from "./api";
-import axios from "axios"; // ✅ OBLIGATOIRE
+import axios from "axios";
+
+const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
 export const getCondidature = () => api.get("/candidatures");
 export const getCandidaturesWithJob = () => api.get("/candidatures/with-job");
 export const getCondidatureCount = () => api.get("/candidatures/count");
 export const getCandidaturesAnalysis = () => api.get("/candidatures/analysis");
 export const getMyCandidatures = () => api.get("/candidatures/my");
-export const getMyAnalysis = () => api.get("/candidatures/my-analysis"); // ✅ nouveau
+export const getMyAnalysis = () => api.get("/candidatures/my-analysis");
 export const getMatchingStats = () => api.get("/candidatures/stats/matching");
 export const getAcademicStats = () => api.get("/candidatures/stats/academic");
 
-// ── Pré-entretien ──────────────────────────────────────────────
 export const togglePreInterview = (id) =>
   api.patch(`/candidatures/${id}/pre-interview`);
 
 export const getPreInterviewList = () =>
   api.get("/candidatures/pre-interview");
 
-// ── Pré-entretien NORD (RESPONSABLE_RH_NORD) ──────────────────
 export const togglePreInterviewNord = (id) =>
   api.patch(`/candidatures/${id}/pre-interview-nord`);
 
 export const getPreInterviewNordList = () =>
   api.get("/candidatures/pre-interview-nord");
 
-// ── 🆕 Envoyer fiche + quiz ───────────────────────────────────
 export const sendDocuments = (candidatureId, payload) =>
   api.post(`/candidatures/${candidatureId}/send-documents`, payload);
 
-export const getCandidatureById = (id) => api.get(`/candidatures/${id}`);
-
+export const getCandidatureById = (id) =>
+  api.get(`/candidatures/${id}`);
 
 export const getPreInterviewCandidates = async () => {
   const { data } = await axios.get(
@@ -53,7 +52,9 @@ export async function getDgaMyInterviews({
     limit: String(limit),
   });
 
-  if (search.trim()) params.set("search", search.trim());
+  if (search.trim()) {
+    params.set("search", search.trim());
+  }
 
   const { data } = await api.get(
     `/api/interviews/dga/my-interviews?${params.toString()}`
@@ -61,9 +62,9 @@ export async function getDgaMyInterviews({
   return data;
 }
 
-export async function confirmDgaInterview(candidatureId) {
-  const { data } = await api.patch(
-    `/candidatures/${candidatureId}/confirm-dga`
+export async function confirmDgaInterview(interviewId) {
+  const { data } = await api.post(
+    `/api/interviews/${interviewId}/confirm-dga`
   );
   return data;
 }
@@ -95,7 +96,3 @@ export async function deleteInterviewNote(candidatureId, noteId) {
   );
   return data;
 }
-
-
-
-
