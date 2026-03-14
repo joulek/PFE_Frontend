@@ -84,17 +84,18 @@ function prettySexe(v) {
 }
 
 const DEFAULT_COLUMNS = [
-  { id: "titre", label: "Poste prévu", visible: true, sortable: true },
-  { id: "nombrePostes", label: "Nbre Demandé", visible: true, sortable: true },
-  { id: "departement", label: "Département", visible: true, sortable: false },
-  { id: "societe", label: "Société", visible: true, sortable: false },
-  { id: "sexe", label: "Genre", visible: true, sortable: false },
-  { id: "typeDiplome", label: "Diplôme exigé", visible: true, sortable: false },
-  { id: "status", label: "Suivi", visible: true, sortable: true },
-  { id: "dateCloture", label: "Date Clôture", visible: true, sortable: true },
-  { id: "motif", label: "Motif", visible: true, sortable: false },
-  { id: "createdByUser", label: "Créé par", visible: true, sortable: false },
-  { id: "createdAt", label: "Date Création", visible: true, sortable: true },
+  { id: "titre",        label: "Poste prévu",   visible: true,  sortable: true  },
+  { id: "nombrePostes", label: "Nbre Demandé",  visible: true,  sortable: true  },
+  { id: "departement",  label: "Département",   visible: true,  sortable: false },
+  { id: "societe",      label: "Société",       visible: true,  sortable: false },
+  { id: "agence",       label: "Agence",        visible: true,  sortable: false },
+  { id: "sexe",         label: "Genre",         visible: true,  sortable: false },
+  { id: "typeDiplome",  label: "Diplôme exigé", visible: true,  sortable: false },
+  { id: "status",       label: "Suivi",         visible: true,  sortable: true  },
+  { id: "dateCloture",  label: "Date Clôture",  visible: true,  sortable: true  },
+  { id: "motif",        label: "Motif",         visible: true,  sortable: false },
+  { id: "createdByUser",label: "Créé par",      visible: true,  sortable: false },
+  { id: "createdAt",    label: "Date Création", visible: true,  sortable: true  },
 ];
 
 const PAGE_SIZE = 10;
@@ -158,7 +159,8 @@ export default function RecruitmentTrackingPage() {
           job.createdByUser?.toLowerCase().includes(term) ||
           job.lieu?.toLowerCase().includes(term) ||
           job.departement?.toLowerCase().includes(term) ||
-          job.societe?.toLowerCase().includes(term)
+          job.societe?.toLowerCase().includes(term) ||
+          job.agence?.toLowerCase().includes(term)
       );
     }
 
@@ -268,6 +270,8 @@ export default function RecruitmentTrackingPage() {
             return escapeCell(job.departement ?? "");
           case "societe":
             return escapeCell(job.societe ?? "");
+          case "agence":
+            return escapeCell(job.agence ?? "");
           case "sexe":
             return escapeCell(prettySexe(job.sexe));
           case "typeDiplome":
@@ -560,6 +564,25 @@ export default function RecruitmentTrackingPage() {
                               {job.societe ? (
                                 <span className="inline-flex text-xs font-semibold px-3 py-1 rounded-full bg-[#e8f5e1] dark:bg-emerald-900/30 text-[#3d7a1a] dark:text-emerald-400 border border-[#b8dda0] dark:border-emerald-800">
                                   {job.societe}
+                                </span>
+                              ) : (
+                                <span className="text-sm text-gray-400 dark:text-gray-500">
+                                  —
+                                </span>
+                              )}
+                            </td>
+                          );
+                        }
+
+                        if (col.id === "agence") {
+                          return (
+                            <td
+                              key={col.id}
+                              className="px-6 py-5 whitespace-nowrap"
+                            >
+                              {job.agence ? (
+                                <span className="inline-flex text-xs font-semibold px-3 py-1 rounded-full bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 border border-blue-200 dark:border-blue-800">
+                                  {job.agence}
                                 </span>
                               ) : (
                                 <span className="text-sm text-gray-400 dark:text-gray-500">

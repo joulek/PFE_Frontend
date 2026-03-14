@@ -66,7 +66,7 @@ export default function LoginPage() {
         router.replace("/Responsable_RH_Nord/candidatures");
       } else if (role === "DGA") {
         router.replace("/entretiens");
-      } else {
+      } else if (role === "RESPONSABLE_METIER") {
         router.replace("/ResponsableMetier/candidatures");
       }
       router.refresh();

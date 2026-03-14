@@ -196,7 +196,28 @@ export default function CandidatQuizClient() {
     async function load() {
       try {
         /* ===============================
-           1️⃣ CHECK DÉJÀ SOUMIS
+           1️⃣ ACCÈS UNIQUE — bloquer dès la 1ère visite
+        =============================== */
+        const API_BASE = process.env.NEXT_PUBLIC_API_URL;
+        const accessRes = await fetch(`${API_BASE}/quizzes/${quizId}/access`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ candidatureId }),
+        });
+
+        if (!accessRes.ok) {
+          const accessData = await accessRes.json().catch(() => ({}));
+          if (accessRes.status === 403) {
+            setError("⛔ Accès refusé. Vous avez déjà accédé à ce quiz. Un seul accès est autorisé.");
+          } else {
+            setError(accessData.message || "Lien invalide.");
+          }
+          setLoading(false);
+          return;
+        }
+
+        /* ===============================
+           2️⃣ CHECK DÉJÀ SOUMIS
         =============================== */
         const checkRes = await checkQuizAlreadySubmitted(quizId, candidatureId);
         if (checkRes?.data?.alreadySubmitted) {
@@ -205,7 +226,7 @@ export default function CandidatQuizClient() {
         }
 
         /* ===============================
-           2️⃣ LOAD QUIZ
+           3️⃣ LOAD QUIZ
         =============================== */
         const res = await getQuizById(quizId);
         const data = res?.data;
@@ -493,39 +514,7 @@ export default function CandidatQuizClient() {
           />
 
           {/* Bottom actions */}
-          <div className="mt-8 flex items-center justify-between gap-3 flex-wrap">
-            <div className="flex items-center gap-2 flex-wrap">
-              <button
-                onClick={handleFlag}
-                className={`inline-flex items-center gap-2 px-4 py-2 rounded-2xl border font-bold transition ${flagged.has(currentOrder)
-                    ? "border-yellow-400 bg-yellow-50 dark:bg-yellow-900/20 text-yellow-700 dark:text-yellow-300"
-                    : "border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800"
-                  }`}
-              >
-                <Flag className="w-4 h-4" />
-                Marquer
-              </button>
-
-              <button
-                onClick={() => setShowOverview(true)}
-                className="inline-flex items-center gap-2 px-4 py-2 rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-700 dark:text-gray-200 font-bold hover:bg-gray-50 dark:hover:bg-gray-800 transition"
-              >
-                Vue d&apos;ensemble
-              </button>
-            </div>
-
-            <div className="flex items-center gap-3">
-
-              {currentIndex > 0 && (
-                <button
-                  onClick={goPrev}
-                  className="inline-flex items-center gap-2 px-4 py-2.5 rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-700 dark:text-gray-200 font-bold transition hover:bg-gray-50 dark:hover:bg-gray-800"
-                >
-                  <ChevronLeft className="w-4 h-4" />
-                  Précédent
-                </button>
-              )}
-
+          <div className="mt-8 flex items-center justify-end gap-3">
               {currentIndex < totalQuestions - 1 ? (
                 <button
                   onClick={goNext}
@@ -543,7 +532,6 @@ export default function CandidatQuizClient() {
                   <CheckCircle2 className="w-5 h-5" />
                 </button>
               )}
-            </div>
           </div>
 
           {!selectedAnswer && (

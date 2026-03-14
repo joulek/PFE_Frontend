@@ -90,7 +90,17 @@ function getCvUrl(c) {
 }
 
 function getPoste(c) {
-  return safeStr(c?.jobTitle) || safeStr(c?.posteRecherche) || "—";
+  return (
+    // Candidatures d'offres : titre de l'offre liée
+    safeStr(c?.jobOffer?.titre) ||
+    safeStr(c?.job?.titre) ||
+    safeStr(c?.offer?.titre) ||
+    safeStr(c?.jobTitle) ||
+    // Candidatures spontanées
+    safeStr(c?.posteRecherche) ||
+    safeStr(c?.poste) ||
+    "—"
+  );
 }
 
 /* ================= STATUS BADGE ================= */
@@ -432,7 +442,7 @@ export default function CandidaturesUnifiedPage() {
                         </td>
                       )}
                       <td className="px-6 py-5">
-                        <span className="inline-flex items-center px-3 py-1 rounded-full bg-[#E9F5E3] dark:bg-gray-700 text-[#4E8F2F] dark:text-emerald-400 text-xs font-semibold border border-[#d7ebcf] dark:border-gray-600 max-w-[180px] truncate">
+                        <span className="inline-flex items-center px-3 py-1 rounded-full bg-[#E9F5E3] dark:bg-gray-700 text-[#4E8F2F] dark:text-emerald-400 text-xs font-semibold border border-[#d7ebcf] dark:border-gray-600 max-w-[320px] whitespace-normal break-words">
                           {getPoste(c)}
                         </span>
                       </td>
