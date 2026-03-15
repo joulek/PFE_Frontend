@@ -755,6 +755,9 @@ export default function Navbar() {
                         <Link href="/recruiter/candidatures-confirmees" className={`${dropdownItemBase} ${isActive("/recruiter/candidatures-confirmees") ? dropdownActive : dropdownHover}`}>
                           Candidatures confirmées
                         </Link>
+                        <Link href="/recruiter/comparisons_list" className={`${dropdownItemBase} ${isActive("/recruiter/comparisons_list") ? dropdownActive : dropdownHover}`}>
+                           Comparaisons Candidatures
+                        </Link>
                       </div>
                     )}
                   </div>
@@ -1052,6 +1055,7 @@ export default function Navbar() {
                     <Link href="/recruiter/PreInterviewList" className="block px-5 py-3.5 rounded-xl text-gray-700 dark:text-gray-200 hover:bg-gray-100/70 dark:hover:bg-gray-800/60">Liste des pré-sélections</Link>
                     <Link href="/recruiter/tracking" className="block px-5 py-3.5 rounded-xl text-gray-700 dark:text-gray-200 hover:bg-gray-100/70 dark:hover:bg-gray-800/60">Suivi de recrutement</Link>
                     <Link href="/recruiter/candidatures-confirmees" className="block px-5 py-3.5 rounded-xl text-gray-700 dark:text-gray-200 hover:bg-gray-100/70 dark:hover:bg-gray-800/60">Candidatures confirmées</Link>
+                    <Link href="/recruiter/comparisons_list" className={`block px-5 py-3.5 rounded-xl font-medium transition ${isActive("/recruiter/comparisons_list") ? "bg-[#6CB33F] text-white" : "text-gray-700 dark:text-gray-200 hover:bg-gray-100/70 dark:hover:bg-gray-800/60"}`}> Comparaisons Candidatures</Link>
 
                     <div className="px-5 py-1">
                       <p className="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-1">Formulaires</p>

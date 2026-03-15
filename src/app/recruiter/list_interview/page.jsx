@@ -1280,6 +1280,25 @@ export default function AdminInterviewList() {
   const [planifierOpen, setPlanifierOpen] = useState(false);
   const [confirmingAdmin, setConfirmingAdmin] = useState(null);
 
+  // ✅ Comparaison — sélection de candidats
+  const [selectedForCompare, setSelectedForCompare] = useState([]);
+
+  function toggleSelectForCompare(iv, e) {
+    e.stopPropagation();
+    setSelectedForCompare((prev) => {
+      const exists = prev.find((c) => String(c._id) === String(iv._id));
+      if (exists) return prev.filter((c) => String(c._id) !== String(iv._id));
+      if (prev.length >= 4) return prev; // max 4
+      return [...prev, iv];
+    });
+  }
+
+  function handleCompare() {
+    if (selectedForCompare.length < 2) return;
+    const ids = selectedForCompare.map((c) => String(c._id)).join(",");
+    router.push(`/recruiter/compare_interviews?ids=${ids}`);
+  }
+
   async function handleConfirmAdmin(candidatureId, e) {
     e.stopPropagation();
     if (!candidatureId || confirmingAdmin) return;
@@ -1503,6 +1522,15 @@ export default function AdminInterviewList() {
           </div>
 
           <div className="flex items-center gap-3 flex-wrap">
+            {selectedForCompare.length >= 2 && (
+              <button
+                onClick={handleCompare}
+                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-violet-600 hover:bg-violet-700 text-white font-semibold transition-colors shadow-sm"
+              >
+                <Users className="w-4 h-4" />
+                Comparer ({selectedForCompare.length})
+              </button>
+            )}
             <button
               onClick={() => setPlanifierOpen(true)}
               className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-[#6CB33F] hover:bg-[#4E8F2F] dark:bg-emerald-600 dark:hover:bg-emerald-500 text-white font-semibold transition-colors"
@@ -1617,6 +1645,7 @@ export default function AdminInterviewList() {
               <table className="w-full text-sm min-w-[1100px]">
                 <thead className="bg-[#E9F5E3] dark:bg-gray-700 text-[#4E8F2F] dark:text-emerald-400">
                   <tr>
+                    <th className="px-4 py-5 w-10"></th>
                     <th className="text-left px-6 lg:px-8 py-5 font-extrabold uppercase text-xs tracking-wider">
                       Candidat
                     </th>
@@ -1744,6 +1773,16 @@ export default function AdminInterviewList() {
                                 : ""
                             } ${isCancelled ? "opacity-60" : ""}`}
                           >
+                            {/* ✅ Checkbox comparaison */}
+                            <td className="px-4 py-5" onClick={(e) => e.stopPropagation()}>
+                              <input
+                                type="checkbox"
+                                checked={!!selectedForCompare.find((c) => String(c._id) === String(iv._id))}
+                                onChange={(e) => toggleSelectForCompare(iv, e)}
+                                disabled={!selectedForCompare.find((c) => String(c._id) === String(iv._id)) && selectedForCompare.length >= 4}
+                                className="w-4 h-4 rounded accent-violet-600 cursor-pointer disabled:opacity-40"
+                              />
+                            </td>
                             <td className="px-6 lg:px-8 py-5">
                               <div className="flex items-center gap-3">
                                 <Avatar name={iv.candidateName} />
