@@ -9,6 +9,8 @@ export const getCondidatureCount = () => api.get("/candidatures/count");
 export const getCandidaturesAnalysis = () => api.get("/candidatures/analysis");
 export const getMyCandidatures = () => api.get("/candidatures/my");
 export const getMyAnalysis = () => api.get("/candidatures/my-analysis");
+export const getMyCandidaturesCreated = () => api.get("/candidatures/my-created");   // ✅ NOUVEAU
+export const getAnalysisNord = () => api.get("/candidatures/analysis-nord");          // ✅ NOUVEAU
 export const getMatchingStats = () => api.get("/candidatures/stats/matching");
 export const getAcademicStats = () => api.get("/candidatures/stats/academic");
 

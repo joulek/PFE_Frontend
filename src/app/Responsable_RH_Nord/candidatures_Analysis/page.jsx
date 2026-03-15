@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState, useCallback } from "react";
 import Pagination from "../../components/Pagination";
 
-import { getMyAnalysis, togglePreInterviewNord } from "../../services/candidature.api";
+import { getAnalysisNord, togglePreInterviewNord } from "../../services/candidature.api";
 
 import {
   Search,
@@ -744,7 +744,7 @@ export default function RMCandidatureAnalysisPage() {
       try {
         setLoading(true);
 
-        const res = await getMyAnalysis();
+        const res = await getAnalysisNord();
         const data = res?.data;
         const storedIds = getStoredPreselected();
 
