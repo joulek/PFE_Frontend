@@ -1,90 +1,109 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useRouter, useParams } from "next/navigation";  // ✅ AJOUTER useParams
-import { 
-  ArrowLeft, 
-  Save, 
-  AlertCircle, 
-  CheckCircle, 
-  Loader, 
+import { useEffect, useMemo, useState } from "react";
+import { useRouter, useParams } from "next/navigation";
+import {
+  ArrowLeft,
+  Save,
+  AlertCircle,
+  CheckCircle,
+  Loader,
   Star,
   MessageSquare,
-  FileText,
 } from "lucide-react";
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL ;
-
+const API_BASE = process.env.NEXT_PUBLIC_API_URL;
 
 function getAuthHeaders() {
   const token =
     (typeof localStorage !== "undefined" && localStorage.getItem("token")) ||
     (typeof sessionStorage !== "undefined" && sessionStorage.getItem("token")) ||
     "";
-  console.log("🔑 Token:", token ? "OUI ✅" : "NON ❌");
+
   return token ? { Authorization: `Bearer ${token}` } : {};
 }
 
 async function apiFetch(path, options = {}) {
-  console.log("🌐 API CALL:", options.method || "GET", path);
-  try {
-    const res = await fetch(`${API_BASE}${path}`, {
-      headers: {
-        "Content-Type": "application/json",
-        ...getAuthHeaders(),
-        ...options.headers,
-      },
-      ...options,
-    });
+  const res = await fetch(`${API_BASE}${path}`, {
+    headers: {
+      "Content-Type": "application/json",
+      ...getAuthHeaders(),
+      ...options.headers,
+    },
+    ...options,
+  });
 
-    console.log("📡 Response status:", res.status);
-    console.log("📡 Response ok:", res.ok);
-
-    if (!res.ok) {
-      console.error("❌ HTTP Error:", res.status);
-      throw new Error(`HTTP ${res.status}`);
-    }
-
-    const data = await res.json();
-    console.log("✅ Response data:", data);
-    return data;
-  } catch (err) {
-    console.error("❌ apiFetch ERROR:", err);
-    throw err;
+  if (!res.ok) {
+    let message = `HTTP ${res.status}`;
+    try {
+      const err = await res.json();
+      message = err?.message || message;
+    } catch {}
+    throw new Error(message);
   }
+
+  return res.json();
+}
+
+function hasMeaningfulValue(value, type) {
+  if (type === "score") {
+    return value !== null && value !== undefined && value !== "";
+  }
+  if (type === "boolean" || type === "choice") {
+    return String(value || "").trim() !== "";
+  }
+  return String(value || "").trim() !== "";
+}
+
+function RadioCard({ checked, onClick, label }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`flex w-full items-center gap-4 rounded-2xl border px-5 py-4 text-left transition ${
+        checked
+          ? "border-[#7CC242] bg-[#F3FBEA] dark:border-[#7CC242] dark:bg-[#7CC242]/10"
+          : "border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 hover:border-[#7CC242]/60"
+      }`}
+    >
+      <span
+        className={`flex h-6 w-6 items-center justify-center rounded-full border-2 transition ${
+          checked
+            ? "border-[#7CC242] bg-[#7CC242]"
+            : "border-gray-400 dark:border-white/30"
+        }`}
+      >
+        {checked ? <span className="h-2.5 w-2.5 rounded-full bg-white" /> : null}
+      </span>
+
+      <span className="text-[16px] font-medium text-[#0B1220] dark:text-white">
+        {label}
+      </span>
+    </button>
+  );
 }
 
 export default function InterviewEvaluationPage() {
   const router = useRouter();
-  const params = useParams();  // ✅ UTILISER useParams() hook
+  const params = useParams();
   const interviewId = params?.id;
 
-  console.log("🔴 PAGE MOUNTED - params:", params);
-  console.log("🔴 PAGE MOUNTED - interviewId:", interviewId);
-
-  // États
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(false);
 
-  // Données
   const [interview, setInterview] = useState(null);
   const [fiche, setFiche] = useState(null);
   const [criteria, setCriteria] = useState([]);
-  
-  // Évaluation
+
   const [ratings, setRatings] = useState({});
   const [comments, setComments] = useState({});
   const [overallRating, setOverallRating] = useState(0);
   const [evaluationNotes, setEvaluationNotes] = useState("");
 
-  // Charge les données
   useEffect(() => {
-    console.log("🔴 USEEFFECT - LOAD FORM START");
-    
     if (!interviewId) {
-      console.error("❌ NO INTERVIEW ID");
       setError("ID d'entretien manquant");
       setLoading(false);
       return;
@@ -94,55 +113,44 @@ export default function InterviewEvaluationPage() {
       try {
         setLoading(true);
         setError(null);
-        
-        console.log("📌 Loading form for interviewId:", interviewId);
 
-        // Récupérer la fiche et les critères
-        const url = `/api/interviews/${interviewId}/evaluation-form`;
-        console.log("🌐 Calling URL:", url);
-        
-        const formData = await apiFetch(url);
-        
-        console.log("✅ Form data reçue:", formData);
-        
-        if (!formData) {
-          throw new Error("No data received from API");
-        }
+        const formData = await apiFetch(
+          `/api/interviews/${interviewId}/evaluation-form`,
+        );
 
-        console.log("📋 Interview:", formData.interview);
-        console.log("📊 Fiche:", formData.fiche);
-        console.log("✏️ Criteria count:", formData.criteria?.length);
+        setInterview(formData?.interview || null);
+        setFiche(formData?.fiche || null);
 
-        setInterview(formData.interview);
-        setFiche(formData.fiche);
-        setCriteria(formData.criteria || []);
+        const sortedCriteria = Array.isArray(formData?.criteria)
+          ? [...formData.criteria].sort(
+              (a, b) =>
+                Number(a?.order ?? 0) - Number(b?.order ?? 0) ||
+                String(a?.label || "").localeCompare(String(b?.label || "")),
+            )
+          : [];
 
-        // Chercher une évaluation existante
-        if (formData.existingEvaluation) {
-          console.log("Existing evaluation found");
+        setCriteria(sortedCriteria);
+
+        if (formData?.existingEvaluation) {
           const existingEval = formData.existingEvaluation;
-          setOverallRating(existingEval.overallRating || 0);
-          setEvaluationNotes(existingEval.notes || "");
+          setOverallRating(existingEval?.overallRating || 0);
+          setEvaluationNotes(existingEval?.notes || "");
 
-          // Remplir les ratings et commentaires
           const newRatings = {};
           const newComments = {};
-          existingEval.ratings.forEach((r) => {
-            console.log("   - Criterion:", r.label, "=", r.value);
+
+          (existingEval?.ratings || []).forEach((r) => {
             newRatings[r.criterionId] = r.value;
             newComments[r.criterionId] = r.comment || "";
           });
+
           setRatings(newRatings);
           setComments(newComments);
-        } else {
-          console.log("📝 No existing evaluation");
         }
-
-        console.log("🟢 FORM LOADED SUCCESSFULLY");
       } catch (err) {
-        console.error("❌ ERREUR LOAD FORM:", err);
-        console.error("Stack:", err.stack);
-        setError("Impossible de charger la fiche d'évaluation: " + err.message);
+        setError(
+          "Impossible de charger la fiche d'évaluation : " + err.message,
+        );
       } finally {
         setLoading(false);
       }
@@ -151,20 +159,47 @@ export default function InterviewEvaluationPage() {
     loadForm();
   }, [interviewId]);
 
-  // Sauvegarde l'évaluation
+  const completion = useMemo(() => {
+    if (!criteria.length) return 0;
+    const filled = criteria.filter((criterion) =>
+      hasMeaningfulValue(ratings[criterion._id], criterion.type),
+    ).length;
+    return Math.round((filled / criteria.length) * 100);
+  }, [criteria, ratings]);
+
+  const updateRating = (criterionId, value) => {
+    setRatings((prev) => ({
+      ...prev,
+      [criterionId]: value,
+    }));
+  };
+
+  const updateComment = (criterionId, value) => {
+    setComments((prev) => ({
+      ...prev,
+      [criterionId]: value,
+    }));
+  };
+
   const handleSave = async () => {
-    console.log("🔴 SAVE START");
     try {
       setSaving(true);
       setError(null);
       setSuccess(false);
+
+      if (!fiche?._id) {
+        throw new Error("Fiche d'évaluation introuvable");
+      }
 
       const evaluationData = {
         ficheId: fiche._id,
         ratings: criteria.map((crit) => ({
           criterionId: crit._id,
           label: crit.label,
-          value: ratings[crit._id] || 0,
+          value:
+            ratings[crit._id] !== undefined && ratings[crit._id] !== null
+              ? ratings[crit._id]
+              : "",
           comment: comments[crit._id] || "",
           type: crit.type,
         })),
@@ -172,36 +207,26 @@ export default function InterviewEvaluationPage() {
         overallRating,
       };
 
-      console.log("💾 Saving evaluation data:", evaluationData);
-
-      const url = `/api/interviews/${interviewId}/evaluation`;
-      console.log("🌐 Calling URL:", url);
-      
-      const result = await apiFetch(url, {
+      await apiFetch(`/api/interviews/${interviewId}/evaluation`, {
         method: "POST",
         body: JSON.stringify(evaluationData),
       });
 
-      console.log("✅ Save result:", result);
       setSuccess(true);
-      
+
       setTimeout(() => {
-        console.log("↩️ Redirecting...");
         router.back();
-      }, 2000);
+      }, 1500);
     } catch (err) {
-      console.error("❌ SAVE ERROR:", err);
-      setError("Erreur lors de la sauvegarde de l'évaluation: " + err.message);
+      setError("Erreur lors de la sauvegarde de l'évaluation : " + err.message);
     } finally {
       setSaving(false);
     }
   };
 
-  console.log("🔵 RENDER - loading:", loading, "error:", error);
-
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-[#F4FAF2] to-[#E8F5E1] dark:from-[#0B1220] dark:to-[#0F1A2B] px-6 py-8">
+      <div className="min-h-screen bg-gradient-to-br from-[#F4FAF2] to-[#E8F5E1] px-6 py-8 dark:from-[#0B1220] dark:to-[#0F1A2B]">
         <div className="mx-auto max-w-4xl">
           <div className="flex items-center justify-center py-20">
             <Loader size={40} className="animate-spin text-[#7CC242]" />
@@ -216,9 +241,10 @@ export default function InterviewEvaluationPage() {
 
   if (error && !interview) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-[#F4FAF2] to-[#E8F5E1] dark:from-[#0B1220] dark:to-[#0F1A2B] px-6 py-8">
+      <div className="min-h-screen bg-gradient-to-br from-[#F4FAF2] to-[#E8F5E1] px-6 py-8 dark:from-[#0B1220] dark:to-[#0F1A2B]">
         <div className="mx-auto max-w-4xl">
           <button
+            type="button"
             onClick={() => router.back()}
             className="mb-8 flex items-center gap-2 text-[#7CC242] hover:opacity-80"
           >
@@ -226,7 +252,7 @@ export default function InterviewEvaluationPage() {
             Retour
           </button>
 
-          <div className="rounded-2xl border-2 border-red-200 dark:border-red-500/30 bg-red-50 dark:bg-red-500/10 p-6">
+          <div className="rounded-2xl border-2 border-red-200 bg-red-50 p-6 dark:border-red-500/30 dark:bg-red-500/10">
             <div className="flex gap-4">
               <AlertCircle size={24} className="flex-shrink-0 text-red-500" />
               <div>
@@ -234,9 +260,6 @@ export default function InterviewEvaluationPage() {
                   Erreur
                 </h2>
                 <p className="mt-1 text-red-600 dark:text-red-300">{error}</p>
-                <p className="mt-2 text-xs text-red-500 dark:text-red-400">
-                  Vérifiez la console (F12) pour plus de détails
-                </p>
               </div>
             </div>
           </div>
@@ -246,11 +269,11 @@ export default function InterviewEvaluationPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#F4FAF2] to-[#E8F5E1] dark:from-[#0B1220] dark:to-[#0F1A2B] px-6 py-8">
+    <div className="min-h-screen bg-gradient-to-br from-[#F4FAF2] to-[#E8F5E1] px-6 py-8 dark:from-[#0B1220] dark:to-[#0F1A2B]">
       <div className="mx-auto max-w-4xl">
-        {/* HEADER */}
         <div className="mb-8">
           <button
+            type="button"
             onClick={() => router.back()}
             className="mb-6 flex items-center gap-2 text-[#7CC242] transition hover:opacity-80"
           >
@@ -258,9 +281,8 @@ export default function InterviewEvaluationPage() {
             Retour
           </button>
 
-          <div className="rounded-2xl bg-white dark:bg-[#0F1A2B] p-8 shadow-sm dark:border dark:border-white/10">
+          <div className="rounded-2xl bg-white p-8 shadow-sm dark:border dark:border-white/10 dark:bg-[#0F1A2B]">
             <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-              {/* Candidat */}
               <div>
                 <p className="text-sm font-semibold uppercase text-gray-500 dark:text-gray-400">
                   Candidat
@@ -273,13 +295,12 @@ export default function InterviewEvaluationPage() {
                 </p>
               </div>
 
-              {/* Type d'entretien */}
               <div>
                 <p className="text-sm font-semibold uppercase text-gray-500 dark:text-gray-400">
                   Type d'entretien
                 </p>
                 <div className="mt-2 flex flex-wrap gap-2">
-                  <span className="inline-flex items-center rounded-full border border-[#7CC242]/50 dark:border-[#7CC242]/30 bg-[#7CC242]/10 dark:bg-[#7CC242]/5 px-4 py-1 text-sm font-semibold text-[#7CC242]">
+                  <span className="inline-flex items-center rounded-full border border-[#7CC242]/50 bg-[#7CC242]/10 px-4 py-1 text-sm font-semibold text-[#7CC242] dark:border-[#7CC242]/30 dark:bg-[#7CC242]/5">
                     {interview?.interviewType || "Entretien RH"}
                   </span>
                 </div>
@@ -289,8 +310,7 @@ export default function InterviewEvaluationPage() {
               </div>
             </div>
 
-            {/* Détails entretien */}
-            <div className="mt-6 border-t border-gray-200 dark:border-white/10 pt-6">
+            <div className="mt-6 border-t border-gray-200 pt-6 dark:border-white/10">
               <div className="grid grid-cols-2 gap-4 text-sm">
                 <div>
                   <p className="font-semibold text-gray-600 dark:text-gray-400">
@@ -298,7 +318,9 @@ export default function InterviewEvaluationPage() {
                   </p>
                   <p className="mt-1 text-[#0B1220] dark:text-white">
                     {interview?.proposedDate
-                      ? new Date(interview.proposedDate).toLocaleDateString("fr-FR")
+                      ? new Date(interview.proposedDate).toLocaleDateString(
+                          "fr-FR",
+                        )
                       : "-"}
                   </p>
                 </div>
@@ -312,25 +334,24 @@ export default function InterviewEvaluationPage() {
                 </div>
               </div>
             </div>
+
+            
           </div>
         </div>
 
-        {/* FICHE D'ÉVALUATION */}
         <div className="space-y-6">
-          <div className="rounded-2xl bg-white dark:bg-[#0F1A2B] p-8 shadow-sm dark:border dark:border-white/10">
+          <div className="rounded-2xl bg-white p-8 shadow-sm dark:border dark:border-white/10 dark:bg-[#0F1A2B]">
             <h2 className="text-xl font-bold text-[#0B1220] dark:text-white">
               {fiche?.description || "Critères d'évaluation"}
             </h2>
 
-            {/* CRITÈRES */}
             <div className="mt-8 space-y-8">
               {criteria && criteria.length > 0 ? (
                 criteria.map((criterion, idx) => (
                   <div
                     key={criterion._id}
-                    className="border-b border-gray-100 dark:border-white/5 pb-8 last:border-b-0"
+                    className="border-b border-gray-100 pb-8 last:border-b-0 dark:border-white/5"
                   >
-                    {/* LABEL ET TYPE */}
                     <div className="flex items-start justify-between gap-4">
                       <div className="flex-1">
                         <h3 className="text-lg font-semibold text-[#0B1220] dark:text-white">
@@ -342,121 +363,117 @@ export default function InterviewEvaluationPage() {
                           </p>
                         )}
                       </div>
+
                       {criterion.weight && (
                         <div className="flex-shrink-0">
-                          <span className="inline-block rounded bg-gray-100 dark:bg-white/10 px-3 py-1 text-xs font-semibold text-gray-700 dark:text-gray-300">
+                          <span className="inline-block rounded bg-gray-100 px-3 py-1 text-xs font-semibold text-gray-700 dark:bg-white/10 dark:text-gray-300">
                             Poids: {criterion.weight}
                           </span>
                         </div>
                       )}
                     </div>
 
-                    {/* INPUT SELON LE TYPE */}
                     <div className="mt-4">
                       {criterion.type === "score" && criterion.scale ? (
-                        // INPUT SCORE (1-5)
                         <div className="space-y-3">
-                          <div className="flex gap-2">
+                          <div className="flex flex-wrap gap-2">
                             {Array.from(
-                              { length: criterion.scale.max - criterion.scale.min + 1 },
-                              (_, i) => criterion.scale.min + i
+                              {
+                                length:
+                                  Number(criterion.scale.max) -
+                                    Number(criterion.scale.min) +
+                                  1,
+                              },
+                              (_, i) => Number(criterion.scale.min) + i,
                             ).map((score) => (
                               <button
                                 key={score}
-                                onClick={() =>
-                                  setRatings((prev) => ({
-                                    ...prev,
-                                    [criterion._id]: score,
-                                  }))
-                                }
+                                type="button"
+                                onClick={() => updateRating(criterion._id, score)}
                                 className={`flex h-12 w-12 items-center justify-center rounded-lg border-2 font-bold transition ${
                                   ratings[criterion._id] === score
                                     ? "border-[#7CC242] bg-[#7CC242] text-white"
-                                    : "border-gray-200 dark:border-white/20 bg-white dark:bg-white/5 text-gray-700 dark:text-white hover:border-[#7CC242]"
+                                    : "border-gray-200 bg-white text-gray-700 hover:border-[#7CC242] dark:border-white/20 dark:bg-white/5 dark:text-white"
                                 }`}
                               >
                                 {score}
                               </button>
                             ))}
                           </div>
+
                           <p className="text-xs text-gray-500 dark:text-gray-400">
                             {criterion.scale.min} = Faible | {criterion.scale.max} =
                             Excellent
                           </p>
                         </div>
+                      ) : criterion.type === "boolean" ? (
+                        <div className="space-y-3">
+                          <RadioCard
+                            label="Oui"
+                            checked={ratings[criterion._id] === "Oui"}
+                            onClick={() => updateRating(criterion._id, "Oui")}
+                          />
+                          <RadioCard
+                            label="Non"
+                            checked={ratings[criterion._id] === "Non"}
+                            onClick={() => updateRating(criterion._id, "Non")}
+                          />
+                        </div>
                       ) : criterion.type === "choice" &&
                         Array.isArray(criterion.choices) ? (
-                        // SELECT MULTIPLE CHOICE
-                        <select
-                          value={ratings[criterion._id] || ""}
-                          onChange={(e) =>
-                            setRatings((prev) => ({
-                              ...prev,
-                              [criterion._id]: e.target.value,
-                            }))
-                          }
-                          className="w-full rounded-lg border border-gray-200 dark:border-white/20 bg-white dark:bg-white/5 px-4 py-3 text-[#0B1220] dark:text-white transition focus:border-[#7CC242] focus:outline-none"
-                        >
-                          <option value="">Sélectionner une option...</option>
+                        <div className="space-y-3">
                           {criterion.choices.map((choice, i) => (
-                            <option key={i} value={choice}>
-                              {choice}
-                            </option>
+                            <RadioCard
+                              key={i}
+                              label={choice}
+                              checked={ratings[criterion._id] === choice}
+                              onClick={() => updateRating(criterion._id, choice)}
+                            />
                           ))}
-                        </select>
+                        </div>
                       ) : (
-                        // TEXT AREA (défaut)
                         <textarea
                           placeholder="Votre évaluation..."
                           value={ratings[criterion._id] || ""}
                           onChange={(e) =>
-                            setRatings((prev) => ({
-                              ...prev,
-                              [criterion._id]: e.target.value,
-                            }))
+                            updateRating(criterion._id, e.target.value)
                           }
-                          className="w-full rounded-lg border border-gray-200 dark:border-white/20 bg-white dark:bg-white/5 px-4 py-3 text-[#0B1220] dark:text-white placeholder-gray-400 dark:placeholder-gray-500 transition focus:border-[#7CC242] focus:outline-none"
+                          className="w-full rounded-lg border border-gray-200 bg-white px-4 py-3 text-[#0B1220] placeholder-gray-400 transition focus:border-[#7CC242] focus:outline-none dark:border-white/20 dark:bg-white/5 dark:text-white dark:placeholder-gray-500"
                           rows={3}
                         />
                       )}
                     </div>
 
-                    {/* COMMENTAIRE */}
-                    {(criterion.type === "score" || criterion.type === "choice") && (
-                      <div className="mt-4">
-                        <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 dark:text-gray-300">
-                          <MessageSquare size={16} />
-                          Commentaire (optionnel)
-                        </label>
-                        <textarea
-                          placeholder="Ajouter un commentaire détaillé..."
-                          value={comments[criterion._id] || ""}
-                          onChange={(e) =>
-                            setComments((prev) => ({
-                              ...prev,
-                              [criterion._id]: e.target.value,
-                            }))
-                          }
-                          className="mt-2 w-full rounded-lg border border-gray-200 dark:border-white/20 bg-white dark:bg-white/5 px-4 py-2 text-sm text-[#0B1220] dark:text-white placeholder-gray-400 dark:placeholder-gray-500 transition focus:border-[#7CC242] focus:outline-none"
-                          rows={2}
-                        />
-                      </div>
-                    )}
+                    <div className="mt-4">
+                      <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 dark:text-gray-300">
+                        <MessageSquare size={16} />
+                        Commentaire (optionnel)
+                      </label>
+                      <textarea
+                        placeholder="Ajouter un commentaire détaillé..."
+                        value={comments[criterion._id] || ""}
+                        onChange={(e) =>
+                          updateComment(criterion._id, e.target.value)
+                        }
+                        className="mt-2 w-full rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm text-[#0B1220] placeholder-gray-400 transition focus:border-[#7CC242] focus:outline-none dark:border-white/20 dark:bg-white/5 dark:text-white dark:placeholder-gray-500"
+                        rows={2}
+                      />
+                    </div>
                   </div>
                 ))
               ) : (
-                <p className="text-red-600 dark:text-red-400">❌ Aucun critère trouvé</p>
+                <p className="text-red-600 dark:text-red-400">
+                  Aucun critère trouvé
+                </p>
               )}
             </div>
           </div>
 
-          {/* ÉVALUATION GÉNÉRALE ET NOTES */}
-          <div className="rounded-2xl bg-white dark:bg-[#0F1A2B] p-8 shadow-sm dark:border dark:border-white/10">
+          <div className="rounded-2xl bg-white p-8 shadow-sm dark:border dark:border-white/10 dark:bg-[#0F1A2B]">
             <h3 className="text-lg font-bold text-[#0B1220] dark:text-white">
               Évaluation générale
             </h3>
 
-            {/* NOTE GLOBALE */}
             <div className="mt-6">
               <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300">
                 Note globale (optionnel)
@@ -465,6 +482,7 @@ export default function InterviewEvaluationPage() {
                 {[1, 2, 3, 4, 5].map((star) => (
                   <button
                     key={star}
+                    type="button"
                     onClick={() => setOverallRating(star)}
                     className="transition"
                   >
@@ -481,7 +499,6 @@ export default function InterviewEvaluationPage() {
               </div>
             </div>
 
-            {/* NOTES FINALES */}
             <div className="mt-6">
               <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300">
                 Observations supplémentaires
@@ -490,50 +507,47 @@ export default function InterviewEvaluationPage() {
                 placeholder="Ajouter des notes finales, recommandations..."
                 value={evaluationNotes}
                 onChange={(e) => setEvaluationNotes(e.target.value)}
-                className="mt-2 w-full rounded-lg border border-gray-200 dark:border-white/20 bg-white dark:bg-white/5 px-4 py-3 text-[#0B1220] dark:text-white placeholder-gray-400 dark:placeholder-gray-500 transition focus:border-[#7CC242] focus:outline-none"
+                className="mt-2 w-full rounded-lg border border-gray-200 bg-white px-4 py-3 text-[#0B1220] placeholder-gray-400 transition focus:border-[#7CC242] focus:outline-none dark:border-white/20 dark:bg-white/5 dark:text-white dark:placeholder-gray-500"
                 rows={4}
               />
             </div>
           </div>
 
-          {/* MESSAGES */}
           {error && (
-            <div className="rounded-2xl border-2 border-red-200 dark:border-red-500/30 bg-red-50 dark:bg-red-500/10 p-4">
+            <div className="rounded-2xl border-2 border-red-200 bg-red-50 p-4 dark:border-red-500/30 dark:bg-red-500/10">
               <div className="flex gap-3">
-                <AlertCircle
-                  size={20}
-                  className="flex-shrink-0 text-red-500"
-                />
+                <AlertCircle size={20} className="flex-shrink-0 text-red-500" />
                 <p className="text-sm text-red-700 dark:text-red-400">{error}</p>
               </div>
             </div>
           )}
 
           {success && (
-            <div className="rounded-2xl border-2 border-green-200 dark:border-green-500/30 bg-green-50 dark:bg-green-500/10 p-4">
+            <div className="rounded-2xl border-2 border-green-200 bg-green-50 p-4 dark:border-green-500/30 dark:bg-green-500/10">
               <div className="flex gap-3">
                 <CheckCircle
                   size={20}
                   className="flex-shrink-0 text-green-600 dark:text-green-400"
                 />
                 <p className="text-sm text-green-700 dark:text-green-400">
-                  ✅ Évaluation sauvegardée avec succès !
+                  Évaluation sauvegardée avec succès.
                 </p>
               </div>
             </div>
           )}
 
-          {/* BOUTONS ACTION */}
           <div className="flex gap-4">
             <button
+              type="button"
               onClick={() => router.back()}
               disabled={saving}
-              className="flex-1 rounded-full border-2 border-gray-300 dark:border-white/20 bg-white dark:bg-[#0F1A2B] px-6 py-3 font-semibold text-[#0B1220] dark:text-white transition hover:bg-gray-50 dark:hover:bg-white/5 disabled:opacity-60"
+              className="flex-1 rounded-full border-2 border-gray-300 bg-white px-6 py-3 font-semibold text-[#0B1220] transition hover:bg-gray-50 disabled:opacity-60 dark:border-white/20 dark:bg-[#0F1A2B] dark:text-white dark:hover:bg-white/5"
             >
               Annuler
             </button>
 
             <button
+              type="button"
               onClick={handleSave}
               disabled={saving || criteria.length === 0}
               className="flex flex-1 items-center justify-center gap-2 rounded-full bg-[#7CC242] px-6 py-3 font-semibold text-white transition hover:opacity-90 disabled:opacity-60"

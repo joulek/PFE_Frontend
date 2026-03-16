@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   Mail,
   Phone,
@@ -11,12 +11,12 @@ import {
   ChevronRight,
   Search,
   Loader2,
+  Linkedin,
 } from "lucide-react";
 import api from "../../services/api";
 
 export default function CandidaturesPage() {
   const [candidatures, setCandidatures] = useState([]);
-  const [filtered, setFiltered] = useState([]);
   const [loading, setLoading] = useState(true);
   const [userPoste, setUserPoste] = useState(null);
   const [search, setSearch] = useState("");
@@ -28,6 +28,7 @@ export default function CandidaturesPage() {
   useEffect(() => {
     async function load() {
       setLoading(true);
+
       const u = JSON.parse(localStorage.getItem("user") || "{}");
       const poste = u?.poste || null;
       setUserPoste(poste);
@@ -37,11 +38,9 @@ export default function CandidaturesPage() {
         const res = await api.get(`/candidatures/my${params}`);
         const data = Array.isArray(res.data) ? res.data : [];
         setCandidatures(data);
-        setFiltered(data);
       } catch (error) {
         console.error("Erreur chargement candidatures :", error);
         setCandidatures([]);
-        setFiltered([]);
       } finally {
         setLoading(false);
       }
@@ -50,51 +49,85 @@ export default function CandidaturesPage() {
     load();
   }, []);
 
-  useEffect(() => {
-    const q = search.toLowerCase().trim();
-    const f = candidatures.filter(
-      (c) =>
-        getName(c).toLowerCase().includes(q) ||
-        (c.jobTitle || "").toLowerCase().includes(q) ||
-        getEmail(c).toLowerCase().includes(q)
-    );
-    setFiltered(f);
-    setPage(1);
-  }, [search, candidatures]);
+  const getParsed = (c) => {
+    const raw = c?.extracted?.parsed || c?.extracted || {};
+    return raw?.manual || raw?.parsed || raw || {};
+  };
 
-  const getParsed = (c) => c?.extracted?.parsed || c?.extracted?.manual || {};
+  const getPersonalInfo = (c) => {
+    const p = getParsed(c);
+    return p?.personal_info || {};
+  };
 
   const getName = (c) => {
     const p = getParsed(c);
+    const pi = getPersonalInfo(c);
 
-    if (p.nom) return p.nom;
-
-    if (c?.personalInfoForm?.prenom && c?.personalInfoForm?.nom) {
-      return `${c.personalInfoForm.prenom} ${c.personalInfoForm.nom}`;
+    if (p?.nom && String(p.nom).trim()) {
+      return String(p.nom).trim();
     }
 
-    const prenom = p.first_name || p.prenom || p.personal_info?.first_name || "";
-    const nom = p.last_name || p.personal_info?.last_name || "";
+    if (p?.full_name && String(p.full_name).trim()) {
+      return String(p.full_name).trim();
+    }
 
-    if (prenom || nom) return `${prenom} ${nom}`.trim();
+    if (c?.personalInfoForm?.prenom || c?.personalInfoForm?.nom) {
+      return `${c?.personalInfoForm?.prenom || ""} ${c?.personalInfoForm?.nom || ""}`.trim();
+    }
 
-    return "—";
+    const prenom = p?.first_name || p?.prenom || pi?.first_name || "";
+    const nom = p?.last_name || pi?.last_name || "";
+
+    const full = `${prenom} ${nom}`.trim();
+    return full || "—";
   };
 
   const getEmail = (c) => {
     const p = getParsed(c);
-    return c?.personalInfoForm?.email || p.email || p.personal_info?.email || "—";
+    const pi = getPersonalInfo(c);
+
+    return (
+      c?.personalInfoForm?.email ||
+      p?.email ||
+      pi?.email ||
+      "—"
+    );
   };
 
   const getPhone = (c) => {
     const p = getParsed(c);
+    const pi = getPersonalInfo(c);
+
     return (
       c?.personalInfoForm?.telephone ||
-      p.telephone ||
-      p.phone ||
-      p.personal_info?.telephone ||
+      p?.telephone ||
+      p?.phone ||
+      pi?.telephone ||
+      pi?.phone ||
       "—"
     );
+  };
+
+  const getLinkedin = (c) => {
+    const p = getParsed(c);
+    const pi = getPersonalInfo(c);
+    const reseaux = p?.reseaux_sociaux || {};
+
+    return (
+      c?.personalInfoForm?.linkedin ||
+      reseaux?.linkedin ||
+      pi?.linkedin ||
+      p?.linkedin ||
+      "—"
+    );
+  };
+
+  const normalizeUrl = (url) => {
+    if (!url || url === "—") return null;
+    const trimmed = String(url).trim();
+    if (!trimmed) return null;
+    if (/^https?:\/\//i.test(trimmed)) return trimmed;
+    return `https://${trimmed}`;
   };
 
   const withApiPrefix = (url) => {
@@ -110,7 +143,32 @@ export default function CandidaturesPage() {
     return null;
   };
 
-  const totalPages = Math.ceil(filtered.length / LIMIT);
+  const filtered = useMemo(() => {
+    const q = search.toLowerCase().trim();
+    if (!q) return candidatures;
+
+    return candidatures.filter((c) => {
+      const name = getName(c).toLowerCase();
+      const email = getEmail(c).toLowerCase();
+      const phone = getPhone(c).toLowerCase();
+      const linkedin = getLinkedin(c).toLowerCase();
+      const jobTitle = (c?.jobTitle || "").toLowerCase();
+
+      return (
+        name.includes(q) ||
+        email.includes(q) ||
+        phone.includes(q) ||
+        linkedin.includes(q) ||
+        jobTitle.includes(q)
+      );
+    });
+  }, [search, candidatures]);
+
+  useEffect(() => {
+    setPage(1);
+  }, [search]);
+
+  const totalPages = Math.ceil(filtered.length / LIMIT) || 1;
   const paginated = filtered.slice((page - 1) * LIMIT, page * LIMIT);
 
   if (loading) {
@@ -118,7 +176,9 @@ export default function CandidaturesPage() {
       <div className="min-h-screen bg-[#f5f8f2] dark:bg-[#0f1720] flex items-center justify-center">
         <div className="flex flex-col items-center gap-3">
           <Loader2 className="w-8 h-8 animate-spin text-[#6fa93f]" />
-          <p className="text-sm text-slate-500 dark:text-slate-300">Chargement...</p>
+          <p className="text-sm text-slate-500 dark:text-slate-300">
+            Chargement...
+          </p>
         </div>
       </div>
     );
@@ -145,7 +205,7 @@ export default function CandidaturesPage() {
             <Search className="w-5 h-5 text-[#4E8F2F] dark:text-emerald-400 flex-shrink-0" />
             <input
               type="text"
-              placeholder="Rechercher (nom, email, poste)..."
+              placeholder="Rechercher (nom, email, téléphone, LinkedIn, poste)..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className="w-full outline-none text-sm bg-transparent text-gray-700 dark:text-gray-300 placeholder-gray-500 dark:placeholder-gray-400"
@@ -184,6 +244,9 @@ export default function CandidaturesPage() {
                         Contact
                       </th>
                       <th className="text-left px-6 py-5 font-extrabold uppercase text-xs tracking-wider">
+                        LinkedIn
+                      </th>
+                      <th className="text-left px-6 py-5 font-extrabold uppercase text-xs tracking-wider">
                         Poste
                       </th>
                       <th className="text-left px-6 py-5 font-extrabold uppercase text-xs tracking-wider">
@@ -197,6 +260,8 @@ export default function CandidaturesPage() {
                       const name = getName(c);
                       const email = getEmail(c);
                       const phone = getPhone(c);
+                      const linkedin = getLinkedin(c);
+                      const linkedinUrl = normalizeUrl(linkedin);
                       const cvLink = getCvLink(c);
                       const jobTitle = c?.jobTitle || "—";
 
@@ -216,12 +281,30 @@ export default function CandidaturesPage() {
                             </div>
                           </td>
 
-                          <td className="px-6 py-5 text-gray-600 dark:text-gray-300">
+                          <td className="px-6 py-5 text-gray-600 dark:text-gray-300 break-all">
                             {email}
                           </td>
 
                           <td className="px-6 py-5 text-gray-600 dark:text-gray-300 whitespace-nowrap">
                             {phone}
+                          </td>
+
+                          <td className="px-6 py-5 text-gray-600 dark:text-gray-300">
+                            {linkedinUrl ? (
+                              <a
+                                href={linkedinUrl}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="inline-flex items-center gap-2 text-[#2563eb] dark:text-[#93c5fd] font-semibold hover:underline break-all"
+                              >
+                                <Linkedin className="w-4 h-4 shrink-0" />
+                                <span className="truncate max-w-[220px]">
+                                  Profil
+                                </span>
+                              </a>
+                            ) : (
+                              <span className="text-slate-400">—</span>
+                            )}
                           </td>
 
                           <td className="px-6 py-5 text-gray-600 dark:text-gray-300 whitespace-nowrap">
@@ -257,6 +340,8 @@ export default function CandidaturesPage() {
                   const name = getName(c);
                   const email = getEmail(c);
                   const phone = getPhone(c);
+                  const linkedin = getLinkedin(c);
+                  const linkedinUrl = normalizeUrl(linkedin);
                   const cvLink = getCvLink(c);
                   const jobTitle = c?.jobTitle || "—";
 
@@ -311,6 +396,31 @@ export default function CandidaturesPage() {
                           </div>
                         </div>
 
+                        <div className="flex items-start gap-3">
+                          <div className="w-9 h-9 rounded-xl bg-[#f1f7eb] dark:bg-slate-900 flex items-center justify-center shrink-0">
+                            <Linkedin className="w-4 h-4 text-[#6d9f40] dark:text-[#9dca7c]" />
+                          </div>
+                          <div className="min-w-0">
+                            <p className="text-xs font-bold uppercase tracking-wide text-slate-400">
+                              LinkedIn
+                            </p>
+                            {linkedinUrl ? (
+                              <a
+                                href={linkedinUrl}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="text-sm text-[#2563eb] dark:text-[#93c5fd] break-all hover:underline"
+                              >
+                                {linkedin}
+                              </a>
+                            ) : (
+                              <p className="text-sm text-slate-700 dark:text-slate-200 break-words">
+                                —
+                              </p>
+                            )}
+                          </div>
+                        </div>
+
                         <div className="pt-2">
                           {cvLink ? (
                             <a
@@ -350,7 +460,9 @@ export default function CandidaturesPage() {
                     </button>
 
                     <button
-                      onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                      onClick={() =>
+                        setPage((p) => Math.min(totalPages, p + 1))
+                      }
                       disabled={page === totalPages}
                       className="w-10 h-10 rounded-full border border-[#d7e3cf] dark:border-slate-700 flex items-center justify-center text-slate-600 dark:text-slate-300 disabled:opacity-40"
                     >

@@ -18,7 +18,6 @@ import {
   Check,
   AlertCircle,
   ArrowLeft,
-  Clock3,
   CheckCircle2,
 } from "lucide-react";
 
@@ -145,6 +144,95 @@ function DashedButton({ children, ...props }) {
   );
 }
 
+function PreviewOption({ label }) {
+  return (
+    <label className="flex items-center gap-4 rounded-2xl border border-[#bbf7d0] bg-white px-5 py-4 dark:border-white/10 dark:bg-[#0B1220]">
+      <input type="radio" disabled className="h-5 w-5 accent-green-600" />
+      <span className="text-[15px] font-medium text-[#111827] dark:text-white">
+        {label}
+      </span>
+    </label>
+  );
+}
+
+function CriterionRenderPreview({ criterion }) {
+  if (criterion.type === "boolean") {
+    return (
+      <div className="mt-5 rounded-2xl border border-[#86efac]/60 bg-[#16a34a]/5 p-5 dark:border-white/10 dark:bg-white/5">
+        <h4 className="text-[15px] font-bold text-[#111827] dark:text-white">
+          Aperçu du rendu
+        </h4>
+        <div className="mt-4 space-y-3">
+          <PreviewOption label="Oui" />
+          <PreviewOption label="Non" />
+        </div>
+      </div>
+    );
+  }
+
+  if (criterion.type === "choice") {
+    return (
+      <div className="mt-5 rounded-2xl border border-[#86efac]/60 bg-[#16a34a]/5 p-5 dark:border-white/10 dark:bg-white/5">
+        <h4 className="text-[15px] font-bold text-[#111827] dark:text-white">
+          Aperçu du rendu
+        </h4>
+        <div className="mt-4 space-y-3">
+          {Array.isArray(criterion.choices) && criterion.choices.length > 0 ? (
+            criterion.choices.map((choice, idx) => (
+              <PreviewOption key={idx} label={choice} />
+            ))
+          ) : (
+            <p className="text-sm font-semibold text-amber-700 dark:text-amber-300">
+              Aucune option définie.
+            </p>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  if (criterion.type === "score" && criterion.scale) {
+    const min = Number(criterion.scale.min ?? 1);
+    const max = Number(criterion.scale.max ?? 5);
+    const values =
+      min <= max
+        ? Array.from({ length: max - min + 1 }, (_, i) => min + i)
+        : [];
+
+    return (
+      <div className="mt-5 rounded-2xl border border-[#86efac]/60 bg-[#16a34a]/5 p-5 dark:border-white/10 dark:bg-white/5">
+        <h4 className="text-[15px] font-bold text-[#111827] dark:text-white">
+          Aperçu du rendu
+        </h4>
+        <div className="mt-4 flex flex-wrap gap-3">
+          {values.map((value) => (
+            <span
+              key={value}
+              className="inline-flex min-h-[44px] min-w-[44px] items-center justify-center rounded-2xl border border-[#86efac]/60 bg-white px-4 py-2 text-sm font-bold text-[#166534] dark:border-white/10 dark:bg-[#0B1220] dark:text-white"
+            >
+              {value}
+            </span>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="mt-5 rounded-2xl border border-[#86efac]/60 bg-[#16a34a]/5 p-5 dark:border-white/10 dark:bg-white/5">
+      <h4 className="text-[15px] font-bold text-[#111827] dark:text-white">
+        Aperçu du rendu
+      </h4>
+      <TextareaBase
+        rows={3}
+        disabled
+        placeholder="Votre évaluation..."
+        className="mt-4 cursor-not-allowed opacity-90"
+      />
+    </div>
+  );
+}
+
 /* ===================== MODAL DELETE ===================== */
 function DeleteCriterionModal({ criterion, onClose, onConfirm, loading }) {
   return (
@@ -152,7 +240,7 @@ function DeleteCriterionModal({ criterion, onClose, onConfirm, loading }) {
       <div className="relative w-full max-w-md rounded-3xl bg-white p-8 shadow-xl dark:bg-[#0F1A2B]">
         <button
           onClick={onClose}
-          className="absolute right-5 top-5 rounded-lg p-2 text-gray-400 hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-white/10 dark:text-white/50"
+          className="absolute right-5 top-5 rounded-lg p-2 text-gray-400 hover:bg-gray-100 hover:text-gray-600 dark:text-white/50 dark:hover:bg-white/10"
           aria-label="Fermer"
         >
           <X size={20} />
@@ -184,7 +272,11 @@ function DeleteCriterionModal({ criterion, onClose, onConfirm, loading }) {
         </div>
 
         <div className="mt-8 flex gap-3">
-          <OutlineButton onClick={onClose} disabled={loading} className="flex-1">
+          <OutlineButton
+            onClick={onClose}
+            disabled={loading}
+            className="flex-1"
+          >
             Annuler
           </OutlineButton>
           <button
@@ -218,7 +310,10 @@ function CriterionForm({ criterion, ficheId, onSave, onCancel, isLoading }) {
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: type === "checkbox" ? checked : value }));
+    setFormData((prev) => ({
+      ...prev,
+      [name]: type === "checkbox" ? checked : value,
+    }));
     setErrors([]);
   };
 
@@ -230,13 +325,20 @@ function CriterionForm({ criterion, ficheId, onSave, onCancel, isLoading }) {
   };
 
   const addChoice = () => {
-    if (!newChoice.trim()) return;
-    setFormData((prev) => ({ ...prev, choices: [...prev.choices, newChoice.trim()] }));
+    const value = newChoice.trim();
+    if (!value) return;
+    setFormData((prev) => ({
+      ...prev,
+      choices: [...prev.choices, value],
+    }));
     setNewChoice("");
   };
 
   const removeChoice = (index) => {
-    setFormData((prev) => ({ ...prev, choices: prev.choices.filter((_, i) => i !== index) }));
+    setFormData((prev) => ({
+      ...prev,
+      choices: prev.choices.filter((_, i) => i !== index),
+    }));
   };
 
   const handleSubmit = async (e) => {
@@ -273,8 +375,11 @@ function CriterionForm({ criterion, ficheId, onSave, onCancel, isLoading }) {
     };
 
     try {
-      if (criterion?._id) await updateCriterion(criterion._id, payload);
-      else await createCriterion(payload);
+      if (criterion?._id) {
+        await updateCriterion(criterion._id, payload);
+      } else {
+        await createCriterion(payload);
+      }
       onSave();
     } catch (err) {
       setErrors([err?.response?.data?.message || "Erreur sauvegarde"]);
@@ -308,7 +413,11 @@ function CriterionForm({ criterion, ficheId, onSave, onCancel, isLoading }) {
               Type *
             </label>
             <div className="mt-2">
-              <SelectBase name="type" value={formData.type} onChange={handleChange}>
+              <SelectBase
+                name="type"
+                value={formData.type}
+                onChange={handleChange}
+              >
                 <option value="text">Texte</option>
                 <option value="score">Score</option>
                 <option value="choice">Choix</option>
@@ -349,6 +458,20 @@ function CriterionForm({ criterion, ficheId, onSave, onCancel, isLoading }) {
             </div>
           </div>
 
+          <div>
+            <label className="text-[15px] font-medium text-[#111827] dark:text-white">
+              Ordre
+            </label>
+            <div className="mt-2">
+              <InputBase
+                type="number"
+                name="order"
+                value={formData.order}
+                onChange={handleChange}
+              />
+            </div>
+          </div>
+
           <div className="flex items-center gap-3 md:justify-center">
             <input
               id="isActive"
@@ -358,12 +481,13 @@ function CriterionForm({ criterion, ficheId, onSave, onCancel, isLoading }) {
               onChange={handleChange}
               className="h-5 w-5 rounded border-gray-300 text-green-600 focus:ring-green-500"
             />
-            <label htmlFor="isActive" className="text-[15px] text-[#111827] dark:text-white">
+            <label
+              htmlFor="isActive"
+              className="text-[15px] text-[#111827] dark:text-white"
+            >
               Actif
             </label>
           </div>
-
-          
         </div>
 
         {formData.type === "score" && (
@@ -373,7 +497,9 @@ function CriterionForm({ criterion, ficheId, onSave, onCancel, isLoading }) {
             </h4>
             <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-3">
               <div>
-                <label className="text-xs font-bold text-[#111827] dark:text-white">Min</label>
+                <label className="text-xs font-bold text-[#111827] dark:text-white">
+                  Min
+                </label>
                 <div className="mt-2">
                   <InputBase
                     type="number"
@@ -383,7 +509,9 @@ function CriterionForm({ criterion, ficheId, onSave, onCancel, isLoading }) {
                 </div>
               </div>
               <div>
-                <label className="text-xs font-bold text-[#111827] dark:text-white">Max</label>
+                <label className="text-xs font-bold text-[#111827] dark:text-white">
+                  Max
+                </label>
                 <div className="mt-2">
                   <InputBase
                     type="number"
@@ -393,7 +521,9 @@ function CriterionForm({ criterion, ficheId, onSave, onCancel, isLoading }) {
                 </div>
               </div>
               <div>
-                <label className="text-xs font-bold text-[#111827] dark:text-white">Pas</label>
+                <label className="text-xs font-bold text-[#111827] dark:text-white">
+                  Pas
+                </label>
                 <div className="mt-2">
                   <InputBase
                     type="number"
@@ -434,7 +564,7 @@ function CriterionForm({ criterion, ficheId, onSave, onCancel, isLoading }) {
               {formData.choices.map((c, idx) => (
                 <span
                   key={idx}
-                  className="inline-flex items-center gap-2 rounded-xl border border-[#86efac]/60 bg-white px-3 py-2 text-sm font-bold text-[#166534] dark:bg-[#0B1220] dark:text-white dark:border-white/10"
+                  className="inline-flex items-center gap-2 rounded-xl border border-[#86efac]/60 bg-white px-3 py-2 text-sm font-bold text-[#166534] dark:border-white/10 dark:bg-[#0B1220] dark:text-white"
                 >
                   {c}
                   <button
@@ -451,10 +581,15 @@ function CriterionForm({ criterion, ficheId, onSave, onCancel, isLoading }) {
           </div>
         )}
 
+        <CriterionRenderPreview criterion={formData} />
+
         {errors.length > 0 && (
           <div className="rounded-2xl border border-red-500/20 bg-red-500/10 p-4">
             {errors.map((er, i) => (
-              <div key={i} className="text-sm font-semibold text-red-600 dark:text-red-400">
+              <div
+                key={i}
+                className="text-sm font-semibold text-red-600 dark:text-red-400"
+              >
                 • {er}
               </div>
             ))}
@@ -466,7 +601,12 @@ function CriterionForm({ criterion, ficheId, onSave, onCancel, isLoading }) {
             <Check size={16} />
             Enregistrer
           </PrimaryButton>
-          <OutlineButton type="button" onClick={onCancel} disabled={isLoading} className="flex-1">
+          <OutlineButton
+            type="button"
+            onClick={onCancel}
+            disabled={isLoading}
+            className="flex-1"
+          >
             <X size={16} />
             Annuler
           </OutlineButton>
@@ -495,20 +635,30 @@ export default function EvaluationFicheDetailsPage() {
 
   const [ficheName, setFicheName] = useState("");
   const [ficheDescription, setFicheDescription] = useState("");
-  const [ficheInterviewType, setFicheInterviewType] = useState(""); // 🆕 Type d'entretien
+  const [ficheInterviewType, setFicheInterviewType] = useState("");
   const [ficheSaving, setFicheSaving] = useState(false);
 
   async function load() {
     if (!ficheId) return;
     setLoading(true);
     setError("");
+
     try {
       const res = await getFicheWithCriteria(ficheId);
-      setFiche(res?.data?.fiche);
-      setFicheName(res?.data?.fiche?.name || "");
-      setFicheDescription(res?.data?.fiche?.description || "");
-      setFicheInterviewType(res?.data?.fiche?.interviewType || ""); // 🆕
-      setCriteria(Array.isArray(res?.data?.criteria) ? res.data.criteria : []);
+      const loadedFiche = res?.data?.fiche || null;
+      const loadedCriteria = Array.isArray(res?.data?.criteria)
+        ? [...res.data.criteria].sort(
+            (a, b) =>
+              Number(a?.order ?? 0) - Number(b?.order ?? 0) ||
+              String(a?.label || "").localeCompare(String(b?.label || "")),
+          )
+        : [];
+
+      setFiche(loadedFiche);
+      setFicheName(loadedFiche?.name || "");
+      setFicheDescription(loadedFiche?.description || "");
+      setFicheInterviewType(loadedFiche?.interviewType || "");
+      setCriteria(loadedCriteria);
     } catch (e) {
       setError(e?.response?.data?.message || "Erreur chargement fiche");
     } finally {
@@ -518,7 +668,6 @@ export default function EvaluationFicheDetailsPage() {
 
   useEffect(() => {
     load();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ficheId]);
 
   async function saveFiche() {
@@ -526,13 +675,15 @@ export default function EvaluationFicheDetailsPage() {
       setError("Le nom est obligatoire");
       return;
     }
+
     setFicheSaving(true);
     setError("");
+
     try {
       await updateFiche(ficheId, {
         name: ficheName,
         description: ficheDescription,
-        interviewType: ficheInterviewType, // 🆕
+        interviewType: ficheInterviewType,
         isActive: fiche?.isActive,
       });
       setEditingFiche(false);
@@ -546,6 +697,7 @@ export default function EvaluationFicheDetailsPage() {
 
   async function onDeleteCriterion() {
     if (!deletingCriterion) return;
+
     setDeleting(true);
     try {
       await deleteCriterion(deletingCriterion._id);
@@ -583,18 +735,16 @@ export default function EvaluationFicheDetailsPage() {
   return (
     <div className="min-h-screen bg-[#EEF8F0] p-6 dark:bg-[#0B1220]">
       <div className="mx-auto w-full max-w-5xl">
-        {/* RETOUR */}
         <div className="mb-6">
           <Link
             href="/recruiter/criteres-evaluation"
-            className="inline-flex items-center gap-2 rounded-xl border border-[#16a34a]/35 bg-white px-5 py-3 text-sm font-bold text-[#166534] hover:bg-[#16a34a]/5 transition dark:bg-[#0F1A2B] dark:text-white dark:border-white/10 dark:hover:bg-white/5"
+            className="inline-flex items-center gap-2 rounded-xl border border-[#16a34a]/35 bg-white px-5 py-3 text-sm font-bold text-[#166534] transition hover:bg-[#16a34a]/5 dark:border-white/10 dark:bg-[#0F1A2B] dark:text-white dark:hover:bg-white/5"
           >
             <ArrowLeft size={18} />
             Retour
           </Link>
         </div>
 
-        {/* HEADER FICHE */}
         <Card>
           <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
             <div className="flex-1">
@@ -630,7 +780,6 @@ export default function EvaluationFicheDetailsPage() {
           </div>
         </Card>
 
-        {/* EDIT FICHE */}
         {editingFiche && (
           <div className="mt-6">
             <Card>
@@ -644,7 +793,10 @@ export default function EvaluationFicheDetailsPage() {
                     Nom de la fiche *
                   </label>
                   <div className="mt-2">
-                    <InputBase value={ficheName} onChange={(e) => setFicheName(e.target.value)} />
+                    <InputBase
+                      value={ficheName}
+                      onChange={(e) => setFicheName(e.target.value)}
+                    />
                   </div>
                 </div>
 
@@ -653,14 +805,21 @@ export default function EvaluationFicheDetailsPage() {
                     Type d'entretien
                   </label>
                   <div className="mt-2">
-                    <SelectBase value={ficheInterviewType} onChange={(e) => setFicheInterviewType(e.target.value)}>
+                    <SelectBase
+                      value={ficheInterviewType}
+                      onChange={(e) => setFicheInterviewType(e.target.value)}
+                    >
                       <option value="">-- Sélectionner un type --</option>
                       <option value="Entretien RH">Entretien RH</option>
-                     <option value="Entretien téléphonique">
-                  Entretien téléphonique
-                </option>
-                      <option value="Entretien technique">Entretien technique</option>
-                      <option value="Entretien RH + technique">Entretien RH + technique</option>
+                      <option value="Entretien téléphonique">
+                        Entretien téléphonique
+                      </option>
+                      <option value="Entretien technique">
+                        Entretien technique
+                      </option>
+                      <option value="Entretien RH + technique">
+                        Entretien RH + technique
+                      </option>
                     </SelectBase>
                   </div>
                 </div>
@@ -687,11 +846,19 @@ export default function EvaluationFicheDetailsPage() {
                 )}
 
                 <div className="flex flex-col gap-3 border-t border-black/10 pt-6 md:flex-row dark:border-white/10">
-                  <PrimaryButton onClick={saveFiche} disabled={ficheSaving} className="flex-1">
+                  <PrimaryButton
+                    onClick={saveFiche}
+                    disabled={ficheSaving}
+                    className="flex-1"
+                  >
                     <Check size={16} />
                     {ficheSaving ? "Enregistrement..." : "Enregistrer"}
                   </PrimaryButton>
-                  <OutlineButton onClick={() => setEditingFiche(false)} disabled={ficheSaving} className="flex-1">
+                  <OutlineButton
+                    onClick={() => setEditingFiche(false)}
+                    disabled={ficheSaving}
+                    className="flex-1"
+                  >
                     <X size={16} />
                     Annuler
                   </OutlineButton>
@@ -701,7 +868,6 @@ export default function EvaluationFicheDetailsPage() {
           </div>
         )}
 
-        {/* ERROR */}
         {error && !editingFiche && (
           <div className="mt-6 rounded-2xl border border-red-500/20 bg-red-500/10 p-4">
             <p className="text-sm font-semibold text-red-600 dark:text-red-400">
@@ -710,7 +876,6 @@ export default function EvaluationFicheDetailsPage() {
           </div>
         )}
 
-        {/* CRITERES */}
         <div className="mt-10">
           <div className="mb-5 flex items-center justify-between gap-4">
             <h2 className="text-2xl font-extrabold text-[#111827] dark:text-white">
@@ -778,16 +943,19 @@ export default function EvaluationFicheDetailsPage() {
                     <div className="flex items-center gap-2">
                       <button
                         onClick={() => setEditingId(criterion._id)}
-                        className="rounded-lg  bg-white p-2 hover:bg-[#16a34a]/5 transition dark:border-white/10 dark:bg-[#0B1220] dark:hover:bg-white/5"
+                        className="rounded-lg bg-white p-2 transition hover:bg-[#16a34a]/5 dark:border-white/10 dark:bg-[#0B1220] dark:hover:bg-white/5"
                         aria-label="Modifier"
                         title="Modifier"
                       >
-                        <Pencil size={18} className="text-[#166534] dark:text-white" />
+                        <Pencil
+                          size={18}
+                          className="text-[#166534] dark:text-white"
+                        />
                       </button>
 
                       <button
                         onClick={() => setDeletingCriterion(criterion)}
-                        className="rounded-lg p-2 hover:bg-red-50 transition dark:hover:bg-red-500/10"
+                        className="rounded-lg p-2 transition hover:bg-red-50 dark:hover:bg-red-500/10"
                         aria-label="Supprimer"
                         title="Supprimer"
                       >
@@ -814,6 +982,9 @@ export default function EvaluationFicheDetailsPage() {
                       <span className="rounded-full border border-[#86efac]/60 bg-[#16a34a]/5 px-3 py-1 text-[#166534] dark:border-white/10 dark:bg-white/5 dark:text-white">
                         Poids: {criterion.weight}
                       </span>
+                      <span className="rounded-full border border-[#86efac]/60 bg-[#16a34a]/5 px-3 py-1 text-[#166534] dark:border-white/10 dark:bg-white/5 dark:text-white">
+                        Ordre: {criterion.order ?? 0}
+                      </span>
                       <Badge active={criterion.isActive}>
                         {criterion.isActive ? "Actif" : "Inactif"}
                       </Badge>
@@ -821,10 +992,12 @@ export default function EvaluationFicheDetailsPage() {
 
                     {criterion.type === "score" && criterion.scale && (
                       <div className="mt-3 text-xs font-semibold text-[#111827]/60 dark:text-white/60">
-                        Échelle: {criterion.scale.min} à {criterion.scale.max} (pas:{" "}
-                        {criterion.scale.step})
+                        Échelle: {criterion.scale.min} à {criterion.scale.max}
+                        {" "} (pas: {criterion.scale.step})
                       </div>
                     )}
+
+                    <CriterionRenderPreview criterion={criterion} />
                   </div>
                 </Card>
               ))

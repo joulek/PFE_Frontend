@@ -138,6 +138,101 @@ function DashedAddButton({ children, className = "", ...props }) {
   );
 }
 
+function PreviewOption({ label }) {
+  return (
+    <label className="flex items-center gap-4 rounded-2xl border border-[#bbf7d0] bg-white px-5 py-4 dark:border-white/10 dark:bg-[#0B1220]">
+      <input
+        type="radio"
+        disabled
+        className="h-5 w-5 accent-green-600"
+      />
+      <span className="text-[15px] font-medium text-[#0B1220] dark:text-white">
+        {label}
+      </span>
+    </label>
+  );
+}
+
+function CriterionPreview({ criterion }) {
+  if (criterion.type === "boolean") {
+    return (
+      <div className="rounded-3xl border border-green-200 bg-green-50 p-6 dark:border-white/10 dark:bg-white/5">
+        <h4 className="font-extrabold text-[#0B1220] dark:text-white">
+          Aperçu du rendu
+        </h4>
+        <div className="mt-4 space-y-3">
+          <PreviewOption label="Oui" />
+          <PreviewOption label="Non" />
+        </div>
+      </div>
+    );
+  }
+
+  if (criterion.type === "choice") {
+    return (
+      <div className="rounded-3xl border border-green-200 bg-green-50 p-6 dark:border-white/10 dark:bg-white/5">
+        <h4 className="font-extrabold text-[#0B1220] dark:text-white">
+          Aperçu du rendu
+        </h4>
+
+        {criterion.choices.length === 0 ? (
+          <p className="mt-4 text-sm font-semibold text-amber-700 dark:text-amber-300">
+            Ajoutez des options pour voir l’aperçu.
+          </p>
+        ) : (
+          <div className="mt-4 space-y-3">
+            {criterion.choices.map((opt, i) => (
+              <PreviewOption key={i} label={opt} />
+            ))}
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  if (criterion.type === "score") {
+    return (
+      <div className="rounded-3xl border border-green-200 bg-green-50 p-6 dark:border-white/10 dark:bg-white/5">
+        <h4 className="font-extrabold text-[#0B1220] dark:text-white">
+          Aperçu du rendu
+        </h4>
+        <div className="mt-4 flex flex-wrap gap-3">
+          {Array.from(
+            {
+              length:
+                Number(criterion.scale.max) >= Number(criterion.scale.min)
+                  ? Number(criterion.scale.max) - Number(criterion.scale.min) + 1
+                  : 0,
+            },
+            (_, idx) => Number(criterion.scale.min) + idx,
+          ).map((value) => (
+            <span
+              key={value}
+              className="inline-flex min-h-[44px] min-w-[44px] items-center justify-center rounded-2xl border border-[#bbf7d0] bg-white px-4 py-2 text-sm font-bold text-[#166534] dark:border-white/10 dark:bg-[#0B1220] dark:text-white"
+            >
+              {value}
+            </span>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="rounded-3xl border border-green-200 bg-green-50 p-6 dark:border-white/10 dark:bg-white/5">
+      <h4 className="font-extrabold text-[#0B1220] dark:text-white">
+        Aperçu du rendu
+      </h4>
+      <Textarea
+        rows={3}
+        disabled
+        placeholder="Votre évaluation..."
+        className="cursor-not-allowed opacity-90"
+      />
+    </div>
+  );
+}
+
 function emptyCriterion() {
   return {
     id: crypto.randomUUID(),
@@ -156,16 +251,25 @@ function emptyCriterion() {
 export default function CreateEvaluationFichePage() {
   const [name, setName] = useState("Fiche d'évaluation");
   const [description, setDescription] = useState("");
-  const [interviewType, setInterviewType] = useState(""); // 🆕 Type d'entretien
+  const [interviewType, setInterviewType] = useState("");
   const [isActive, setIsActive] = useState(true);
 
   const [criteria, setCriteria] = useState([emptyCriterion()]);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
 
-  const addCriterion = () => setCriteria((prev) => [...prev, emptyCriterion()]);
+  const addCriterion = () =>
+    setCriteria((prev) => [
+      ...prev,
+      { ...emptyCriterion(), order: prev.length },
+    ]);
+
   const removeCriterion = (id) =>
-    setCriteria((prev) => prev.filter((c) => c.id !== id));
+    setCriteria((prev) =>
+      prev
+        .filter((c) => c.id !== id)
+        .map((c, index) => ({ ...c, order: index })),
+    );
 
   const updateCriterionField = (id, patch) => {
     setCriteria((prev) =>
@@ -177,9 +281,13 @@ export default function CreateEvaluationFichePage() {
     setCriteria((prev) =>
       prev.map((c) => {
         if (c.id !== id) return c;
-        const v = (c.newChoice || "").trim();
-        if (!v) return c;
-        return { ...c, choices: [...c.choices, v], newChoice: "" };
+        const value = (c.newChoice || "").trim();
+        if (!value) return c;
+        return {
+          ...c,
+          choices: [...c.choices, value],
+          newChoice: "",
+        };
       }),
     );
   };
@@ -188,51 +296,68 @@ export default function CreateEvaluationFichePage() {
     setCriteria((prev) =>
       prev.map((c) => {
         if (c.id !== id) return c;
-        return { ...c, choices: c.choices.filter((_, i) => i !== idx) };
+        return {
+          ...c,
+          choices: c.choices.filter((_, i) => i !== idx),
+        };
       }),
     );
   };
 
   const validate = () => {
     const errs = [];
+
     if (!name.trim()) errs.push("Le titre de la fiche est obligatoire.");
+
     criteria.forEach((c, idx) => {
       if (!c.label.trim()) errs.push(`Critère ${idx + 1}: label obligatoire.`);
-      if (c.type === "choice" && c.choices.length === 0)
+
+      if (c.type === "choice" && c.choices.length === 0) {
         errs.push(`Critère ${idx + 1}: ajoute au moins un choix.`);
+      }
+
       if (c.type === "score") {
-        if (Number(c.scale.min) >= Number(c.scale.max))
+        if (Number(c.scale.min) >= Number(c.scale.max)) {
           errs.push(`Critère ${idx + 1}: min < max requis.`);
-        if (Number(c.scale.step) <= 0)
+        }
+        if (Number(c.scale.step) <= 0) {
           errs.push(`Critère ${idx + 1}: step > 0 requis.`);
+        }
       }
     });
+
     return errs;
   };
 
   const onSave = async () => {
     setError("");
     const errs = validate();
+
     if (errs.length) {
       setError(errs.join(" "));
       return;
     }
 
     setSaving(true);
+
     try {
-      // 🆕 Inclure interviewType dans la création
       const ficheRes = await createFiche({
         name,
         description,
         interviewType,
         isActive,
       });
+
       const ficheId =
         ficheRes?.data?._id || ficheRes?.data?.fiche?._id || ficheRes?.data?.id;
-      if (!ficheId) throw new Error("ID de la fiche non récupéré.");
+
+      if (!ficheId) {
+        throw new Error("ID de la fiche non récupéré.");
+      }
 
       for (let i = 0; i < criteria.length; i++) {
         const c = criteria[i];
+
         await createCriterion({
           ficheId,
           label: c.label,
@@ -240,7 +365,7 @@ export default function CreateEvaluationFichePage() {
           type: c.type,
           weight: Number(c.weight),
           isActive: !!c.isActive,
-          order: Number(c.order || i),
+          order: Number(c.order ?? i),
           scale: c.type === "score" ? c.scale : undefined,
           choices: c.type === "choice" ? c.choices : undefined,
         });
@@ -257,10 +382,8 @@ export default function CreateEvaluationFichePage() {
   };
 
   return (
-    // ✅ IMPORTANT: background en classes (pas de style inline), donc dark s'applique
-    <div className="min-h-screen p-8 bg-[#EEF8F0] dark:bg-[#0B1220]">
+    <div className="min-h-screen bg-[#EEF8F0] p-8 dark:bg-[#0B1220]">
       <div className="mx-auto max-w-5xl">
-        {/* Header */}
         <div className="flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
           <div>
             <h1 className="text-4xl font-black text-[#0B1220] dark:text-white">
@@ -279,7 +402,6 @@ export default function CreateEvaluationFichePage() {
           </Link>
         </div>
 
-        {/* Infos générales */}
         <div className="mt-8">
           <Card>
             <div className="flex items-start justify-between gap-6">
@@ -293,7 +415,7 @@ export default function CreateEvaluationFichePage() {
                   type="checkbox"
                   checked={isActive}
                   onChange={(e) => setIsActive(e.target.checked)}
-                  className="h-5 w-5 accent-red-600"
+                  className="h-5 w-5 accent-green-600"
                 />
               </div>
             </div>
@@ -332,7 +454,6 @@ export default function CreateEvaluationFichePage() {
           </Card>
         </div>
 
-        {/* Critères */}
         <div className="mt-10">
           <h2 className="text-2xl font-black text-[#0B1220] dark:text-white">
             Critères
@@ -349,7 +470,7 @@ export default function CreateEvaluationFichePage() {
                   <button
                     type="button"
                     onClick={() => removeCriterion(c.id)}
-                    className="rounded-xl p-2 hover:bg-red-50 transition dark:hover:bg-red-500/10"
+                    className="rounded-xl p-2 transition hover:bg-red-50 dark:hover:bg-red-500/10"
                     title="Supprimer"
                     aria-label="Supprimer"
                     disabled={criteria.length === 1}
@@ -412,7 +533,20 @@ export default function CreateEvaluationFichePage() {
                       />
                     </div>
 
-                    <div className="flex items-center gap-3 md:justify-end">
+                    <div>
+                      <Label>Ordre</Label>
+                      <Input
+                        type="number"
+                        value={c.order}
+                        onChange={(e) =>
+                          updateCriterionField(c.id, {
+                            order: Number(e.target.value),
+                          })
+                        }
+                      />
+                    </div>
+
+                    <div className="flex items-center gap-3 md:col-span-3 md:justify-end">
                       <input
                         type="checkbox"
                         checked={c.isActive}
@@ -520,8 +654,7 @@ export default function CreateEvaluationFichePage() {
                         {c.choices.map((opt, i) => (
                           <span
                             key={i}
-                            className="inline-flex items-center gap-2 rounded-full border border-green-200 bg-white px-4 py-2 text-xs font-extrabold text-green-700
-                                       dark:bg-[#0B1220] dark:text-white dark:border-white/10"
+                            className="inline-flex items-center gap-2 rounded-full border border-green-200 bg-white px-4 py-2 text-xs font-extrabold text-green-700 dark:border-white/10 dark:bg-[#0B1220] dark:text-white"
                           >
                             {opt}
                             <button
@@ -537,6 +670,8 @@ export default function CreateEvaluationFichePage() {
                       </div>
                     </div>
                   )}
+
+                  <CriterionPreview criterion={c} />
                 </div>
               </Card>
             ))}
