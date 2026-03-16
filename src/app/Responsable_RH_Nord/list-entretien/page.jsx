@@ -65,6 +65,12 @@ const STATUS_CONFIG = {
     color: "text-indigo-700 dark:text-indigo-300 border-indigo-200 dark:border-indigo-700 bg-indigo-50 dark:bg-indigo-950/30",
     dot: "bg-indigo-500",
   },
+  RESCHEDULED: {
+    label: "Reprogrammé",
+    short: "Reprogrammé",
+    color: "text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-700 bg-blue-50 dark:bg-blue-950/30",
+    dot: "bg-blue-500",
+  },
 };
 
 const TYPE_CONFIG = {
@@ -92,10 +98,18 @@ const TYPE_CONFIG = {
     label: "DGA",
     cls: "text-rose-700 dark:text-rose-300 bg-rose-50 dark:bg-rose-950/30 border-rose-200 dark:border-rose-700",
   },
-  // ✅ Téléphonique
   telephonique: {
     label: "Téléphonique",
     cls: "text-green-700 dark:text-green-300 bg-green-50 dark:bg-green-950/30 border-green-200 dark:border-green-700",
+  },
+  // ✅ AJOUTS — entretiens créés par RH Nord
+  NORD: {
+    label: "Entretien RH",
+    cls: "text-[#4E8F2F] dark:text-emerald-400 bg-[#E9F5E3] dark:bg-gray-700 border-[#d7ebcf] dark:border-gray-600",
+  },
+  entretien_nord: {
+    label: "Entretien RH",
+    cls: "text-[#4E8F2F] dark:text-emerald-400 bg-[#E9F5E3] dark:bg-gray-700 border-[#d7ebcf] dark:border-gray-600",
   },
 };
 
@@ -223,13 +237,11 @@ export default function ResponsableMetierInterviewList() {
 
   useEffect(() => { setPage(1); }, [statusFilter]);
 
-  // ── Fetch entretiens (RH Nord planifiés + Téléphoniques confirmés) ──
   const fetchInterviews = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
-      // 1. ✅ Entretiens RH Nord planifiés via Google Calendar
-      //    → GET /api/interviewNord/interview-nord/list
+      // 1. Entretiens RH Nord planifiés
       let rhNordList = [];
       try {
         const params = new URLSearchParams({ page, limit: LIMIT });
@@ -238,13 +250,11 @@ export default function ResponsableMetierInterviewList() {
 
         const rhNordRes = await api.get(`/api/interviewNord/interview-nord/list?${params}`);
         rhNordList = rhNordRes.data?.interviews || [];
-        console.log("📅 Entretiens RH Nord chargés:", rhNordList.length);
       } catch (rhErr) {
         console.error("❌ Erreur chargement entretiens RH Nord:", rhErr);
       }
 
-      // 2. ✅ Entretiens téléphoniques confirmés
-      //    → GET /api/interviewNord/telephonique/my-list
+      // 2. Entretiens téléphoniques confirmés
       let telList = [];
       try {
         const telData = await getMyTelephoniqueInterviews({
@@ -254,16 +264,14 @@ export default function ResponsableMetierInterviewList() {
         });
         telList = telData.interviews || [];
 
-        // Les téléphoniques sont toujours CONFIRMED — les exclure si filtre autre
         if (statusFilter !== "ALL" && statusFilter !== "CONFIRMED") {
           telList = [];
         }
-        console.log("📞 Téléphoniques chargés:", telList.length);
       } catch (telErr) {
         console.error("❌ Erreur chargement téléphoniques:", telErr);
       }
 
-      // 3. Fusion : une seule ligne si même candidature a tél + RH planifié
+      // 3. Fusion
       const telByCandidatureId = {};
       for (const tel of telList) {
         const key = String(tel.candidatureId || tel._id);
@@ -280,7 +288,6 @@ export default function ResponsableMetierInterviewList() {
         return iv;
       });
 
-      // Téléphoniques sans entretien RH planifié associé
       const remainingTel = Object.values(telByCandidatureId);
 
       const merged = [...enrichedRhNord, ...remainingTel].sort((a, b) => {
@@ -299,7 +306,6 @@ export default function ResponsableMetierInterviewList() {
     }
   }, [page, statusFilter, debouncedSearch]);
 
-  // ── Fetch stats ──
   const fetchStats = useCallback(async () => {
     setStatsLoading(true);
     try {
@@ -426,12 +432,24 @@ export default function ResponsableMetierInterviewList() {
                     const isExpanded = expandedRow === iv._id;
                     const isTelephonique = iv._isTelephonique === true || iv.interviewType === "telephonique";
                     const isRHTech = isRHTechInterview(iv.interviewType);
-                    const hasBoth = !isTelephonique && !!iv._telEntry; // RH+Tech avec tél fusionné
+
+                    // ✅ FIX — inclure NORD et entretien_nord
+                    const isRHSimple =
+                      iv.interviewType === "RH"             ||
+                      iv.interviewType === "rh"             ||
+                      iv.interviewType === "NORD"           ||
+                      iv.interviewType === "entretien_nord" ||
+                      iv.type === "entretien_nord";
+
+                    const hasBoth = !isTelephonique && !!iv._telEntry;
 
                     const statusCfg = STATUS_CONFIG[iv.status] || {};
-                    const typeCfg   = isTelephonique
+
+                    // ✅ FIX — fallback sur iv.type si iv.interviewType non reconnu
+                    const typeCfg = isTelephonique
                       ? TYPE_CONFIG.telephonique
-                      : (TYPE_CONFIG[iv.interviewType] || TYPE_CONFIG.RH);
+                      : (TYPE_CONFIG[iv.interviewType] || TYPE_CONFIG[iv.type] || TYPE_CONFIG.RH);
+
                     const isCancelled = iv.status === "CANCELLED";
 
                     const displayDate = iv.confirmedDate || iv.proposedDate || iv.confirmedAt || iv.proposedStart;
@@ -441,21 +459,23 @@ export default function ResponsableMetierInterviewList() {
                         ? new Date(iv.proposedStart).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" })
                         : null));
 
-                    // Bouton évaluation — ✅ CORRECTED pour Responsable RH Nord
-                    // RH Nord a que des entretiens RH simples (pas RH+Tech)
-                    const isRHSimple = iv.interviewType === "RH" || iv.interviewType === "rh";
-                    const showEvalRH = (isRHSimple || isRHTech) && (iv.status === "CONFIRMED" || iv.status === "PENDING_CANDIDATE_CONFIRMATION");
+                    // ✅ FIX — showEvalRH inclut RESCHEDULED
+                    const showEvalRH =
+                      (isRHSimple || isRHTech) &&
+                      ["CONFIRMED", "PENDING_CANDIDATE_CONFIRMATION", "RESCHEDULED"].includes(iv.status);
+
                     const showEvalTel = isTelephonique;
                     const showEval = showEvalRH || showEvalTel || hasBoth;
 
-                    // ✅ URLs correctes par type
-                    const evalUrlRH = isRHTech 
+                    const evalUrlRH = isRHTech
                       ? `/Responsable_RH_Nord/interviews/${iv._id}/evaluation?type=rh_tech`
                       : `/Responsable_RH_Nord/interviews/${iv._id}/evaluation?type=rh`;
+
                     const evalUrlTel = isTelephonique
                       ? `/Responsable_RH_Nord/interviews/${iv._id}/evaluation-telephonique`
-                      : iv._telEntry ? `/Responsable_RH_Nord/interviews/${iv._telEntry._id}/evaluation-telephonique` : null;
-                    const evalUrl = isTelephonique ? evalUrlTel : evalUrlRH;
+                      : iv._telEntry
+                        ? `/Responsable_RH_Nord/interviews/${iv._telEntry._id}/evaluation-telephonique`
+                        : null;
 
                     return (
                       <React.Fragment key={iv._id}>
@@ -482,7 +502,7 @@ export default function ResponsableMetierInterviewList() {
                             </span>
                           </td>
 
-                          {/* Type — badge(s) */}
+                          {/* Type */}
                           <td className="px-3 sm:px-4 md:px-6 lg:px-8 py-3 sm:py-5">
                             <div className="flex flex-col gap-1.5">
                               <Badge label={typeCfg.label} className={`${typeCfg.cls} border text-xs`} />
@@ -514,7 +534,7 @@ export default function ResponsableMetierInterviewList() {
                             </div>
                           </td>
 
-                          {/* Évaluation — un ou deux boutons */}
+                          {/* Évaluation */}
                           <td className="px-3 sm:px-4 md:px-6 lg:px-8 py-3 sm:py-5">
                             <div className="flex flex-col gap-1.5">
                               {(showEvalRH || hasBoth) && (

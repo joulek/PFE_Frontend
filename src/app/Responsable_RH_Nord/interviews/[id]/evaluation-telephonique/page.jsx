@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter, useParams } from "next/navigation";
 import {
   ArrowLeft,
@@ -38,7 +38,7 @@ async function apiFetch(path, options = {}) {
     if (!res.ok) {
       const errData = await res.json().catch(() => ({}));
       console.error("❌ HTTP:", res.status, errData);
-      throw new Error(errData.error || `HTTP ${res.status}`);
+      throw new Error(errData.error || errData.message || `HTTP ${res.status}`);
     }
 
     return await res.json();
@@ -46,6 +46,49 @@ async function apiFetch(path, options = {}) {
     console.error("❌ apiFetch ERROR:", err);
     throw err;
   }
+}
+
+function hasMeaningfulValue(value, type) {
+  if (type === "score") {
+    return value !== null && value !== undefined && value !== "";
+  }
+  if (type === "boolean" || type === "choice") {
+    return String(value || "").trim() !== "";
+  }
+  return String(value || "").trim() !== "";
+}
+
+function normalizeChoice(choice) {
+  if (typeof choice === "string") return choice;
+  return choice?.label || choice?.value || "";
+}
+
+function RadioCard({ checked, onClick, label }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`flex w-full items-center gap-4 rounded-xl sm:rounded-2xl border px-4 sm:px-5 py-3.5 sm:py-4 text-left transition ${
+        checked
+          ? "border-[#6CB33F] bg-[#F3FBEA] dark:border-[#6CB33F] dark:bg-[#6CB33F]/10"
+          : "border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 hover:border-[#6CB33F]/60"
+      }`}
+    >
+      <span
+        className={`flex h-5 w-5 sm:h-6 sm:w-6 items-center justify-center rounded-full border-2 transition ${
+          checked
+            ? "border-[#6CB33F] bg-[#6CB33F]"
+            : "border-gray-400 dark:border-gray-300"
+        }`}
+      >
+        {checked ? <span className="h-2.5 w-2.5 rounded-full bg-white" /> : null}
+      </span>
+
+      <span className="text-sm sm:text-[16px] font-medium text-gray-900 dark:text-white">
+        {label}
+      </span>
+    </button>
+  );
 }
 
 export default function InterviewEvaluationTelephoniquePage() {
@@ -80,12 +123,29 @@ export default function InterviewEvaluationTelephoniquePage() {
         setError(null);
 
         console.log("📞 Loading téléphonique evaluation form for:", interviewId);
-        const formData = await apiFetch(`/api/interviewNord/telephonique/${interviewId}/evaluation-form`);
+        const formData = await apiFetch(
+          `/api/interviewNord/telephonique/${interviewId}/evaluation-form`
+        );
 
         console.log("✅ Form loaded successfully");
-        setInterview(formData.interview);
-        setFiche(formData.fiche);
-        setCriteria(formData.criteria || []);
+
+        setInterview(formData.interview || null);
+        setFiche(formData.fiche || null);
+
+        const sortedCriteria = Array.isArray(formData.criteria)
+          ? [...formData.criteria]
+              .map((c) => ({
+                ...c,
+                _id: c._id?.$oid || String(c._id || ""),
+              }))
+              .sort(
+                (a, b) =>
+                  Number(a?.order ?? 0) - Number(b?.order ?? 0) ||
+                  String(a?.label || "").localeCompare(String(b?.label || ""))
+              )
+          : [];
+
+        setCriteria(sortedCriteria);
 
         if (formData.existingEvaluation) {
           const existingEval = formData.existingEvaluation;
@@ -94,10 +154,15 @@ export default function InterviewEvaluationTelephoniquePage() {
 
           const newRatings = {};
           const newComments = {};
-          existingEval.ratings.forEach((r) => {
-            newRatings[r.criterionId] = r.value;
-            newComments[r.criterionId] = r.comment || "";
+
+          (existingEval.ratings || []).forEach((r) => {
+            const key = r.criterionId?.$oid || String(r.criterionId || "");
+            if (key) {
+              newRatings[key] = r.value;
+              newComments[key] = r.comment || "";
+            }
           });
+
           setRatings(newRatings);
           setComments(newComments);
         }
@@ -112,18 +177,47 @@ export default function InterviewEvaluationTelephoniquePage() {
     loadForm();
   }, [interviewId]);
 
+  const completion = useMemo(() => {
+    if (!criteria.length) return 0;
+    const filled = criteria.filter((criterion) =>
+      hasMeaningfulValue(ratings[criterion._id], criterion.type)
+    ).length;
+    return Math.round((filled / criteria.length) * 100);
+  }, [criteria, ratings]);
+
+  const updateRating = (criterionId, value) => {
+    setRatings((prev) => ({
+      ...prev,
+      [criterionId]: value,
+    }));
+  };
+
+  const updateComment = (criterionId, value) => {
+    setComments((prev) => ({
+      ...prev,
+      [criterionId]: value,
+    }));
+  };
+
   const handleSave = async () => {
     try {
       setSaving(true);
       setError(null);
       setSuccess(false);
 
+      if (!fiche?._id) {
+        throw new Error("Fiche d'évaluation introuvable");
+      }
+
       const evaluationData = {
         ficheId: fiche._id,
         ratings: criteria.map((crit) => ({
           criterionId: crit._id,
           label: crit.label,
-          value: ratings[crit._id] || 0,
+          value:
+            ratings[crit._id] !== undefined && ratings[crit._id] !== null
+              ? ratings[crit._id]
+              : "",
           comment: comments[crit._id] || "",
           type: crit.type,
         })),
@@ -131,7 +225,8 @@ export default function InterviewEvaluationTelephoniquePage() {
         overallRating,
       };
 
-      console.log("💾 Saving téléphonique evaluation...");
+      console.log("💾 Saving téléphonique evaluation...", evaluationData);
+
       await apiFetch(`/api/interviewNord/telephonique/${interviewId}/evaluation`, {
         method: "POST",
         body: JSON.stringify(evaluationData),
@@ -139,6 +234,7 @@ export default function InterviewEvaluationTelephoniquePage() {
 
       console.log("✅ Evaluation saved");
       setSuccess(true);
+
       setTimeout(() => {
         router.back();
       }, 2000);
@@ -150,10 +246,9 @@ export default function InterviewEvaluationTelephoniquePage() {
     }
   };
 
-  // ── Loading ──
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-[#F0FAF0] to-[#E3F4E3] dark:from-gray-950 dark:to-gray-900 px-4 sm:px-6 py-8">
+      <div className="min-h-screen bg-gradient-to-br from-[#F4FAF2] to-[#E8F5E1] px-4 sm:px-6 py-8 dark:from-gray-950 dark:to-gray-900">
         <div className="mx-auto max-w-4xl">
           <div className="flex items-center justify-center py-20">
             <Loader size={40} className="animate-spin text-[#6CB33F]" />
@@ -166,26 +261,29 @@ export default function InterviewEvaluationTelephoniquePage() {
     );
   }
 
-  // ── Erreur fatale ──
   if (error && !interview) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-[#F0FAF0] to-[#E3F4E3] dark:from-gray-950 dark:to-gray-900 px-4 sm:px-6 py-8">
+      <div className="min-h-screen bg-gradient-to-br from-[#F4FAF2] to-[#E8F5E1] px-4 sm:px-6 py-8 dark:from-gray-950 dark:to-gray-900">
         <div className="mx-auto max-w-4xl">
           <button
+            type="button"
             onClick={() => router.back()}
             className="mb-6 sm:mb-8 flex items-center gap-2 text-[#6CB33F] hover:opacity-80"
           >
             <ArrowLeft size={20} />
             Retour
           </button>
-          <div className="rounded-2xl border-2 border-red-200 dark:border-red-500/30 bg-red-50 dark:bg-red-500/10 p-4 sm:p-6">
+
+          <div className="rounded-2xl border-2 border-red-200 bg-red-50 p-4 sm:p-6 dark:border-red-500/30 dark:bg-red-500/10">
             <div className="flex gap-4">
               <AlertCircle size={24} className="flex-shrink-0 text-red-500" />
               <div>
                 <h2 className="text-base sm:text-lg font-bold text-red-700 dark:text-red-400">
                   Erreur
                 </h2>
-                <p className="mt-1 text-xs sm:text-sm text-red-600 dark:text-red-300">{error}</p>
+                <p className="mt-1 text-xs sm:text-sm text-red-600 dark:text-red-300">
+                  {error}
+                </p>
               </div>
             </div>
           </div>
@@ -194,14 +292,12 @@ export default function InterviewEvaluationTelephoniquePage() {
     );
   }
 
-  // ── Page principale ──
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#F0FAF0] to-[#E3F4E3] dark:from-gray-950 dark:to-gray-900 px-4 sm:px-6 py-6 sm:py-8">
+    <div className="min-h-screen bg-gradient-to-br from-[#F4FAF2] to-[#E8F5E1] px-4 sm:px-6 py-6 sm:py-8 dark:from-gray-950 dark:to-gray-900">
       <div className="mx-auto max-w-4xl">
-
-        {/* ── Header candidat ── */}
         <div className="mb-6 sm:mb-8">
           <button
+            type="button"
             onClick={() => router.back()}
             className="mb-4 sm:mb-6 flex items-center gap-2 text-[#6CB33F] transition hover:opacity-80"
           >
@@ -209,7 +305,7 @@ export default function InterviewEvaluationTelephoniquePage() {
             Retour
           </button>
 
-          <div className="rounded-xl sm:rounded-2xl bg-white dark:bg-gray-800/80 p-4 sm:p-6 md:p-8 shadow-sm dark:border dark:border-gray-700">
+          <div className="rounded-xl sm:rounded-2xl bg-white p-4 sm:p-6 md:p-8 shadow-sm dark:border dark:border-gray-700 dark:bg-gray-800/80">
             <div className="grid grid-cols-1 gap-4 sm:gap-6 md:grid-cols-2">
               <div>
                 <p className="text-xs sm:text-sm font-semibold uppercase text-gray-500 dark:text-gray-400">
@@ -228,8 +324,7 @@ export default function InterviewEvaluationTelephoniquePage() {
                   Type d'entretien
                 </p>
                 <div className="mt-2 flex flex-wrap gap-2">
-                  {/* Badge vert téléphonique */}
-                  <span className="inline-flex items-center gap-2 rounded-full border border-green-200 dark:border-green-700 bg-green-50 dark:bg-green-900/20 px-3 sm:px-4 py-1 text-xs sm:text-sm font-semibold text-green-700 dark:text-green-300">
+                  <span className="inline-flex items-center gap-2 rounded-full border border-green-200 bg-green-50 px-3 sm:px-4 py-1 text-xs sm:text-sm font-semibold text-green-700 dark:border-green-700 dark:bg-green-900/20 dark:text-green-300">
                     <PhoneCall size={14} />
                     Entretien Téléphonique
                   </span>
@@ -240,10 +335,12 @@ export default function InterviewEvaluationTelephoniquePage() {
               </div>
             </div>
 
-            <div className="mt-4 sm:mt-6 border-t border-gray-200 dark:border-gray-700 pt-4 sm:pt-6">
+            <div className="mt-4 sm:mt-6 border-t border-gray-200 pt-4 sm:pt-6 dark:border-gray-700">
               <div className="grid grid-cols-2 gap-3 sm:gap-4 text-xs sm:text-sm">
                 <div>
-                  <p className="font-semibold text-gray-600 dark:text-gray-400">Date</p>
+                  <p className="font-semibold text-gray-600 dark:text-gray-400">
+                    Date
+                  </p>
                   <p className="mt-1 text-gray-900 dark:text-white">
                     {interview?.proposedDate
                       ? new Date(interview.proposedDate).toLocaleDateString("fr-FR")
@@ -251,19 +348,22 @@ export default function InterviewEvaluationTelephoniquePage() {
                   </p>
                 </div>
                 <div>
-                  <p className="font-semibold text-gray-600 dark:text-gray-400">Heure</p>
+                  <p className="font-semibold text-gray-600 dark:text-gray-400">
+                    Heure
+                  </p>
                   <p className="mt-1 text-gray-900 dark:text-white">
                     {interview?.proposedTime || "-"}
                   </p>
                 </div>
               </div>
             </div>
+
+            
           </div>
         </div>
 
-        {/* ── Critères ── */}
         <div className="space-y-4 sm:space-y-6">
-          <div className="rounded-xl sm:rounded-2xl bg-white dark:bg-gray-800/80 p-4 sm:p-6 md:p-8 shadow-sm dark:border dark:border-gray-700">
+          <div className="rounded-xl sm:rounded-2xl bg-white p-4 sm:p-6 md:p-8 shadow-sm dark:border dark:border-gray-700 dark:bg-gray-800/80">
             <h2 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white">
               {fiche?.description || "Critères d'évaluation téléphonique"}
             </h2>
@@ -273,10 +373,10 @@ export default function InterviewEvaluationTelephoniquePage() {
                 criteria.map((criterion, idx) => (
                   <div
                     key={criterion._id}
-                    className="border-b border-gray-100 dark:border-gray-700 pb-6 sm:pb-8 last:border-b-0"
+                    className="border-b border-gray-100 pb-6 sm:pb-8 last:border-b-0 dark:border-gray-700"
                   >
                     <div className="flex items-start justify-between gap-3 sm:gap-4">
-                      <div className="flex-1 min-w-0">
+                      <div className="min-w-0 flex-1">
                         <h3 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white">
                           {idx + 1}. {criterion.label}
                         </h3>
@@ -286,9 +386,10 @@ export default function InterviewEvaluationTelephoniquePage() {
                           </p>
                         )}
                       </div>
+
                       {criterion.weight && (
                         <div className="flex-shrink-0">
-                          <span className="inline-block rounded bg-gray-100 dark:bg-gray-700 px-2 sm:px-3 py-1 text-xs font-semibold text-gray-700 dark:text-gray-300">
+                          <span className="inline-block rounded bg-gray-100 px-2 sm:px-3 py-1 text-xs font-semibold text-gray-700 dark:bg-gray-700 dark:text-gray-300">
                             {criterion.weight}
                           </span>
                         </div>
@@ -298,16 +399,20 @@ export default function InterviewEvaluationTelephoniquePage() {
                     <div className="mt-4">
                       {criterion.type === "score" && criterion.scale ? (
                         <div className="space-y-3">
-                          <div className="flex gap-2 flex-wrap">
+                          <div className="flex flex-wrap gap-2">
                             {Array.from(
-                              { length: criterion.scale.max - criterion.scale.min + 1 },
-                              (_, i) => criterion.scale.min + i
+                              {
+                                length:
+                                  Number(criterion.scale.max) -
+                                    Number(criterion.scale.min) +
+                                  1,
+                              },
+                              (_, i) => Number(criterion.scale.min) + i
                             ).map((score) => (
                               <button
                                 key={score}
-                                onClick={() =>
-                                  setRatings((prev) => ({ ...prev, [criterion._id]: score }))
-                                }
+                                type="button"
+                                onClick={() => updateRating(criterion._id, score)}
                                 className={`flex h-10 w-10 sm:h-12 sm:w-12 items-center justify-center rounded-lg border-2 font-bold transition text-sm sm:text-base ${
                                   ratings[criterion._id] === score
                                     ? "border-[#6CB33F] bg-[#6CB33F] text-white"
@@ -322,63 +427,69 @@ export default function InterviewEvaluationTelephoniquePage() {
                             {criterion.scale.min} = Faible | {criterion.scale.max} = Excellent
                           </p>
                         </div>
-                      ) : criterion.type === "choice" && Array.isArray(criterion.choices) ? (
-                        <select
-                          value={ratings[criterion._id] || ""}
-                          onChange={(e) =>
-                            setRatings((prev) => ({ ...prev, [criterion._id]: e.target.value }))
-                          }
-                          className="w-full rounded-lg sm:rounded-xl border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 px-3 sm:px-4 py-2.5 sm:py-3 text-xs sm:text-sm text-gray-900 dark:text-white transition focus:border-[#6CB33F] focus:outline-none"
-                        >
-                          <option value="">Sélectionner une option...</option>
-                          {criterion.choices.map((choice, i) => (
-                            <option key={i} value={choice}>
-                              {choice}
-                            </option>
-                          ))}
-                        </select>
+                      ) : criterion.type === "boolean" ? (
+                        <div className="space-y-3">
+                          <RadioCard
+                            label="Oui"
+                            checked={ratings[criterion._id] === "Oui"}
+                            onClick={() => updateRating(criterion._id, "Oui")}
+                          />
+                          <RadioCard
+                            label="Non"
+                            checked={ratings[criterion._id] === "Non"}
+                            onClick={() => updateRating(criterion._id, "Non")}
+                          />
+                        </div>
+                      ) : criterion.type === "choice" &&
+                        Array.isArray(criterion.choices) ? (
+                        <div className="space-y-3">
+                          {criterion.choices.map((choice, i) => {
+                            const label = normalizeChoice(choice);
+                            return (
+                              <RadioCard
+                                key={i}
+                                label={label}
+                                checked={ratings[criterion._id] === label}
+                                onClick={() => updateRating(criterion._id, label)}
+                              />
+                            );
+                          })}
+                        </div>
                       ) : (
                         <textarea
                           placeholder="Votre évaluation..."
                           value={ratings[criterion._id] || ""}
-                          onChange={(e) =>
-                            setRatings((prev) => ({ ...prev, [criterion._id]: e.target.value }))
-                          }
+                          onChange={(e) => updateRating(criterion._id, e.target.value)}
                           className="w-full rounded-lg sm:rounded-xl border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 px-3 sm:px-4 py-2.5 sm:py-3 text-xs sm:text-sm text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 transition focus:border-[#6CB33F] focus:outline-none"
                           rows={3}
                         />
                       )}
                     </div>
 
-                    {(criterion.type === "score" || criterion.type === "choice") && (
-                      <div className="mt-3 sm:mt-4">
-                        <label className="flex items-center gap-2 text-xs sm:text-sm font-semibold text-gray-700 dark:text-gray-300">
-                          <MessageSquare size={16} />
-                          Commentaire (optionnel)
-                        </label>
-                        <textarea
-                          placeholder="Ajouter un commentaire détaillé..."
-                          value={comments[criterion._id] || ""}
-                          onChange={(e) =>
-                            setComments((prev) => ({ ...prev, [criterion._id]: e.target.value }))
-                          }
-                          className="mt-2 w-full rounded-lg sm:rounded-xl border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 px-3 sm:px-4 py-2 text-xs sm:text-sm text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 transition focus:border-[#6CB33F] focus:outline-none"
-                          rows={2}
-                        />
-                      </div>
-                    )}
+                    <div className="mt-3 sm:mt-4">
+                      <label className="flex items-center gap-2 text-xs sm:text-sm font-semibold text-gray-700 dark:text-gray-300">
+                        <MessageSquare size={16} />
+                        Commentaire (optionnel)
+                      </label>
+                      <textarea
+                        placeholder="Ajouter un commentaire détaillé..."
+                        value={comments[criterion._id] || ""}
+                        onChange={(e) => updateComment(criterion._id, e.target.value)}
+                        className="mt-2 w-full rounded-lg sm:rounded-xl border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 px-3 sm:px-4 py-2 text-xs sm:text-sm text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 transition focus:border-[#6CB33F] focus:outline-none"
+                        rows={2}
+                      />
+                    </div>
                   </div>
                 ))
               ) : (
                 <p className="text-xs sm:text-sm text-red-600 dark:text-red-400">
-                  ❌ Aucun critère trouvé pour cet entretien téléphonique
+                  Aucun critère trouvé pour cet entretien téléphonique
                 </p>
               )}
             </div>
           </div>
 
-          {/* ── Évaluation générale ── */}
-          <div className="rounded-xl sm:rounded-2xl bg-white dark:bg-gray-800/80 p-4 sm:p-6 md:p-8 shadow-sm dark:border dark:border-gray-700">
+          <div className="rounded-xl sm:rounded-2xl bg-white p-4 sm:p-6 md:p-8 shadow-sm dark:border dark:border-gray-700 dark:bg-gray-800/80">
             <h3 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white">
               Évaluation générale
             </h3>
@@ -391,6 +502,7 @@ export default function InterviewEvaluationTelephoniquePage() {
                 {[1, 2, 3, 4, 5].map((star) => (
                   <button
                     key={star}
+                    type="button"
                     onClick={() => setOverallRating(star)}
                     className="transition"
                   >
@@ -421,31 +533,37 @@ export default function InterviewEvaluationTelephoniquePage() {
             </div>
           </div>
 
-          {/* ── Erreur inline ── */}
           {error && (
-            <div className="rounded-xl sm:rounded-2xl border-2 border-red-200 dark:border-red-500/30 bg-red-50 dark:bg-red-500/10 p-3 sm:p-4">
+            <div className="rounded-xl sm:rounded-2xl border-2 border-red-200 bg-red-50 p-3 sm:p-4 dark:border-red-500/30 dark:bg-red-500/10">
               <div className="flex gap-3">
-                <AlertCircle size={20} className="flex-shrink-0 text-red-500 mt-0.5" />
-                <p className="text-xs sm:text-sm text-red-700 dark:text-red-400">{error}</p>
-              </div>
-            </div>
-          )}
-
-          {/* ── Succès ── */}
-          {success && (
-            <div className="rounded-xl sm:rounded-2xl border-2 border-green-200 dark:border-green-500/30 bg-green-50 dark:bg-green-500/10 p-3 sm:p-4">
-              <div className="flex gap-3">
-                <CheckCircle size={20} className="flex-shrink-0 text-green-600 dark:text-green-400 mt-0.5" />
-                <p className="text-xs sm:text-sm text-green-700 dark:text-green-400">
-                  ✅ Évaluation téléphonique sauvegardée avec succès !
+                <AlertCircle
+                  size={20}
+                  className="mt-0.5 flex-shrink-0 text-red-500"
+                />
+                <p className="text-xs sm:text-sm text-red-700 dark:text-red-400">
+                  {error}
                 </p>
               </div>
             </div>
           )}
 
-          {/* ── Actions ── */}
+          {success && (
+            <div className="rounded-xl sm:rounded-2xl border-2 border-green-200 bg-green-50 p-3 sm:p-4 dark:border-green-500/30 dark:bg-green-500/10">
+              <div className="flex gap-3">
+                <CheckCircle
+                  size={20}
+                  className="mt-0.5 flex-shrink-0 text-green-600 dark:text-green-400"
+                />
+                <p className="text-xs sm:text-sm text-green-700 dark:text-green-400">
+                  Évaluation téléphonique sauvegardée avec succès !
+                </p>
+              </div>
+            </div>
+          )}
+
           <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
             <button
+              type="button"
               onClick={() => router.back()}
               disabled={saving}
               className="flex-1 rounded-lg sm:rounded-full border-2 border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-4 sm:px-6 py-2.5 sm:py-3 font-semibold text-xs sm:text-sm text-gray-900 dark:text-white transition hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-60"
@@ -454,6 +572,7 @@ export default function InterviewEvaluationTelephoniquePage() {
             </button>
 
             <button
+              type="button"
               onClick={handleSave}
               disabled={saving || criteria.length === 0}
               className="flex flex-1 items-center justify-center gap-2 rounded-lg sm:rounded-full bg-[#6CB33F] px-4 sm:px-6 py-2.5 sm:py-3 font-semibold text-xs sm:text-sm text-white transition hover:opacity-90 disabled:opacity-60"

@@ -2,12 +2,12 @@
 
 import { useEffect, useState } from "react";
 import { useRouter, useParams } from "next/navigation";
-import { 
-  ArrowLeft, 
-  Save, 
-  AlertCircle, 
-  CheckCircle, 
-  Loader, 
+import {
+  ArrowLeft,
+  Save,
+  AlertCircle,
+  CheckCircle,
+  Loader,
   Star,
   MessageSquare,
 } from "lucide-react";
@@ -47,6 +47,50 @@ async function apiFetch(path, options = {}) {
   }
 }
 
+function normalizeChoice(choice, index) {
+  if (typeof choice === "string") {
+    return {
+      value: choice,
+      label: choice,
+      key: `choice-${index}-${choice}`,
+    };
+  }
+
+  return {
+    value: choice?.value ?? choice?.label ?? `choice-${index}`,
+    label: choice?.label ?? choice?.value ?? `Option ${index + 1}`,
+    key: `choice-${index}-${choice?.value ?? choice?.label ?? index}`,
+  };
+}
+
+function CompactRadioCard({ checked, onClick, label }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`flex w-full items-center gap-4 rounded-xl sm:rounded-2xl border px-4 sm:px-5 py-3.5 sm:py-4 text-left transition ${
+        checked
+          ? "border-[#6CB33F] bg-[#F3FBEA] dark:border-[#6CB33F] dark:bg-[#6CB33F]/10"
+          : "border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 hover:border-[#6CB33F]/60"
+      }`}
+    >
+      <span
+        className={`flex h-5 w-5 sm:h-6 sm:w-6 items-center justify-center rounded-full border-2 transition ${
+          checked
+            ? "border-[#6CB33F] bg-[#6CB33F]"
+            : "border-gray-400 dark:border-gray-300"
+        }`}
+      >
+        {checked ? <span className="h-2.5 w-2.5 rounded-full bg-white" /> : null}
+      </span>
+
+      <span className="text-sm sm:text-[16px] font-medium text-gray-900 dark:text-white">
+        {label}
+      </span>
+    </button>
+  );
+}
+
 export default function InterviewEvaluationPage() {
   const router = useRouter();
   const params = useParams();
@@ -60,7 +104,7 @@ export default function InterviewEvaluationPage() {
   const [interview, setInterview] = useState(null);
   const [fiche, setFiche] = useState(null);
   const [criteria, setCriteria] = useState([]);
-  
+
   const [ratings, setRatings] = useState({});
   const [comments, setComments] = useState({});
   const [overallRating, setOverallRating] = useState(0);
@@ -77,11 +121,10 @@ export default function InterviewEvaluationPage() {
       try {
         setLoading(true);
         setError(null);
-        
+
         console.log("📌 Loading evaluation form for:", interviewId);
-        // ✅ URL CORRECTE
         const formData = await apiFetch(`/api/interviews/${interviewId}/evaluation-form`);
-        
+
         console.log("✅ Form loaded successfully");
         setInterview(formData.interview);
         setFiche(formData.fiche);
@@ -94,10 +137,12 @@ export default function InterviewEvaluationPage() {
 
           const newRatings = {};
           const newComments = {};
-          existingEval.ratings.forEach((r) => {
+
+          (existingEval.ratings || []).forEach((r) => {
             newRatings[r.criterionId] = r.value;
             newComments[r.criterionId] = r.comment || "";
           });
+
           setRatings(newRatings);
           setComments(newComments);
         }
@@ -119,7 +164,7 @@ export default function InterviewEvaluationPage() {
       setSuccess(false);
 
       const evaluationData = {
-        ficheId: fiche._id,
+        ficheId: fiche?._id,
         ratings: criteria.map((crit) => ({
           criterionId: crit._id,
           label: crit.label,
@@ -130,9 +175,8 @@ export default function InterviewEvaluationPage() {
         notes: evaluationNotes,
         overallRating,
       };
-      
+
       console.log("💾 Saving evaluation...");
-      // ✅ URL CORRECTE
       await apiFetch(`/api/interviews/${interviewId}/evaluation`, {
         method: "POST",
         body: JSON.stringify(evaluationData),
@@ -153,7 +197,7 @@ export default function InterviewEvaluationPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-[#F4FAF2] to-[#E8F5E1] dark:from-gray-950 dark:to-gray-900 px-4 sm:px-6 py-8">
+      <div className="min-h-screen bg-gradient-to-br from-[#F4FAF2] to-[#E8F5E1] px-4 sm:px-6 py-8 dark:from-gray-950 dark:to-gray-900">
         <div className="mx-auto max-w-4xl">
           <div className="flex items-center justify-center py-20">
             <Loader size={40} className="animate-spin text-[#6CB33F]" />
@@ -168,9 +212,10 @@ export default function InterviewEvaluationPage() {
 
   if (error && !interview) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-[#F4FAF2] to-[#E8F5E1] dark:from-gray-950 dark:to-gray-900 px-4 sm:px-6 py-8">
+      <div className="min-h-screen bg-gradient-to-br from-[#F4FAF2] to-[#E8F5E1] px-4 sm:px-6 py-8 dark:from-gray-950 dark:to-gray-900">
         <div className="mx-auto max-w-4xl">
           <button
+            type="button"
             onClick={() => router.back()}
             className="mb-6 sm:mb-8 flex items-center gap-2 text-[#6CB33F] hover:opacity-80"
           >
@@ -178,14 +223,16 @@ export default function InterviewEvaluationPage() {
             Retour
           </button>
 
-          <div className="rounded-2xl border-2 border-red-200 dark:border-red-500/30 bg-red-50 dark:bg-red-500/10 p-4 sm:p-6">
+          <div className="rounded-2xl border-2 border-red-200 bg-red-50 p-4 sm:p-6 dark:border-red-500/30 dark:bg-red-500/10">
             <div className="flex gap-4">
               <AlertCircle size={24} className="flex-shrink-0 text-red-500" />
               <div>
                 <h2 className="text-base sm:text-lg font-bold text-red-700 dark:text-red-400">
                   Erreur
                 </h2>
-                <p className="mt-1 text-xs sm:text-sm text-red-600 dark:text-red-300">{error}</p>
+                <p className="mt-1 text-xs sm:text-sm text-red-600 dark:text-red-300">
+                  {error}
+                </p>
               </div>
             </div>
           </div>
@@ -195,10 +242,11 @@ export default function InterviewEvaluationPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#F4FAF2] to-[#E8F5E1] dark:from-gray-950 dark:to-gray-900 px-4 sm:px-6 py-6 sm:py-8">
+    <div className="min-h-screen bg-gradient-to-br from-[#F4FAF2] to-[#E8F5E1] px-4 sm:px-6 py-6 sm:py-8 dark:from-gray-950 dark:to-gray-900">
       <div className="mx-auto max-w-4xl">
         <div className="mb-6 sm:mb-8">
           <button
+            type="button"
             onClick={() => router.back()}
             className="mb-4 sm:mb-6 flex items-center gap-2 text-[#6CB33F] transition hover:opacity-80"
           >
@@ -206,7 +254,7 @@ export default function InterviewEvaluationPage() {
             Retour
           </button>
 
-          <div className="rounded-xl sm:rounded-2xl bg-white dark:bg-gray-800/80 p-4 sm:p-6 md:p-8 shadow-sm dark:border dark:border-gray-700">
+          <div className="rounded-xl sm:rounded-2xl bg-white p-4 sm:p-6 md:p-8 shadow-sm dark:border dark:border-gray-700 dark:bg-gray-800/80">
             <div className="grid grid-cols-1 gap-4 sm:gap-6 md:grid-cols-2">
               <div>
                 <p className="text-xs sm:text-sm font-semibold uppercase text-gray-500 dark:text-gray-400">
@@ -225,7 +273,7 @@ export default function InterviewEvaluationPage() {
                   Type d'entretien
                 </p>
                 <div className="mt-2 flex flex-wrap gap-2">
-                  <span className="inline-flex items-center rounded-full border border-violet-200 dark:border-violet-700 bg-violet-50 dark:bg-violet-900/20 px-3 sm:px-4 py-1 text-xs sm:text-sm font-semibold text-violet-700 dark:text-violet-300">
+                  <span className="inline-flex items-center rounded-full border border-violet-200 bg-violet-50 px-3 sm:px-4 py-1 text-xs sm:text-sm font-semibold text-violet-700 dark:border-violet-700 dark:bg-violet-900/20 dark:text-violet-300">
                     Entretien RH Nord
                   </span>
                 </div>
@@ -235,7 +283,7 @@ export default function InterviewEvaluationPage() {
               </div>
             </div>
 
-            <div className="mt-4 sm:mt-6 border-t border-gray-200 dark:border-gray-700 pt-4 sm:pt-6">
+            <div className="mt-4 sm:mt-6 border-t border-gray-200 pt-4 sm:pt-6 dark:border-gray-700">
               <div className="grid grid-cols-2 gap-3 sm:gap-4 text-xs sm:text-sm">
                 <div>
                   <p className="font-semibold text-gray-600 dark:text-gray-400">
@@ -261,132 +309,148 @@ export default function InterviewEvaluationPage() {
         </div>
 
         <div className="space-y-4 sm:space-y-6">
-          <div className="rounded-xl sm:rounded-2xl bg-white dark:bg-gray-800/80 p-4 sm:p-6 md:p-8 shadow-sm dark:border dark:border-gray-700">
+          <div className="rounded-xl sm:rounded-2xl bg-white p-4 sm:p-6 md:p-8 shadow-sm dark:border dark:border-gray-700 dark:bg-gray-800/80">
             <h2 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white">
               {fiche?.description || "Critères d'évaluation"}
             </h2>
 
             <div className="mt-6 sm:mt-8 space-y-6 sm:space-y-8">
               {criteria && criteria.length > 0 ? (
-                criteria.map((criterion, idx) => (
-                  <div
-                    key={criterion._id}
-                    className="border-b border-gray-100 dark:border-gray-700 pb-6 sm:pb-8 last:border-b-0"
-                  >
-                    <div className="flex items-start justify-between gap-3 sm:gap-4">
-                      <div className="flex-1 min-w-0">
-                        <h3 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white">
-                          {idx + 1}. {criterion.label}
-                        </h3>
-                        {criterion.description && (
-                          <p className="mt-1 text-xs sm:text-sm text-gray-600 dark:text-gray-400">
-                            {criterion.description}
-                          </p>
+                criteria.map((criterion, idx) => {
+                  const selectedValue = ratings[criterion._id] || "";
+                  const isChoice =
+                    criterion.type === "choice" && Array.isArray(criterion.choices);
+                  const isScore = criterion.type === "score" && criterion.scale;
+
+                  return (
+                    <div
+                      key={criterion._id}
+                      className="border-b border-gray-100 pb-6 sm:pb-8 last:border-b-0 dark:border-gray-700"
+                    >
+                      <div className="flex items-start justify-between gap-3 sm:gap-4">
+                        <div className="min-w-0 flex-1">
+                          <h3 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white">
+                            {idx + 1}. {criterion.label}
+                          </h3>
+                          {criterion.description && (
+                            <p className="mt-1 text-xs sm:text-sm text-gray-600 dark:text-gray-400">
+                              {criterion.description}
+                            </p>
+                          )}
+                        </div>
+
+                        {criterion.weight && (
+                          <div className="flex-shrink-0">
+                            <span className="inline-block rounded bg-gray-100 px-2 sm:px-3 py-1 text-xs font-semibold text-gray-700 dark:bg-gray-700 dark:text-gray-300">
+                              {criterion.weight}
+                            </span>
+                          </div>
                         )}
                       </div>
-                      {criterion.weight && (
-                        <div className="flex-shrink-0">
-                          <span className="inline-block rounded bg-gray-100 dark:bg-gray-700 px-2 sm:px-3 py-1 text-xs font-semibold text-gray-700 dark:text-gray-300">
-                            {criterion.weight}
-                          </span>
-                        </div>
-                      )}
-                    </div>
 
-                    <div className="mt-4">
-                      {criterion.type === "score" && criterion.scale ? (
-                        <div className="space-y-3">
-                          <div className="flex gap-2 flex-wrap">
-                            {Array.from(
-                              { length: criterion.scale.max - criterion.scale.min + 1 },
-                              (_, i) => criterion.scale.min + i
-                            ).map((score) => (
-                              <button
-                                key={score}
-                                onClick={() =>
-                                  setRatings((prev) => ({
-                                    ...prev,
-                                    [criterion._id]: score,
-                                  }))
-                                }
-                                className={`flex h-10 w-10 sm:h-12 sm:w-12 items-center justify-center rounded-lg border-2 font-bold transition text-sm sm:text-base ${
-                                  ratings[criterion._id] === score
-                                    ? "border-[#6CB33F] bg-[#6CB33F] text-white"
-                                    : "border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-700 dark:text-white hover:border-[#6CB33F]"
-                                }`}
-                              >
-                                {score}
-                              </button>
-                            ))}
+                      <div className="mt-4">
+                        {isScore ? (
+                          <div className="space-y-3">
+                            <div className="flex flex-wrap gap-2">
+                              {Array.from(
+                                { length: criterion.scale.max - criterion.scale.min + 1 },
+                                (_, i) => criterion.scale.min + i
+                              ).map((score) => (
+                                <button
+                                  key={score}
+                                  type="button"
+                                  onClick={() =>
+                                    setRatings((prev) => ({
+                                      ...prev,
+                                      [criterion._id]: score,
+                                    }))
+                                  }
+                                  className={`flex h-10 w-10 sm:h-12 sm:w-12 items-center justify-center rounded-lg border-2 font-bold transition text-sm sm:text-base ${
+                                    ratings[criterion._id] === score
+                                      ? "border-[#6CB33F] bg-[#6CB33F] text-white"
+                                      : "border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-700 dark:text-white hover:border-[#6CB33F]"
+                                  }`}
+                                >
+                                  {score}
+                                </button>
+                              ))}
+                            </div>
+
+                            <p className="text-xs text-gray-500 dark:text-gray-400">
+                              {criterion.scale.min} = Faible | {criterion.scale.max} = Excellent
+                            </p>
                           </div>
-                          <p className="text-xs text-gray-500 dark:text-gray-400">
-                            {criterion.scale.min} = Faible | {criterion.scale.max} = Excellent
-                          </p>
+                        ) : isChoice ? (
+                          <div className="space-y-3">
+                            {criterion.choices.map((rawChoice, choiceIndex) => {
+                              const choice = normalizeChoice(rawChoice, choiceIndex);
+                              const checked =
+                                String(selectedValue).trim() === String(choice.value).trim();
+
+                              return (
+                                <CompactRadioCard
+                                  key={choice.key}
+                                  label={choice.label}
+                                  checked={checked}
+                                  onClick={() =>
+                                    setRatings((prev) => ({
+                                      ...prev,
+                                      [criterion._id]: choice.value,
+                                    }))
+                                  }
+                                />
+                              );
+                            })}
+                          </div>
+                        ) : (
+                          <textarea
+                            placeholder="Votre évaluation..."
+                            value={ratings[criterion._id] || ""}
+                            onChange={(e) =>
+                              setRatings((prev) => ({
+                                ...prev,
+                                [criterion._id]: e.target.value,
+                              }))
+                            }
+                            className="w-full rounded-lg sm:rounded-xl border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 px-3 sm:px-4 py-2.5 sm:py-3 text-xs sm:text-sm text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 transition focus:border-[#6CB33F] focus:outline-none"
+                            rows={3}
+                          />
+                        )}
+                      </div>
+
+                      {(criterion.type === "score" || criterion.type === "choice") && (
+                        <div className="mt-3 sm:mt-4">
+                          <label className="flex items-center gap-2 text-xs sm:text-sm font-semibold text-gray-700 dark:text-gray-300">
+                            <MessageSquare size={16} />
+                            Commentaire (optionnel)
+                          </label>
+
+                          <textarea
+                            placeholder="Ajouter un commentaire détaillé..."
+                            value={comments[criterion._id] || ""}
+                            onChange={(e) =>
+                              setComments((prev) => ({
+                                ...prev,
+                                [criterion._id]: e.target.value,
+                              }))
+                            }
+                            className="mt-2 w-full rounded-lg sm:rounded-xl border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 px-3 sm:px-4 py-2 text-xs sm:text-sm text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 transition focus:border-[#6CB33F] focus:outline-none"
+                            rows={2}
+                          />
                         </div>
-                      ) : criterion.type === "choice" &&
-                        Array.isArray(criterion.choices) ? (
-                        <select
-                          value={ratings[criterion._id] || ""}
-                          onChange={(e) =>
-                            setRatings((prev) => ({
-                              ...prev,
-                              [criterion._id]: e.target.value,
-                            }))
-                          }
-                          className="w-full rounded-lg sm:rounded-xl border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 px-3 sm:px-4 py-2.5 sm:py-3 text-xs sm:text-sm text-gray-900 dark:text-white transition focus:border-[#6CB33F] focus:outline-none"
-                        >
-                          <option value="">Sélectionner une option...</option>
-                          {criterion.choices.map((choice, i) => (
-                            <option key={i} value={choice}>
-                              {choice}
-                            </option>
-                          ))}
-                        </select>
-                      ) : (
-                        <textarea
-                          placeholder="Votre évaluation..."
-                          value={ratings[criterion._id] || ""}
-                          onChange={(e) =>
-                            setRatings((prev) => ({
-                              ...prev,
-                              [criterion._id]: e.target.value,
-                            }))
-                          }
-                          className="w-full rounded-lg sm:rounded-xl border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 px-3 sm:px-4 py-2.5 sm:py-3 text-xs sm:text-sm text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 transition focus:border-[#6CB33F] focus:outline-none"
-                          rows={3}
-                        />
                       )}
                     </div>
-
-                    {(criterion.type === "score" || criterion.type === "choice") && (
-                      <div className="mt-3 sm:mt-4">
-                        <label className="flex items-center gap-2 text-xs sm:text-sm font-semibold text-gray-700 dark:text-gray-300">
-                          <MessageSquare size={16} />
-                          Commentaire (optionnel)
-                        </label>
-                        <textarea
-                          placeholder="Ajouter un commentaire détaillé..."
-                          value={comments[criterion._id] || ""}
-                          onChange={(e) =>
-                            setComments((prev) => ({
-                              ...prev,
-                              [criterion._id]: e.target.value,
-                            }))
-                          }
-                          className="mt-2 w-full rounded-lg sm:rounded-xl border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 px-3 sm:px-4 py-2 text-xs sm:text-sm text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 transition focus:border-[#6CB33F] focus:outline-none"
-                          rows={2}
-                        />
-                      </div>
-                    )}
-                  </div>
-                ))
+                  );
+                })
               ) : (
-                <p className="text-xs sm:text-sm text-red-600 dark:text-red-400">❌ Aucun critère trouvé</p>
+                <p className="text-xs sm:text-sm text-red-600 dark:text-red-400">
+                  Aucun critère trouvé
+                </p>
               )}
             </div>
           </div>
 
-          <div className="rounded-xl sm:rounded-2xl bg-white dark:bg-gray-800/80 p-4 sm:p-6 md:p-8 shadow-sm dark:border dark:border-gray-700">
+          <div className="rounded-xl sm:rounded-2xl bg-white p-4 sm:p-6 md:p-8 shadow-sm dark:border dark:border-gray-700 dark:bg-gray-800/80">
             <h3 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white">
               Évaluation générale
             </h3>
@@ -395,10 +459,12 @@ export default function InterviewEvaluationPage() {
               <label className="block text-xs sm:text-sm font-semibold text-gray-700 dark:text-gray-300">
                 Note globale (optionnel)
               </label>
+
               <div className="mt-3 flex gap-2">
                 {[1, 2, 3, 4, 5].map((star) => (
                   <button
                     key={star}
+                    type="button"
                     onClick={() => setOverallRating(star)}
                     className="transition"
                   >
@@ -430,20 +496,28 @@ export default function InterviewEvaluationPage() {
           </div>
 
           {error && (
-            <div className="rounded-xl sm:rounded-2xl border-2 border-red-200 dark:border-red-500/30 bg-red-50 dark:bg-red-500/10 p-3 sm:p-4">
+            <div className="rounded-xl sm:rounded-2xl border-2 border-red-200 bg-red-50 p-3 sm:p-4 dark:border-red-500/30 dark:bg-red-500/10">
               <div className="flex gap-3">
-                <AlertCircle size={20} className="flex-shrink-0 text-red-500 mt-0.5" />
-                <p className="text-xs sm:text-sm text-red-700 dark:text-red-400">{error}</p>
+                <AlertCircle
+                  size={20}
+                  className="mt-0.5 flex-shrink-0 text-red-500"
+                />
+                <p className="text-xs sm:text-sm text-red-700 dark:text-red-400">
+                  {error}
+                </p>
               </div>
             </div>
           )}
 
           {success && (
-            <div className="rounded-xl sm:rounded-2xl border-2 border-green-200 dark:border-green-500/30 bg-green-50 dark:bg-green-500/10 p-3 sm:p-4">
+            <div className="rounded-xl sm:rounded-2xl border-2 border-green-200 bg-green-50 p-3 sm:p-4 dark:border-green-500/30 dark:bg-green-500/10">
               <div className="flex gap-3">
-                <CheckCircle size={20} className="flex-shrink-0 text-green-600 dark:text-green-400 mt-0.5" />
+                <CheckCircle
+                  size={20}
+                  className="mt-0.5 flex-shrink-0 text-green-600 dark:text-green-400"
+                />
                 <p className="text-xs sm:text-sm text-green-700 dark:text-green-400">
-                  ✅ Évaluation sauvegardée avec succès !
+                  Évaluation sauvegardée avec succès !
                 </p>
               </div>
             </div>
@@ -451,6 +525,7 @@ export default function InterviewEvaluationPage() {
 
           <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
             <button
+              type="button"
               onClick={() => router.back()}
               disabled={saving}
               className="flex-1 rounded-lg sm:rounded-full border-2 border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-4 sm:px-6 py-2.5 sm:py-3 font-semibold text-xs sm:text-sm text-gray-900 dark:text-white transition hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-60"
@@ -459,6 +534,7 @@ export default function InterviewEvaluationPage() {
             </button>
 
             <button
+              type="button"
               onClick={handleSave}
               disabled={saving || criteria.length === 0}
               className="flex flex-1 items-center justify-center gap-2 rounded-lg sm:rounded-full bg-[#6CB33F] px-4 sm:px-6 py-2.5 sm:py-3 font-semibold text-xs sm:text-sm text-white transition hover:opacity-90 disabled:opacity-60"

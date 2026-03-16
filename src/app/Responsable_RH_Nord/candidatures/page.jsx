@@ -11,10 +11,11 @@ import {
   ChevronRight,
   Search,
   Loader2,
+  Linkedin,
 } from "lucide-react";
 import api from "../../services/api";
 
-export default function CandidaturesPage() {
+export default function CandidaturesNordPage() {
   const [candidatures, setCandidatures] = useState([]);
   const [filtered, setFiltered] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -25,75 +26,81 @@ export default function CandidaturesPage() {
   const LIMIT = 10;
   const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 
- useEffect(() => {
-  async function load() {
-    setLoading(true);
-    const u = JSON.parse(localStorage.getItem("user") || "{}");
-    const poste = u?.poste || null;
-    setUserPoste(poste);
-
-    try {
-      // ✅ Nouvelle route : candidatures des jobs créés par ce Responsable RH Nord
-      const res = await api.get(`/candidatures/my-created`);
-      const data = Array.isArray(res.data) ? res.data : [];
-      setCandidatures(data);
-      setFiltered(data);
-    } catch (error) {
-      console.error("Erreur chargement candidatures :", error);
-      setCandidatures([]);
-      setFiltered([]);
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  load();
-}, []);
-
-  useEffect(() => {
-    const q = search.toLowerCase().trim();
-    const f = candidatures.filter(
-      (c) =>
-        getName(c).toLowerCase().includes(q) ||
-        (c.jobTitle || "").toLowerCase().includes(q) ||
-        getEmail(c).toLowerCase().includes(q)
-    );
-    setFiltered(f);
-    setPage(1);
-  }, [search, candidatures]);
-
-  const getParsed = (c) => c?.extracted?.parsed || c?.extracted?.manual || {};
+  const cleanValue = (value) => {
+    if (value === null || value === undefined) return "";
+    return String(value).trim();
+  };
 
   const getName = (c) => {
-    const p = getParsed(c);
+    const directFullName = cleanValue(c?.fullName);
+    if (directFullName) return directFullName;
 
-    if (p.nom) return p.nom;
+    const directCombined = `${cleanValue(c?.prenom)} ${cleanValue(c?.nom)}`.trim();
+    if (directCombined) return directCombined;
 
-    if (c?.personalInfoForm?.prenom && c?.personalInfoForm?.nom) {
-      return `${c.personalInfoForm.prenom} ${c.personalInfoForm.nom}`;
-    }
+    const parsed = c?.extracted?.parsed || {};
 
-    const prenom = p.first_name || p.prenom || p.personal_info?.first_name || "";
-    const nom = p.last_name || p.personal_info?.last_name || "";
+    const candidates = [
+      parsed?.nom,
+      parsed?.full_name,
+      parsed?.personal_info?.full_name,
+      `${cleanValue(parsed?.personal_info?.first_name)} ${cleanValue(parsed?.personal_info?.last_name)}`.trim(),
 
-    if (prenom || nom) return `${prenom} ${nom}`.trim();
+      parsed?.manual?.nom,
+      parsed?.manual?.full_name,
+      parsed?.manual?.personal_info?.full_name,
+      `${cleanValue(parsed?.manual?.personal_info?.first_name)} ${cleanValue(parsed?.manual?.personal_info?.last_name)}`.trim(),
 
-    return "—";
+      parsed?.parsed?.nom,
+      parsed?.parsed?.full_name,
+      parsed?.parsed?.personal_info?.full_name,
+      `${cleanValue(parsed?.parsed?.personal_info?.first_name)} ${cleanValue(parsed?.parsed?.personal_info?.last_name)}`.trim(),
+    ];
+
+    const found = candidates.find((value) => cleanValue(value));
+    return cleanValue(found) || "—";
   };
 
   const getEmail = (c) => {
-    const p = getParsed(c);
-    return c?.personalInfoForm?.email || p.email || p.personal_info?.email || "—";
+    return (
+      cleanValue(c?.email) ||
+      cleanValue(c?.extracted?.parsed?.email) ||
+      cleanValue(c?.extracted?.parsed?.personal_info?.email) ||
+      cleanValue(c?.extracted?.parsed?.manual?.email) ||
+      cleanValue(c?.extracted?.parsed?.manual?.personal_info?.email) ||
+      cleanValue(c?.extracted?.parsed?.parsed?.email) ||
+      cleanValue(c?.extracted?.parsed?.parsed?.personal_info?.email) ||
+      "—"
+    );
   };
 
   const getPhone = (c) => {
-    const p = getParsed(c);
     return (
-      c?.personalInfoForm?.telephone ||
-      p.telephone ||
-      p.phone ||
-      p.personal_info?.telephone ||
+      cleanValue(c?.telephone) ||
+      cleanValue(c?.phone) ||
+      cleanValue(c?.extracted?.parsed?.telephone) ||
+      cleanValue(c?.extracted?.parsed?.personal_info?.telephone) ||
+      cleanValue(c?.extracted?.parsed?.personal_info?.phone) ||
+      cleanValue(c?.extracted?.parsed?.manual?.telephone) ||
+      cleanValue(c?.extracted?.parsed?.manual?.personal_info?.telephone) ||
+      cleanValue(c?.extracted?.parsed?.manual?.personal_info?.phone) ||
+      cleanValue(c?.extracted?.parsed?.parsed?.telephone) ||
+      cleanValue(c?.extracted?.parsed?.parsed?.personal_info?.telephone) ||
+      cleanValue(c?.extracted?.parsed?.parsed?.personal_info?.phone) ||
       "—"
+    );
+  };
+
+  const getLinkedin = (c) => {
+    return (
+      cleanValue(c?.linkedin) ||
+      cleanValue(c?.extracted?.parsed?.reseaux_sociaux?.linkedin) ||
+      cleanValue(c?.extracted?.parsed?.personal_info?.linkedin) ||
+      cleanValue(c?.extracted?.parsed?.manual?.reseaux_sociaux?.linkedin) ||
+      cleanValue(c?.extracted?.parsed?.manual?.personal_info?.linkedin) ||
+      cleanValue(c?.extracted?.parsed?.parsed?.reseaux_sociaux?.linkedin) ||
+      cleanValue(c?.extracted?.parsed?.parsed?.personal_info?.linkedin) ||
+      null
     );
   };
 
@@ -110,6 +117,49 @@ export default function CandidaturesPage() {
     return null;
   };
 
+  useEffect(() => {
+    async function load() {
+      setLoading(true);
+
+      try {
+        const u = JSON.parse(localStorage.getItem("user") || "{}");
+        setUserPoste(u?.poste || null);
+      } catch {
+        setUserPoste(null);
+      }
+
+      try {
+        const res = await api.get("/candidatures/my-created");
+        const data = Array.isArray(res.data) ? res.data : [];
+        setCandidatures(data);
+        setFiltered(data);
+      } catch (error) {
+        console.error("Erreur chargement candidatures :", error);
+        setCandidatures([]);
+        setFiltered([]);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    load();
+  }, []);
+
+  useEffect(() => {
+    const q = search.toLowerCase().trim();
+
+    const f = candidatures.filter((c) => {
+      return (
+        getName(c).toLowerCase().includes(q) ||
+        (c?.jobTitle || "").toLowerCase().includes(q) ||
+        getEmail(c).toLowerCase().includes(q)
+      );
+    });
+
+    setFiltered(f);
+    setPage(1);
+  }, [search, candidatures]);
+
   const totalPages = Math.ceil(filtered.length / LIMIT);
   const paginated = filtered.slice((page - 1) * LIMIT, page * LIMIT);
 
@@ -118,7 +168,9 @@ export default function CandidaturesPage() {
       <div className="min-h-screen bg-[#f5f8f2] dark:bg-[#0f1720] flex items-center justify-center">
         <div className="flex flex-col items-center gap-3">
           <Loader2 className="w-8 h-8 animate-spin text-[#6fa93f]" />
-          <p className="text-sm text-slate-500 dark:text-slate-300">Chargement...</p>
+          <p className="text-sm text-slate-500 dark:text-slate-300">
+            Chargement...
+          </p>
         </div>
       </div>
     );
@@ -141,7 +193,7 @@ export default function CandidaturesPage() {
         </div>
 
         <div className="mb-7">
-          <div className="bg-white dark:bg-gray-800 rounded-full shadow-sm border border-gray-100 dark:border-gray-700 px-4 sm:px-5 py-3 flex items-center gap-3 mb-6 transition-colors duration-300">
+          <div className="bg-white dark:bg-gray-800 rounded-full shadow-sm border border-gray-100 dark:border-gray-700 px-4 sm:px-5 py-3 flex items-center gap-3 mb-6">
             <Search className="w-5 h-5 text-[#4E8F2F] dark:text-emerald-400 flex-shrink-0" />
             <input
               type="text"
@@ -187,6 +239,9 @@ export default function CandidaturesPage() {
                         Poste
                       </th>
                       <th className="text-left px-6 py-5 font-extrabold uppercase text-xs tracking-wider">
+                        LinkedIn
+                      </th>
+                      <th className="text-left px-6 py-5 font-extrabold uppercase text-xs tracking-wider">
                         CV
                       </th>
                     </tr>
@@ -197,6 +252,7 @@ export default function CandidaturesPage() {
                       const name = getName(c);
                       const email = getEmail(c);
                       const phone = getPhone(c);
+                      const linkedin = getLinkedin(c);
                       const cvLink = getCvLink(c);
                       const jobTitle = c?.jobTitle || "—";
 
@@ -205,14 +261,10 @@ export default function CandidaturesPage() {
                           key={c?._id || idx}
                           className="hover:bg-green-50/40 dark:hover:bg-gray-700/40 transition-colors"
                         >
-                          <td className="px-6 py-5 font-extrabold text-gray-900 dark:text-white whitespace-nowrap">
-                            <div className="flex items-center gap-4">
-                              <div className="w-12 h-12 rounded-full bg-[#edf4e7] dark:bg-slate-800 flex items-center justify-center shrink-0">
-                                <UserCircle className="w-7 h-7 text-[#6d9f40] dark:text-[#9dca7c]" />
-                              </div>
-                              <span className="text-[18px] font-extrabold text-[#111827] dark:text-white leading-snug">
+                          <td className="px-6 py-5 whitespace-nowrap">
+                           <div className="font-extrabold text-gray-900 dark:text-white text-lg">
                                 {name}
-                              </span>
+                          
                             </div>
                           </td>
 
@@ -224,13 +276,33 @@ export default function CandidaturesPage() {
                             {phone}
                           </td>
 
-                          <td className="px-6 py-5 text-gray-600 dark:text-gray-300 whitespace-nowrap">
+                          <td className="px-6 py-5 whitespace-nowrap">
                             <span className="inline-flex items-center rounded-full bg-[#dce9c8] dark:bg-[#2b3b24] px-4 py-2 text-[15px] font-bold text-[#5d8f35] dark:text-[#b4dc92]">
                               {jobTitle}
                             </span>
                           </td>
 
-                          <td className="px-6 py-5 text-gray-600 dark:text-gray-300 whitespace-nowrap">
+                          <td className="px-6 py-5 whitespace-nowrap">
+                            {linkedin ? (
+                              <a
+                                href={
+                                  linkedin.startsWith("http")
+                                    ? linkedin
+                                    : `https://${linkedin}`
+                                }
+                                target="_blank"
+                                rel="noreferrer"
+                                className="inline-flex items-center gap-2 rounded-full bg-[#e8f0fe] dark:bg-[#1e2a3a] px-5 py-3 text-[15px] font-bold text-[#0a66c2] dark:text-[#70a8ff] hover:opacity-90 transition"
+                              >
+                                <Linkedin className="w-4 h-4" />
+                                Profil
+                              </a>
+                            ) : (
+                              <span className="text-slate-400">—</span>
+                            )}
+                          </td>
+
+                          <td className="px-6 py-5 whitespace-nowrap">
                             {cvLink ? (
                               <a
                                 href={cvLink}
@@ -257,6 +329,7 @@ export default function CandidaturesPage() {
                   const name = getName(c);
                   const email = getEmail(c);
                   const phone = getPhone(c);
+                  const linkedin = getLinkedin(c);
                   const cvLink = getCvLink(c);
                   const jobTitle = c?.jobTitle || "—";
 
@@ -266,14 +339,12 @@ export default function CandidaturesPage() {
                       className="rounded-3xl border border-[#dbe6d3] dark:border-slate-700 bg-white dark:bg-slate-800/70 shadow-sm p-4"
                     >
                       <div className="flex items-center gap-3 mb-4">
-                        <div className="w-12 h-12 rounded-full bg-[#edf4e7] dark:bg-slate-900 flex items-center justify-center shrink-0">
-                          <UserCircle className="w-7 h-7 text-[#6d9f40] dark:text-[#9dca7c]" />
-                        </div>
-
+                    
                         <div className="min-w-0">
-                          <h3 className="text-[16px] font-extrabold text-[#111827] dark:text-white break-words">
+                          <h3 className="text-[16px] font-semibold text-[#111827] dark:text-white break-words">
                             {name}
                           </h3>
+
                           <div className="mt-2">
                             <span className="inline-flex items-center rounded-full bg-[#dce9c8] dark:bg-[#2b3b24] px-3 py-1.5 text-[12px] font-bold text-[#5d8f35] dark:text-[#b4dc92]">
                               {jobTitle}
@@ -311,19 +382,44 @@ export default function CandidaturesPage() {
                           </div>
                         </div>
 
-                        <div className="pt-2">
+                        {linkedin && (
+                          <div className="flex items-start gap-3">
+                            <div className="w-9 h-9 rounded-xl bg-[#e8f0fe] dark:bg-[#1e2a3a] flex items-center justify-center shrink-0">
+                              <Linkedin className="w-4 h-4 text-[#0a66c2] dark:text-[#70a8ff]" />
+                            </div>
+                            <div className="min-w-0">
+                              <p className="text-xs font-bold uppercase tracking-wide text-slate-400">
+                                LinkedIn
+                              </p>
+                              <a
+                                href={
+                                  linkedin.startsWith("http")
+                                    ? linkedin
+                                    : `https://${linkedin}`
+                                }
+                                target="_blank"
+                                rel="noreferrer"
+                                className="text-sm text-[#0a66c2] dark:text-[#70a8ff] font-semibold break-all hover:underline"
+                              >
+                                Voir le profil
+                              </a>
+                            </div>
+                          </div>
+                        )}
+
+                        <div className="pt-2 flex gap-2">
                           {cvLink ? (
                             <a
                               href={cvLink}
                               target="_blank"
                               rel="noreferrer"
-                              className="w-full inline-flex items-center justify-center gap-2 rounded-2xl bg-[#e4eed8] dark:bg-[#24331f] px-4 py-3 text-[15px] font-bold text-[#5c8d37] dark:text-[#b4dc92] hover:opacity-90 transition"
+                              className="flex-1 inline-flex items-center justify-center gap-2 rounded-2xl bg-[#e4eed8] dark:bg-[#24331f] px-4 py-3 text-[15px] font-bold text-[#5c8d37] dark:text-[#b4dc92] hover:opacity-90 transition"
                             >
                               <FileText className="w-4 h-4" />
                               Voir CV
                             </a>
                           ) : (
-                            <div className="w-full inline-flex items-center justify-center rounded-2xl bg-slate-100 dark:bg-slate-700/60 px-4 py-3 text-sm font-semibold text-slate-400">
+                            <div className="flex-1 inline-flex items-center justify-center rounded-2xl bg-slate-100 dark:bg-slate-700/60 px-4 py-3 text-sm font-semibold text-slate-400">
                               CV indisponible
                             </div>
                           )}
@@ -350,7 +446,9 @@ export default function CandidaturesPage() {
                     </button>
 
                     <button
-                      onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                      onClick={() =>
+                        setPage((p) => Math.min(totalPages, p + 1))
+                      }
                       disabled={page === totalPages}
                       className="w-10 h-10 rounded-full border border-[#d7e3cf] dark:border-slate-700 flex items-center justify-center text-slate-600 dark:text-slate-300 disabled:opacity-40"
                     >
