@@ -48,6 +48,11 @@ async function apiFetch(path, options = {}) {
   }
 }
 
+function safeStr(v) {
+  if (v === null || v === undefined) return "";
+  return String(v).trim();
+}
+
 function hasMeaningfulValue(value, type) {
   if (type === "score") {
     return value !== null && value !== undefined && value !== "";
@@ -61,6 +66,13 @@ function hasMeaningfulValue(value, type) {
 function normalizeChoice(choice) {
   if (typeof choice === "string") return choice;
   return choice?.label || choice?.value || "";
+}
+
+function formatDateFR(value) {
+  if (!value) return "-";
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return "-";
+  return d.toLocaleDateString("fr-FR");
 }
 
 function RadioCard({ checked, onClick, label }) {
@@ -122,12 +134,9 @@ export default function InterviewEvaluationTelephoniquePage() {
         setLoading(true);
         setError(null);
 
-        console.log("📞 Loading téléphonique evaluation form for:", interviewId);
         const formData = await apiFetch(
           `/api/interviewNord/telephonique/${interviewId}/evaluation-form`
         );
-
-        console.log("✅ Form loaded successfully");
 
         setInterview(formData.interview || null);
         setFiche(formData.fiche || null);
@@ -225,14 +234,11 @@ export default function InterviewEvaluationTelephoniquePage() {
         overallRating,
       };
 
-      console.log("💾 Saving téléphonique evaluation...", evaluationData);
-
       await apiFetch(`/api/interviewNord/telephonique/${interviewId}/evaluation`, {
         method: "POST",
         body: JSON.stringify(evaluationData),
       });
 
-      console.log("✅ Evaluation saved");
       setSuccess(true);
 
       setTimeout(() => {
@@ -312,10 +318,10 @@ export default function InterviewEvaluationTelephoniquePage() {
                   Candidat
                 </p>
                 <h1 className="mt-2 text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">
-                  {interview?.candidateName}
+                  {safeStr(interview?.candidateName) || "—"}
                 </h1>
                 <p className="mt-1 text-xs sm:text-sm text-gray-600 dark:text-gray-400">
-                  {interview?.candidateEmail}
+                  {safeStr(interview?.candidateEmail) || "—"}
                 </p>
               </div>
 
@@ -330,7 +336,7 @@ export default function InterviewEvaluationTelephoniquePage() {
                   </span>
                 </div>
                 <p className="mt-2 sm:mt-3 text-xs text-gray-500 dark:text-gray-400">
-                  📋 {fiche?.name}
+                  📋 {safeStr(fiche?.name) || "Fiche d'évaluation"}
                 </p>
               </div>
             </div>
@@ -342,9 +348,7 @@ export default function InterviewEvaluationTelephoniquePage() {
                     Date
                   </p>
                   <p className="mt-1 text-gray-900 dark:text-white">
-                    {interview?.proposedDate
-                      ? new Date(interview.proposedDate).toLocaleDateString("fr-FR")
-                      : "-"}
+                    {formatDateFR(interview?.proposedDate)}
                   </p>
                 </div>
                 <div>
@@ -352,7 +356,7 @@ export default function InterviewEvaluationTelephoniquePage() {
                     Heure
                   </p>
                   <p className="mt-1 text-gray-900 dark:text-white">
-                    {interview?.proposedTime || "-"}
+                    {safeStr(interview?.proposedTime) || "-"}
                   </p>
                 </div>
               </div>
@@ -365,7 +369,7 @@ export default function InterviewEvaluationTelephoniquePage() {
         <div className="space-y-4 sm:space-y-6">
           <div className="rounded-xl sm:rounded-2xl bg-white p-4 sm:p-6 md:p-8 shadow-sm dark:border dark:border-gray-700 dark:bg-gray-800/80">
             <h2 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white">
-              {fiche?.description || "Critères d'évaluation téléphonique"}
+              {safeStr(fiche?.description) || "Critères d'évaluation téléphonique"}
             </h2>
 
             <div className="mt-6 sm:mt-8 space-y-6 sm:space-y-8">
@@ -440,8 +444,7 @@ export default function InterviewEvaluationTelephoniquePage() {
                             onClick={() => updateRating(criterion._id, "Non")}
                           />
                         </div>
-                      ) : criterion.type === "choice" &&
-                        Array.isArray(criterion.choices) ? (
+                      ) : criterion.type === "choice" && Array.isArray(criterion.choices) ? (
                         <div className="space-y-3">
                           {criterion.choices.map((choice, i) => {
                             const label = normalizeChoice(choice);
@@ -536,10 +539,7 @@ export default function InterviewEvaluationTelephoniquePage() {
           {error && (
             <div className="rounded-xl sm:rounded-2xl border-2 border-red-200 bg-red-50 p-3 sm:p-4 dark:border-red-500/30 dark:bg-red-500/10">
               <div className="flex gap-3">
-                <AlertCircle
-                  size={20}
-                  className="mt-0.5 flex-shrink-0 text-red-500"
-                />
+                <AlertCircle size={20} className="mt-0.5 flex-shrink-0 text-red-500" />
                 <p className="text-xs sm:text-sm text-red-700 dark:text-red-400">
                   {error}
                 </p>

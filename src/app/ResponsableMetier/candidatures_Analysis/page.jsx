@@ -10,14 +10,11 @@ import {
   CheckCircle2,
   AlertTriangle,
   Brain,
-  Target,
   BadgeCheck,
   FileText,
   ShieldAlert,
   TrendingUp,
-  Mail,
-  Check,
-  Calendar,
+  Trophy,
 } from "lucide-react";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL;
@@ -112,7 +109,10 @@ function ProgressBar({ value01 }) {
 
   return (
     <div className="w-full h-2 bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden">
-      <div className="h-full bg-green-500 dark:bg-emerald-500" style={{ width: `${p}%` }} />
+      <div
+        className="h-full bg-green-500 dark:bg-emerald-500"
+        style={{ width: `${p}%` }}
+      />
     </div>
   );
 }
@@ -144,7 +144,7 @@ function recLabel(rec) {
   return rec;
 }
 
-/* ================= NORMALIZE JOB MATCH (NEW SCHEMA) ================= */
+/* ================= NORMALIZE JOB MATCH ================= */
 function normalizeJobMatch(jobMatch) {
   const root = jobMatch || {};
   const status = root?.status;
@@ -157,8 +157,6 @@ function normalizeJobMatch(jobMatch) {
   const experienceAnalysis = payload?.experienceAnalysis || {};
   const riskMitigation = payload?.riskMitigation || {};
   const nextSteps = payload?.nextSteps || {};
-  const projectImpact = payload?.projectImpact || {};
-  const competitiveAnalysis = payload?.competitiveAnalysis || {};
   const compensationFit = payload?.compensationFit || {};
 
   return {
@@ -192,7 +190,9 @@ function normalizeJobMatch(jobMatch) {
     totalYears: experienceAnalysis?.totalYears,
     relevantYears: experienceAnalysis?.relevantYears,
     seniorityLevel: experienceAnalysis?.seniorityLevel,
-    expBreakdown: Array.isArray(experienceAnalysis?.breakdown) ? experienceAnalysis.breakdown : [],
+    expBreakdown: Array.isArray(experienceAnalysis?.breakdown)
+      ? experienceAnalysis.breakdown
+      : [],
 
     riskLevel: riskMitigation?.riskLevel,
     probabilityOfSuccess: riskMitigation?.probabilityOfSuccess,
@@ -211,8 +211,17 @@ function normalizeJobMatch(jobMatch) {
   };
 }
 
+/* ================= TOP N OPTIONS ================= */
+const TOP_N_OPTIONS = [
+  { label: "Tous", value: 0 },
+  { label: "Top 5", value: 5 },
+  { label: "Top 10", value: 10 },
+  { label: "Top 20", value: 20 },
+  { label: "Top 50", value: 50 },
+];
+
 /* ================= CARD ================= */
-function CandidatureCard({ c }) {
+function CandidatureCard({ c, rank }) {
   const analysis = c?.analysis || {};
   const ai = analysis?.aiDetection || {};
   const match = normalizeJobMatch(analysis?.jobMatch);
@@ -250,6 +259,7 @@ function CandidatureCard({ c }) {
 
     const uniq = [];
     const seen = new Set();
+
     for (const x of arr) {
       const k = x.toLowerCase();
       if (!seen.has(k)) {
@@ -257,23 +267,48 @@ function CandidatureCard({ c }) {
         uniq.push(x);
       }
     }
+
     return uniq.slice(0, 16);
-  }, [c]);
+  }, [match]);
+
+  const rankBadge =
+    rank <= 3 ? (
+      <div
+        className={`flex-shrink-0 flex items-center justify-center w-7 h-7 rounded-full text-xs font-extrabold ${
+          rank === 1
+            ? "bg-yellow-400 text-yellow-900"
+            : rank === 2
+              ? "bg-gray-300 text-gray-700"
+              : "bg-amber-600 text-white"
+        }`}
+      >
+        {rank === 1 ? "🥇" : rank === 2 ? "🥈" : "🥉"}
+      </div>
+    ) : (
+      <div className="flex-shrink-0 flex items-center justify-center w-7 h-7 rounded-full bg-gray-100 dark:bg-gray-700 text-xs font-bold text-gray-500 dark:text-gray-400">
+        #{rank}
+      </div>
+    );
 
   return (
-    <div data-cy="candidature-card"
-      className="bg-white dark:bg-gray-800 rounded-3xl border border-gray-100 dark:border-gray-700 shadow-sm overflow-hidden transition-colors duration-300">
+    <div
+      data-cy="candidature-card"
+      className="bg-white dark:bg-gray-800 rounded-3xl border border-gray-100 dark:border-gray-700 shadow-sm overflow-hidden transition-colors duration-300"
+    >
       <div className="p-4 md:p-6">
-
-        {/* TOP HEADER - RESPONSIVE */}
+        {/* TOP HEADER */}
         <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
           <div className="flex items-start gap-3 sm:gap-4 min-w-0">
+            <div className="flex-shrink-0 mt-1">{rankBadge}</div>
+
             <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-green-100 dark:bg-green-900/30 flex-shrink-0 flex items-center justify-center text-green-700 dark:text-emerald-400 font-bold text-sm sm:text-base">
               {name?.[0]?.toUpperCase() || "C"}
             </div>
 
             <div className="min-w-0 flex-1">
-              <h2 className="text-lg sm:text-xl font-extrabold text-gray-900 dark:text-white truncate">{name}</h2>
+              <h2 className="text-lg sm:text-xl font-extrabold text-gray-900 dark:text-white truncate">
+                {name}
+              </h2>
 
               <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 mt-1 truncate">
                 {jobTitle} • <span className="font-medium">{expYears}</span>
@@ -290,7 +325,9 @@ function CandidatureCard({ c }) {
                     <FileText className="w-3 h-3 sm:w-4 sm:h-4 flex-shrink-0" />
                     <span className="hidden sm:inline">Voir CV</span>
                     <span className="sm:hidden">CV</span>
-                    <span className="text-gray-400 dark:text-gray-500 text-xs hidden sm:inline">({cvName})</span>
+                    <span className="text-gray-400 dark:text-gray-500 text-xs hidden sm:inline">
+                      ({cvName})
+                    </span>
                   </a>
                 ) : (
                   <span className="text-xs text-red-500 dark:text-red-400 font-medium">
@@ -301,7 +338,9 @@ function CandidatureCard({ c }) {
 
               <div className="flex flex-wrap gap-2 mt-3">
                 {match?.confidenceLevel && (
-                  <Tag variant="green"><span className="text-xs">Conf: {match.confidenceLevel}</span></Tag>
+                  <Tag variant="green">
+                    <span className="text-xs">Conf: {match.confidenceLevel}</span>
+                  </Tag>
                 )}
                 {match?.riskLevel && (
                   <Tag variant={match.riskLevel === "low" ? "green" : "red"}>
@@ -318,19 +357,21 @@ function CandidatureCard({ c }) {
           </div>
         </div>
 
-        {/* LES 3 CONTAINERS DEMANDÉS */}
+        {/* 3 CONTAINERS */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3 md:gap-4 mt-4 md:mt-6">
           {/* MATCH SCORE */}
           <div className="rounded-2xl border border-gray-100 dark:border-gray-700 p-3 md:p-4 bg-white dark:bg-gray-800/50 transition-colors">
-            <p className="text-xs font-semibold text-gray-500 dark:text-gray-400">MATCH SCORE</p>
+            <p className="text-xs font-semibold text-gray-500 dark:text-gray-400">
+              MATCH SCORE
+            </p>
             <div className="flex items-end justify-between mt-2">
-              <p data-cy="match-score"
-                className="text-2xl sm:text-3xl font-extrabold text-green-600 dark:text-emerald-400">
+              <p
+                data-cy="match-score"
+                className="text-2xl sm:text-3xl font-extrabold text-green-600 dark:text-emerald-400"
+              >
                 {typeof score === "number" ? pct(score) : "—"}
               </p>
-              <span
-                className={`text-xs px-2 py-1 rounded-full ${scorePill(score)}`}
-              >
+              <span className={`text-xs px-2 py-1 rounded-full ${scorePill(score)}`}>
                 {match?.recommendation ? recLabel(match.recommendation) : "—"}
               </span>
             </div>
@@ -339,41 +380,46 @@ function CandidatureCard({ c }) {
             </p>
           </div>
 
-
           {/* EXPERIENCE */}
           <div className="rounded-2xl border border-gray-100 dark:border-gray-700 p-3 md:p-4 bg-white dark:bg-gray-800/50 transition-colors">
-            <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-2">EXPERIENCE</p>
+            <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-2">
+              EXPERIENCE
+            </p>
 
-            {/* Total + Seniority */}
             <div className="flex items-center gap-2 md:gap-3 mb-3">
               <p className="text-2xl sm:text-3xl font-extrabold text-gray-900 dark:text-white">
                 {typeof match?.totalYears === "number" ? `${match.totalYears} ans` : expYears}
               </p>
               {match?.seniorityLevel && (
-                <span className={`text-xs font-bold px-2 py-1 rounded-full capitalize flex-shrink-0
-                  ${match.seniorityLevel === "senior" || match.seniorityLevel === "lead"
-                    ? "bg-green-100 text-green-700 dark:bg-emerald-900/30 dark:text-emerald-400"
-                    : match.seniorityLevel === "mid"
-                      ? "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400"
-                      : "bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300"
-                  }`}>
+                <span
+                  className={`text-xs font-bold px-2 py-1 rounded-full capitalize flex-shrink-0 ${
+                    match.seniorityLevel === "senior" || match.seniorityLevel === "lead"
+                      ? "bg-green-100 text-green-700 dark:bg-emerald-900/30 dark:text-emerald-400"
+                      : match.seniorityLevel === "mid"
+                        ? "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400"
+                        : "bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300"
+                  }`}
+                >
                   {match.seniorityLevel}
                 </span>
               )}
             </div>
 
-            {/* Relevant years */}
             {typeof match?.relevantYears === "number" && (
               <p className="text-xs text-gray-500 dark:text-gray-400 mb-3">
-                <span className="font-semibold text-gray-700 dark:text-gray-300">{match.relevantYears} ans</span> pertinents pour ce poste
+                <span className="font-semibold text-gray-700 dark:text-gray-300">
+                  {match.relevantYears} ans
+                </span>{" "}
+                pertinents pour ce poste
               </p>
             )}
-
           </div>
 
           {/* AI DETECTION */}
           <div className="rounded-2xl border border-gray-100 dark:border-gray-700 p-3 md:p-4 bg-white dark:bg-gray-800/50 min-h-[120px] flex flex-col justify-between transition-colors">
-            <p className="text-xs font-semibold text-gray-500 dark:text-gray-400">AI DETECTION</p>
+            <p className="text-xs font-semibold text-gray-500 dark:text-gray-400">
+              AI DETECTION
+            </p>
 
             {ai?.status !== "DONE" ? (
               <div className="flex items-center gap-2 mt-2">
@@ -391,8 +437,10 @@ function CandidatureCard({ c }) {
                     <CheckCircle2 className="w-5 h-5 sm:w-6 sm:h-6 text-green-600 dark:text-emerald-400 flex-shrink-0" />
                   )}
 
-                  <p data-cy="ai-detection-result"
-                    className="text-2xl sm:text-3xl font-extrabold text-gray-900 dark:text-white">
+                  <p
+                    data-cy="ai-detection-result"
+                    className="text-2xl sm:text-3xl font-extrabold text-gray-900 dark:text-white"
+                  >
                     {ai.isAIGenerated ? "AI" : "Human"}
                   </p>
                 </div>
@@ -412,14 +460,12 @@ function CandidatureCard({ c }) {
               </div>
             )}
           </div>
-
         </div>
 
-        {/* DETAILS GRID - organisation demandée */}
+        {/* DETAILS GRID */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6 mt-4 md:mt-6">
           {/* GAUCHE */}
           <div className="space-y-4 md:space-y-6">
-
             {/* AI Match Summary */}
             <div className="rounded-2xl border border-gray-100 dark:border-gray-700 p-4 md:p-5 bg-white dark:bg-gray-800/50 transition-colors">
               <div className="flex items-center gap-2 text-gray-900 dark:text-white font-semibold text-sm md:text-base">
@@ -459,7 +505,7 @@ function CandidatureCard({ c }) {
               </div>
             </div>
 
-            {/* Détails d'Expérience - PLACÉ ICI COMME DEMANDÉ */}
+            {/* Détails d'Expérience */}
             <div className="rounded-2xl border border-gray-100 dark:border-gray-700 p-4 md:p-5 bg-white dark:bg-gray-800/50 transition-colors">
               <div className="flex items-center gap-2 text-gray-900 dark:text-white font-semibold text-sm md:text-base">
                 <TrendingUp className="w-4 h-4 md:w-5 md:h-5 text-gray-700 dark:text-gray-300 flex-shrink-0" />
@@ -470,9 +516,13 @@ function CandidatureCard({ c }) {
                   <li>Aucune expérience détaillée disponible.</li>
                 ) : (
                   match.expBreakdown.map((exp, i) => (
-                    <li key={i} className="border-b border-gray-200 dark:border-gray-700 pb-2 last:border-0 last:pb-0">
+                    <li
+                      key={i}
+                      className="border-b border-gray-200 dark:border-gray-700 pb-2 last:border-0 last:pb-0"
+                    >
                       <p className="font-semibold text-gray-800 dark:text-gray-200">
-                        {exp.type ? `${exp.type}: ` : ""}{exp.role || exp.title || "—"}
+                        {exp.type ? `${exp.type}: ` : ""}
+                        {exp.role || exp.title || "—"}
                       </p>
                       <p>{exp.company || "—"}</p>
                       <p>{exp.duration || "—"}</p>
@@ -482,7 +532,7 @@ function CandidatureCard({ c }) {
               </ul>
             </div>
 
-            {/* Scores Détailés */}
+            {/* Scores Detaillés */}
             <div className="rounded-2xl border border-gray-100 dark:border-gray-700 p-4 md:p-5 bg-white dark:bg-gray-800/50 transition-colors">
               <p className="text-gray-900 dark:text-white font-semibold flex items-center gap-2 text-sm md:text-base">
                 <TrendingUp className="w-4 h-4 md:w-5 md:h-5 text-gray-700 dark:text-gray-300 flex-shrink-0" />
@@ -499,7 +549,9 @@ function CandidatureCard({ c }) {
                 ].map(([label, val], idx) => (
                   <div key={idx}>
                     <div className="flex items-center justify-between text-xs md:text-sm">
-                      <span className="text-gray-700 dark:text-gray-300 font-medium">{label}</span>
+                      <span className="text-gray-700 dark:text-gray-300 font-medium">
+                        {label}
+                      </span>
                       <span className="text-gray-500 dark:text-gray-400">
                         {typeof val === "number" ? `${Math.round(val * 100)}%` : "—"}
                       </span>
@@ -511,147 +563,146 @@ function CandidatureCard({ c }) {
             </div>
           </div>
 
-        {/* DROITE - inchangée */}
-        <div className="space-y-4 md:space-y-6">
-          <div className="rounded-2xl border border-gray-100 dark:border-gray-700 p-4 md:p-5 bg-white dark:bg-gray-800/50 transition-colors">
-            <div className="flex items-center gap-2 text-gray-900 dark:text-white font-semibold text-sm md:text-base">
-              <Brain className="w-4 h-4 md:w-5 md:h-5 text-gray-700 dark:text-gray-300 flex-shrink-0" />
-              SKILL CLOUD
+          {/* DROITE */}
+          <div className="space-y-4 md:space-y-6">
+            <div className="rounded-2xl border border-gray-100 dark:border-gray-700 p-4 md:p-5 bg-white dark:bg-gray-800/50 transition-colors">
+              <div className="flex items-center gap-2 text-gray-900 dark:text-white font-semibold text-sm md:text-base">
+                <Brain className="w-4 h-4 md:w-5 md:h-5 text-gray-700 dark:text-gray-300 flex-shrink-0" />
+                SKILL CLOUD
+              </div>
+              <div className="flex flex-wrap gap-2 mt-4">
+                {skillCloud.length === 0 ? (
+                  <Tag>—</Tag>
+                ) : (
+                  skillCloud.map((x, i) => <Tag key={i}>{x}</Tag>)
+                )}
+              </div>
             </div>
-            <div className="flex flex-wrap gap-2 mt-4">
-              {skillCloud.length === 0 ? (
-                <Tag>—</Tag>
-              ) : (
-                skillCloud.map((x, i) => <Tag key={i}>{x}</Tag>)
+
+            <div className="rounded-2xl border border-gray-100 dark:border-gray-700 p-4 md:p-5 bg-white dark:bg-gray-800/50 transition-colors">
+              <div className="flex items-center gap-2 text-gray-900 dark:text-white font-semibold text-sm md:text-base">
+                <BadgeCheck className="w-4 h-4 md:w-5 md:h-5 text-gray-700 dark:text-gray-300 flex-shrink-0" />
+                Job Match Details
+              </div>
+
+              <div className="mt-4 space-y-4">
+                <div>
+                  <p className="text-xs md:text-sm font-semibold text-gray-800 dark:text-gray-200 mb-2">
+                    Matched Skills
+                  </p>
+                  <div className="flex flex-wrap gap-2">
+                    {(match?.matchedSkills || []).length === 0 ? (
+                      <Tag>—</Tag>
+                    ) : (
+                      match.matchedSkills.map((x, i) => (
+                        <Tag key={i} variant="green">
+                          {x}
+                        </Tag>
+                      ))
+                    )}
+                  </div>
+                </div>
+
+                <div>
+                  <p className="text-xs md:text-sm font-semibold text-gray-800 dark:text-gray-200 mb-2">
+                    Missing MUST-HAVE
+                  </p>
+                  <div className="flex flex-wrap gap-2">
+                    {(match?.missingMustHaveSkills || []).length === 0 ? (
+                      <Tag variant="green">Aucun</Tag>
+                    ) : (
+                      match.missingMustHaveSkills.map((x, i) => (
+                        <Tag key={i} variant="red">
+                          {x}
+                        </Tag>
+                      ))
+                    )}
+                  </div>
+                </div>
+
+                <div>
+                  <p className="text-xs md:text-sm font-semibold text-gray-800 dark:text-gray-200 mb-2">
+                    Missing NICE-TO-HAVE
+                  </p>
+                  <div className="flex flex-wrap gap-2">
+                    {(match?.missingNiceToHaveSkills || []).length === 0 ? (
+                      <Tag variant="green">Aucun</Tag>
+                    ) : (
+                      match.missingNiceToHaveSkills.map((x, i) => (
+                        <Tag key={i} variant="yellow">
+                          {x}
+                        </Tag>
+                      ))
+                    )}
+                  </div>
+                </div>
+
+                <div>
+                  <p className="text-xs md:text-sm font-semibold text-gray-800 dark:text-gray-200 mb-2">
+                    Transferable Skills
+                  </p>
+                  <div className="flex flex-wrap gap-2">
+                    {(match?.transferableSkills || []).length === 0 ? (
+                      <Tag>—</Tag>
+                    ) : (
+                      match.transferableSkills.map((x, i) => (
+                        <Tag key={i} variant="yellow">
+                          {x}
+                        </Tag>
+                      ))
+                    )}
+                  </div>
+                </div>
+
+                <div>
+                  <p className="text-xs md:text-sm font-semibold text-gray-800 dark:text-gray-200 mb-2">
+                    Recommendation
+                  </p>
+                  <Tag variant={recColor(match?.recommendation)}>
+                    {recLabel(match?.recommendation)}
+                  </Tag>
+                </div>
+              </div>
+            </div>
+
+            <div className="rounded-2xl border border-gray-100 dark:border-gray-700 p-4 md:p-5 bg-white dark:bg-gray-800/50 transition-colors">
+              <div className="flex items-center gap-2 text-gray-900 dark:text-white font-semibold text-sm md:text-base">
+                <ShieldAlert className="w-4 h-4 md:w-5 md:h-5 text-gray-700 dark:text-gray-300 flex-shrink-0" />
+                Risk & Next Steps
+              </div>
+
+              <div className="mt-4 space-y-2 text-xs md:text-sm text-gray-700 dark:text-gray-300">
+                <p>
+                  <span className="font-semibold">Risk Level:</span>{" "}
+                  {match?.riskLevel || "—"}
+                </p>
+                <p>
+                  <span className="font-semibold">Immediate Action:</span>{" "}
+                  {match?.immediateAction || "—"}
+                </p>
+                <p>
+                  <span className="font-semibold">Talent Pool:</span>{" "}
+                  {match?.talentPoolStatus || "—"}
+                </p>
+              </div>
+
+              {(match?.mitigationStrategies || []).length > 0 && (
+                <div className="mt-3">
+                  <p className="text-xs md:text-sm font-semibold text-gray-900 dark:text-white">
+                    Mitigation Strategies
+                  </p>
+                  <ul className="mt-2 text-xs md:text-sm text-gray-600 dark:text-gray-300 list-disc pl-5 space-y-1">
+                    {match.mitigationStrategies.slice(0, 4).map((x, i) => (
+                      <li key={i}>{x}</li>
+                    ))}
+                  </ul>
+                </div>
               )}
             </div>
           </div>
-
-          <div className="rounded-2xl border border-gray-100 dark:border-gray-700 p-4 md:p-5 bg-white dark:bg-gray-800/50 transition-colors">
-            <div className="flex items-center gap-2 text-gray-900 dark:text-white font-semibold text-sm md:text-base">
-              <BadgeCheck className="w-4 h-4 md:w-5 md:h-5 text-gray-700 dark:text-gray-300 flex-shrink-0" />
-              Job Match Details
-            </div>
-
-            <div className="mt-4 space-y-4">
-              <div>
-                <p className="text-xs md:text-sm font-semibold text-gray-800 dark:text-gray-200 mb-2">
-                  Matched Skills
-                </p>
-                <div className="flex flex-wrap gap-2">
-                  {(match?.matchedSkills || []).length === 0 ? (
-                    <Tag>—</Tag>
-                  ) : (
-                    match.matchedSkills.map((x, i) => (
-                      <Tag key={i} variant="green">
-                        {x}
-                      </Tag>
-                    ))
-                  )}
-                </div>
-              </div>
-
-              <div>
-                <p className="text-xs md:text-sm font-semibold text-gray-800 dark:text-gray-200 mb-2">
-                  Missing MUST-HAVE
-                </p>
-                <div className="flex flex-wrap gap-2">
-                  {(match?.missingMustHaveSkills || []).length === 0 ? (
-                    <Tag variant="green">Aucun</Tag>
-                  ) : (
-                    match.missingMustHaveSkills.map((x, i) => (
-                      <Tag key={i} variant="red">
-                        {x}
-                      </Tag>
-                    ))
-                  )}
-                </div>
-              </div>
-
-              <div>
-                <p className="text-xs md:text-sm font-semibold text-gray-800 dark:text-gray-200 mb-2">
-                  Missing NICE-TO-HAVE
-                </p>
-                <div className="flex flex-wrap gap-2">
-                  {(match?.missingNiceToHaveSkills || []).length === 0 ? (
-                    <Tag variant="green">Aucun</Tag>
-                  ) : (
-                    match.missingNiceToHaveSkills.map((x, i) => (
-                      <Tag key={i} variant="yellow">
-                        {x}
-                      </Tag>
-                    ))
-                  )}
-                </div>
-              </div>
-
-              <div>
-                <p className="text-xs md:text-sm font-semibold text-gray-800 dark:text-gray-200 mb-2">
-                  Transferable Skills
-                </p>
-                <div className="flex flex-wrap gap-2">
-                  {(match?.transferableSkills || []).length === 0 ? (
-                    <Tag>—</Tag>
-                  ) : (
-                    match.transferableSkills.map((x, i) => (
-                      <Tag key={i} variant="yellow">
-                        {x}
-                      </Tag>
-                    ))
-                  )}
-                </div>
-              </div>
-
-              <div>
-                <p className="text-xs md:text-sm font-semibold text-gray-800 dark:text-gray-200 mb-2">
-                  Recommendation
-                </p>
-                <Tag variant={recColor(match?.recommendation)}>
-                  {recLabel(match?.recommendation)}
-                </Tag>
-              </div>
-            </div>
-          </div>
-
-          <div className="rounded-2xl border border-gray-100 dark:border-gray-700 p-4 md:p-5 bg-white dark:bg-gray-800/50 transition-colors">
-            <div className="flex items-center gap-2 text-gray-900 dark:text-white font-semibold text-sm md:text-base">
-              <ShieldAlert className="w-4 h-4 md:w-5 md:h-5 text-gray-700 dark:text-gray-300 flex-shrink-0" />
-              Risk & Next Steps
-            </div>
-
-            <div className="mt-4 space-y-2 text-xs md:text-sm text-gray-700 dark:text-gray-300">
-              <p>
-                <span className="font-semibold">Risk Level:</span>{" "}
-                {match?.riskLevel || "—"}
-              </p>
-              <p>
-                <span className="font-semibold">Immediate Action:</span>{" "}
-                {match?.immediateAction || "—"}
-              </p>
-              <p>
-                <span className="font-semibold">Talent Pool:</span>{" "}
-                {match?.talentPoolStatus || "—"}
-              </p>
-            </div>
-
-            {(match?.mitigationStrategies || []).length > 0 && (
-              <div className="mt-3">
-                <p className="text-xs md:text-sm font-semibold text-gray-900 dark:text-white">
-                  Mitigation Strategies
-                </p>
-                <ul className="mt-2 text-xs md:text-sm text-gray-600 dark:text-gray-300 list-disc pl-5 space-y-1">
-                  {match.mitigationStrategies.slice(0, 4).map((x, i) => (
-                    <li key={i}>{x}</li>
-                  ))}
-                </ul>
-              </div>
-            )}
-          </div>
         </div>
       </div>
-
     </div>
-    </div >
   );
 }
 
@@ -664,6 +715,7 @@ export default function RMCandidatureAnalysisPage() {
   const [jobFilter, setJobFilter] = useState("ALL");
   const [aiFilter, setAiFilter] = useState("ALL");
   const [minScore, setMinScore] = useState(0);
+  const [topN, setTopN] = useState(0);
 
   const [page, setPage] = useState(1);
   const ITEMS_PER_PAGE = 5;
@@ -672,10 +724,8 @@ export default function RMCandidatureAnalysisPage() {
     async function load() {
       try {
         setLoading(true);
-
         const res = await getMyAnalysis();
         const data = res?.data;
-
         setItems(Array.isArray(data) ? data : []);
       } catch (e) {
         console.log("Load error:", e?.message);
@@ -697,7 +747,7 @@ export default function RMCandidatureAnalysisPage() {
   }, [items]);
 
   const filtered = useMemo(() => {
-    return items.filter((c) => {
+    const result = items.filter((c) => {
       const name = getName(c).toLowerCase();
       const email = safeStr(c?.email).toLowerCase();
       const jobTitle = safeStr(c?.jobTitle).toLowerCase();
@@ -721,11 +771,20 @@ export default function RMCandidatureAnalysisPage() {
 
       return true;
     });
-  }, [items, search, jobFilter, aiFilter, minScore]);
+
+    result.sort((a, b) => {
+      const sa = normalizeJobMatch(a?.analysis?.jobMatch)?.score ?? -1;
+      const sb = normalizeJobMatch(b?.analysis?.jobMatch)?.score ?? -1;
+      return sb - sa;
+    });
+
+    if (topN > 0) return result.slice(0, topN);
+    return result;
+  }, [items, search, jobFilter, aiFilter, minScore, topN]);
 
   useEffect(() => {
     setPage(1);
-  }, [search, jobFilter, aiFilter, minScore]);
+  }, [search, jobFilter, aiFilter, minScore, topN]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / ITEMS_PER_PAGE));
 
@@ -745,8 +804,8 @@ export default function RMCandidatureAnalysisPage() {
           </div>
 
           <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700 shadow-sm p-3 md:p-4">
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 md:gap-3">
-              <div className="flex items-center gap-2 border border-gray-200 dark:border-gray-600 rounded-xl px-3 py-2.5 bg-white dark:bg-gray-700">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-2 md:gap-3">
+              <div className="flex items-center gap-2 border border-gray-200 dark:border-gray-600 rounded-xl px-3 py-2.5 bg-white dark:bg-gray-700 sm:col-span-2 lg:col-span-1">
                 <Search className="w-4 h-4 text-gray-500 dark:text-gray-400 flex-shrink-0" />
                 <input
                   value={search}
@@ -780,9 +839,24 @@ export default function RMCandidatureAnalysisPage() {
                 <option value="AI">Généré IA</option>
               </select>
 
+              <div className="flex items-center gap-2 border border-gray-200 dark:border-gray-600 rounded-xl px-3 py-2.5 bg-white dark:bg-gray-700">
+                <Trophy className="w-4 h-4 text-yellow-500 flex-shrink-0" />
+                <select
+                  value={topN}
+                  onChange={(e) => setTopN(Number(e.target.value))}
+                  className="w-full outline-none text-xs sm:text-sm bg-transparent text-gray-800 dark:text-gray-100"
+                >
+                  {TOP_N_OPTIONS.map((o) => (
+                    <option key={o.value} value={o.value}>
+                      {o.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
               <div className="flex items-center gap-2 md:gap-3 border border-gray-200 dark:border-gray-600 rounded-xl px-3 py-2.5 bg-white dark:bg-gray-700">
                 <span className="text-xs md:text-sm text-gray-600 dark:text-gray-300 whitespace-nowrap">
-                  Score
+                  Score ≥
                 </span>
                 <input
                   type="range"
@@ -802,6 +876,19 @@ export default function RMCandidatureAnalysisPage() {
       </div>
 
       <div className="max-w-6xl mx-auto px-4 md:px-6 pb-10 pt-4">
+        {!loading && filtered.length > 0 && (
+          <div className="flex items-center gap-2 mb-4 text-sm text-gray-500 dark:text-gray-400">
+            <Trophy className="w-4 h-4 text-yellow-500" />
+            <span>
+              <span className="font-semibold text-gray-800 dark:text-gray-200">
+                {filtered.length}
+              </span>{" "}
+              candidat{filtered.length > 1 ? "s" : ""}
+              {topN > 0 ? ` — Top ${topN} par score` : " — triés par score décroissant"}
+            </span>
+          </div>
+        )}
+
         {loading ? (
           <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700 shadow-sm p-6 text-center">
             <p className="text-gray-600 dark:text-gray-400">Chargement...</p>
@@ -813,10 +900,11 @@ export default function RMCandidatureAnalysisPage() {
         ) : (
           <>
             <div className="space-y-4 md:space-y-6 mt-4 md:mt-6">
-              {paginatedItems.map((c) => (
+              {paginatedItems.map((c, idx) => (
                 <CandidatureCard
                   key={c._id}
                   c={c}
+                  rank={(page - 1) * ITEMS_PER_PAGE + idx + 1}
                 />
               ))}
             </div>

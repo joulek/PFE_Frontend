@@ -25,46 +25,118 @@ const API_BASE = process.env.NEXT_PUBLIC_API_URL;
 function formatDate(date) {
   if (!date) return "—";
   return new Date(date).toLocaleDateString("fr-FR", {
-    day: "2-digit", month: "short", year: "numeric",
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
   });
 }
 
 function safeStr(v) {
-  if (!v) return "";
+  if (v === null || v === undefined) return "";
   if (typeof v === "string") return v.trim();
-  return String(v);
+  return String(v).trim();
+}
+
+function normalizeUrl(url) {
+  const raw = safeStr(url);
+  if (!raw) return "";
+
+  if (raw.startsWith("http://") || raw.startsWith("https://")) {
+    return raw;
+  }
+
+  if (
+    raw.startsWith("www.") ||
+    raw.includes("linkedin.com") ||
+    raw.includes("linkedin.")
+  ) {
+    return `https://${raw}`;
+  }
+
+  return raw;
 }
 
 function getFullName(c) {
   const extracted = c?.extracted || {};
   const parsed = c?.parsed || {};
+
   return (
     safeStr(c?.fullName) ||
     `${safeStr(c?.prenom)} ${safeStr(c?.nom)}`.trim() ||
     safeStr(extracted?.manual?.nom) ||
+    safeStr(extracted?.manual?.fullName) ||
+    safeStr(extracted?.parsed?.nom) ||
+    safeStr(extracted?.parsed?.fullName) ||
     safeStr(parsed?.manual?.nom) ||
+    safeStr(parsed?.manual?.fullName) ||
+    safeStr(parsed?.nom) ||
+    safeStr(parsed?.fullName) ||
     "Candidat"
   );
 }
 
 function getEmail(c) {
-  return safeStr(c?.email) || safeStr(c?.extracted?.manual?.email) || safeStr(c?.parsed?.manual?.email) || "";
+  return (
+    safeStr(c?.email) ||
+    safeStr(c?.personalInfoForm?.email) ||
+    safeStr(c?.extracted?.manual?.email) ||
+    safeStr(c?.extracted?.parsed?.email) ||
+    safeStr(c?.extracted?.parsed?.personal_info?.email) ||
+    safeStr(c?.parsed?.manual?.email) ||
+    safeStr(c?.parsed?.email) ||
+    safeStr(c?.parsed?.personal_info?.email) ||
+    ""
+  );
 }
 
 function getPhone(c) {
-  return safeStr(c?.telephone) || safeStr(c?.personalInfoForm?.telephone) || safeStr(c?.extracted?.parsed?.telephone) || "";
+  return (
+    safeStr(c?.telephone) ||
+    safeStr(c?.phone) ||
+    safeStr(c?.personalInfoForm?.telephone) ||
+    safeStr(c?.personalInfoForm?.phone) ||
+    safeStr(c?.extracted?.manual?.telephone) ||
+    safeStr(c?.extracted?.manual?.phone) ||
+    safeStr(c?.extracted?.parsed?.telephone) ||
+    safeStr(c?.extracted?.parsed?.phone) ||
+    safeStr(c?.extracted?.parsed?.personal_info?.telephone) ||
+    safeStr(c?.extracted?.parsed?.personal_info?.phone) ||
+    safeStr(c?.parsed?.manual?.telephone) ||
+    safeStr(c?.parsed?.manual?.phone) ||
+    safeStr(c?.parsed?.telephone) ||
+    safeStr(c?.parsed?.phone) ||
+    safeStr(c?.parsed?.personal_info?.telephone) ||
+    safeStr(c?.parsed?.personal_info?.phone) ||
+    ""
+  );
 }
 
 function getLinkedIn(c) {
-  const url = safeStr(c?.personalInfoForm?.linkedin) || safeStr(c?.extracted?.parsed?.reseaux_sociaux?.linkedin);
-  if (!url) return "";
-  return url.startsWith("http") ? url : `https://${url}`;
+  const linkedin =
+    safeStr(c?.linkedin) ||
+    safeStr(c?.personalInfoForm?.linkedin) ||
+    safeStr(c?.extracted?.manual?.linkedin) ||
+    safeStr(c?.extracted?.parsed?.linkedin) ||
+    safeStr(c?.extracted?.parsed?.reseaux_sociaux?.linkedin) ||
+    safeStr(c?.extracted?.parsed?.personal_info?.linkedin) ||
+    safeStr(c?.parsed?.manual?.linkedin) ||
+    safeStr(c?.parsed?.linkedin) ||
+    safeStr(c?.parsed?.reseaux_sociaux?.linkedin) ||
+    safeStr(c?.parsed?.personal_info?.linkedin) ||
+    "";
+
+  return normalizeUrl(linkedin);
 }
 
 function getCvUrl(c) {
-  const raw = safeStr(c?.cv?.fileUrl) || safeStr(c?.cv?.url) || safeStr(c?.cv?.filename) || safeStr(c?.cvUrl);
+  const raw =
+    safeStr(c?.cv?.fileUrl) ||
+    safeStr(c?.cv?.url) ||
+    safeStr(c?.cv?.filename) ||
+    safeStr(c?.cvUrl);
+
   if (!raw) return "";
-  if (raw.startsWith("http")) return raw;
+  if (raw.startsWith("http://") || raw.startsWith("https://")) return raw;
   return `${API_BASE}${raw.startsWith("/") ? raw : `/${raw}`}`;
 }
 
@@ -74,16 +146,34 @@ function getPoste(c) {
 
 /* ================= STATUS BADGE ================= */
 const STATUS_CONFIG = {
-  EN_ATTENTE: { label: "En attente", dot: "bg-amber-400", bg: "bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-300" },
-  VU:         { label: "Vu",         dot: "bg-blue-400",  bg: "bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300"   },
-  RETENU:     { label: "Retenu",     dot: "bg-emerald-500", bg: "bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-300" },
-  REJETE:     { label: "Rejeté",     dot: "bg-red-400",   bg: "bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400"       },
+  EN_ATTENTE: {
+    label: "En attente",
+    dot: "bg-amber-400",
+    bg: "bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-300",
+  },
+  VU: {
+    label: "Vu",
+    dot: "bg-blue-400",
+    bg: "bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300",
+  },
+  RETENU: {
+    label: "Retenu",
+    dot: "bg-emerald-500",
+    bg: "bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-300",
+  },
+  REJETE: {
+    label: "Rejeté",
+    dot: "bg-red-400",
+    bg: "bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400",
+  },
 };
 
 function StatusBadge({ status }) {
   const cfg = STATUS_CONFIG[status] || STATUS_CONFIG.EN_ATTENTE;
   return (
-    <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold ${cfg.bg}`}>
+    <span
+      className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold ${cfg.bg}`}
+    >
       <span className={`w-1.5 h-1.5 rounded-full ${cfg.dot}`} />
       {cfg.label}
     </span>
@@ -92,10 +182,10 @@ function StatusBadge({ status }) {
 
 /* ================= TABS ================= */
 const TABS = [
-  { key: "TOUS",        label: "Tous",                  Icon: Users        },
-  { key: "OFFRES",      label: "Offres",                Icon: Briefcase    },
-  { key: "RECRUTEMENT", label: "Candidature spontanée", Icon: Briefcase    },
-  { key: "STAGE",       label: "Stages",                Icon: GraduationCap },
+  { key: "TOUS", label: "Tous", Icon: Users },
+  { key: "OFFRES", label: "Offres", Icon: Briefcase },
+  { key: "RECRUTEMENT", label: "Candidature spontanée", Icon: Briefcase },
+  { key: "STAGE", label: "Stages", Icon: GraduationCap },
 ];
 
 /* ================= PAGE ================= */
@@ -117,7 +207,11 @@ export default function CandidaturesUnifiedPage() {
           getCandidaturesWithJob().catch(() => ({ data: [] })),
           getSpontaneousApplications().catch(() => ({ data: [] })),
         ]);
-        setCandidaturesOffres((offresRes.data || []).map((c) => ({ ...c, _source: "OFFRES" })));
+
+        setCandidaturesOffres(
+          (offresRes.data || []).map((c) => ({ ...c, _source: "OFFRES" }))
+        );
+
         setCandidaturesSpontanees(
           (spontRes.data || []).map((c) => ({
             ...c,
@@ -128,6 +222,7 @@ export default function CandidaturesUnifiedPage() {
         setLoading(false);
       }
     }
+
     load();
   }, []);
 
@@ -136,21 +231,27 @@ export default function CandidaturesUnifiedPage() {
     [candidaturesOffres, candidaturesSpontanees]
   );
 
-  const counts = useMemo(() => ({
-    TOUS:        allCandidatures.length,
-    OFFRES:      candidaturesOffres.length,
-    RECRUTEMENT: candidaturesSpontanees.filter((c) => c._source === "RECRUTEMENT").length,
-    STAGE:       candidaturesSpontanees.filter((c) => c._source === "STAGE").length,
-  }), [allCandidatures, candidaturesOffres, candidaturesSpontanees]);
+  const counts = useMemo(
+    () => ({
+      TOUS: allCandidatures.length,
+      OFFRES: candidaturesOffres.length,
+      RECRUTEMENT: candidaturesSpontanees.filter((c) => c._source === "RECRUTEMENT").length,
+      STAGE: candidaturesSpontanees.filter((c) => c._source === "STAGE").length,
+    }),
+    [allCandidatures, candidaturesOffres, candidaturesSpontanees]
+  );
 
   const filtered = useMemo(() => {
     let base =
-      activeTab === "TOUS"   ? allCandidatures :
-      activeTab === "OFFRES" ? candidaturesOffres :
-      candidaturesSpontanees.filter((c) => c._source === activeTab);
+      activeTab === "TOUS"
+        ? allCandidatures
+        : activeTab === "OFFRES"
+          ? candidaturesOffres
+          : candidaturesSpontanees.filter((c) => c._source === activeTab);
 
     const query = q.toLowerCase().trim();
     if (!query) return base;
+
     return base.filter(
       (c) =>
         getFullName(c).toLowerCase().includes(query) ||
@@ -160,15 +261,17 @@ export default function CandidaturesUnifiedPage() {
   }, [allCandidatures, candidaturesOffres, candidaturesSpontanees, activeTab, q]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
-  const paginated  = filtered.slice((page - 1) * pageSize, page * pageSize);
+  const paginated = filtered.slice((page - 1) * pageSize, page * pageSize);
 
-  function handleTabChange(key) { setActiveTab(key); setPage(1); }
+  function handleTabChange(key) {
+    setActiveTab(key);
+    setPage(1);
+  }
 
-  const showStatus   = activeTab !== "OFFRES";
-  const showSource   = activeTab === "TOUS";
+  const showStatus = activeTab !== "OFFRES";
+  const showSource = activeTab === "TOUS";
   const showLinkedIn = activeTab === "TOUS" || activeTab === "OFFRES";
-  // ✅ Action uniquement pour spontanées/stages (pas offres) — pointe vers RH Nord
-  const showAction   = activeTab !== "OFFRES";
+  const showAction = activeTab !== "OFFRES";
 
   function handleDetail(c) {
     const id = String(c._id?.$oid || c._id);
@@ -178,39 +281,45 @@ export default function CandidaturesUnifiedPage() {
   return (
     <div className="min-h-screen bg-[#F0FAF0] dark:bg-gray-950 text-gray-900 dark:text-gray-100 transition-colors duration-300">
       <div className="max-w-full mx-auto px-4 sm:px-6 pt-10 pb-16">
-
-        {/* HEADER */}
         <h1 className="text-3xl sm:text-4xl font-extrabold text-gray-900 dark:text-white mb-6">
           Liste des Candidatures
         </h1>
 
-        {/* SEARCH */}
         <div className="bg-white dark:bg-gray-800 rounded-full shadow-sm border border-gray-100 dark:border-gray-700 px-4 sm:px-5 py-3 flex items-center gap-3 mb-6">
           <Search className="w-5 h-5 text-[#4E8F2F] dark:text-emerald-400 flex-shrink-0" />
           <input
             value={q}
-            onChange={(e) => { setQ(e.target.value); setPage(1); }}
+            onChange={(e) => {
+              setQ(e.target.value);
+              setPage(1);
+            }}
             placeholder="Rechercher (nom, email, poste)…"
             className="w-full outline-none text-sm bg-transparent text-gray-700 dark:text-gray-300 placeholder-gray-500 dark:placeholder-gray-400"
           />
         </div>
 
-        {/* TABS */}
         <div className="flex flex-wrap gap-2 mb-8">
           {TABS.map(({ key, label, Icon }) => {
             const active = activeTab === key;
             return (
-              <button key={key} onClick={() => handleTabChange(key)}
-                className={`inline-flex items-center gap-2 px-5 py-2.5 rounded-full text-sm font-semibold transition-all border
-                  ${active
+              <button
+                key={key}
+                onClick={() => handleTabChange(key)}
+                className={`inline-flex items-center gap-2 px-5 py-2.5 rounded-full text-sm font-semibold transition-all border ${
+                  active
                     ? "bg-[#6CB33F] border-[#6CB33F] text-white shadow-md"
                     : "bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300 hover:border-[#6CB33F]"
-                  }`}
+                }`}
               >
                 <Icon size={15} />
                 {label}
-                <span className={`inline-flex items-center justify-center w-5 h-5 rounded-full text-xs font-bold
-                  ${active ? "bg-white/25 text-white" : "bg-[#E9F5E3] dark:bg-gray-700 text-[#4E8F2F] dark:text-emerald-400"}`}>
+                <span
+                  className={`inline-flex items-center justify-center w-5 h-5 rounded-full text-xs font-bold ${
+                    active
+                      ? "bg-white/25 text-white"
+                      : "bg-[#E9F5E3] dark:bg-gray-700 text-[#4E8F2F] dark:text-emerald-400"
+                  }`}
+                >
                   {counts[key]}
                 </span>
               </button>
@@ -218,17 +327,17 @@ export default function CandidaturesUnifiedPage() {
           })}
         </div>
 
-        {/* LOADING */}
         {loading && (
           <div className="bg-white dark:bg-gray-800 rounded-3xl shadow-lg border border-gray-200 dark:border-gray-700 p-12 text-center">
             <div className="flex flex-col items-center gap-4">
               <div className="animate-spin rounded-full h-12 w-12 border-4 border-[#E9F5E3] dark:border-gray-700 border-t-[#4E8F2F]" />
-              <p className="text-gray-500 dark:text-gray-400">Chargement des candidatures...</p>
+              <p className="text-gray-500 dark:text-gray-400">
+                Chargement des candidatures...
+              </p>
             </div>
           </div>
         )}
 
-        {/* EMPTY */}
         {!loading && filtered.length === 0 && (
           <div className="bg-white dark:bg-gray-800 rounded-3xl shadow-lg border border-gray-200 dark:border-gray-700 p-12 text-center">
             <div className="flex flex-col items-center gap-4">
@@ -242,8 +351,10 @@ export default function CandidaturesUnifiedPage() {
                 {q ? `Aucun résultat pour "${q}".` : "Aucune candidature dans cette catégorie."}
               </p>
               {q && (
-                <button onClick={() => setQ("")}
-                  className="px-6 py-2 bg-[#6CB33F] hover:bg-[#4E8F2F] text-white rounded-full font-semibold transition-colors">
+                <button
+                  onClick={() => setQ("")}
+                  className="px-6 py-2 bg-[#6CB33F] hover:bg-[#4E8F2F] text-white rounded-full font-semibold transition-colors"
+                >
                   Effacer la recherche
                 </button>
               )}
@@ -251,60 +362,93 @@ export default function CandidaturesUnifiedPage() {
           </div>
         )}
 
-        {/* MOBILE CARDS */}
         {!loading && filtered.length > 0 && (
           <div className="md:hidden space-y-4">
             {paginated.map((c) => (
-              <div key={c._id} className="bg-white dark:bg-gray-800 rounded-3xl shadow border border-[#E9F5E3] dark:border-gray-700 p-5">
+              <div
+                key={c._id}
+                className="bg-white dark:bg-gray-800 rounded-3xl shadow border border-[#E9F5E3] dark:border-gray-700 p-5"
+              >
                 <div className="flex items-start justify-between gap-3 mb-3">
-                  <div className="font-extrabold text-gray-900 dark:text-white text-lg">{getFullName(c)}</div>
+                  <div className="font-extrabold text-gray-900 dark:text-white text-lg">
+                    {getFullName(c)}
+                  </div>
                   {c.status && <StatusBadge status={c.status} />}
                 </div>
+
                 {getEmail(c) && (
                   <div className="text-sm text-gray-600 dark:text-gray-300 mb-1 flex items-center gap-1">
-                    <Mail size={14} className="text-gray-400 flex-shrink-0" /> {getEmail(c)}
+                    <Mail size={14} className="text-gray-400 flex-shrink-0" />
+                    {getEmail(c)}
                   </div>
                 )}
+
                 {getPhone(c) && (
                   <div className="text-sm text-gray-600 dark:text-gray-300 mb-1 flex items-center gap-1">
-                    <Phone size={14} className="text-gray-400 flex-shrink-0" /> {getPhone(c)}
+                    <Phone size={14} className="text-gray-400 flex-shrink-0" />
+                    {getPhone(c)}
                   </div>
                 )}
+
                 {getLinkedIn(c) && (
-                  <a href={getLinkedIn(c)} target="_blank" rel="noopener noreferrer"
-                    className="text-sm text-[#4E8F2F] dark:text-emerald-400 underline flex items-center gap-1 mb-2">
-                    <Linkedin size={14} className="flex-shrink-0" /> Profil LinkedIn
+                  <a
+                    href={getLinkedIn(c)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-sm text-[#4E8F2F] dark:text-emerald-400 underline flex items-center gap-1 mb-2"
+                  >
+                    <Linkedin size={14} className="flex-shrink-0" />
+                    Profil LinkedIn
                   </a>
                 )}
+
                 <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
                   <span className="inline-flex items-center px-3 py-1 rounded-full bg-[#E9F5E3] dark:bg-gray-700 text-[#4E8F2F] dark:text-emerald-400 text-xs font-semibold">
                     {getPoste(c)}
                   </span>
+
                   {showSource && (
-                    <span className={`text-xs font-medium px-2 py-1 rounded-full ${
-                      c._source === "OFFRES" ? "bg-blue-50 text-blue-600 dark:bg-blue-900/20 dark:text-blue-300" :
-                      c._source === "STAGE"  ? "bg-purple-50 text-purple-600 dark:bg-purple-900/20 dark:text-purple-300" :
-                      "bg-gray-100 text-gray-500 dark:bg-gray-700 dark:text-gray-400"
-                    }`}>
-                      {c._source === "OFFRES" ? "Offre" : c._source === "STAGE" ? "Stage" : "Spontanée"}
+                    <span
+                      className={`text-xs font-medium px-2 py-1 rounded-full ${
+                        c._source === "OFFRES"
+                          ? "bg-blue-50 text-blue-600 dark:bg-blue-900/20 dark:text-blue-300"
+                          : c._source === "STAGE"
+                            ? "bg-purple-50 text-purple-600 dark:bg-purple-900/20 dark:text-purple-300"
+                            : "bg-gray-100 text-gray-500 dark:bg-gray-700 dark:text-gray-400"
+                      }`}
+                    >
+                      {c._source === "OFFRES"
+                        ? "Offre"
+                        : c._source === "STAGE"
+                          ? "Stage"
+                          : "Spontanée"}
                     </span>
                   )}
                 </div>
+
                 <div className="mt-3 flex items-center justify-between">
                   <div className="text-xs text-gray-400 flex items-center gap-1">
-                    <Calendar size={12} /> {formatDate(c?.createdAt)}
+                    <Calendar size={12} />
+                    {formatDate(c?.createdAt)}
                   </div>
+
                   <div className="flex items-center gap-2">
                     {getCvUrl(c) && (
-                      <a href={getCvUrl(c)} target="_blank" rel="noopener noreferrer"
-                        className="inline-flex items-center gap-1 bg-[#E9F5E3] dark:bg-gray-700 border border-[#d7ebcf] dark:border-gray-600 text-[#4E8F2F] dark:text-emerald-400 font-bold px-3 py-1.5 rounded-full text-xs hover:bg-[#d7ebcf] transition-colors">
+                      <a
+                        href={getCvUrl(c)}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1 bg-[#E9F5E3] dark:bg-gray-700 border border-[#d7ebcf] dark:border-gray-600 text-[#4E8F2F] dark:text-emerald-400 font-bold px-3 py-1.5 rounded-full text-xs hover:bg-[#d7ebcf] transition-colors"
+                      >
                         Voir CV
                       </a>
                     )}
-                    {/* ✅ Action → /RESPONSABLE_RH_OPTYLAB/candidatures/:id */}
+
                     {c._source !== "OFFRES" && (
-                      <button onClick={() => handleDetail(c)}
-                        className="h-8 w-8 flex items-center justify-center rounded-full bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors">
+                      <button
+                        onClick={() => handleDetail(c)}
+                        className="h-8 w-8 flex items-center justify-center rounded-full bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+                      >
                         <Eye size={14} className="text-gray-600 dark:text-gray-300" />
                       </button>
                     )}
@@ -315,82 +459,164 @@ export default function CandidaturesUnifiedPage() {
           </div>
         )}
 
-        {/* DESKTOP TABLE */}
         {!loading && filtered.length > 0 && (
           <div className="hidden md:block bg-white dark:bg-gray-800 rounded-3xl shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead className="bg-[#E9F5E3] dark:bg-gray-700 text-[#4E8F2F] dark:text-emerald-400">
                   <tr>
-                    <th className="text-left px-6 py-5 font-extrabold uppercase text-xs tracking-wider">Candidat</th>
-                    <th className="text-left px-6 py-5 font-extrabold uppercase text-xs tracking-wider">Email</th>
-                    <th className="text-left px-6 py-5 font-extrabold uppercase text-xs tracking-wider">Contact</th>
-                    {showLinkedIn && <th className="text-left px-6 py-5 font-extrabold uppercase text-xs tracking-wider">LinkedIn</th>}
-                    <th className="text-left px-6 py-5 font-extrabold uppercase text-xs tracking-wider">Poste</th>
-                    {showSource && <th className="text-left px-6 py-5 font-extrabold uppercase text-xs tracking-wider">Type</th>}
-                    {showStatus && <th className="text-left px-6 py-5 font-extrabold uppercase text-xs tracking-wider">Statut</th>}
-                    <th className="text-left px-6 py-5 font-extrabold uppercase text-xs tracking-wider">Date</th>
-                    <th className="text-center px-6 py-5 font-extrabold uppercase text-xs tracking-wider">CV</th>
-                    {showAction && <th className="text-center px-6 py-5 font-extrabold uppercase text-xs tracking-wider">Action</th>}
+                    <th className="text-left px-6 py-5 font-extrabold uppercase text-xs tracking-wider">
+                      Candidat
+                    </th>
+                    <th className="text-left px-6 py-5 font-extrabold uppercase text-xs tracking-wider">
+                      Email
+                    </th>
+                    <th className="text-left px-6 py-5 font-extrabold uppercase text-xs tracking-wider">
+                      Contact
+                    </th>
+                    {showLinkedIn && (
+                      <th className="text-left px-6 py-5 font-extrabold uppercase text-xs tracking-wider">
+                        LinkedIn
+                      </th>
+                    )}
+                    <th className="text-left px-6 py-5 font-extrabold uppercase text-xs tracking-wider">
+                      Poste
+                    </th>
+                    {showSource && (
+                      <th className="text-left px-6 py-5 font-extrabold uppercase text-xs tracking-wider">
+                        Type
+                      </th>
+                    )}
+                    {showStatus && (
+                      <th className="text-left px-6 py-5 font-extrabold uppercase text-xs tracking-wider">
+                        Statut
+                      </th>
+                    )}
+                    <th className="text-left px-6 py-5 font-extrabold uppercase text-xs tracking-wider">
+                      Date
+                    </th>
+                    <th className="text-center px-6 py-5 font-extrabold uppercase text-xs tracking-wider">
+                      CV
+                    </th>
+                    {showAction && (
+                      <th className="text-center px-6 py-5 font-extrabold uppercase text-xs tracking-wider">
+                        Action
+                      </th>
+                    )}
                   </tr>
                 </thead>
+
                 <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
                   {paginated.map((c) => (
-                    <tr key={c._id} className="hover:bg-green-50/40 dark:hover:bg-gray-700/40 transition-colors">
-                      <td className="px-6 py-5 font-extrabold text-gray-900 dark:text-white whitespace-nowrap">{getFullName(c)}</td>
-                      <td className="px-6 py-5 text-gray-600 dark:text-gray-300">{getEmail(c) || "—"}</td>
-                      <td className="px-6 py-5 text-gray-600 dark:text-gray-300 whitespace-nowrap">{getPhone(c) || "—"}</td>
+                    <tr
+                      key={c._id}
+                      className="hover:bg-green-50/40 dark:hover:bg-gray-700/40 transition-colors"
+                    >
+                      <td className="px-6 py-5 font-extrabold text-gray-900 dark:text-white whitespace-nowrap">
+                        {getFullName(c)}
+                      </td>
+
+                      <td className="px-6 py-5 text-gray-600 dark:text-gray-300">
+                        {getEmail(c) || "—"}
+                      </td>
+
+                      <td className="px-6 py-5 text-gray-600 dark:text-gray-300 whitespace-nowrap">
+                        {getPhone(c) || "—"}
+                      </td>
+
                       {showLinkedIn && (
                         <td className="px-6 py-5">
                           {getLinkedIn(c) ? (
-                            <a href={getLinkedIn(c)} target="_blank" rel="noopener noreferrer"
-                              className="text-[#4E8F2F] dark:text-emerald-400 underline hover:text-[#3a6b23] transition-colors">
+                            <a
+                              href={getLinkedIn(c)}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-[#4E8F2F] dark:text-emerald-400 underline hover:text-[#3a6b23] transition-colors"
+                            >
                               Profil
                             </a>
-                          ) : <span className="text-gray-400">—</span>}
+                          ) : (
+                            <span className="text-gray-400">—</span>
+                          )}
                         </td>
                       )}
+
                       <td className="px-6 py-5">
                         <span className="inline-flex items-center px-3 py-1 rounded-full bg-[#E9F5E3] dark:bg-gray-700 text-[#4E8F2F] dark:text-emerald-400 text-xs font-semibold border border-[#d7ebcf] dark:border-gray-600 max-w-[180px] truncate">
                           {getPoste(c)}
                         </span>
                       </td>
+
                       {showSource && (
                         <td className="px-6 py-5">
-                          <span className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold ${
-                            c._source === "OFFRES" ? "bg-blue-50 text-blue-600 dark:bg-blue-900/20 dark:text-blue-300" :
-                            c._source === "STAGE"  ? "bg-purple-50 text-purple-600 dark:bg-purple-900/20 dark:text-purple-300" :
-                            "bg-gray-100 text-gray-500 dark:bg-gray-700 dark:text-gray-400"
-                          }`}>
-                            {c._source === "OFFRES" ? <><Briefcase size={11} /> Offre</> :
-                             c._source === "STAGE"  ? <><GraduationCap size={11} /> Stage</> : "Spontanée"}
+                          <span
+                            className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold ${
+                              c._source === "OFFRES"
+                                ? "bg-blue-50 text-blue-600 dark:bg-blue-900/20 dark:text-blue-300"
+                                : c._source === "STAGE"
+                                  ? "bg-purple-50 text-purple-600 dark:bg-purple-900/20 dark:text-purple-300"
+                                  : "bg-gray-100 text-gray-500 dark:bg-gray-700 dark:text-gray-400"
+                            }`}
+                          >
+                            {c._source === "OFFRES" ? (
+                              <>
+                                <Briefcase size={11} />
+                                Offre
+                              </>
+                            ) : c._source === "STAGE" ? (
+                              <>
+                                <GraduationCap size={11} />
+                                Stage
+                              </>
+                            ) : (
+                              "Spontanée"
+                            )}
                           </span>
                         </td>
                       )}
+
                       {showStatus && (
                         <td className="px-6 py-5">
-                          {c.status ? <StatusBadge status={c.status} /> : <span className="text-gray-400">—</span>}
+                          {c.status ? (
+                            <StatusBadge status={c.status} />
+                          ) : (
+                            <span className="text-gray-400">—</span>
+                          )}
                         </td>
                       )}
-                      <td className="px-6 py-5 text-gray-500 dark:text-gray-400 whitespace-nowrap">{formatDate(c?.createdAt)}</td>
+
+                      <td className="px-6 py-5 text-gray-500 dark:text-gray-400 whitespace-nowrap">
+                        {formatDate(c?.createdAt)}
+                      </td>
+
                       <td className="px-6 py-5 text-center">
                         {getCvUrl(c) ? (
-                          <a href={getCvUrl(c)} target="_blank" rel="noopener noreferrer"
-                            className="inline-flex items-center gap-1.5 bg-[#E9F5E3] dark:bg-gray-700 border border-[#d7ebcf] dark:border-gray-600 text-[#4E8F2F] dark:text-emerald-400 font-bold px-4 py-2 rounded-full text-xs hover:bg-[#d7ebcf] transition-colors whitespace-nowrap">
+                          <a
+                            href={getCvUrl(c)}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1.5 bg-[#E9F5E3] dark:bg-gray-700 border border-[#d7ebcf] dark:border-gray-600 text-[#4E8F2F] dark:text-emerald-400 font-bold px-4 py-2 rounded-full text-xs hover:bg-[#d7ebcf] transition-colors whitespace-nowrap"
+                          >
                             Voir CV
                           </a>
-                        ) : <span className="text-gray-400">—</span>}
+                        ) : (
+                          <span className="text-gray-400">—</span>
+                        )}
                       </td>
+
                       {showAction && (
                         <td className="px-6 py-5 text-center">
-                          {/* ✅ Pointe vers /RESPONSABLE_RH_OPTYLAB/candidatures/:id */}
                           {c._source !== "OFFRES" ? (
-                            <button onClick={() => handleDetail(c)}
+                            <button
+                              onClick={() => handleDetail(c)}
                               className="h-9 w-9 inline-flex items-center justify-center rounded-full bg-gray-100 dark:bg-gray-700 hover:bg-[#E9F5E3] dark:hover:bg-gray-600 text-gray-500 dark:text-gray-400 hover:text-[#4E8F2F] transition-colors"
-                              title="Voir le détail">
+                              title="Voir le détail"
+                            >
                               <Eye size={15} />
                             </button>
-                          ) : <span className="text-gray-300">—</span>}
+                          ) : (
+                            <span className="text-gray-300">—</span>
+                          )}
                         </td>
                       )}
                     </tr>
@@ -401,16 +627,18 @@ export default function CandidaturesUnifiedPage() {
           </div>
         )}
 
-        {/* PAGINATION */}
         {!loading && filtered.length > 0 && (
           <div className="mt-6 flex flex-col sm:flex-row items-center justify-between gap-4 text-sm text-gray-500 dark:text-gray-400">
             <p className="font-medium">
               Total : {filtered.length} candidature{filtered.length > 1 ? "s" : ""}
             </p>
-            <Pagination currentPage={page} totalPages={totalPages} onPageChange={setPage} />
+            <Pagination
+              currentPage={page}
+              totalPages={totalPages}
+              onPageChange={setPage}
+            />
           </div>
         )}
-
       </div>
     </div>
   );
