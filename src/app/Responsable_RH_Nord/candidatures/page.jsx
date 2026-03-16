@@ -25,30 +25,30 @@ export default function CandidaturesPage() {
   const LIMIT = 10;
   const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 
-  useEffect(() => {
-    async function load() {
-      setLoading(true);
-      const u = JSON.parse(localStorage.getItem("user") || "{}");
-      const poste = u?.poste || null;
-      setUserPoste(poste);
+ useEffect(() => {
+  async function load() {
+    setLoading(true);
+    const u = JSON.parse(localStorage.getItem("user") || "{}");
+    const poste = u?.poste || null;
+    setUserPoste(poste);
 
-      try {
-        const params = poste ? `?poste=${encodeURIComponent(poste)}` : "";
-        const res = await api.get(`/candidatures/my${params}`);
-        const data = Array.isArray(res.data) ? res.data : [];
-        setCandidatures(data);
-        setFiltered(data);
-      } catch (error) {
-        console.error("Erreur chargement candidatures :", error);
-        setCandidatures([]);
-        setFiltered([]);
-      } finally {
-        setLoading(false);
-      }
+    try {
+      // ✅ Nouvelle route : candidatures des jobs créés par ce Responsable RH Nord
+      const res = await api.get(`/candidatures/my-created`);
+      const data = Array.isArray(res.data) ? res.data : [];
+      setCandidatures(data);
+      setFiltered(data);
+    } catch (error) {
+      console.error("Erreur chargement candidatures :", error);
+      setCandidatures([]);
+      setFiltered([]);
+    } finally {
+      setLoading(false);
     }
+  }
 
-    load();
-  }, []);
+  load();
+}, []);
 
   useEffect(() => {
     const q = search.toLowerCase().trim();
