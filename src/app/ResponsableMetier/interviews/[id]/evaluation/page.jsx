@@ -14,6 +14,21 @@ import {
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL;
 
+// ✅ Décode le JWT pour obtenir les infos de l'utilisateur connecté
+function getCurrentUser() {
+  try {
+    const token =
+      (typeof localStorage !== "undefined" && localStorage.getItem("token")) ||
+      (typeof sessionStorage !== "undefined" && sessionStorage.getItem("token")) ||
+      "";
+    if (!token) return null;
+    const payload = JSON.parse(atob(token.split(".")[1]));
+    return payload;
+  } catch {
+    return null;
+  }
+}
+
 function getAuthHeaders() {
   const token =
     (typeof localStorage !== "undefined" && localStorage.getItem("token")) ||
@@ -104,6 +119,19 @@ export default function InterviewEvaluationPage() {
   const [overallRating, setOverallRating] = useState(0);
   const [evaluationNotes, setEvaluationNotes] = useState("");
 
+  // ✅ Identité de l'évaluateur connecté (recruteur ou responsable métier)
+  const currentUser = typeof window !== "undefined" ? getCurrentUser() : null;
+  const evaluatorName =
+    currentUser?.prenom && currentUser?.nom
+      ? `${currentUser.prenom} ${currentUser.nom}`.trim()
+      : currentUser?.name || currentUser?.email || "Vous";
+  const evaluatorRole =
+    currentUser?.role === "responsable_metier" || currentUser?.role === "RESPONSABLE_METIER"
+      ? "Responsable Métier"
+      : currentUser?.role === "admin" || currentUser?.role === "ADMIN"
+      ? "Admin / Recruteur"
+      : "Recruteur";
+
   useEffect(() => {
     if (!interviewId) {
       setError("ID d'entretien manquant");
@@ -127,11 +155,17 @@ export default function InterviewEvaluationPage() {
         setFiche(formData.fiche || null);
 
         const sortedCriteria = Array.isArray(formData.criteria)
-          ? [...formData.criteria].sort(
-              (a, b) =>
-                Number(a?.order ?? 0) - Number(b?.order ?? 0) ||
-                String(a?.label || "").localeCompare(String(b?.label || "")),
-            )
+          ? [...formData.criteria]
+              .map((c) => ({
+                ...c,
+                // ✅ Normaliser _id en string pour usage comme clé d'objet JS
+                _id: c._id?.$oid || String(c._id || ""),
+              }))
+              .sort(
+                (a, b) =>
+                  Number(a?.order ?? 0) - Number(b?.order ?? 0) ||
+                  String(a?.label || "").localeCompare(String(b?.label || "")),
+              )
           : [];
 
         setCriteria(sortedCriteria);
@@ -144,9 +178,15 @@ export default function InterviewEvaluationPage() {
           const newRatings = {};
           const newComments = {};
 
+          // ✅ FIX : normaliser criterionId en string
+          // En DB, criterionId est un ObjectId → MongoDB le sérialise en string via JSON,
+          // mais on s'assure que la clé est toujours une string pour matcher criterion._id
           (existingEval.ratings || []).forEach((r) => {
-            newRatings[r.criterionId] = r.value;
-            newComments[r.criterionId] = r.comment || "";
+            const key = r.criterionId?.$oid || String(r.criterionId || "");
+            if (key) {
+              newRatings[key]   = r.value;
+              newComments[key]  = r.comment || "";
+            }
           });
 
           setRatings(newRatings);
@@ -343,20 +383,21 @@ export default function InterviewEvaluationPage() {
               </div>
             </div>
 
-            <div className="mt-5 sm:mt-6">
-              <div className="mb-2 flex items-center justify-between text-xs sm:text-sm font-semibold">
-                <span className="text-gray-600 dark:text-gray-400">
-                  Progression
-                </span>
-                <span className="text-gray-900 dark:text-white">
-                  {completion}%
-                </span>
-              </div>
-              <div className="h-2.5 sm:h-3 w-full overflow-hidden rounded-full bg-gray-200 dark:bg-gray-700">
-                <div
-                  className="h-full rounded-full bg-[#6CB33F] transition-all duration-300"
-                  style={{ width: `${completion}%` }}
-                />
+
+            {/* ✅ Badge évaluateur — chaque évaluateur a sa propre fiche indépendante */}
+            <div className="mt-4 rounded-xl border border-[#6CB33F]/30 bg-[#F3FBEA] px-4 py-3 dark:border-[#6CB33F]/20 dark:bg-[#6CB33F]/5">
+              <div className="flex items-center gap-3">
+                <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-[#6CB33F] text-xs font-bold text-white">
+                  {evaluatorName.charAt(0).toUpperCase()}
+                </div>
+                <div>
+                  <p className="text-xs font-bold text-[#4E8F2F] dark:text-[#6CB33F]">
+                    Votre évaluation personnelle — {evaluatorRole}
+                  </p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">
+                    {evaluatorName} · Cette fiche vous est propre et indépendante de celle des autres évaluateurs.
+                  </p>
+                </div>
               </div>
             </div>
           </div>
