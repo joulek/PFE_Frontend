@@ -428,16 +428,20 @@ function SendDocumentsModal({
 /* ================================================================
    MODAL — Planifier Entretien (2 flows)
 ================================================================ */
-function TelephoniqueFlow({ candidate, onBack, onClose }) {
+function TelephoniqueFlow({ candidate, onBack, onClose, onScheduled }) {
   const [confirming, setConfirming] = useState(false);
   const [done, setDone] = useState(false);
   const [error, setError] = useState("");
 
-  const name =
-    candidate?.fullName ||
-    `${candidate?.prenom || ""} ${candidate?.nom || ""}`.trim() ||
-    "Candidat";
-  const email = safeStr(candidate?.email) || "Email non renseigné";
+  // ✅ FIX : résolution nom/email/téléphone depuis toutes les structures DB possibles
+  const name = getName(candidate);
+  const email =
+    safeStr(candidate?.email) ||
+    safeStr(candidate?.candidateEmail) ||
+    safeStr(candidate?.personalInfoForm?.email) ||
+    safeStr(candidate?.extracted?.parsed?.email) ||
+    safeStr(candidate?.extracted?.email) ||
+    "Email non renseigné";
   const phone =
     safeStr(candidate?.telephone) ||
     safeStr(candidate?.phone) ||
@@ -445,8 +449,13 @@ function TelephoniqueFlow({ candidate, onBack, onClose }) {
     safeStr(candidate?.personalInfoForm?.phone) ||
     safeStr(candidate?.extracted?.parsed?.telephone) ||
     safeStr(candidate?.extracted?.parsed?.phone) ||
+    safeStr(candidate?.extracted?.telephone) ||
+    safeStr(candidate?.extracted?.phone) ||
     "Téléphone non renseigné";
-  const jobTitle = safeStr(candidate?.jobTitle) || "Poste non renseigné";
+  const jobTitle =
+    safeStr(candidate?.jobTitle) ||
+    safeStr(candidate?.jobData?.titre) ||
+    "Poste non renseigné";
 
   async function confirmInterview() {
     setConfirming(true);
@@ -454,7 +463,11 @@ function TelephoniqueFlow({ candidate, onBack, onClose }) {
     try {
       await api.patch(`/api/interviewNord/confirm-telephonique/${candidate._id}`);
       setDone(true);
-      setTimeout(() => onClose(), 1200);
+      // ✅ Notifier le parent pour refresh la liste (badge "Planifié" visible sans F5)
+      setTimeout(() => {
+        onScheduled?.();
+        onClose();
+      }, 1200);
     } catch (e) {
       console.error("confirmInterview error:", e?.response?.status, e?.response?.data);
       const msg =
@@ -551,11 +564,20 @@ function TelephoniqueFlow({ candidate, onBack, onClose }) {
   );
 }
 
-function RHFlow({ candidate, onBack, onClose }) {
-  const name =
-    candidate?.fullName || `${candidate?.prenom || ""} ${candidate?.nom || ""}`.trim() || "Candidat";
-  const email = candidate?.email || "";
-  const jobTitle = candidate?.jobTitle || "";
+function RHFlow({ candidate, onBack, onClose, onScheduled }) {
+  // ✅ FIX : résolution nom/email/jobTitle depuis toutes les structures DB possibles
+  const name = getName(candidate);
+  const email =
+    safeStr(candidate?.email) ||
+    safeStr(candidate?.candidateEmail) ||
+    safeStr(candidate?.personalInfoForm?.email) ||
+    safeStr(candidate?.extracted?.parsed?.email) ||
+    safeStr(candidate?.extracted?.email) ||
+    "";
+  const jobTitle =
+    safeStr(candidate?.jobTitle) ||
+    safeStr(candidate?.jobData?.titre) ||
+    "";
   const candidId = candidate?._id || "";
 
   function openCalendar() {
@@ -705,6 +727,7 @@ function EntretienModal({ candidate, onClose, onRHScheduled }) {
             candidate={candidate}
             onBack={() => setStep("type")}
             onClose={onClose}
+            onScheduled={onRHScheduled}
           />
         )}
         {step === "rh" && (
@@ -755,6 +778,13 @@ function PreInterviewRow({ c, onOpenSendModal, onOpenEntretienModal }) {
   const jobTitle = safeStr(c?.jobTitle) || "—";
   const email = safeStr(c?.email);
   const selectedAt = c?.preInterviewNord?.selectedAt;
+
+  // ✅ Entretien déjà planifié (flag retourné par l'API)
+  const interviewScheduled =
+    c?.interviewScheduled === true ||
+    c?.preInterviewNord?.interviewScheduled === true ||
+    c?.entretiens?.rhNordScheduled === true;
+  const interviewDate = c?.interviewDate || c?.preInterviewNord?.interviewDate || null;
 
   const allSent = sentFiche && sentQuiz;
   const anySent = sentFiche || sentQuiz;
@@ -878,13 +908,22 @@ function PreInterviewRow({ c, onOpenSendModal, onOpenEntretienModal }) {
         <div className="flex items-center gap-2 flex-wrap">
           {sendBtn}
 
-          <button
-            onClick={() => onOpenEntretienModal(c)}
-            className="inline-flex items-center gap-1.5 px-3 py-2 rounded-full bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold transition-colors shadow-sm"
-          >
-            <Calendar className="w-3.5 h-3.5" />
-            Planifier
-          </button>
+          {interviewScheduled ? (
+            <span className="inline-flex items-center gap-1.5 px-3 py-2 rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 text-xs font-semibold border border-blue-200 dark:border-blue-700 cursor-default"
+              title={interviewDate ? `Planifié le ${formatDate(interviewDate)}` : "Entretien planifié"}
+            >
+              <CheckCircle2 className="w-3.5 h-3.5" />
+              {interviewDate ? formatDate(interviewDate) : "Planifié"}
+            </span>
+          ) : (
+            <button
+              onClick={() => onOpenEntretienModal(c)}
+              className="inline-flex items-center gap-1.5 px-3 py-2 rounded-full bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold transition-colors shadow-sm"
+            >
+              <Calendar className="w-3.5 h-3.5" />
+              Planifier
+            </button>
+          )}
 
           <Link
             href={`/Responsable_RH_Nord/PreInterviewList/${c._id}/results`}
@@ -1118,7 +1157,16 @@ export default function PreInterviewListPage() {
         <EntretienModal
           candidate={entretienModalCandidate}
           onClose={() => setEntretienModalCandidate(null)}
-          onRHScheduled={() => setEntretienModalCandidate(null)}
+          onRHScheduled={async () => {
+            setEntretienModalCandidate(null);
+            // ✅ Recharger la liste depuis l'API pour afficher le badge "Planifié"
+            try {
+              const res = await getPreInterviewNordList();
+              const fresh = Array.isArray(res?.data) ? res.data : [];
+              setCandidates(fresh);
+              saveStoredCandidates(fresh);
+            } catch {}
+          }}
         />
       )}
     </div>

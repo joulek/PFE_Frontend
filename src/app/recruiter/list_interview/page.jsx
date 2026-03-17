@@ -1304,16 +1304,32 @@ export default function AdminInterviewList() {
     if (!candidatureId || confirmingAdmin) return;
     setConfirmingAdmin(candidatureId);
     try {
-      await apiFetch(`/candidatures/${candidatureId}/confirm-admin`, {
-        method: "PATCH",
-      });
+      // ✅ FIX : URL complète incluant le préfixe /api/interviews
+      const res = await apiFetch(
+        `/api/interviews/candidatures/${candidatureId}/confirm-admin`,
+        { method: "PATCH" },
+      );
+
+      if (res && res.success === false) {
+        throw new Error(res.message || "Erreur serveur");
+      }
+
+      // Mise à jour optimiste immédiate dans le state local
       setInterviews((prev) =>
         prev.map((iv) =>
-          iv.candidatureId === candidatureId || String(iv._id) === candidatureId
-            ? { ...iv, adminConfirmed: true }
+          String(iv.candidatureId) === String(candidatureId) ||
+          String(iv._id) === String(candidatureId)
+            ? {
+                ...iv,
+                adminConfirmed: true,
+                adminConfirmedAt: new Date().toISOString(),
+              }
             : iv,
         ),
       );
+
+      // Rechargement depuis l'API pour garantir la persistance MongoDB
+      await fetchInterviews();
     } catch (err) {
       alert("Erreur confirmation : " + (err.message || "Impossible"));
     } finally {
@@ -1915,11 +1931,17 @@ export default function AdminInterviewList() {
                             </td>
 
                             <td className="px-6 lg:px-8 py-5">
-                              {iv.adminConfirmed ? (
-                                <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-200 bg-emerald-50 dark:border-emerald-700 dark:bg-emerald-950/30 px-3 py-1.5 text-xs font-bold text-emerald-700 dark:text-emerald-300 whitespace-nowrap">
-                                  <CheckCircle2 className="w-3.5 h-3.5" />
-                                  Confirmé
-                                </span>
+                              {/* ✅ adminConfirmed persisté en DB — badge permanent */}
+                              {iv.adminConfirmed === true ? (
+                                <div className="flex flex-col gap-0.5">
+                                  <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-200 bg-emerald-50 dark:border-emerald-700 dark:bg-emerald-950/30 px-3 py-1.5 text-xs font-bold text-emerald-700 dark:text-emerald-300 whitespace-nowrap">
+                                    <CheckCircle2 className="w-3.5 h-3.5" />
+                                    Confirmé
+                                  </span>
+                                  {iv.adminConfirmedAt && (
+                                    <span className="text-[10px] text-gray-400 pl-1">{formatDate(iv.adminConfirmedAt)}</span>
+                                  )}
+                                </div>
                               ) : (
                                 <button
                                   onClick={(e) =>

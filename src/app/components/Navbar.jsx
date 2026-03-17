@@ -442,7 +442,8 @@ export default function Navbar() {
     pathname.startsWith("/recruiter/QuizTechnique");
 
   const isInNordCandidatures =
-    pathname.startsWith("/Responsable_RH_Nord/candidatures");
+    pathname.startsWith("/Responsable_RH_Nord/candidatures") ||
+    pathname.startsWith("/Responsable_RH_Nord/confirmed-candidates");
 
   const isInNordRecrutement =
     pathname.startsWith("/Responsable_RH_Nord/quiz") ||
@@ -669,6 +670,9 @@ export default function Navbar() {
                         </Link>
                         <Link href="/Responsable_RH_Nord/candidatures_Analysis" className={`${dropdownItemBase} ${isActive("/Responsable_RH_Nord/candidatures_Analysis") ? dropdownActive : dropdownHover}`}>
                           Analyse des candidatures
+                        </Link>
+                        <Link href="/Responsable_RH_Nord/confirmed-candidates" className={`${dropdownItemBase} ${isActive("/Responsable_RH_Nord/confirmed-candidates") ? dropdownActive : dropdownHover}`}>
+                          Candidats confirmés
                         </Link>
                       </div>
                     )}
@@ -1000,6 +1004,9 @@ export default function Navbar() {
                           </Link>
                           <Link href="/Responsable_RH_Nord/candidatures_Analysis" className={`block px-5 py-2.5 rounded-lg text-sm transition ${isActive("/Responsable_RH_Nord/candidatures_Analysis") ? "bg-[#6CB33F]/20 text-[#4E8F2F] font-semibold" : "text-gray-600 dark:text-gray-300 hover:bg-gray-100/70 dark:hover:bg-gray-800/60"}`}>
                             Analyse des candidatures
+                          </Link>
+                          <Link href="/Responsable_RH_Nord/confirmed-candidates" className={`block px-5 py-2.5 rounded-lg text-sm transition ${isActive("/Responsable_RH_Nord/confirmed-candidates") ? "bg-[#6CB33F]/20 text-[#4E8F2F] font-semibold" : "text-gray-600 dark:text-gray-300 hover:bg-gray-100/70 dark:hover:bg-gray-800/60"}`}>
+                            Candidats confirmés
                           </Link>
                         </div>
                       )}
