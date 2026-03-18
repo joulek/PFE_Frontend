@@ -61,57 +61,57 @@ function InsertEmployeeModal({ candidature, onClose, onSuccess }) {
 
   // ── Mapping automatique depuis personalInfoForm + extracted ──
   function extractFromCandidature(raw) {
-    const pif  = raw?.personalInfoForm || {};
-    const ext  = raw?.extracted?.parsed || {};
-    const man  = ext?.manual  || {};
-    const par  = ext?.parsed  || ext; // structure directe
+    const pif = raw?.personalInfoForm || {};
+    const ext = raw?.extracted?.parsed || {};
+    const man = ext?.manual || {};
+    const par = ext?.parsed || ext; // structure directe
 
     const s = (v) => String(v || "").trim();
 
     return {
       // ✅ Depuis candidature (déjà dispo)
       fullName: s(raw.fullName) || s([raw.prenom, raw.nom].filter(Boolean).join(" ")),
-      poste:    s(raw.jobTitle),
-      email:    s(raw.email),
-      telephone:s(raw.telephone) || s(pif.telephone) || s(par.telephone) || s(man.telephone),
+      poste: s(raw.jobTitle),
+      email: s(raw.email),
+      telephone: s(raw.telephone) || s(pif.telephone) || s(par.telephone) || s(man.telephone),
 
       // ✅ Depuis personalInfoForm (rempli par le candidat via la fiche)
-      cin:             s(pif.cin)              || s(par.cin)              || s(man.cin),
-      cnss:            s(pif.cnss)             || s(par.cnss)             || s(man.cnss),
-      matricule:       s(pif.matricule)        || s(par.matricule)        || s(man.matricule),
-      agence:          s(pif.agence)           || s(par.agence)           || s(man.agence),
-      societe:         s(pif.societe)          || s(par.societe)          || s(man.societe),
-      departement:     s(pif.departement)      || s(par.departement)      || s(man.departement),
-      contratSociete:  s(pif.contratSociete)   || s(par.contratSociete)   || s(man.contratSociete),
-      typeContrat:     s(pif.typeContrat)       || s(par.typeContrat)      || s(man.typeContrat),
-      genre:           s(pif.genre)            || s(par.genre)            || s(man.genre),
-      situation:       s(pif.situation)        || s(par.situation)        || s(man.situation)
-                       || s(pif.situationFamiliale) || s(par.situationFamiliale),
-      dateDebutContrat:s(pif.dateDebutContrat) || s(par.dateDebutContrat) || "",
-      dateFinContrat:  s(pif.dateFinContrat)   || s(par.dateFinContrat)   || "",
+      cin: s(pif.cin) || s(par.cin) || s(man.cin),
+      cnss: s(pif.cnss) || s(par.cnss) || s(man.cnss),
+      matricule: s(pif.matricule) || s(par.matricule) || s(man.matricule),
+      agence: s(pif.agence) || s(par.agence) || s(man.agence),
+      societe: s(pif.societe) || s(par.societe) || s(man.societe),
+      departement: s(pif.departement) || s(par.departement) || s(man.departement),
+      contratSociete: s(pif.contratSociete) || s(par.contratSociete) || s(man.contratSociete),
+      typeContrat: s(pif.typeContrat) || s(par.typeContrat) || s(man.typeContrat),
+      genre: s(pif.genre) || s(par.genre) || s(man.genre),
+      situation: s(pif.situation) || s(par.situation) || s(man.situation)
+        || s(pif.situationFamiliale) || s(par.situationFamiliale),
+      dateDebutContrat: s(pif.dateDebutContrat) || s(par.dateDebutContrat) || "",
+      dateFinContrat: s(pif.dateFinContrat) || s(par.dateFinContrat) || "",
     };
   }
 
   const LABELS = {
-    cin:              "N° CIN",
-    matricule:        "Matricule",
-    agence:           "Agence",
-    societe:          "Société",
-    departement:      "Département",
-    contratSociete:   "Contrat / Société",
-    typeContrat:      "Type de contrat",
+    cin: "N° CIN",
+    matricule: "Matricule",
+    agence: "Agence",
+    societe: "Société",
+    departement: "Département",
+    contratSociete: "Contrat / Société",
+    typeContrat: "Type de contrat",
     dateDebutContrat: "Date début contrat",
-    dateFinContrat:   "Date fin contrat",
-    genre:            "Genre",
-    situation:        "Situation familiale",
-    cnss:             "N° CNSS",
+    dateFinContrat: "Date fin contrat",
+    genre: "Genre",
+    situation: "Situation familiale",
+    cnss: "N° CNSS",
   };
 
   const SELECT_OPTIONS = {
-    genre:          ["", "Homme", "Femme"],
-    situation:      ["", "Célibataire", "Marié(e)", "Divorcé(e)", "Veuf/Veuve"],
-    typeContrat:    ["", "CIVP", "CAIP", "Karama", "CDI avec PE", "CDD (exp)", "CDI sans PE"],
-    societe:        ["", "Optylab", "OptyGros"],
+    genre: ["", "Homme", "Femme"],
+    situation: ["", "Célibataire", "Marié(e)", "Divorcé(e)", "Veuf/Veuve"],
+    typeContrat: ["", "CIVP", "CAIP", "Karama", "CDI avec PE", "CDD (exp)", "CDI sans PE"],
+    societe: ["", "Optylab", "OptyGros"],
     contratSociete: ["", "Optylab", "OptyGros"],
     agence: [
       "", "Tunis", "Ariana", "Ben Arous", "Manouba", "Bizerte", "Nabeul", "Zaghouan",
@@ -122,17 +122,17 @@ function InsertEmployeeModal({ candidature, onClose, onSuccess }) {
   };
 
   const DATE_FIELDS = ["dateDebutContrat", "dateFinContrat"];
-  const REQUIRED    = ["cin", "matricule"];
-  const ALL_FIELDS  = [
-    "cin","matricule","agence","societe","departement",
-    "contratSociete","typeContrat","dateDebutContrat",
-    "dateFinContrat","genre","situation","cnss",
+  const REQUIRED = ["cin", "matricule"];
+  const ALL_FIELDS = [
+    "cin", "matricule", "agence", "societe", "departement",
+    "contratSociete", "typeContrat", "dateDebutContrat",
+    "dateFinContrat", "genre", "situation", "cnss",
   ];
 
-  const [form, setForm]         = useState(() => extractFromCandidature(candidature));
+  const [form, setForm] = useState(() => extractFromCandidature(candidature));
   const [loadingData, setLoadingData] = useState(true);
-  const [sending, setSending]   = useState(false);
-  const [error, setError]       = useState("");
+  const [sending, setSending] = useState(false);
+  const [error, setError] = useState("");
 
   // ── Charger la candidature complète (personalInfoForm) depuis l'API ──
   useEffect(() => {
@@ -169,12 +169,12 @@ function InsertEmployeeModal({ candidature, onClose, onSuccess }) {
 
   // Champs encore vides (manquants)
   const missingFields = ALL_FIELDS.filter(k => !form[k]);
-  const hasMissing    = missingFields.length > 0;
+  const hasMissing = missingFields.length > 0;
 
   async function handleSubmit() {
-    if (!form.cin.trim())       return setError("N° CIN est obligatoire");
+    if (!form.cin.trim()) return setError("N° CIN est obligatoire");
     if (!form.matricule.trim()) return setError("Matricule est obligatoire");
-    if (!form.fullName.trim())  return setError("Nom & Prénom est obligatoire");
+    if (!form.fullName.trim()) return setError("Nom & Prénom est obligatoire");
     setError("");
     setSending(true);
     try {
@@ -262,19 +262,18 @@ function InsertEmployeeModal({ candidature, onClose, onSuccess }) {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {ALL_FIELDS.map(key => {
                   const isRequired = REQUIRED.includes(key);
-                  const isDate     = DATE_FIELDS.includes(key);
-                  const options    = SELECT_OPTIONS[key];
-                  const val        = form[key] || "";
-                  const isFilled   = !!val;
-                  const label      = LABELS[key];
+                  const isDate = DATE_FIELDS.includes(key);
+                  const options = SELECT_OPTIONS[key];
+                  const val = form[key] || "";
+                  const isFilled = !!val;
+                  const label = LABELS[key];
 
                   return (
                     <div key={key} className="relative">
-                      <label className={`block text-xs font-bold mb-1 ${
-                        isRequired && !isFilled ? "text-red-600"
-                        : isFilled ? "text-emerald-600"
-                        : "text-gray-600 dark:text-gray-400"
-                      }`}>
+                      <label className={`block text-xs font-bold mb-1 ${isRequired && !isFilled ? "text-red-600"
+                          : isFilled ? "text-emerald-600"
+                            : "text-gray-600 dark:text-gray-400"
+                        }`}>
                         {label}
                         {isRequired && <span className="ml-0.5 text-red-500">*</span>}
                         {isFilled && !isRequired && (
@@ -286,11 +285,10 @@ function InsertEmployeeModal({ candidature, onClose, onSuccess }) {
                         <select
                           value={val}
                           onChange={e => handleChange(key, e.target.value)}
-                          className={`w-full border rounded-xl px-3 py-2 text-sm outline-none focus:ring-2 bg-white dark:bg-gray-800 dark:text-white transition-colors ${
-                            isRequired && !val ? "border-red-300 focus:ring-red-300"
-                            : isFilled ? "border-emerald-300 focus:ring-emerald-400 bg-emerald-50/30 dark:bg-emerald-900/10"
-                            : "border-gray-200 dark:border-gray-700 focus:ring-[#6CB33F]"
-                          }`}
+                          className={`w-full border rounded-xl px-3 py-2 text-sm outline-none focus:ring-2 bg-white dark:bg-gray-800 dark:text-white transition-colors ${isRequired && !val ? "border-red-300 focus:ring-red-300"
+                              : isFilled ? "border-emerald-300 focus:ring-emerald-400 bg-emerald-50/30 dark:bg-emerald-900/10"
+                                : "border-gray-200 dark:border-gray-700 focus:ring-[#6CB33F]"
+                            }`}
                         >
                           {options.map(o => <option key={o} value={o}>{o || `-- ${label} --`}</option>)}
                         </select>
@@ -300,11 +298,10 @@ function InsertEmployeeModal({ candidature, onClose, onSuccess }) {
                           value={val}
                           onChange={e => handleChange(key, e.target.value)}
                           placeholder={isRequired ? `${label} obligatoire` : label}
-                          className={`w-full border rounded-xl px-3 py-2 text-sm outline-none focus:ring-2 bg-white dark:bg-gray-800 dark:text-white transition-colors ${
-                            isRequired && !val ? "border-red-300 focus:ring-red-300"
-                            : isFilled ? "border-emerald-300 focus:ring-emerald-400 bg-emerald-50/30 dark:bg-emerald-900/10"
-                            : "border-gray-200 dark:border-gray-700 focus:ring-[#6CB33F]"
-                          }`}
+                          className={`w-full border rounded-xl px-3 py-2 text-sm outline-none focus:ring-2 bg-white dark:bg-gray-800 dark:text-white transition-colors ${isRequired && !val ? "border-red-300 focus:ring-red-300"
+                              : isFilled ? "border-emerald-300 focus:ring-emerald-400 bg-emerald-50/30 dark:bg-emerald-900/10"
+                                : "border-gray-200 dark:border-gray-700 focus:ring-[#6CB33F]"
+                            }`}
                         />
                       )}
                     </div>
@@ -359,7 +356,7 @@ function InsertEmployeeButton({ candidature }) {
   });
 
   function handleSuccess(result) {
-    try { localStorage.setItem(storageKey, result); } catch {}
+    try { localStorage.setItem(storageKey, result); } catch { }
     setStatus(result);
     setShowModal(false);
   }
@@ -371,15 +368,15 @@ function InsertEmployeeButton({ candidature }) {
         disabled={!!status}
         title={
           status === "done" ? "Employé déjà ajouté"
-          : status === "exists" ? "Déjà enregistré comme employé"
-          : "Insérer comme employé"
+            : status === "exists" ? "Déjà enregistré comme employé"
+              : "Insérer comme employé"
         }
         className={`inline-flex items-center gap-1.5 px-3 py-2 rounded-full text-xs font-semibold transition-colors shadow-sm whitespace-nowrap
           ${status === "done"
             ? "bg-emerald-50 border border-emerald-200 text-emerald-700 cursor-not-allowed opacity-80"
             : status === "exists"
-            ? "bg-gray-100 border border-gray-200 text-gray-400 cursor-not-allowed opacity-70"
-            : "bg-[#6CB33F] hover:bg-[#4E8F2F] text-white cursor-pointer"
+              ? "bg-gray-100 border border-gray-200 text-gray-400 cursor-not-allowed opacity-70"
+              : "bg-[#6CB33F] hover:bg-[#4E8F2F] text-white cursor-pointer"
           }`}
       >
         {status === "done" ? (
@@ -421,18 +418,18 @@ function ConfirmBadge({ confirmed, label, date, optional = false }) {
 }
 
 const FILTERS = [
-  { key: "all",   label: "Tous" },
+  { key: "all", label: "Tous" },
   { key: "admin", label: "Confirmés Admin" },
-  { key: "dga",   label: "Confirmés DGA" },
+  { key: "dga", label: "Confirmés DGA" },
 ];
 
 export default function ConfirmedCandidaturesPage() {
   const router = useRouter();
-  const [data, setData]         = useState([]);
-  const [loading, setLoading]   = useState(true);
-  const [error, setError]       = useState(null);
-  const [search, setSearch]     = useState("");
-  const [filter, setFilter]     = useState("all");
+  const [data, setData] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [search, setSearch] = useState("");
+  const [filter, setFilter] = useState("all");
   const [refreshing, setRefreshing] = useState(false);
   const [rhNordCount, setRhNordCount] = useState(null);
 
@@ -483,8 +480,8 @@ export default function ConfirmedCandidaturesPage() {
   }, [data, search]);
 
   const bothConfirmed = useMemo(() => filtered.filter(c => c.adminConfirmed && c.dgaConfirmed).length, [filtered]);
-  const adminOnly     = useMemo(() => filtered.filter(c => c.adminConfirmed && !c.dgaConfirmed).length, [filtered]);
-  const dgaOnly       = useMemo(() => filtered.filter(c => !c.adminConfirmed && c.dgaConfirmed).length, [filtered]);
+  const adminOnly = useMemo(() => filtered.filter(c => c.adminConfirmed && !c.dgaConfirmed).length, [filtered]);
+  const dgaOnly = useMemo(() => filtered.filter(c => !c.adminConfirmed && c.dgaConfirmed).length, [filtered]);
 
   return (
     <div className="min-h-screen bg-[#F0FAF0] dark:bg-gray-950 text-gray-900 dark:text-gray-100">
@@ -539,11 +536,10 @@ export default function ConfirmedCandidaturesPage() {
             <Filter className="w-4 h-4 text-gray-400 flex-shrink-0" />
             {FILTERS.map(f => (
               <button key={f.key} onClick={() => setFilter(f.key)}
-                className={`px-3 py-1 rounded-full text-xs font-bold transition-all ${
-                  filter === f.key
+                className={`px-3 py-1 rounded-full text-xs font-bold transition-all ${filter === f.key
                     ? "bg-[#4E8F2F] text-white"
                     : "text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700"
-                }`}>
+                  }`}>
                 {f.label}
               </button>
             ))}
@@ -597,7 +593,7 @@ export default function ConfirmedCandidaturesPage() {
               <table className="w-full text-sm border-collapse" style={{ minWidth: "900px" }}>
                 <thead className="bg-[#E9F5E3] dark:bg-gray-700 text-[#4E8F2F] dark:text-emerald-400">
                   <tr>
-                    {[ "Candidat", "Poste", "Confirmation Admin", "Confirmation DGA", "Date candidature", "Employé"].map(h => (
+                    {["Candidat", "Poste", "Confirmation Admin", "Confirmation DGA", "Date candidature", "Employé"].map(h => (
                       <th key={h} className="text-left px-5 py-4 font-extrabold uppercase text-xs tracking-wider border-b border-[#d4edc4] dark:border-gray-600 whitespace-nowrap">
                         {h}
                       </th>
@@ -606,12 +602,17 @@ export default function ConfirmedCandidaturesPage() {
                 </thead>
                 <tbody>
                   {filtered.map((c, idx) => (
-                    <tr key={String(c._id)}
-                      className={`border-t border-gray-100 dark:border-gray-700 ${
-                        idx % 2 !== 0 ? "bg-gray-50/50 dark:bg-gray-750/30" : ""
-                      } hover:bg-[#F0FAF0] dark:hover:bg-gray-700/30 transition-colors`}>
+                    <tr
+                      key={String(c._id)}
+                      className="
+    border-t border-gray-100 dark:border-gray-700
+    bg-white dark:bg-[#0B1220]
+    hover:bg-[#F0FAF0] dark:hover:bg-[#1A2332]
+    transition-colors
+  "
+                    >
 
-                    
+
 
                       {/* Candidat */}
                       <td className="px-5 py-4">

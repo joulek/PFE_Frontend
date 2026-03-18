@@ -631,24 +631,24 @@ export default function GestionResponsableMetierPage() {
           ) : (
             <div className="w-full overflow-x-auto">
               <table className="w-full text-sm min-w-[980px]">
-                <thead>
-                  <tr className="bg-[#F0FAF0] dark:bg-gray-700 text-left">
-                    <th className="px-6 py-4 font-semibold text-gray-600 dark:text-gray-300 whitespace-nowrap">
+                <thead className="bg-[#E9F5E3] dark:bg-gray-700 text-[#4E8F2F] dark:text-emerald-400">
+                  <tr >
+                    <th className="text-left px-6 lg:px-8 py-5 font-extrabold uppercase text-xs tracking-wider">
                       Responsable
                     </th>
-                    <th className="px-6 py-4 font-semibold text-gray-600 dark:text-gray-300 whitespace-nowrap">
+                    <th className="text-left px-6 lg:px-8 py-5 font-extrabold uppercase text-xs tracking-wider">
                       Email
                     </th>
-                    <th className="px-6 py-4 font-semibold text-gray-600 dark:text-gray-300 whitespace-nowrap">
+                    <th className="text-left px-6 lg:px-8 py-5 font-extrabold uppercase text-xs tracking-wider">
                       Poste
                     </th>
-                    <th className="px-6 py-4 font-semibold text-gray-600 dark:text-gray-300 whitespace-nowrap">
+                    <th className="text-left px-6 lg:px-8 py-5 font-extrabold uppercase text-xs tracking-wider">
                       Rôle
                     </th>
-                    <th className="px-6 py-4 font-semibold text-gray-600 dark:text-gray-300 whitespace-nowrap">
+                    <th className="text-left px-6 lg:px-8 py-5 font-extrabold uppercase text-xs tracking-wider">
                       Statut
                     </th>
-                    <th className="px-6 py-4 font-semibold text-gray-600 dark:text-gray-300 text-right whitespace-nowrap">
+                    <th className="text-left px-6 lg:px-8 py-5 font-extrabold uppercase text-xs tracking-wider">
                       Actions
                     </th>
                   </tr>
@@ -763,7 +763,7 @@ export default function GestionResponsableMetierPage() {
           </div>
         )}
 
-     
+
       </div>
 
       {/* ================= MODAL ADD / EDIT ================= */}

@@ -9,6 +9,7 @@ import {
   CheckCircle2,
   XCircle,
   Clock3,
+  X,
 } from "lucide-react";
 
 function TimePickModal({ open, date, onClose, onSubmit, loading, error, ok }) {
@@ -28,103 +29,136 @@ function TimePickModal({ open, date, onClose, onSubmit, loading, error, ok }) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div
-        className="absolute inset-0 bg-black/45 backdrop-blur-[2px]"
+        className="absolute inset-0 bg-black/45 backdrop-blur-[3px]"
         onClick={onClose}
       />
 
-      <div className="relative w-full max-w-lg overflow-hidden rounded-[28px] bg-white dark:bg-gray-900 shadow-[0_30px_80px_rgba(0,0,0,0.25)] border border-emerald-100/60 dark:border-gray-800">
-        <div className="relative px-8 py-7 text-white text-center bg-[#22a06b]">
-          <div className="pointer-events-none absolute inset-0 opacity-30 bg-gradient-to-b from-white/25 to-transparent" />
-
-          <p className="text-white/90 text-[12px] font-extrabold uppercase tracking-[0.18em]">
-            RESPONSABLE MÉTIER
-          </p>
-
-          <h2 className="mt-1 text-2xl sm:text-[28px] font-extrabold leading-tight">
-            Proposer une autre date
-          </h2>
-
-          {dateFR && (
-            <p className="mt-1 text-white/95 text-sm font-semibold capitalize">
-              {dateFR}
+      <div className="relative w-full max-w-[860px] overflow-hidden rounded-[26px] bg-white dark:bg-[#0f172a] shadow-[0_35px_90px_rgba(0,0,0,0.35)] border border-gray-200 dark:border-gray-800">
+        {/* HEADER */}
+        <div className="flex items-center justify-between gap-4 border-b border-gray-200 dark:border-gray-800 px-6 sm:px-8 py-5">
+          <div className="min-w-0">
+            <p className="text-[12px] font-extrabold uppercase tracking-[0.18em] text-[#22a06b] dark:text-emerald-400">
+              RESPONSABLE MÉTIER
             </p>
-          )}
+            <h2 className="mt-1 text-[28px] sm:text-[34px] font-extrabold leading-tight text-gray-900 dark:text-white">
+              Proposer une autre date
+            </h2>
+            {dateFR ? (
+              <p className="mt-1 text-sm font-semibold capitalize text-gray-500 dark:text-gray-400">
+                {dateFR}
+              </p>
+            ) : null}
+          </div>
 
-          <button
-            onClick={onClose}
-            className="absolute top-5 right-5 w-11 h-11 rounded-full bg-white/15 hover:bg-white/25 border border-white/20 backdrop-blur flex items-center justify-center transition"
-            aria-label="Fermer"
-          >
-            <span className="text-xl leading-none">×</span>
-          </button>
+          <div className="flex items-center gap-3 shrink-0">
+            <button
+              onClick={() => onSubmit(timeFrom)}
+              disabled={!date || !timeFrom || loading || ok}
+              className="inline-flex items-center justify-center rounded-2xl bg-[#7AC142] px-5 py-3 text-sm font-extrabold text-white shadow-sm transition hover:bg-[#69ad38] disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {loading ? (
+                <span className="inline-flex items-center gap-2">
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Envoi...
+                </span>
+              ) : ok ? (
+                "Envoyé"
+              ) : (
+                "Enregistrer"
+              )}
+            </button>
+
+            <button
+              onClick={onClose}
+              className="flex h-11 w-11 items-center justify-center rounded-full text-gray-500 transition hover:bg-gray-100 hover:text-gray-700 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-gray-200"
+              aria-label="Fermer"
+            >
+              <X className="h-6 w-6" />
+            </button>
+          </div>
         </div>
 
-        <div className="px-8 py-7 space-y-5">
-          <div className="flex items-center gap-4 p-5 rounded-2xl bg-emerald-50/80 dark:bg-emerald-500/10 border border-emerald-100 dark:border-emerald-500/20">
-            <div className="w-12 h-12 rounded-2xl bg-[#22a06b] flex items-center justify-center shadow-[0_8px_24px_rgba(34,160,107,0.35)]">
-              <CalendarClock className="w-6 h-6 text-white" />
-            </div>
-            <div className="min-w-0">
-              <div className="text-[18px] font-extrabold text-gray-900 dark:text-white">
-                Choisir l&apos;heure
+        {/* BODY */}
+        <div className="px-6 sm:px-8 py-7">
+          <div className="space-y-6">
+            {/* Bloc info */}
+            <div className="flex items-start gap-4 rounded-2xl border border-emerald-100 bg-emerald-50/70 p-5 dark:border-emerald-500/20 dark:bg-emerald-500/10">
+              <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-[#22a06b] shadow-[0_10px_26px_rgba(34,160,107,0.28)]">
+                <CalendarClock className="h-7 w-7 text-white" />
               </div>
-              <div className="text-sm text-gray-600 dark:text-gray-400">
-                Choisissez un créneau selon votre agenda Outlook.
+
+              <div className="min-w-0">
+                <p className="text-[15px] font-extrabold text-gray-900 dark:text-white">
+                  Choisir l&apos;heure
+                </p>
+                <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">
+                  Choisissez un créneau selon votre agenda.
+                </p>
               </div>
             </div>
+
+            {/* Champ heure style modal Google */}
+            <div className="grid grid-cols-1 gap-5">
+              <div>
+                <label className="mb-2 block text-[12px] font-extrabold uppercase tracking-wider text-gray-500 dark:text-gray-300">
+                  Heure
+                </label>
+
+                <div className="flex items-center gap-4 rounded-2xl border border-gray-200 bg-white px-4 py-4 dark:border-gray-700 dark:bg-[#111827]">
+                  <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-gray-100 dark:bg-gray-800">
+                    <Clock3 className="h-5 w-5 text-gray-500 dark:text-gray-300" />
+                  </div>
+
+                  <input
+                    type="time"
+                    value={timeFrom}
+                    onChange={(e) => setTimeFrom(e.target.value)}
+                    className="h-12 w-full rounded-xl border border-gray-200 bg-white px-4 text-lg font-bold tracking-wide text-gray-900 outline-none transition focus:border-[#22a06b] focus:ring-4 focus:ring-emerald-500/15 dark:border-gray-700 dark:bg-[#0f172a] dark:text-white"
+                  />
+                </div>
+
+                <p className="mt-2 text-xs text-gray-500 dark:text-gray-400">
+                  Astuce : choisissez une heure entre <b>10:00</b> et <b>12:00</b> si possible.
+                </p>
+              </div>
+            </div>
+
+            {/* Alertes */}
+            {ok ? (
+              <div className="flex gap-3 rounded-2xl border border-emerald-200 bg-emerald-50 p-4 dark:border-emerald-500/20 dark:bg-emerald-500/10">
+                <CheckCircle2 className="mt-0.5 h-5 w-5 text-emerald-600 dark:text-emerald-400" />
+                <div className="text-sm font-extrabold text-emerald-700 dark:text-emerald-300">
+                  Nouvelle date envoyée
+                </div>
+              </div>
+            ) : null}
+
+            {error ? (
+              <div className="flex gap-3 rounded-2xl border border-red-200 bg-red-50 p-4 dark:border-red-500/20 dark:bg-red-500/10">
+                <XCircle className="mt-0.5 h-5 w-5 text-red-600 dark:text-red-400" />
+                <div className="text-sm font-extrabold text-red-700 dark:text-red-300">
+                  {error}
+                </div>
+              </div>
+            ) : null}
           </div>
+        </div>
 
-          <div className="space-y-2">
-            <label className="block text-[12px] font-extrabold text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-              Heure
-            </label>
-
-            <div className="relative">
-              <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">
-                <Clock3 className="w-5 h-5" />
-              </span>
-
-              <input
-                type="time"
-                value={timeFrom}
-                onChange={(e) => setTimeFrom(e.target.value)}
-                className="w-full h-14 pl-12 pr-4 rounded-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950 text-gray-900 dark:text-white font-semibold tracking-wide outline-none
-                           focus:ring-4 focus:ring-emerald-500/20 focus:border-emerald-400 transition"
-              />
-            </div>
-
-            <p className="text-xs text-gray-500 dark:text-gray-400">
-              Astuce : choisissez une heure entre <b>10:00</b> et <b>12:00</b> si possible.
-            </p>
-          </div>
-
-          {ok ? (
-            <div className="flex gap-3 p-4 rounded-2xl bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-100 dark:border-emerald-500/20">
-              <CheckCircle2 className="w-5 h-5 text-emerald-600 mt-0.5" />
-              <div className="text-sm font-extrabold text-emerald-700 dark:text-emerald-300">
-                Nouvelle date envoyée
-              </div>
-            </div>
-          ) : null}
-
-          {error ? (
-            <div className="flex gap-3 p-4 rounded-2xl bg-red-50 dark:bg-red-500/10 border border-red-100 dark:border-red-500/20">
-              <XCircle className="w-5 h-5 text-red-600 mt-0.5" />
-              <div className="text-sm font-extrabold text-red-700 dark:text-red-300">
-                {error}
-              </div>
-            </div>
-          ) : null}
+        {/* FOOTER */}
+        <div className="flex flex-col-reverse items-stretch justify-between gap-3 border-t border-gray-200 bg-gray-50 px-6 sm:px-8 py-4 sm:flex-row sm:items-center dark:border-gray-800 dark:bg-[#0b1220]">
+          <button
+            onClick={onClose}
+            className="inline-flex h-12 items-center justify-center rounded-2xl border border-gray-200 bg-white px-6 text-sm font-bold text-gray-800 transition hover:bg-gray-100 dark:border-gray-700 dark:bg-[#111827] dark:text-white dark:hover:bg-gray-800"
+          >
+            Annuler
+          </button>
 
           <button
             onClick={() => onSubmit(timeFrom)}
             disabled={!date || !timeFrom || loading || ok}
-            className="w-full h-14 rounded-2xl px-6 font-extrabold text-white bg-[#22a06b] hover:bg-[#1b8a5b] transition
-                       disabled:opacity-50 disabled:cursor-not-allowed
-                       shadow-[0_12px_35px_rgba(34,160,107,0.35)]
-                       flex items-center justify-center gap-2"
+            className="inline-flex h-12 items-center justify-center gap-2 rounded-2xl bg-[#7AC142] px-6 text-sm font-extrabold text-white transition hover:bg-[#69ad38] disabled:cursor-not-allowed disabled:opacity-50"
           >
-            {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : null}
+            {loading ? <Loader2 className="h-5 w-5 animate-spin" /> : null}
             {loading ? "Envoi..." : "Envoyer la nouvelle date"}
           </button>
         </div>

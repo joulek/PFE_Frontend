@@ -317,10 +317,10 @@ export default function JobModal({
                     type="button"
                     onClick={() => setForm({ ...form, typeOffre: "STAGE", typeContrat: "", dureeStage: "" })}
                     className={`flex-1 h-12 rounded-xl flex items-center justify-center gap-2 font-semibold text-sm border-2 transition-all duration-200
-                      ${form.typeOffre === "STAGE"
-                        ? "bg-blue-500 border-blue-500 text-white shadow-md"
-                        : "bg-white dark:bg-gray-700 border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:border-blue-400"
-                      }`}
+${form.typeOffre === "STAGE"
+  ? "bg-blue-500 border-blue-500 text-white shadow-md"
+  : "bg-white dark:bg-gray-700 border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:border-blue-400"
+}`}
                   >
                     <GraduationCap size={16} />
                     Stage

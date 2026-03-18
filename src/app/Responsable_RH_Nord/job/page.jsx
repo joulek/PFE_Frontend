@@ -172,7 +172,6 @@ function OriginBadge({ origin }) {
   );
 }
 
-
 /* ================= TYPE OFFRE BADGE ================= */
 function TypeOffreBadge({ typeOffre }) {
   const isStage = (typeOffre || '').toUpperCase() === 'STAGE';
@@ -450,7 +449,7 @@ export default function ResponsableJobsPage() {
                   <button
                     key={f.key}
                     onClick={() => setTypeOffreFilter(f.key)}
-                    className={`inline-flex items-center gap-1.5 px-3 md:px-4 py-1 md:py-1.5 rounded-full text-xs md:text-sm font-bold transition-all duration-150 ${
+                    className={`inline-flex items-center gap-1.5 px-3 md:px-4 py-1 md:py-1.5 rounded-full text-xs md:text-sm font-bold transition-all duration-150 flex-shrink-0 ${
                       active
                         ? colorActive
                         : "text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
@@ -476,7 +475,7 @@ export default function ResponsableJobsPage() {
             </div>
           </div>
 
-          {/* ROW 2 — Statut */}
+          {/* ROW 3 — Statut */}
           <div className="flex flex-col md:flex-row md:items-center gap-2 md:gap-0 px-3 md:px-0">
             <div className="md:px-5 md:py-3.5 md:border-r border-gray-100 dark:border-gray-700/60 md:shrink-0">
               <span className="text-xs font-bold uppercase tracking-widest text-gray-400 dark:text-gray-500 whitespace-nowrap">
@@ -682,7 +681,7 @@ function JobOfferModal({ open, onClose, onSubmit, initialData }) {
 
     typeContrat: "",
     motif: "",
-    genre: "",
+    sexe: "",
 
     typeStage: "",
     dureeStage: "",
@@ -730,7 +729,7 @@ function JobOfferModal({ open, onClose, onSubmit, initialData }) {
           typeDiplome: initialData.typeDiplome || "",
           typeContrat: initialData.typeContrat || "",
           motif: initialData.motif || "",
-          genre: initialData.genre || "",
+          sexe: initialData.sexe || "",
           typeStage: initialData.typeStage || "",
           dureeStage: initialData.dureeStage || "",
           hardSkills: Array.isArray(initialData.hardSkills) ? initialData.hardSkills.join(", ") : initialData.hardSkills || "",
@@ -784,7 +783,6 @@ function JobOfferModal({ open, onClose, onSubmit, initialData }) {
     setForm((prev) => ({
       ...prev,
       typeOffre: type,
-      // reset type-specific fields on switch
       typeContrat: "",
       motif: "",
       typeStage: "",
@@ -800,36 +798,51 @@ function JobOfferModal({ open, onClose, onSubmit, initialData }) {
     if (!form.description.trim()) return setFormError("❌ La description est obligatoire.");
     if (!form.lieu.trim()) return setFormError("❌ Le lieu du poste est obligatoire.");
     if (!form.dateCloture) return setFormError("❌ La date de clôture est obligatoire.");
-    if (!isValidTotal) return setFormError("❌ La somme des pondérations doit être égale à 100%.");
+    
+    // ✅ VALIDATION CORRIGÉE: Pondérations UNIQUEMENT pour les emplois
+    if (!isStage && !isValidTotal) {
+      return setFormError("❌ La somme des pondérations doit être égale à 100%.");
+    }
 
+    // ✅ CONSTRUCTION DU PAYLOAD COMPLÈTE ET CORRIGÉE
     const payload = {
       typeOffre: form.typeOffre,
       titre: form.titre.trim(),
       description: form.description.trim(),
       lieu: form.lieu.trim(),
       dateCloture: form.dateCloture,
-      nombrePostes: form.nombrePostes || undefined,
-      typeDiplome: form.typeDiplome || undefined,
-      genre: form.genre || undefined,
       hardSkills: parseSkills(form.hardSkills),
       softSkills: parseSkills(form.softSkills),
-      scores: form.scores,
-      // JOB-specific
+
+      // Champs communs (optionnels)
+      ...(form.nombrePostes && { nombrePostes: form.nombrePostes }),
+      ...(form.typeDiplome && { typeDiplome: form.typeDiplome }),
+      ...(form.sexe && { sexe: form.sexe }), // ✅ Important: backend attend "sexe"
+
+      // ✅ CHAMPS SPÉCIFIQUES À L'EMPLOI
       ...(form.typeOffre === "JOB" && {
         salaire: form.salaire || undefined,
         typeContrat: form.typeContrat || undefined,
         motif: form.motif || undefined,
+        scores: {
+          skillsFit: Number(form.scores.skillsFit) || 0,
+          experienceFit: Number(form.scores.experienceFit) || 0,
+          projectsFit: Number(form.scores.projectsFit) || 0,
+          educationFit: Number(form.scores.educationFit) || 0,
+          communicationFit: Number(form.scores.communicationFit) || 0,
+        },
+        generateQuiz: !isEditing && generateQuiz,
+        numQuestions: !isEditing && generateQuiz ? numQuestions : 0,
       }),
-      // STAGE-specific
+
+      // ✅ CHAMPS SPÉCIFIQUES AU STAGE (C'ÉTAIT LE PROBLÈME!)
       ...(form.typeOffre === "STAGE" && {
         typeStage: form.typeStage || undefined,
         dureeStage: form.dureeStage || undefined,
       }),
-      ...(!isEditing && {
-        generateQuiz,
-        numQuestions: generateQuiz ? numQuestions : 0,
-      }),
     };
+
+    console.log("📤 Envoi du payload:", payload); // ✅ DEBUG
 
     setSubmitting(true);
     try {
@@ -1072,37 +1085,38 @@ function JobOfferModal({ open, onClose, onSubmit, initialData }) {
                     </div>
                   </div>
 
-                  {/* MOTIF */}
-                  <div>
-                    <label className={labelBase}>Motif</label>
-                    <div className="relative">
-                      <select
-                        value={form.motif}
-                        onChange={(e) => setForm({ ...form, motif: e.target.value })}
-                        className={selectBase}
-                      >
-                        {MOTIF_OPTIONS.map((o) => (
-                          <option key={o.value} value={o.value}>{o.label}</option>
-                        ))}
-                      </select>
-                      <span className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-gray-400">▾</span>
+                  {/* MOTIF + GENRE */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-5 md:gap-6">
+                    <div>
+                      <label className={labelBase}>Motif</label>
+                      <div className="relative">
+                        <select
+                          value={form.motif}
+                          onChange={(e) => setForm({ ...form, motif: e.target.value })}
+                          className={selectBase}
+                        >
+                          {MOTIF_OPTIONS.map((o) => (
+                            <option key={o.value} value={o.value}>{o.label}</option>
+                          ))}
+                        </select>
+                        <span className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-gray-400">▾</span>
+                      </div>
                     </div>
-                  </div>
 
-                  {/* GENRE */}
-                  <div>
-                    <label className={labelBase}>Genre</label>
-                    <div className="relative">
-                      <select
-                        value={form.genre}
-                        onChange={(e) => setForm({ ...form, genre: e.target.value })}
-                        className={selectBase}
-                      >
-                        {SEXE_OPTIONS.map((o) => (
-                          <option key={o.value} value={o.value}>{o.label}</option>
-                        ))}
-                      </select>
-                      <span className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-gray-400">▾</span>
+                    <div>
+                      <label className={labelBase}>Genre</label>
+                      <div className="relative">
+                        <select
+                          value={form.sexe}
+                          onChange={(e) => setForm({ ...form, sexe: e.target.value })}
+                          className={selectBase}
+                        >
+                          {SEXE_OPTIONS.map((o) => (
+                            <option key={o.value} value={o.value}>{o.label}</option>
+                          ))}
+                        </select>
+                        <span className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-gray-400">▾</span>
+                      </div>
                     </div>
                   </div>
                 </>
@@ -1172,8 +1186,8 @@ function JobOfferModal({ open, onClose, onSubmit, initialData }) {
                     <label className={labelBase}>Genre</label>
                     <div className="relative">
                       <select
-                        value={form.genre}
-                        onChange={(e) => setForm({ ...form, genre: e.target.value })}
+                        value={form.sexe}
+                        onChange={(e) => setForm({ ...form, sexe: e.target.value })}
                         className={selectBase}
                       >
                         {SEXE_OPTIONS.map((o) => (
@@ -1205,7 +1219,7 @@ function JobOfferModal({ open, onClose, onSubmit, initialData }) {
                   <input
                     value={form.softSkills}
                     onChange={(e) => setForm({ ...form, softSkills: e.target.value })}
-                    placeholder="Communication, Leadership, Espri..."
+                    placeholder="Communication, Leadership, Esprit..."
                     className={inputBase}
                   />
                   <p className="text-xs text-gray-500 dark:text-gray-400 mt-1.5">

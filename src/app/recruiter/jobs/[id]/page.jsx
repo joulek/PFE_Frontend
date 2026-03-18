@@ -37,7 +37,6 @@ import {
   AlertTriangle,
   ExternalLink,
   Link2,
-  Unlink,
   Send,
   BadgeInfo,
   GraduationCap,
@@ -156,18 +155,19 @@ function Pill({ className, children }) {
   );
 }
 
+// ✅ CORRIGÉ: InfoCard avec textes longs non tronqués
 function InfoCard({ icon: Icon, label, value }) {
   return (
     <div className="rounded-2xl border border-gray-100 dark:border-gray-700 bg-white/70 dark:bg-gray-800/60 backdrop-blur p-4">
       <div className="flex items-start gap-3">
-        <div className="h-10 w-10 rounded-2xl grid place-items-center bg-[#E9F5E3] dark:bg-emerald-900/25 text-[#4E8F2F] dark:text-emerald-400">
+        <div className="h-10 w-10 rounded-2xl grid place-items-center bg-[#E9F5E3] dark:bg-emerald-900/25 text-[#4E8F2F] dark:text-emerald-400 flex-shrink-0">
           <Icon size={18} />
         </div>
-        <div className="min-w-0">
+        <div className="min-w-0 flex-1">
           <p className="text-xs font-bold uppercase tracking-wide text-gray-500 dark:text-gray-400">
             {label}
           </p>
-          <p className="mt-1 text-sm font-semibold text-gray-900 dark:text-gray-100 truncate">
+          <p className="mt-1 text-sm font-semibold text-gray-900 dark:text-gray-100 break-words whitespace-normal leading-relaxed">
             {value || "—"}
           </p>
         </div>
@@ -210,7 +210,7 @@ function LinkedInBadge({ connected }) {
   }
   return (
     <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700">
-      <Unlink size={11} className="text-amber-600 dark:text-amber-400" />
+      <Link2 size={11} className="text-amber-600 dark:text-amber-400" />
       <span className="text-xs font-semibold text-amber-600 dark:text-amber-400">
         Non connecté
       </span>

@@ -130,7 +130,7 @@ export default function CandidatConfirmInterview({ token }) {
             </div>
 
             <h2 className="text-2xl font-extrabold text-gray-900 dark:text-white mb-2">
-              Entretien confirmé ! 🎉
+              Entretien confirmé ! 
             </h2>
 
             <p className="text-sm text-gray-500 dark:text-slate-300 mb-1">
