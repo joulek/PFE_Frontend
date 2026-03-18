@@ -373,7 +373,7 @@ export default function ConfirmedInterviewsPage() {
 
                           {/* Responsable */}
                           <td className={`px-6 lg:px-8 py-5 ${topBorder}`}>
-                            {(iv.responsableName || iv.responsableEmail) ? (
+                           {(iv.responsableName || iv.responsableEmail) && iv.responsableEmail !== iv.candidateEmail ? (
                               <div className="flex items-center gap-2">
                                 <div className={`w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 ${isRhTech ? "bg-violet-100 dark:bg-violet-900/30" : "bg-[#E9F5E3] dark:bg-emerald-900/30"}`}>
                                   <UserCheck className={`w-3.5 h-3.5 ${isRhTech ? "text-violet-600 dark:text-violet-400" : "text-[#4E8F2F] dark:text-emerald-400"}`} />

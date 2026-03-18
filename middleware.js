@@ -28,7 +28,7 @@ export function middleware(req) {
     pathname.startsWith("/responsableMetier");
 
   const isAssistanceDirPath     = pathname.startsWith("/entretiens-confirmes");
-  const isDGAPath               = pathname.startsWith("/entretiens");
+  const isDGAPath = pathname.startsWith("/entretiens") && !pathname.startsWith("/entretiens-confirmes");
   const isFichesPath            = pathname.startsWith("/fiche_renseignement");
   const isResponsableRHOPTYLABPath = pathname.startsWith("/RESPONSABLE_RH_OPTYLAB");
   const isResponsableRHNordPath    = pathname.startsWith("/RESPONSABLE_RH_NORD");
@@ -85,14 +85,15 @@ export function middleware(req) {
   if (isResponsableRHNordPath && token && !isResponsableRHNord) return redirect("/unauthorized");
 
   // 3) Connecté et va /login => redirection selon rôle
-  if (isLoginPage && token) {
+ if (isLoginPage && token) {
     if (isAdmin)               return redirect("/recruiter/dashboard");
     if (isAssistanteRH)        return redirect("/employees");
     if (isAssistanceDirection) return redirect("/entretiens-confirmes");
+    if (isDGA)                 return redirect("/entretiens"); // ← ajoute ça
     if (isResponsableRHOPTYLAB)   return redirect("/RESPONSABLE_RH_OPTYLAB");
     if (isResponsableRHNord)      return redirect("/RESPONSABLE_RH_NORD");
     return redirect("/ResponsableMetier/candidatures");
-  }
+}
 
   // 4) No cache pages sensibles
   if (isProtected || isLoginPage || isUnauthorized) {

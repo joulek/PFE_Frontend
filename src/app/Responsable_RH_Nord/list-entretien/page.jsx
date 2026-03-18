@@ -26,6 +26,82 @@ import {
 import api from "../../services/api";
 
 // ─────────────────────────────────────────────────────────
+//  Helpers : résoudre nom/email depuis toutes les structures
+// ─────────────────────────────────────────────────────────
+function extractNameFromCvUrl(cvUrl) {
+  // "/uploads/cvs/1773869669421-NourheneAbbes.pdf" → "Nourhene Abbes"
+  if (!cvUrl) return null;
+  try {
+    const filename = cvUrl.split("/").pop().replace(/\.pdf$/i, "").replace(/\.PDF$/i, "");
+    const withoutTs = filename.replace(/^\d+[-_]/, ""); // retirer timestamp
+    // CamelCase → "Nourhene Abbes"
+    const spaced = withoutTs
+      .replace(/([a-z])([A-Z])/g, "$1 $2")
+      .replace(/([A-Z]+)([A-Z][a-z])/g, "$1 $2")
+      .replace(/[-_]/g, " ")
+      .trim();
+    return spaced.length > 1 ? spaced : null;
+  } catch { return null; }
+}
+
+const FAKE_NAMES = ["candidat", "candidate", "—", "-", "inconnu", "candidat inconnu", ""];
+
+function resolveCandidateName(iv) {
+  // 1. Champs directs — ignorer les valeurs bidon
+  const raw = (iv.candidateName || "").trim();
+  if (raw && !FAKE_NAMES.includes(raw.toLowerCase())) return raw;
+
+  // 2. Autres champs directs
+  if (iv.candidate?.name?.trim())  return iv.candidate.name.trim();
+  if (iv.nom?.trim())              return iv.nom.trim();
+  if (iv.name?.trim())             return iv.name.trim();
+  if (iv.fullName?.trim())         return iv.fullName.trim();
+  const pif = [iv.prenom, iv.nomFamille].filter(Boolean).join(" ").trim();
+  if (pif) return pif;
+
+  // 3. Depuis extracted.parsed (3 formats CV)
+  const p = iv.extracted?.parsed;
+  if (p) {
+    if (p.nom?.trim())       return p.nom.trim();
+    if (p.full_name?.trim()) return p.full_name.trim();
+    const piA = [p.personal_info?.first_name, p.personal_info?.last_name].filter(Boolean).join(" ").trim();
+    if (piA) return piA;
+    const piB = [p.first_name, p.last_name].filter(Boolean).join(" ").trim();
+    if (piB) return piB;
+    if (p.manual?.nom?.trim())       return p.manual.nom.trim();
+    if (p.manual?.full_name?.trim()) return p.manual.full_name.trim();
+    const piC = [p.manual?.personal_info?.first_name, p.manual?.personal_info?.last_name].filter(Boolean).join(" ").trim();
+    if (piC) return piC;
+    if (p.parsed?.nom?.trim())       return p.parsed.nom.trim();
+    if (p.parsed?.full_name?.trim()) return p.parsed.full_name.trim();
+    const piD = [p.parsed?.personal_info?.first_name, p.parsed?.personal_info?.last_name].filter(Boolean).join(" ").trim();
+    if (piD) return piD;
+  }
+
+  // 4. ✅ Dernier recours — extraire depuis le nom du fichier CV
+  const fromCv = extractNameFromCvUrl(iv.cvUrl || iv.cv?.url || iv.cv);
+  if (fromCv) return fromCv;
+
+  return "—";
+}
+
+function resolveCandidateEmail(iv) {
+  if (iv.candidateEmail?.trim()) return iv.candidateEmail.trim();
+  if (iv.candidate?.email?.trim()) return iv.candidate.email.trim();
+  if (iv.email?.trim())            return iv.email.trim();
+  const p = iv.extracted?.parsed;
+  if (p) {
+    if (p.email?.trim())                        return p.email.trim();
+    if (p.personal_info?.email?.trim())         return p.personal_info.email.trim();
+    if (p.manual?.email?.trim())                return p.manual.email.trim();
+    if (p.manual?.personal_info?.email?.trim()) return p.manual.personal_info.email.trim();
+    if (p.parsed?.email?.trim())                return p.parsed.email.trim();
+    if (p.parsed?.personal_info?.email?.trim()) return p.parsed.personal_info.email.trim();
+  }
+  return "—";
+}
+
+// ─────────────────────────────────────────────────────────
 //  STATUTS
 // ─────────────────────────────────────────────────────────
 const STATUS_CONFIG = {
@@ -283,14 +359,23 @@ export default function ResponsableMetierInterviewList() {
       const enrichedRhNord = rhNordList.map((iv) => {
         const key = iv.candidatureId ? String(iv.candidatureId) : null;
         const tel = key ? telByCandidatureId[key] : null;
+        const resolved = {
+          ...iv,
+          candidateName:  resolveCandidateName(iv),
+          candidateEmail: resolveCandidateEmail(iv),
+        };
         if (tel) {
           delete telByCandidatureId[key];
-          return { ...iv, _telEntry: tel };
+          return { ...resolved, _telEntry: tel };
         }
-        return iv;
+        return resolved;
       });
 
-      const remainingTel = Object.values(telByCandidatureId);
+      const remainingTel = Object.values(telByCandidatureId).map((tel) => ({
+        ...tel,
+        candidateName:  resolveCandidateName(tel),
+        candidateEmail: resolveCandidateEmail(tel),
+      }));
 
       const merged = [...enrichedRhNord, ...remainingTel].sort((a, b) => {
         const da = new Date(a.confirmedDate || a.proposedDate || a.confirmedAt || 0);
@@ -348,7 +433,7 @@ export default function ResponsableMetierInterviewList() {
         <div className="flex flex-col xl:flex-row xl:items-center xl:justify-between gap-4 mb-6 sm:mb-8">
           <div>
             <h1 className="text-3xl sm:text-4xl font-extrabold text-gray-900 dark:text-white">Mes Entretiens</h1>
-            <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">Entretiens RH + Tech &amp; Téléphoniques assignés</p>
+            <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">Entretiens RH  &amp; Téléphoniques assignés</p>
           </div>
         </div>
 
@@ -646,9 +731,16 @@ export default function ResponsableMetierInterviewList() {
                                   </button>
                                 )}
 
-                                {/* ✅ Bouton Confirmer candidat — RH Nord — uniquement PENDING_CANDIDATE_CONFIRMATION */}
-                                {!isTelephonique && iv.status === "PENDING_CANDIDATE_CONFIRMATION" && (
-                                  (confirmedRhNordIds.has(iv._id) || iv.rhNordConfirmed) ? (
+                                {/* ✅ Bouton Confirmer candidat — RH Nord
+                                     Visible pour RH et Téléphonique
+                                     Indépendant du statut entretien :
+                                     - candidat confirme l'entretien  → status = CONFIRMED
+                                     - RH Nord confirme le candidat   → rhNordConfirmed = true
+                                     Ces 2 actions sont séparées ! */}
+                                {["PENDING_CANDIDATE_CONFIRMATION", "CONFIRMED", "RESCHEDULED"].includes(iv.status) &&
+                                  !iv.rhNordConfirmed &&
+                                  (
+                                  confirmedRhNordIds.has(iv._id) ? (
                                     <span className="inline-flex items-center gap-2 px-3 sm:px-4 py-2 rounded-full bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-700 text-emerald-700 dark:text-emerald-300 font-semibold text-xs sm:text-sm">
                                       <CheckCircle2 className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                                       Candidat confirmé

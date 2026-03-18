@@ -658,18 +658,31 @@ function EntretienModal({ candidate, onClose, onRHScheduled }) {
   const [step, setStep] = useState("type");
   const name = getName(candidate);
 
+  // ✅ Suivi séparé : entretien téléphonique ET entretien RH
+  const telephoniqueScheduled =
+    candidate?.entretiens?.telephoniqueScheduled === true ||
+    candidate?.preInterviewNord?.telephoniqueScheduled === true ||
+    candidate?.telephoniqueScheduled === true;
+
+  const rhScheduled =
+    candidate?.entretiens?.rhNordScheduled === true ||
+    candidate?.preInterviewNord?.rhScheduled === true ||
+    candidate?.rhScheduled === true;
+
   const types = [
     {
       id: "telephonique",
       label: "Entretien Téléphonique",
       icon: PhoneCall,
-      desc: "Valider l'entretien téléphonique",
+      desc: telephoniqueScheduled ? "Déjà planifié ✓" : "Valider l'entretien téléphonique",
+      done: telephoniqueScheduled,
     },
     {
       id: "rh",
       label: "Entretien RH",
       icon: Users,
-      desc: "Planifier + email candidat",
+      desc: rhScheduled ? "Déjà planifié ✓" : "Planifier + email candidat",
+      done: rhScheduled,
     },
   ];
 
@@ -702,21 +715,38 @@ function EntretienModal({ candidate, onClose, onRHScheduled }) {
             {types.map((t) => (
               <button
                 key={t.id}
-                onClick={() => setStep(t.id)}
-                className="w-full flex items-center gap-4 p-4 rounded-2xl border border-gray-200 dark:border-gray-800 hover:border-green-300 dark:hover:border-green-700 hover:bg-green-50/60 dark:hover:bg-green-900/10 transition-all group text-left"
+                onClick={() => !t.done && setStep(t.id)}
+                disabled={t.done}
+                className={`w-full flex items-center gap-4 p-4 rounded-2xl border transition-all group text-left
+                  ${t.done
+                    ? "border-green-200 dark:border-green-800 bg-green-50/60 dark:bg-green-900/10 opacity-70 cursor-not-allowed"
+                    : "border-gray-200 dark:border-gray-800 hover:border-green-300 dark:hover:border-green-700 hover:bg-green-50/60 dark:hover:bg-green-900/10"
+                  }`}
               >
-                <div className="w-11 h-11 rounded-xl bg-green-600 flex items-center justify-center shadow-sm flex-shrink-0">
-                  <t.icon className="w-5 h-5 text-white" />
+                <div className={`w-11 h-11 rounded-xl flex items-center justify-center shadow-sm flex-shrink-0 ${
+                  t.done ? "bg-green-500" : "bg-green-600"
+                }`}>
+                  {t.done
+                    ? <CheckCircle2 className="w-5 h-5 text-white" />
+                    : <t.icon className="w-5 h-5 text-white" />
+                  }
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="font-extrabold text-gray-900 dark:text-white text-sm">
+                  <p className={`font-extrabold text-sm ${
+                    t.done ? "text-green-700 dark:text-green-400" : "text-gray-900 dark:text-white"
+                  }`}>
                     {t.label}
                   </p>
-                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                  <p className={`text-xs mt-0.5 ${
+                    t.done ? "text-green-600 dark:text-green-500 font-semibold" : "text-gray-500 dark:text-gray-400"
+                  }`}>
                     {t.desc}
                   </p>
                 </div>
-                <ChevronRight className="w-4 h-4 text-gray-400 group-hover:text-green-600 transition-colors flex-shrink-0" />
+                {t.done
+                  ? <CheckCircle2 className="w-4 h-4 text-green-500 flex-shrink-0" />
+                  : <ChevronRight className="w-4 h-4 text-gray-400 group-hover:text-green-600 transition-colors flex-shrink-0" />
+                }
               </button>
             ))}
           </div>
@@ -779,11 +809,25 @@ function PreInterviewRow({ c, onOpenSendModal, onOpenEntretienModal }) {
   const email = safeStr(c?.email);
   const selectedAt = c?.preInterviewNord?.selectedAt;
 
-  // ✅ Entretien déjà planifié (flag retourné par l'API)
-  const interviewScheduled =
+  // ✅ Suivi séparé : entretien téléphonique ET entretien RH
+  const telephoniqueScheduled =
+    c?.entretiens?.telephoniqueScheduled === true ||
+    c?.preInterviewNord?.telephoniqueScheduled === true ||
+    c?.telephoniqueScheduled === true;
+
+  const rhScheduled =
+    c?.entretiens?.rhNordScheduled === true ||
+    c?.preInterviewNord?.rhScheduled === true ||
+    c?.rhScheduled === true;
+
+  // "Planifié" complet = les deux entretiens planifiés
+  const bothScheduled = telephoniqueScheduled && rhScheduled;
+
+  // Pour rétrocompatibilité : si l'API retourne l'ancien flag global
+  const legacyScheduled =
     c?.interviewScheduled === true ||
-    c?.preInterviewNord?.interviewScheduled === true ||
-    c?.entretiens?.rhNordScheduled === true;
+    c?.preInterviewNord?.interviewScheduled === true;
+
   const interviewDate = c?.interviewDate || c?.preInterviewNord?.interviewDate || null;
 
   const allSent = sentFiche && sentQuiz;
@@ -908,21 +952,45 @@ function PreInterviewRow({ c, onOpenSendModal, onOpenEntretienModal }) {
         <div className="flex items-center gap-2 flex-wrap">
           {sendBtn}
 
-          {interviewScheduled ? (
-            <span className="inline-flex items-center gap-1.5 px-3 py-2 rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 text-xs font-semibold border border-blue-200 dark:border-blue-700 cursor-default"
-              title={interviewDate ? `Planifié le ${formatDate(interviewDate)}` : "Entretien planifié"}
+          {bothScheduled || legacyScheduled ? (
+            // ✅ Les deux entretiens sont planifiés → badge final "Planifié"
+            <span
+              className="inline-flex items-center gap-1.5 px-3 py-2 rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 text-xs font-semibold border border-blue-200 dark:border-blue-700 cursor-default"
+              title={interviewDate ? `Planifié le ${formatDate(interviewDate)}` : "Les deux entretiens planifiés"}
             >
               <CheckCircle2 className="w-3.5 h-3.5" />
               {interviewDate ? formatDate(interviewDate) : "Planifié"}
             </span>
           ) : (
-            <button
-              onClick={() => onOpenEntretienModal(c)}
-              className="inline-flex items-center gap-1.5 px-3 py-2 rounded-full bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold transition-colors shadow-sm"
-            >
-              <Calendar className="w-3.5 h-3.5" />
-              Planifier
-            </button>
+            // ✅ Bouton toujours actif tant que les deux entretiens ne sont pas planifiés
+            <div className="flex flex-col gap-1">
+              <button
+                onClick={() => onOpenEntretienModal(c)}
+                className="inline-flex items-center gap-1.5 px-3 py-2 rounded-full bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold transition-colors shadow-sm"
+              >
+                <Calendar className="w-3.5 h-3.5" />
+                Planifier
+              </button>
+              {/* Mini-badges de progression */}
+              <div className="flex gap-1 flex-wrap">
+                <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold border ${
+                  telephoniqueScheduled
+                    ? "bg-green-50 text-green-700 border-green-200 dark:bg-green-900/20 dark:text-green-400 dark:border-green-800"
+                    : "bg-gray-50 text-gray-400 border-gray-200 dark:bg-gray-800 dark:border-gray-700"
+                }`}>
+                  <PhoneCall className="w-2.5 h-2.5" />
+                  Tél.{telephoniqueScheduled ? " ✓" : ""}
+                </span>
+                <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold border ${
+                  rhScheduled
+                    ? "bg-green-50 text-green-700 border-green-200 dark:bg-green-900/20 dark:text-green-400 dark:border-green-800"
+                    : "bg-gray-50 text-gray-400 border-gray-200 dark:bg-gray-800 dark:border-gray-700"
+                }`}>
+                  <Users className="w-2.5 h-2.5" />
+                  RH{rhScheduled ? " ✓" : ""}
+                </span>
+              </div>
+            </div>
           )}
 
           <Link

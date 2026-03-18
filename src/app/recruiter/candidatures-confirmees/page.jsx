@@ -437,35 +437,53 @@ export default function ConfirmedCandidaturesPage() {
     try {
       setError(null);
       if (withRefresh) setRefreshing(true); else setLoading(true);
-      const res = await apiFetch(`/candidatures/confirmed?filter=${filter}`);
-      setData(Array.isArray(res) ? res : []);
+
+      // ✅ Bonne route : /api/interviews/confirmed (collection interviews)
+      //    retourne { interviews: [...], total, page, totalPages }
+      const token =
+        (typeof localStorage !== "undefined" && localStorage.getItem("token")) ||
+        (typeof sessionStorage !== "undefined" && sessionStorage.getItem("token")) || "";
+
+      const params = new URLSearchParams({ page: "1", limit: "200" });
+      if (search.trim()) params.append("search", search.trim());
+
+      const res = await fetch(
+        `${API_BASE}/api/interviews/confirmed?${params}`,
+        { headers: { "Content-Type": "application/json", ...(token ? { Authorization: `Bearer ${token}` } : {}) } }
+      );
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const json = await res.json();
+
+      // La réponse contient interviews[] — mapper vers le format attendu par le tableau
+      let list = (json?.interviews || []).map(iv => ({
+        _id:               iv._id,
+        fullName:          iv.candidateName || "",
+        email:             iv.candidateEmail || "",
+        jobTitle:          iv.jobTitle || "—",
+        telephone:         iv.telephone || "",
+        createdAt:         iv.createdAt,
+        adminConfirmed:    iv.adminConfirmed   || false,
+        adminConfirmedAt:  iv.adminConfirmedAt || null,
+        dgaConfirmed:      iv.dgaConfirmed || !!iv.dgaInterview?.confirmed || false,
+        dgaConfirmedAt:    iv.dgaConfirmedAt || iv.dgaInterview?.confirmedAt || null,
+        responsableName:   iv.responsableName  || null,
+        candidatureId:     iv.candidatureId    || null,
+      }));
+
+      // Filtres locaux
+      if (filter === "admin") list = list.filter(c => c.adminConfirmed);
+      if (filter === "dga")   list = list.filter(c => c.dgaConfirmed);
+
+      setData(list);
     } catch (err) {
       setError(err.message || "Erreur chargement");
     } finally {
       setLoading(false);
       setRefreshing(false);
     }
-  }, [filter]);
+  }, [filter, search]);
 
-  // ✅ Fetch le nombre de candidats confirmés par RH Nord
-  useEffect(() => {
-    async function fetchRhNordCount() {
-      try {
-        const token =
-          (typeof localStorage !== "undefined" && localStorage.getItem("token")) ||
-          (typeof sessionStorage !== "undefined" && sessionStorage.getItem("token")) || "";
-        const res = await fetch(
-          `${API_BASE}/api/interviews/rh-nord-confirmed?page=1&limit=1`,
-          { headers: { "Content-Type": "application/json", ...(token ? { Authorization: `Bearer ${token}` } : {}) } }
-        );
-        if (res.ok) {
-          const data = await res.json();
-          setRhNordCount(data?.total ?? 0);
-        }
-      } catch (_) { /* non bloquant */ }
-    }
-    fetchRhNordCount();
-  }, []);
+
 
   useEffect(() => { fetchData(); }, [fetchData]);
 

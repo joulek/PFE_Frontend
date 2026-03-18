@@ -1547,13 +1547,7 @@ export default function AdminInterviewList() {
                 Comparer ({selectedForCompare.length})
               </button>
             )}
-            <button
-              onClick={() => setPlanifierOpen(true)}
-              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-[#6CB33F] hover:bg-[#4E8F2F] dark:bg-emerald-600 dark:hover:bg-emerald-500 text-white font-semibold transition-colors"
-            >
-              <Plus className="w-4 h-4" />
-              Planifier un entretien
-            </button>
+
           </div>
         </div>
 
