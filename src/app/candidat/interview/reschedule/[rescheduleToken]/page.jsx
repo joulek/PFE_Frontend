@@ -2,37 +2,47 @@
 import CandidatRescheduleInterview from "./CandidatRescheduleInterview";
 import CandidatRescheduleRhTechInterview from "./CandidatRescheduleRhTechInterview";
 
-async function getInterviewType(rescheduleToken) {
+async function getInterviewInfo(rescheduleToken) {
   try {
     const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
-    const res = await fetch(
-      `${API_BASE}/api/interviews/reschedule-info/${rescheduleToken}`,
+
+    // ✅ On essaie d'abord la route Nord
+    const resNord = await fetch(
+      `${API_BASE}/api/interviewNord/reschedule-info/${rescheduleToken}`,
       { cache: "no-store" }
     );
-    if (!res.ok) return null;
-    const data = await res.json();
-    return data?.interview?.type || null;
+
+    if (resNord.ok) {
+      const data = await resNord.json();
+      // ✅ Si trouvé côté Nord → c'est un entretien Nord
+      if (data?.interview) return { isNord: true };
+    }
+
+    // ✅ Sinon on essaie la route RH classique
+    const resRh = await fetch(
+      `${API_BASE}/api/calendar/interview/reschedule-info/${rescheduleToken}`,
+      { cache: "no-store" }
+    );
+
+    if (resRh.ok) {
+      const data = await resRh.json();
+      if (data?.interview) return { isNord: false };
+    }
+
+    return { isNord: false };
   } catch {
-    return null;
+    return { isNord: false };
   }
 }
 
 export default async function Page({ params }) {
   const { rescheduleToken } = await params;
 
-  const interviewType = await getInterviewType(rescheduleToken);
-
-  // ✅ Si type = "nord" ou "rh_nord" → composant RH Nord
-  const isNord =
-    interviewType === "rh_nord" ||
-    interviewType === "nord" ||
-    interviewType === "NORD" ||
-    interviewType === "RH_NORD";
+  const { isNord } = await getInterviewInfo(rescheduleToken);
 
   if (isNord) {
     return <CandidatRescheduleRhTechInterview token={rescheduleToken} />;
   }
 
-  // ✅ Par défaut → composant RH classique (rh, telephonique, rh_technique…)
   return <CandidatRescheduleInterview token={rescheduleToken} />;
 }

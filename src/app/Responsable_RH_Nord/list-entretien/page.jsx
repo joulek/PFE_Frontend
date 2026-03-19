@@ -718,19 +718,7 @@ export default function ResponsableMetierInterviewList() {
                               </div>
 
                               <div className="mt-4 sm:mt-5 flex flex-col sm:flex-row flex-wrap gap-2 sm:gap-3">
-                                {!isTelephonique && (iv.status === "PENDING_CONFIRMATION" || iv.status === "CANDIDATE_REQUESTED_RESCHEDULE") && (
-                                  <button
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      router.push(`/ResponsableMetier/confirm-interview/${iv.confirmationToken}`);
-                                    }}
-                                    className="px-3 sm:px-4 py-2 rounded-full bg-[#E9F5E3] dark:bg-emerald-950/30 border border-[#cfe4c4] dark:border-emerald-700 text-[#4E8F2F] dark:text-emerald-300 font-semibold text-xs sm:text-sm hover:bg-[#d7ebcf] dark:hover:bg-emerald-900/40 transition-colors flex items-center gap-2"
-                                  >
-                                    <Send className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                                    {iv.status === "CANDIDATE_REQUESTED_RESCHEDULE" ? "Répondre" : "Confirmer"}
-                                  </button>
-                                )}
-
+                               
                                 {/* ✅ Bouton Confirmer candidat — RH Nord
                                      Visible pour RH et Téléphonique
                                      Indépendant du statut entretien :
