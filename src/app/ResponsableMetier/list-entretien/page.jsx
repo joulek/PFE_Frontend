@@ -13,10 +13,10 @@ import api from "../../services/api";
 const getFicheSubmissionsByCandidature = (candidatureId) =>
   api.get(`/fiche-submissions/candidature/${candidatureId}`);
 
+// ✅ FIX : récupère les soumissions quiz d'une candidature
 const getQuizSubmissionsByCandidature = (candidatureId) =>
   api.get(`/quiz-submissions/candidature/${candidatureId}`);
 
-// ✅ FIX : PENDING_MANAGER_CONFIRMATION ajouté
 const STATUS_CONFIG = {
   PENDING_CONFIRMATION: {
     label: "En attente de votre confirmation",
@@ -156,42 +156,103 @@ function ScoreCircle({ percentage }) {
   );
 }
 
+// ✅ FIX COMPLET : QuizResultCard avec gestion d'erreur robuste
 function QuizResultCard({ candidatureId }) {
   const router = useRouter();
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [fetchError, setFetchError] = useState(null); // ✅ distingue "pas soumis" de "erreur"
+
   useEffect(() => {
-    if (!candidatureId) { setLoading(false); return; }
+    // ✅ FIX : si candidatureId est absent ou invalide, on arrête immédiatement
+    if (!candidatureId) {
+      setLoading(false);
+      return;
+    }
+
+    setLoading(true);
+    setFetchError(null);
+
     getQuizSubmissionsByCandidature(candidatureId)
-      .then((res) => { const list = Array.isArray(res) ? res : (res?.data ?? []); setData(list[0] ?? null); })
-      .catch(() => setData(null))
+      .then((res) => {
+        // ✅ FIX : res est la réponse axios → res.data est le tableau
+        // On accepte aussi le cas où res est directement un tableau (defensive)
+        const list = Array.isArray(res?.data)
+          ? res.data
+          : Array.isArray(res)
+          ? res
+          : [];
+        setData(list[0] ?? null);
+      })
+      .catch((err) => {
+        // ✅ FIX : on stocke l'erreur au lieu de silencieusement mettre null
+        // Cela évite d'afficher "Pas encore soumis" quand c'est un 403/500
+        const status = err?.response?.status;
+        if (status === 403) {
+          setFetchError("Accès non autorisé");
+        } else if (status === 404) {
+          setFetchError(null); // vraiment pas de soumission
+        } else {
+          setFetchError("Erreur de chargement");
+        }
+        setData(null);
+      })
       .finally(() => setLoading(false));
   }, [candidatureId]);
+
+  // ✅ Cas : candidatureId manquant dans l'objet interview
+  if (!candidatureId) {
+    return (
+      <DetailCard label="Résultat Quiz">
+        <div className="flex items-center gap-2 text-amber-500 text-xs py-1">
+          <AlertTriangle className="w-4 h-4" />
+          <span>ID candidature manquant</span>
+        </div>
+      </DetailCard>
+    );
+  }
+
   return (
     <DetailCard label="Résultat Quiz">
       {loading ? (
-        <div className="flex items-center gap-2 text-gray-400 text-xs py-1"><Loader2 className="w-4 h-4 animate-spin" />Chargement…</div>
+        <div className="flex items-center gap-2 text-gray-400 text-xs py-1">
+          <Loader2 className="w-4 h-4 animate-spin" />
+          Chargement…
+        </div>
+      ) : fetchError ? (
+        // ✅ FIX : affiche l'erreur réelle au lieu de "Pas encore soumis"
+        <div className="flex items-center gap-2 text-red-400 text-xs py-1">
+          <XCircle className="w-4 h-4" />
+          <span>{fetchError}</span>
+        </div>
       ) : !data ? (
-        <div className="flex items-center gap-2 text-gray-400 text-xs py-1"><BarChart2 className="w-4 h-4" /><span>Pas encore soumis</span></div>
+        <div className="flex items-center gap-2 text-gray-400 text-xs py-1">
+          <BarChart2 className="w-4 h-4" />
+          <span>Pas encore soumis</span>
+        </div>
       ) : (
         <div className="space-y-3 mt-1">
           <div className="flex items-center gap-3">
             <ScoreCircle percentage={data.percentage} />
             <div className="min-w-0">
-              <p className="text-sm font-bold text-gray-800 dark:text-gray-100">{data.score ?? "—"} / {data.totalQuestions ?? "—"} bonnes réponses</p>
-              <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Soumis le {formatDate(data.submittedAt)}</p>
-              <div className="flex flex-wrap gap-1.5 mt-2">
-                {(data.answers ?? []).slice(0, 5).map((a, i) => (
-                  <span key={i} className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold border ${a.isCorrect ? "bg-emerald-50 dark:bg-emerald-950/30 border-emerald-200 dark:border-emerald-700 text-emerald-700 dark:text-emerald-300" : "bg-red-50 dark:bg-red-950/30 border-red-200 dark:border-red-700 text-red-700 dark:text-red-300"}`}>
-                    {a.isCorrect ? <CheckCheck className="w-3 h-3" /> : <CircleX className="w-3 h-3" />}Q{a.order ?? i + 1}
-                  </span>
-                ))}
-                {(data.answers ?? []).length > 5 && <span className="text-[10px] text-gray-400 self-center">+{data.answers.length - 5} autres</span>}
-              </div>
+              <p className="text-sm font-bold text-gray-800 dark:text-gray-100">
+                {data.score ?? "—"} / {data.totalQuestions ?? "—"} bonnes réponses
+              </p>
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                Soumis le {formatDate(data.submittedAt)}
+              </p>
+             
             </div>
           </div>
-          <button onClick={(e) => { e.stopPropagation(); router.push(`/ResponsableMetier/list-entretien/${candidatureId}/quiz-result`); }} className="w-full mt-1 px-3 py-2 rounded-full bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-700 text-emerald-700 dark:text-emerald-300 font-semibold text-xs hover:bg-emerald-100 dark:hover:bg-emerald-900/40 transition-colors flex items-center justify-center gap-2">
-            <Trophy className="w-3.5 h-3.5" />Voir détails
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              router.push(`/ResponsableMetier/list-entretien/${candidatureId}/quiz-result`);
+            }}
+            className="w-full mt-1 px-3 py-2 rounded-full bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-700 text-emerald-700 dark:text-emerald-300 font-semibold text-xs hover:bg-emerald-100 dark:hover:bg-emerald-900/40 transition-colors flex items-center justify-center gap-2"
+          >
+            <Trophy className="w-3.5 h-3.5" />
+            Voir détails
           </button>
         </div>
       )}
@@ -206,7 +267,11 @@ function FicheResultCard({ candidatureId }) {
   useEffect(() => {
     if (!candidatureId) { setLoading(false); return; }
     getFicheSubmissionsByCandidature(candidatureId)
-      .then((res) => { const list = Array.isArray(res) ? res : (res?.data ?? []); const submitted = list.find((s) => s.status === "SUBMITTED") ?? list[0] ?? null; setData(submitted); })
+      .then((res) => {
+        const list = Array.isArray(res?.data) ? res.data : Array.isArray(res) ? res : [];
+        const submitted = list.find((s) => s.status === "SUBMITTED") ?? list[0] ?? null;
+        setData(submitted);
+      })
       .catch(() => setData(null))
       .finally(() => setLoading(false));
   }, [candidatureId]);
@@ -223,9 +288,14 @@ function FicheResultCard({ candidatureId }) {
               {data.status === "SUBMITTED" ? <CheckCircle2 className="w-3 h-3" /> : <Clock3 className="w-3 h-3" />}
               {data.status === "SUBMITTED" ? "Soumise" : "En cours"}
             </span>
-            {data.status === "SUBMITTED" && <span className="text-[11px] text-gray-400 dark:text-gray-500">{formatDate(data.finishedAt)}</span>}
+            {data.status === "SUBMITTED" && (
+              <span className="text-[11px] text-gray-400 dark:text-gray-500">{formatDate(data.finishedAt)}</span>
+            )}
           </div>
-          <button onClick={(e) => { e.stopPropagation(); router.push(`/ResponsableMetier/list-entretien/${candidatureId}/fiche-result`); }} className="w-full mt-1 px-3 py-2 rounded-full bg-violet-50 dark:bg-violet-950/30 border border-violet-200 dark:border-violet-700 text-violet-700 dark:text-violet-300 font-semibold text-xs hover:bg-violet-100 dark:hover:bg-violet-900/40 transition-colors flex items-center justify-center gap-2">
+          <button
+            onClick={(e) => { e.stopPropagation(); router.push(`/ResponsableMetier/list-entretien/${candidatureId}/fiche-result`); }}
+            className="w-full mt-1 px-3 py-2 rounded-full bg-violet-50 dark:bg-violet-950/30 border border-violet-200 dark:border-violet-700 text-violet-700 dark:text-violet-300 font-semibold text-xs hover:bg-violet-100 dark:hover:bg-violet-900/40 transition-colors flex items-center justify-center gap-2"
+          >
             <ClipboardList className="w-3.5 h-3.5" />Voir détails
           </button>
         </div>
@@ -284,7 +354,6 @@ export default function ResponsableMetierInterviewList() {
   useEffect(() => { fetchInterviews(); }, [fetchInterviews]);
   useEffect(() => { fetchStats(); }, [fetchStats]);
 
-  // ✅ Cumule les deux statuts "à confirmer"
   const pendingCount = (stats?.PENDING_CONFIRMATION ?? 0) + (stats?.PENDING_MANAGER_CONFIRMATION ?? 0);
 
   return (
@@ -302,8 +371,17 @@ export default function ResponsableMetierInterviewList() {
 
         <div className="bg-white dark:bg-gray-800 rounded-full shadow-sm border border-gray-100 dark:border-gray-700 px-4 sm:px-5 py-3 flex items-center gap-3 mb-6 transition-colors duration-300">
           <Search className="w-5 h-5 text-[#4E8F2F] dark:text-emerald-400 flex-shrink-0" />
-          <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Rechercher (nom, email, poste)…" className="w-full outline-none text-sm bg-transparent text-gray-700 dark:text-gray-300 placeholder-gray-500 dark:placeholder-gray-400" />
-          {search && <button onClick={() => setSearch("")} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"><X className="w-4 h-4" /></button>}
+          <input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Rechercher (nom, email, poste)…"
+            className="w-full outline-none text-sm bg-transparent text-gray-700 dark:text-gray-300 placeholder-gray-500 dark:placeholder-gray-400"
+          />
+          {search && (
+            <button onClick={() => setSearch("")} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200">
+              <X className="w-4 h-4" />
+            </button>
+          )}
         </div>
 
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3 sm:gap-4 mb-6">
@@ -311,7 +389,6 @@ export default function ResponsableMetierInterviewList() {
             {STATUS_FILTERS.map((s) => {
               const cfg = s === "ALL" ? { short: "Tous", dot: null } : STATUS_CONFIG[s];
               const isActive = statusFilter === s;
-              // Masquer PENDING_MANAGER_CONFIRMATION s'il n'y a aucun entretien avec ce statut
               if (s === "PENDING_MANAGER_CONFIRMATION" && !stats?.PENDING_MANAGER_CONFIRMATION) return null;
               return (
                 <button key={s} onClick={() => setStatusFilter(s)}
@@ -380,10 +457,20 @@ export default function ResponsableMetierInterviewList() {
                     const displayTime = iv.confirmedDate ? iv.confirmedTime : iv.proposedTime || iv.time || iv.slotTime;
                     const needsConfirmation = iv.status === "PENDING_CONFIRMATION" || iv.status === "PENDING_MANAGER_CONFIRMATION" || iv.status === "CANDIDATE_REQUESTED_RESCHEDULE";
 
+                    // ✅ FIX : candidatureId peut être stocké sous différents noms selon l'API
+                    const candidatureId =
+                      iv.candidatureId ||
+                      iv.candidature_id ||
+                      iv.candidature?._id ||
+                      iv.candidature?.id ||
+                      null;
+
                     return (
                       <React.Fragment key={iv._id}>
-                        <tr onClick={() => setExpandedRow(isExpanded ? null : iv._id)}
-                          className={`hover:bg-green-50/40 dark:hover:bg-gray-700/40 transition-colors cursor-pointer ${isExpanded ? "bg-green-50/30 dark:bg-gray-700/30" : ""} ${isCancelled ? "opacity-60" : ""}`}>
+                        <tr
+                          onClick={() => setExpandedRow(isExpanded ? null : iv._id)}
+                          className={`hover:bg-green-50/40 dark:hover:bg-gray-700/40 transition-colors cursor-pointer ${isExpanded ? "bg-green-50/30 dark:bg-gray-700/30" : ""} ${isCancelled ? "opacity-60" : ""}`}
+                        >
                           <td className="px-6 lg:px-8 py-5">
                             <div className="flex items-center gap-3">
                               <Avatar name={iv.candidateName} />
@@ -399,22 +486,34 @@ export default function ResponsableMetierInterviewList() {
                               <span className="truncate max-w-[140px]">{iv.jobTitle || "—"}</span>
                             </span>
                           </td>
-                          <td className="px-6 lg:px-8 py-5"><Badge label={typeCfg.label} className={`${typeCfg.cls} border text-xs`} /></td>
+                          <td className="px-6 lg:px-8 py-5">
+                            <Badge label={typeCfg.label} className={`${typeCfg.cls} border text-xs`} />
+                          </td>
                           <td className="px-6 lg:px-8 py-5">
                             <div className="flex flex-col gap-1">
                               <span className="flex items-center gap-2 text-gray-800 dark:text-gray-200 font-semibold text-sm">
-                                <Calendar className="w-4 h-4 text-[#4E8F2F] dark:text-emerald-400 flex-shrink-0" />{formatDate(displayDate)}
+                                <Calendar className="w-4 h-4 text-[#4E8F2F] dark:text-emerald-400 flex-shrink-0" />
+                                {formatDate(displayDate)}
                               </span>
-                              {displayTime && <span className="flex items-center gap-2 text-gray-500 dark:text-gray-400 text-xs ml-6"><Clock3 className="w-3.5 h-3.5" />{displayTime}</span>}
+                              {displayTime && (
+                                <span className="flex items-center gap-2 text-gray-500 dark:text-gray-400 text-xs ml-6">
+                                  <Clock3 className="w-3.5 h-3.5" />{displayTime}
+                                </span>
+                              )}
                               {iv.status === "CANDIDATE_REQUESTED_RESCHEDULE" && (
                                 <div className="flex items-center gap-1 text-orange-600 dark:text-orange-400 text-xs ml-6 font-semibold">
-                                  <AlertTriangle className="w-3.5 h-3.5" /><span>{formatDate(iv.candidateProposedDate)}</span>
+                                  <AlertTriangle className="w-3.5 h-3.5" />
+                                  <span>{formatDate(iv.candidateProposedDate)}</span>
                                 </div>
                               )}
                             </div>
                           </td>
-                          <td className="px-6 lg:px-8 py-5"><Badge label={statusCfg.short || iv.status} className={`${statusCfg.color || ""} text-xs`} dotClass={statusCfg.dot || ""} /></td>
-                          <td className="px-6 lg:px-8 py-5 text-right"><ChevronDown className={`w-5 h-5 text-gray-400 ml-auto transition-transform ${isExpanded ? "rotate-180" : ""}`} /></td>
+                          <td className="px-6 lg:px-8 py-5">
+                            <Badge label={statusCfg.short || iv.status} className={`${statusCfg.color || ""} text-xs`} dotClass={statusCfg.dot || ""} />
+                          </td>
+                          <td className="px-6 lg:px-8 py-5 text-right">
+                            <ChevronDown className={`w-5 h-5 text-gray-400 ml-auto transition-transform ${isExpanded ? "rotate-180" : ""}`} />
+                          </td>
                         </tr>
 
                         {isExpanded && (
@@ -433,19 +532,24 @@ export default function ResponsableMetierInterviewList() {
                                 )}
                                 {isRHTechInterview(iv.interviewType) && (iv.status === "CONFIRMED" || iv.status === "PENDING_CANDIDATE_CONFIRMATION") && (
                                   <DetailCard label="Évaluation">
-                                    <button onClick={(e) => { e.stopPropagation(); router.push(`/ResponsableMetier/interviews/${iv._id}/evaluation`); }}
-                                      className="w-full px-3 py-2 rounded-full bg-violet-50 dark:bg-violet-950/30 border border-violet-200 dark:border-violet-700 text-violet-700 dark:text-violet-300 font-semibold text-sm hover:bg-violet-100 dark:hover:bg-violet-900/40 transition-colors flex items-center justify-center gap-2">
+                                    <button
+                                      onClick={(e) => { e.stopPropagation(); router.push(`/ResponsableMetier/interviews/${iv._id}/evaluation`); }}
+                                      className="w-full px-3 py-2 rounded-full bg-violet-50 dark:bg-violet-950/30 border border-violet-200 dark:border-violet-700 text-violet-700 dark:text-violet-300 font-semibold text-sm hover:bg-violet-100 dark:hover:bg-violet-900/40 transition-colors flex items-center justify-center gap-2"
+                                    >
                                       <FileText className="w-4 h-4" />Fiche d'évaluation
                                     </button>
                                   </DetailCard>
                                 )}
-                                <QuizResultCard candidatureId={iv.candidatureId} />
-                                <FicheResultCard candidatureId={iv.candidatureId} />
+                                {/* ✅ FIX : on passe le candidatureId résolu */}
+                                <QuizResultCard candidatureId={candidatureId} />
+                                <FicheResultCard candidatureId={candidatureId} />
                               </div>
                               <div className="mt-5 flex flex-wrap gap-3">
                                 {needsConfirmation && (
-                                  <button onClick={(e) => { e.stopPropagation(); router.push(`/ResponsableMetier/confirm-interview/${iv.confirmationToken}`); }}
-                                    className="px-4 py-2 rounded-full bg-[#E9F5E3] dark:bg-emerald-950/30 border border-[#cfe4c4] dark:border-emerald-700 text-[#4E8F2F] dark:text-emerald-300 font-semibold text-sm hover:bg-[#d7ebcf] dark:hover:bg-emerald-900/40 transition-colors flex items-center gap-2">
+                                  <button
+                                    onClick={(e) => { e.stopPropagation(); router.push(`/ResponsableMetier/confirm-interview/${iv.confirmationToken}`); }}
+                                    className="px-4 py-2 rounded-full bg-[#E9F5E3] dark:bg-emerald-950/30 border border-[#cfe4c4] dark:border-emerald-700 text-[#4E8F2F] dark:text-emerald-300 font-semibold text-sm hover:bg-[#d7ebcf] dark:hover:bg-emerald-900/40 transition-colors flex items-center gap-2"
+                                  >
                                     <Send className="w-4 h-4" />
                                     {iv.status === "CANDIDATE_REQUESTED_RESCHEDULE" ? "Répondre" : "Confirmer"}
                                   </button>
