@@ -961,14 +961,17 @@ export default function Navbar() {
                 {/* ── RESPONSABLE RH OPTYLAB ── */}
                 {isResponsableRHOPTYLAB && (
                   <>
-                    <Link href="/RESPONSABLE_RH_OPTYLAB/candidatures" className={`block px-5 py-3.5 rounded-xl font-medium transition ${isActive("/RESPONSABLE_RH_OPTYLAB/candidatures") ? "bg-[#6CB33F] text-white" : "text-gray-700 dark:text-gray-200 hover:bg-gray-100/70 dark:hover:bg-gray-800/60"}`}>
-                      Liste candidatures
+                    <Link href="/RESPONSABLE_RH_OPTYLAB/candidats" className={`block px-5 py-3.5 rounded-xl font-medium transition ${isActive("/RESPONSABLE_RH_OPTYLAB/candidats") ? "bg-[#6CB33F] text-white" : "text-gray-700 dark:text-gray-200 hover:bg-gray-100/70 dark:hover:bg-gray-800/60"}`}>
+                      Liste candidats
                     </Link>
                     <Link href="/fiche_renseignement" className={`block px-5 py-3.5 rounded-xl font-medium transition ${isInFiche ? "bg-[#6CB33F] text-white" : "text-gray-700 dark:text-gray-200 hover:bg-gray-100/70 dark:hover:bg-gray-800/60"}`}>
                       Fiches de renseignement
                     </Link>
                     <Link href="/calendar" className={`block px-5 py-3.5 rounded-xl font-medium transition ${isActive("/calendar") ? "bg-[#6CB33F] text-white" : "text-gray-700 dark:text-gray-200 hover:bg-gray-100/70 dark:hover:bg-gray-800/60"}`}>
                       Mon calendrier
+                    </Link>
+                    <Link href="/RESPONSABLE_RH_OPTYLAB/entretiens-confirmes" className={`block px-5 py-3.5 rounded-xl font-medium transition ${isActive("/RESPONSABLE_RH_OPTYLAB/entretiens-confirmes") ? "bg-[#6CB33F] text-white" : "text-gray-700 dark:text-gray-200 hover:bg-gray-100/70 dark:hover:bg-gray-800/60"}`}>
+                      Entretiens confirmés
                     </Link>
                   </>
                 )}

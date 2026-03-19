@@ -43,6 +43,7 @@ import {
   Users,
   Wallet,
   FileText,
+  UserCircle,
 } from "lucide-react";
 
 /* ================= UTILS ================= */
@@ -155,8 +156,7 @@ function Pill({ className, children }) {
   );
 }
 
-// ✅ CORRIGÉ: InfoCard avec textes longs non tronqués
-function InfoCard({ icon: Icon, label, value }) {
+function InfoCard({ icon: Icon, label, value, sub }) {
   return (
     <div className="rounded-2xl border border-gray-100 dark:border-gray-700 bg-white/70 dark:bg-gray-800/60 backdrop-blur p-4">
       <div className="flex items-start gap-3">
@@ -170,6 +170,11 @@ function InfoCard({ icon: Icon, label, value }) {
           <p className="mt-1 text-sm font-semibold text-gray-900 dark:text-gray-100 break-words whitespace-normal leading-relaxed">
             {value || "—"}
           </p>
+          {sub && (
+            <p className="mt-0.5 text-xs text-gray-400 dark:text-gray-500 break-words">
+              {sub}
+            </p>
+          )}
         </div>
       </div>
     </div>
@@ -217,16 +222,16 @@ function LinkedInBadge({ connected }) {
     </div>
   );
 }
+
 function buildExtraPostDetails(job) {
   const lines = [];
-
   if (job?.typeContrat) lines.push(`📄 Type de contrat : ${prettyContrat(job.typeContrat)}`);
   if (job?.typeDiplome) lines.push(`🎓 Type de diplôme : ${job.typeDiplome}`);
   if (job?.sexe) lines.push(`👤 Sexe : ${prettySexe(job.sexe)}`);
-
   if (lines.length === 0) return "";
   return `\n\n📌 Détails supplémentaires\n${lines.join("\n")}`;
 }
+
 export default function RecruiterJobDetailsPage() {
   const params = useParams();
   const router = useRouter();
@@ -265,6 +270,27 @@ export default function RecruiterJobDetailsPage() {
   const [liSuccess, setLiSuccess] = useState("");
   const [liError, setLiError] = useState("");
   const alreadyPublished = !!job?.linkedinLastPublishedAt;
+
+  /* ================= RESPONSIBLE ================= */
+  // Trouve le responsable lié à l'offre :
+  // Priorité : premier élément de assignedUserIds, sinon createdBy
+  const responsible = useMemo(() => {
+    if (!users.length || !job) return null;
+
+    const assignedId =
+      Array.isArray(job.assignedUserIds) && job.assignedUserIds.length > 0
+        ? job.assignedUserIds[0]
+        : null;
+
+    const targetId = assignedId ?? job.createdBy;
+    if (!targetId) return null;
+
+    return (
+      users.find(
+        (u) => u._id?.toString() === targetId?.toString()
+      ) || null
+    );
+  }, [users, job]);
 
   const onValidate = async () => {
     try {
@@ -471,20 +497,20 @@ export default function RecruiterJobDetailsPage() {
   }
 
   async function openPublishModal() {
-  setLiError("");
-  setLiSuccess("");
+    setLiError("");
+    setLiSuccess("");
 
-  if (!liConnected) {
-    const connected = await checkLinkedIn();
-    if (!connected) return;
+    if (!liConnected) {
+      const connected = await checkLinkedIn();
+      if (!connected) return;
+    }
+
+    const baseText = buildDefaultLinkedInText(job);
+    const extra = buildExtraPostDetails(job);
+
+    setLiText((baseText + extra).trim());
+    setLiOpen(true);
   }
-
-  const baseText = buildDefaultLinkedInText(job);
-  const extra = buildExtraPostDetails(job);
-
-  setLiText((baseText + extra).trim());
-  setLiOpen(true);
-}
 
   async function onPublishLinkedIn() {
     try {
@@ -495,21 +521,15 @@ export default function RecruiterJobDetailsPage() {
       let finalText = liText.trim();
 
       const extraDetails = [];
-
       if (job?.typeContrat) {
-        extraDetails.push(
-          `📄 Type de contrat : ${prettyContrat(job.typeContrat)}`,
-        );
+        extraDetails.push(`📄 Type de contrat : ${prettyContrat(job.typeContrat)}`);
       }
-
       if (job?.typeDiplome) {
         extraDetails.push(`🎓 Type de diplôme : ${job.typeDiplome}`);
       }
-
       if (job?.sexe) {
         extraDetails.push(`👤 Sexe : ${prettySexe(job.sexe)}`);
       }
-
       if (extraDetails.length > 0) {
         finalText += `\n\n📌 Détails supplémentaires\n`;
         finalText += extraDetails.join("\n");
@@ -517,7 +537,6 @@ export default function RecruiterJobDetailsPage() {
 
       const formData = new FormData();
       formData.append("text", finalText);
-
       if (liImage) {
         formData.append("image", liImage);
       }
@@ -535,6 +554,7 @@ export default function RecruiterJobDetailsPage() {
       setActionLoading(false);
     }
   }
+
   const hard = Array.isArray(job?.hardSkills)
     ? job.hardSkills.filter(Boolean)
     : [];
@@ -607,6 +627,13 @@ export default function RecruiterJobDetailsPage() {
     },
   ].filter(Boolean);
 
+  // ✅ Nom complet du responsable
+  const responsibleName = responsible
+    ? [responsible.prenom, responsible.nom].filter(Boolean).join(" ") ||
+      responsible.email ||
+      "—"
+    : null;
+
   const topCards = [
     { icon: MapPin, label: "Lieu", value: job.lieu || "—" },
     { icon: Calendar, label: "Date de création", value: formatDate(job.createdAt) },
@@ -615,8 +642,15 @@ export default function RecruiterJobDetailsPage() {
       label: "Date de clôture",
       value: formatDate(job.dateCloture),
     },
+    // ✅ Carte Responsable insérée ici
+    responsibleName && {
+      icon: UserCircle,
+      label: "Responsable",
+      value: responsibleName,
+      sub: responsible?.email || undefined,
+    },
     ...detailsRows,
-  ];
+  ].filter(Boolean);
 
   return (
     <div className="min-h-screen bg-[#F0FAF0] dark:bg-gray-950 transition-colors duration-300">
@@ -667,6 +701,7 @@ export default function RecruiterJobDetailsPage() {
                   icon={c.icon}
                   label={c.label}
                   value={c.value}
+                  sub={c.sub}
                 />
               ))}
             </div>

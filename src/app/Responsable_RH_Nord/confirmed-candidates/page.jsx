@@ -97,12 +97,6 @@ export default function ConfirmedCandidatesPage() {
         {/* ── En-tête ── */}
         <div className="flex flex-col xl:flex-row xl:items-center xl:justify-between gap-4 mb-6 sm:mb-8">
           <div className="flex items-center gap-3">
-            <button
-              onClick={() => router.back()}
-              className="p-2 rounded-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-500 dark:text-gray-400 hover:bg-green-50 dark:hover:bg-gray-700 transition-colors"
-            >
-              <ChevronLeft className="w-5 h-5" />
-            </button>
             <div>
               <h1 className="text-2xl sm:text-3xl font-extrabold text-gray-900 dark:text-white tracking-tight">
                 Candidats Confirmés

@@ -341,26 +341,7 @@ export default function InterviewEvaluationTelephoniquePage() {
               </div>
             </div>
 
-            <div className="mt-4 sm:mt-6 border-t border-gray-200 pt-4 sm:pt-6 dark:border-gray-700">
-              <div className="grid grid-cols-2 gap-3 sm:gap-4 text-xs sm:text-sm">
-                <div>
-                  <p className="font-semibold text-gray-600 dark:text-gray-400">
-                    Date
-                  </p>
-                  <p className="mt-1 text-gray-900 dark:text-white">
-                    {formatDateFR(interview?.proposedDate)}
-                  </p>
-                </div>
-                <div>
-                  <p className="font-semibold text-gray-600 dark:text-gray-400">
-                    Heure
-                  </p>
-                  <p className="mt-1 text-gray-900 dark:text-white">
-                    {safeStr(interview?.proposedTime) || "-"}
-                  </p>
-                </div>
-              </div>
-            </div>
+            
 
             
           </div>
