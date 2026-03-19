@@ -439,17 +439,11 @@ function MobileDataCard({ title, lines = [], badge }) {
 function TopActionButtons() {
   return (
     <div className="flex flex-wrap items-center gap-3">
-      <button
-        type="button"
-        className="inline-flex items-center gap-2 rounded-2xl border border-[#DDEAD2] bg-white px-4 py-3 text-sm font-semibold text-gray-800 transition hover:bg-[#F7FBF4] dark:border-[#2A3A59] dark:bg-[#0F172A] dark:text-white dark:hover:bg-[#16233D]"
-      >
-        <Download className="h-4 w-4" />
-        Exporter
-      </button>
+     
 
       <Link
-        href="/recruiter/jobs/new"
-        className="inline-flex items-center gap-2 rounded-2xl bg-[#09B17A] px-4 py-3 text-sm font-semibold text-white transition hover:opacity-95"
+        href="/recruiter/jobs/"
+        className="inline-flex items-center gap-2 rounded-2xl bg-[#6CB33F] hover:bg-[#4E8F2F] dark:bg-emerald-600 dark:hover:bg-emerald-500 px-4 py-3 text-sm font-semibold text-white transition hover:opacity-95"
       >
         <Plus className="h-4 w-4" />
         Nouvelle offre
