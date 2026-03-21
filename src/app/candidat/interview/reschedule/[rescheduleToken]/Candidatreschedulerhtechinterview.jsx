@@ -27,8 +27,8 @@ import {
   Send,
 } from "lucide-react";
 
-const OPTY   = "#F4F8F1";
-const OPTY_D = "#F4F8F1";
+const OPTY   = "#4E8F2F";  // vert principal
+const OPTY_D = "#3D7524";  // vert foncé (hover)
 
 function cn(...a) {
   return a.filter(Boolean).join(" ");
@@ -217,39 +217,7 @@ export default function CandidatRescheduleRhTechInterview({ token }) {
           {!error && interview && (
             <>
               {/* Cards date actuelle + fenêtre */}
-              <div className="mt-7 grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="rounded-2xl border p-5 bg-[#FFF7E6] border-amber-200 shadow-sm dark:bg-[#1A1406] dark:border-amber-900/40">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-2xl bg-amber-500/15 flex items-center justify-center shrink-0">
-                      <CalendarDays className="w-5 h-5 text-amber-600 dark:text-amber-300" />
-                    </div>
-                    <div>
-                      <div className="text-[11px] font-extrabold uppercase tracking-wider text-amber-700 dark:text-amber-300">
-                        Date actuellement proposée
-                      </div>
-                      <div className="mt-0.5 font-extrabold text-gray-900 dark:text-white text-sm">
-                        {currentDateLabel || "—"}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="rounded-2xl border p-5 bg-[#EEF6FF] border-blue-200 shadow-sm dark:bg-[#06101A] dark:border-blue-900/40">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-2xl bg-blue-500/15 flex items-center justify-center shrink-0">
-                      <CalendarClock className="w-5 h-5 text-blue-600 dark:text-blue-300" />
-                    </div>
-                    <div>
-                      <div className="text-[11px] font-extrabold uppercase tracking-wider text-blue-700 dark:text-blue-300">
-                        Fenêtre de report autorisée (3 jours)
-                      </div>
-                      <div className="mt-0.5 font-extrabold text-gray-900 dark:text-white text-sm">
-                        {windowLabel || "—"}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
+              
 
               {/* ── Container créneaux ── */}
               <div className="mt-6 rounded-3xl border shadow-xl overflow-hidden bg-white dark:bg-[#0B1220] border-emerald-100 dark:border-slate-800">
