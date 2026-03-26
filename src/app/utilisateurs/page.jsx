@@ -525,10 +525,15 @@ export default function GestionResponsableMetierPage() {
   async function handleDeleteUserConfirmed() {
     if (!userToDelete) return;
     const userId = userToDelete?._id || userToDelete?.id;
-    await deleteUser(userId);
-    setOpenDeleteModal(false);
-    setUserToDelete(null);
-    fetchUsers();
+    try {
+      await deleteUser(userId);
+    } catch (e) {
+      console.error("Delete failed:", e);
+    } finally {
+      setOpenDeleteModal(false);   // always close
+      setUserToDelete(null);
+      fetchUsers();
+    }
   }
 
   const filteredUsers = useMemo(() => {
