@@ -98,6 +98,49 @@ function timeAgo(dateStr) {
   return date.toLocaleDateString("fr-FR", { day: "numeric", month: "short" });
 }
 
+// ✅ AudioContext partagé — créé au 1er clic utilisateur pour débloquer le navigateur
+let _audioCtx = null;
+function getAudioCtx() {
+  if (!_audioCtx) {
+    _audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  }
+  if (_audioCtx.state === "suspended") {
+    _audioCtx.resume();
+  }
+  return _audioCtx;
+}
+
+// Débloquer dès le 1er clic sur la page
+if (typeof window !== "undefined") {
+  const unlock = () => { getAudioCtx(); window.removeEventListener("click", unlock); };
+  window.addEventListener("click", unlock);
+}
+
+function playNotifSound() {
+  try {
+    const ctx = getAudioCtx();
+    const now = ctx.currentTime;
+
+    // Son style "ding" moderne — 3 harmoniques superposées
+    const freqs = [880, 1320, 1760];
+    freqs.forEach((freq, i) => {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.type = "sine";
+      osc.frequency.setValueAtTime(freq, now);
+      // Volume décroissant par harmonique
+      const vol = [0.4, 0.15, 0.07][i];
+      gain.gain.setValueAtTime(0, now);
+      gain.gain.linearRampToValueAtTime(vol, now + 0.01);
+      gain.gain.exponentialRampToValueAtTime(0.0001, now + 1.2);
+      osc.start(now);
+      osc.stop(now + 1.2);
+    });
+  } catch { }
+}
+
 /* ─── Dropdown Notifications Mobile (simple) ─── */
 function NotifDropdownMobile({ notifications, loadingNotif, unreadCount, onNotifClick, onMarkAllRead }) {
   return (
@@ -308,6 +351,7 @@ export default function Navbar() {
   const notifRef = useRef(null);
   const dropdownRef = useRef(null);
   const mobileDropdownRef = useRef(null);
+  const prevUnreadRef = useRef(null);
 
   useEffect(() => {
     const loadUser = () => {
@@ -343,7 +387,13 @@ export default function Navbar() {
     if (!user) return;
     try {
       const res = await getUnreadCount();
-      setUnreadCount(res.data.count || 0);
+      const newCount = res.data.count || 0;
+      // ✅ Jouer le son si nouvelles notifs détectées
+      if (prevUnreadRef.current !== null && newCount > prevUnreadRef.current) {
+        playNotifSound();
+      }
+      prevUnreadRef.current = newCount;
+      setUnreadCount(newCount);
     } catch { }
   }, [user]);
 
@@ -354,6 +404,8 @@ export default function Navbar() {
   }, [fetchUnreadCount]);
 
   const handleOpenNotif = async () => {
+    // Débloquer l'AudioContext dès que l'utilisateur clique sur la cloche
+    try { getAudioCtx(); } catch { }
     const willOpen = !openNotif;
     setOpenNotif(willOpen);
     setOpenCandidaturesRM(false);

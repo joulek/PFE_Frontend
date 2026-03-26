@@ -497,7 +497,7 @@ function RHFlow({ candidate, onBack, onClose }) {
         </div>
         <div>
           <p className="text-sm font-bold text-gray-800 dark:text-white">Entretien RH</p>
-          <p className="text-xs text-gray-500 dark:text-gray-400">Planifier depuis votre calendrier Outlook</p>
+          <p className="text-xs text-gray-500 dark:text-gray-400">Planifier depuis votre calendrier Gmail </p>
         </div>
       </div>
 

@@ -44,8 +44,20 @@ export default function SpontaneousApplicationPage() {
       setError("❌ Email invalide.");
       return;
     }
+    if (!form.telephone.trim()) {
+      setError("❌ Le numéro de téléphone est obligatoire.");
+      return;
+    }
+    if (!form.posteRecherche.trim()) {
+      setError("❌ Le poste recherché est obligatoire.");
+      return;
+    }
     if (!form.message.trim()) {
-      setError("❌ Le message de motivation est obligatoire.");
+      setError("❌ Le message est obligatoire.");
+      return;
+    }
+    if (!cvFile) {
+      setError("❌ Le CV est obligatoire.");
       return;
     }
 
@@ -173,7 +185,7 @@ export default function SpontaneousApplicationPage() {
                 />
               </div>
               <div>
-                <label className={labelBase}>Téléphone</label>
+                <label className={labelBase}>Téléphone <span className="text-red-500">*</span></label>
                 <input
                   value={form.telephone}
                   onChange={(e) => setForm({ ...form, telephone: e.target.value })}
@@ -185,7 +197,7 @@ export default function SpontaneousApplicationPage() {
 
             {/* POSTE RECHERCHÉ */}
             <div>
-              <label className={labelBase}>Poste recherché</label>
+              <label className={labelBase}>Poste recherché <span className="text-red-500">*</span></label>
               <input
                 value={form.posteRecherche}
                 onChange={(e) => setForm({ ...form, posteRecherche: e.target.value })}
@@ -197,7 +209,7 @@ export default function SpontaneousApplicationPage() {
             {/* MESSAGE */}
             <div>
               <label className={labelBase}>
-                Message de motivation <span className="text-red-500">*</span>
+                Message pour booster votre candidature <span className="text-red-500">*</span>
               </label>
               <textarea
                 rows={5}
@@ -214,7 +226,7 @@ export default function SpontaneousApplicationPage() {
 
             {/* CV UPLOAD */}
             <div>
-              <label className={labelBase}>CV (PDF, max 5 Mo)</label>
+              <label className={labelBase}>CV (PDF, max 5 Mo) <span className="text-red-500">*</span></label>
               {cvFile ? (
                 <div className="flex items-center justify-between p-4 rounded-2xl border border-[#6CB33F] bg-[#E9F5E3] dark:bg-emerald-950/40 dark:border-emerald-700">
                   <div className="flex items-center gap-3 text-sm font-semibold text-[#4E8F2F] dark:text-emerald-300">

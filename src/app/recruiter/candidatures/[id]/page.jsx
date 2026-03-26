@@ -39,6 +39,16 @@ function formatDate(date) {
   });
 }
 
+function formatPhone(phone) {
+  if (!phone) return "—";
+  const digits = phone.replace(/\s+/g, "");
+  if (/^\+216\d{8}$/.test(digits))
+    return `+216 ${digits.slice(4, 6)} ${digits.slice(6, 9)} ${digits.slice(9)}`;
+  if (/^\d{8}$/.test(digits))
+    return `${digits.slice(0, 2)} ${digits.slice(2, 5)} ${digits.slice(5)}`;
+  return digits.replace(/(\d{2})(?=\d)/g, "$1 ").trim();
+}
+
 const STATUS_CONFIG = {
   EN_ATTENTE: {
     label: "En attente",
@@ -149,7 +159,7 @@ export default function ApplicationDetailPage() {
               <InfoCard
                 icon={<Phone size={16} />}
                 label={<span className="font-bold text-gray-900 dark:text-white">Téléphone</span>}
-                value={app.telephone}
+                value={formatPhone(app.telephone)}
               />
 
               <InfoCard

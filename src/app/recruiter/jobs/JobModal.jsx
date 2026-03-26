@@ -8,6 +8,7 @@ const CONTRACT_OPTIONS = [
   { value: "CDD", label: "CDD" },
   { value: "CDI", label: "CDI" },
   { value: "CIVP", label: "CIVP" },
+  { value: "KARAMA", label: "KARAMA" },
 ];
 
 const STAGE_CONTRAT_OPTIONS = [

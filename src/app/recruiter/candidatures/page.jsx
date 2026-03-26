@@ -37,6 +37,22 @@ function safeStr(v) {
   return String(v);
 }
 
+function formatPhone(phone) {
+  if (!phone) return "";
+  // Remove all spaces first
+  const digits = phone.replace(/\s+/g, "");
+  // Tunisia +216 XX XXX XXX
+  if (/^\+216\d{8}$/.test(digits)) {
+    return `+216 ${digits.slice(4, 6)} ${digits.slice(6, 9)} ${digits.slice(9)}`;
+  }
+  // 8 digits local (Tunisia)
+  if (/^\d{8}$/.test(digits)) {
+    return `${digits.slice(0, 2)} ${digits.slice(2, 5)} ${digits.slice(5)}`;
+  }
+  // Generic: group by 2 after country code, or every 2 digits
+  return digits.replace(/(\d{2})(?=\d)/g, "$1 ").trim();
+}
+
 /**
  * ✅ Toutes les données sont dans extracted.parsed (structure unique)
  * Le backend résout déjà fullName / email / telephone / linkedin
@@ -336,7 +352,7 @@ export default function CandidaturesUnifiedPage() {
                 )}
                 {getPhone(c) && (
                   <div className="text-sm text-gray-600 dark:text-gray-300 mb-1 flex items-center gap-1">
-                    <Phone size={14} className="text-gray-400 flex-shrink-0" /> {getPhone(c)}
+                    <Phone size={14} className="text-gray-400 flex-shrink-0" /> {formatPhone(getPhone(c))}
                   </div>
                 )}
                 {getLinkedIn(c) && (
@@ -428,7 +444,7 @@ export default function CandidaturesUnifiedPage() {
 
                       {/* TÉLÉPHONE */}
                       <td className="px-6 py-5 text-gray-600 dark:text-gray-300 whitespace-nowrap">
-                        {getPhone(c) || "—"}
+                        {formatPhone(getPhone(c)) || "—"}
                       </td>
 
                       {/* LINKEDIN */}

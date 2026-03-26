@@ -1,10 +1,10 @@
 // ✅ CHEMIN : app/candidat/interview/reschedule/[rescheduleToken]/page.jsx
 import CandidatRescheduleInterview from "./CandidatRescheduleInterview";
-import CandidatRescheduleRhTechInterview from "./CandidatRescheduleRhTechInterview";
+import CandidatRescheduleRhTechInterview from "./Candidatreschedulerhtechinterview";
 
 async function getInterviewInfo(rescheduleToken) {
   try {
-    const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
+    const API_BASE = process.env.NEXT_PUBLIC_API_URL ;
 
     // ✅ On essaie d'abord la route Nord
     const resNord = await fetch(

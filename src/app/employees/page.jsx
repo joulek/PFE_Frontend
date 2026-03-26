@@ -21,6 +21,7 @@ import {
   Eye,
   EyeOff,
   GripVertical,
+  FileDown,
 } from "lucide-react";
 
 /* ========================= LISTES ========================= */
@@ -30,19 +31,23 @@ const GENRES = [
 ];
 const SOCIETES = [
   { value: "optylab", label: "Optylab" },
-  { value: "optyGros", label: "OptyGros" },
+  { value: "optygros", label: "Optygros" },
 ];
 const CONTRAT_STE = [
   { value: "optylab", label: "Optylab" },
-  { value: "optyGros", label: "OptyGros" },
+  { value: "optygros", label: "Optygros" },
 ];
 const TYPES_CONTRAT = [
   { value: "CIVP", label: "CIVP" },
   { value: "CAIP", label: "CAIP" },
   { value: "Karama", label: "Karama" },
   { value: "CDI avec PE", label: "CDI avec PE" },
-  { value: "CDD (exp)", label: "CDD (exp)" },
+  { value: "CDD", label: "CDD " },
   { value: "CDI sans PE", label: "CDI sans PE" },
+];
+const SITUATIONS = [
+  { value: "Célibataire", label: "Célibataire" },
+  { value: "Marié(e)", label: "Marié(e)" },
 ];
 const AGENCES_TUNISIE = [
   "Ariana", "Béja", "Ben Arous", "Bizerte", "Gabès", "Gafsa", "Jendouba",
@@ -70,7 +75,7 @@ const FIELDS = [
   { key: "typeContrat", label: "Type de contrat", type: "select", required: true, options: TYPES_CONTRAT },
   { key: "dateDebutContrat", label: "Date début contrat", type: "date", required: true },
   { key: "genre", label: "Genre", type: "select", required: false, options: GENRES },
-  { key: "situation", label: "Situation", type: "text", required: false },
+  { key: "situation", label: "Situation", type: "select", required: false, options: SITUATIONS },
   { key: "cnss", label: "N°CNSS", type: "text", required: false },
   { key: "dateFinContrat", label: "Date fin contrat", type: "date", required: false },
 ];
@@ -92,7 +97,7 @@ const CONTRACT_COLORS = {
 
 const SOCIETE_COLORS = {
   optylab: "bg-[#e8f5e1] text-[#3d7a1a] border border-[#b8dda0]",
-  optyGros: "bg-blue-50 text-blue-700 border border-blue-200",
+  optygros: "bg-blue-50 text-blue-700 border border-blue-200",
 };
 
 const PAGE_SIZE = 5;
@@ -425,6 +430,37 @@ export default function EmployeesPage() {
     .map((key) => FIELDS_MAP[key])
     .filter(Boolean);
 
+  function exportToExcel() {
+    // Requires: npm install xlsx
+    import("xlsx").then((XLSX) => {
+      const headers = FIELDS.map((f) => f.label);
+      const dataRows = rows.map((emp) =>
+        FIELDS.map((f) => {
+          const val = emp[f.key];
+          if (!val) return "";
+          if (f.type === "date") {
+            const d = new Date(val);
+            return isNaN(d.getTime()) ? val : d.toLocaleDateString("fr-FR");
+          }
+          if (f.key === "societe" || f.key === "contratSociete") {
+            const opt = f.options?.find((o) => o.value === val);
+            return opt ? opt.label : val;
+          }
+          return val;
+        })
+      );
+
+      const ws = XLSX.utils.aoa_to_sheet([headers, ...dataRows]);
+      ws["!cols"] = headers.map(() => ({ wch: 20 }));
+
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, "Employés");
+
+      const date = new Date().toLocaleDateString("fr-FR").replace(/\//g, "-");
+      XLSX.writeFile(wb, `employes_${date}.xlsx`);
+    });
+  }
+
   // Nombre total d'erreurs pour le résumé
   const totalFieldErrors = Object.keys(formFieldErrors).length;
 
@@ -506,6 +542,16 @@ export default function EmployeesPage() {
               </span>
               <span className="hidden sm:inline">Ajouter un employé</span>
               <span className="sm:hidden text-xs">Ajouter</span>
+            </button>
+
+            <button
+              onClick={exportToExcel}
+              disabled={rows.length === 0}
+              className="h-11 sm:h-14 flex-1 sm:flex-none px-4 sm:px-6 rounded-full bg-emerald-700 hover:bg-emerald-800 dark:bg-emerald-700 dark:hover:bg-emerald-600 text-white font-extrabold text-xs sm:text-[15px] shadow-md transition inline-flex items-center justify-center gap-1.5 sm:gap-2 whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <FileDown className="h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0" />
+              <span className="hidden sm:inline">Export Excel</span>
+              <span className="sm:hidden text-xs">Excel</span>
             </button>
           </div>
         </div>
