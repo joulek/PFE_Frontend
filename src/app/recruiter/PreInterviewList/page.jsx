@@ -122,57 +122,65 @@ function wasSentQuiz(id) { try { return localStorage.getItem(`quiz_sent_${id}`) 
 function SuccessModal({ sentFiche, sentQuiz, email, onClose }) {
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-black/30 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-sm border border-gray-100 dark:border-gray-800 overflow-hidden">
-        {/* Header vert */}
-        <div className="bg-green-500 px-6 py-5 flex flex-col items-center text-center">
-          <div className="w-14 h-14 rounded-full bg-white/20 flex items-center justify-center mb-3">
-            <CheckCircle2 className="w-8 h-8 text-white" />
+      {/* Overlay */}
+      <div
+        className="absolute inset-0 bg-black/40 backdrop-blur-sm"
+        onClick={onClose}
+      />
+
+      {/* Modal */}
+      <div className="relative w-full max-w-md bg-white dark:bg-gray-900 rounded-3xl shadow-2xl overflow-hidden border border-gray-100 dark:border-gray-800">
+
+        {/* Header */}
+        <div className="px-6 py-5 border-b border-gray-100 dark:border-gray-800 bg-green-50/60 dark:bg-green-900/10">
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="text-lg font-extrabold text-gray-900 dark:text-white">
+                Envoi des documents
+              </h2>
+              <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
+                Résultat de l’opération
+              </p>
+            </div>
+
+            <button
+              onClick={onClose}
+              className="w-9 h-9 rounded-full hover:bg-white/70 dark:hover:bg-gray-800 flex items-center justify-center transition-colors"
+            >
+              <X className="w-5 h-5 text-gray-500" />
+            </button>
           </div>
-          <h3 className="text-lg font-extrabold text-white">Envoi réussi !</h3>
-          <p className="text-sm text-white/80 mt-1">
-            Envoyé à <span className="font-semibold text-white">{email}</span>
-          </p>
         </div>
 
-        {/* Contenu */}
-        <div className="px-6 py-5 space-y-3">
-          <p className="text-sm font-semibold text-gray-600 dark:text-gray-400 text-center mb-4">
-            Documents envoyés :
+        {/* Content */}
+        <div className="px-6 py-8 flex flex-col items-center text-center">
+
+          {/* Icon */}
+          <div className="w-20 h-20 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center mb-5">
+            <CheckCircle2 className="w-10 h-10 text-green-600 dark:text-green-400" />
+          </div>
+
+          {/* Title */}
+          <h3 className="text-xl font-extrabold text-gray-800 dark:text-white mb-2">
+            Envoi réussi !
+          </h3>
+
+          {/* Subtitle */}
+          <p className="text-sm text-gray-500 dark:text-gray-400 max-w-xs">
+            Email envoyé au candidat pour accéder aux documents.
           </p>
 
-          {sentQuiz && (
-            <div className="flex items-center gap-3 p-3 bg-green-50 dark:bg-green-900/20 rounded-xl border border-green-100 dark:border-green-800">
-              <div className="w-9 h-9 rounded-lg bg-green-500 flex items-center justify-center flex-shrink-0">
-                <Brain className="w-4 h-4 text-white" />
-              </div>
-              <div>
-                <p className="text-sm font-bold text-gray-800 dark:text-white">Quiz technique</p>
-                <p className="text-xs text-gray-500 dark:text-gray-400">Lien valable 48h · accès unique</p>
-              </div>
-              <CheckCircle2 className="w-4 h-4 text-green-500 ml-auto flex-shrink-0" />
-            </div>
-          )}
-
-          {sentFiche && (
-            <div className="flex items-center gap-3 p-3 bg-green-50 dark:bg-green-900/20 rounded-xl border border-green-100 dark:border-green-800">
-              <div className="w-9 h-9 rounded-lg bg-green-600 flex items-center justify-center flex-shrink-0">
-                <ClipboardList className="w-4 h-4 text-white" />
-              </div>
-              <div>
-                <p className="text-sm font-bold text-gray-800 dark:text-white">Fiche de renseignement</p>
-                <p className="text-xs text-gray-500 dark:text-gray-400">Lien valable 48h · accès unique</p>
-              </div>
-              <CheckCircle2 className="w-4 h-4 text-green-500 ml-auto flex-shrink-0" />
-            </div>
-          )}
+          {/* Details */}
+          <div className="mt-4 text-xs text-gray-400">
+            {email}
+          </div>
         </div>
 
         {/* Footer */}
-        <div className="px-6 pb-5">
+        <div className="px-6 pb-6">
           <button
             onClick={onClose}
-            className="w-full py-3 rounded-xl bg-green-600 hover:bg-green-700 text-white font-extrabold text-sm transition-colors"
+            className="w-full py-3 rounded-xl bg-green-600 hover:bg-green-700 text-white font-bold text-sm transition-colors"
           >
             Fermer
           </button>

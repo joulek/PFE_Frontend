@@ -144,14 +144,13 @@ function MiniCalendarPicker({ selectedDate, onSelect }) {
               onClick={() => onSelect(dateStr)}
               className={`
                 w-full aspect-square rounded-xl text-xs font-semibold transition-all
-                ${
-                  isSelected
-                    ? "bg-[#6CB33F] text-white shadow-sm"
-                    : isToday
-                      ? "bg-[#E9F5E3] dark:bg-emerald-900/30 text-[#4E8F2F] dark:text-emerald-400 ring-1 ring-[#6CB33F]/40"
-                      : isPast
-                        ? "text-gray-300 dark:text-gray-700 cursor-not-allowed"
-                        : "text-gray-700 dark:text-gray-300 hover:bg-[#F1FAF4] dark:hover:bg-emerald-950/20 hover:text-[#4E8F2F]"
+                ${isSelected
+                  ? "bg-[#6CB33F] text-white shadow-sm"
+                  : isToday
+                    ? "bg-[#E9F5E3] dark:bg-emerald-900/30 text-[#4E8F2F] dark:text-emerald-400 ring-1 ring-[#6CB33F]/40"
+                    : isPast
+                      ? "text-gray-300 dark:text-gray-700 cursor-not-allowed"
+                      : "text-gray-700 dark:text-gray-300 hover:bg-[#F1FAF4] dark:hover:bg-emerald-950/20 hover:text-[#4E8F2F]"
                 }
               `}
             >
@@ -177,6 +176,7 @@ function DgaScheduleModal({ interview, onSuccess }) {
 
   const hasDga = !!interview?.dgaInterview;
 
+
   const [form, setForm] = useState({
     dgaDate: new Date().toISOString().split("T")[0],
     dgaTime: "10:00",
@@ -188,8 +188,8 @@ function DgaScheduleModal({ interview, onSuccess }) {
 
   const setF =
     (field) =>
-    (e) =>
-      setForm((prev) => ({ ...prev, [field]: e.target.value }));
+      (e) =>
+        setForm((prev) => ({ ...prev, [field]: e.target.value }));
 
   const loadDgaUsers = async () => {
     setDgaUsersLoading(true);
@@ -570,13 +570,13 @@ function DgaScheduleModal({ interview, onSuccess }) {
                       >
                         {form.dgaDate
                           ? new Date(
-                              form.dgaDate + "T12:00:00",
-                            ).toLocaleDateString("fr-FR", {
-                              weekday: "long",
-                              day: "numeric",
-                              month: "long",
-                              year: "numeric",
-                            })
+                            form.dgaDate + "T12:00:00",
+                          ).toLocaleDateString("fr-FR", {
+                            weekday: "long",
+                            day: "numeric",
+                            month: "long",
+                            year: "numeric",
+                          })
                           : "Choisir une date…"}
                       </span>
                       <svg
@@ -631,11 +631,10 @@ function DgaScheduleModal({ interview, onSuccess }) {
                           onClick={() =>
                             setForm((prev) => ({ ...prev, dgaTime: t }))
                           }
-                          className={`px-3 py-2 rounded-xl text-xs font-semibold border transition-all ${
-                            form.dgaTime === t
-                              ? "bg-[#6CB33F] border-[#6CB33F] text-white shadow-sm"
-                              : "border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400 hover:border-[#6CB33F]/50 hover:text-[#4E8F2F] hover:bg-[#F1FAF4] dark:hover:bg-emerald-950/20"
-                          }`}
+                          className={`px-3 py-2 rounded-xl text-xs font-semibold border transition-all ${form.dgaTime === t
+                            ? "bg-[#6CB33F] border-[#6CB33F] text-white shadow-sm"
+                            : "border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400 hover:border-[#6CB33F]/50 hover:text-[#4E8F2F] hover:bg-[#F1FAF4] dark:hover:bg-emerald-950/20"
+                            }`}
                         >
                           {t}
                         </button>
@@ -1279,10 +1278,25 @@ export default function AdminInterviewList() {
 
   const [planifierOpen, setPlanifierOpen] = useState(false);
   const [confirmingAdmin, setConfirmingAdmin] = useState(null);
+  const [evaluationMap, setEvaluationMap] = useState({});
+  const [openEvalId, setOpenEvalId] = useState(null);
 
   // ✅ Comparaison — sélection de candidats
   const [selectedForCompare, setSelectedForCompare] = useState([]);
+  const fetchEvaluation = async (interviewId) => {
+    try {
+      const res = await apiFetch(`/api/interviews/${interviewId}/evaluation`);
 
+      setEvaluationMap((prev) => ({
+        ...prev,
+        [interviewId]: res,
+      }));
+
+      setOpenEvalId(interviewId);
+    } catch (err) {
+      alert("Aucune évaluation disponible");
+    }
+  };
   function toggleSelectForCompare(iv, e) {
     e.stopPropagation();
     setSelectedForCompare((prev) => {
@@ -1318,12 +1332,12 @@ export default function AdminInterviewList() {
       setInterviews((prev) =>
         prev.map((iv) =>
           String(iv.candidatureId) === String(candidatureId) ||
-          String(iv._id) === String(candidatureId)
+            String(iv._id) === String(candidatureId)
             ? {
-                ...iv,
-                adminConfirmed: true,
-                adminConfirmedAt: new Date().toISOString(),
-              }
+              ...iv,
+              adminConfirmed: true,
+              adminConfirmedAt: new Date().toISOString(),
+            }
             : iv,
         ),
       );
@@ -1578,11 +1592,10 @@ export default function AdminInterviewList() {
                 <button
                   key={s}
                   onClick={() => setStatusFilter(s)}
-                  className={`inline-flex items-center gap-2 px-4 py-2 rounded-full border text-xs font-semibold transition-colors ${
-                    isActive
-                      ? "bg-[#6CB33F] hover:bg-[#4E8F2F] border-[#6CB33F] text-white dark:bg-emerald-600 dark:hover:bg-emerald-500 dark:border-emerald-600"
-                      : "bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-[#4E8F2F] dark:text-emerald-400 hover:bg-green-50 dark:hover:bg-gray-700"
-                  }`}
+                  className={`inline-flex items-center gap-2 px-4 py-2 rounded-full border text-xs font-semibold transition-colors ${isActive
+                    ? "bg-[#6CB33F] hover:bg-[#4E8F2F] border-[#6CB33F] text-white dark:bg-emerald-600 dark:hover:bg-emerald-500 dark:border-emerald-600"
+                    : "bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-[#4E8F2F] dark:text-emerald-400 hover:bg-green-50 dark:hover:bg-gray-700"
+                    }`}
                 >
                   {cfg.dot ? (
                     <span
@@ -1729,15 +1742,15 @@ export default function AdminInterviewList() {
                       const displayTime = hasConfirmedDate
                         ? iv.confirmedTime
                         : iv.proposedTime ||
-                          (iv.proposedStart
-                            ? new Date(iv.proposedStart).toLocaleTimeString(
-                                "fr-FR",
-                                {
-                                  hour: "2-digit",
-                                  minute: "2-digit",
-                                },
-                              )
-                            : null);
+                        (iv.proposedStart
+                          ? new Date(iv.proposedStart).toLocaleTimeString(
+                            "fr-FR",
+                            {
+                              hour: "2-digit",
+                              minute: "2-digit",
+                            },
+                          )
+                          : null);
                       const isCancelled = iv.status === "CANCELLED";
                       const isExpanded = expandedRow === iv._id;
                       const hasDGA = allGroupNotes.some((n) => /dga/i.test(n.type));
@@ -1777,11 +1790,10 @@ export default function AdminInterviewList() {
                                 });
                               }
                             }}
-                            className={`hover:bg-green-50/40 dark:hover:bg-gray-700/40 transition-colors cursor-pointer ${
-                              isExpanded
-                                ? "bg-green-50/30 dark:bg-gray-700/30"
-                                : ""
-                            } ${isCancelled ? "opacity-60" : ""}`}
+                            className={`hover:bg-green-50/40 dark:hover:bg-gray-700/40 transition-colors cursor-pointer ${isExpanded
+                              ? "bg-green-50/30 dark:bg-gray-700/30"
+                              : ""
+                              } ${isCancelled ? "opacity-60" : ""}`}
                           >
                             {/* ✅ Checkbox comparaison */}
                             <td className="px-4 py-5" onClick={(e) => e.stopPropagation()}>
@@ -1872,15 +1884,15 @@ export default function AdminInterviewList() {
 
                                 {iv.status ===
                                   "CANDIDATE_REQUESTED_RESCHEDULE" && (
-                                  <div className="flex items-center gap-2 text-orange-700 dark:text-orange-300">
-                                    <span className="w-2 h-2 rounded-full bg-orange-500" />
-                                    <span>
-                                      Report :{" "}
-                                      {formatDate(iv.candidateProposedDate)}{" "}
-                                      {iv.candidateProposedTime}
-                                    </span>
-                                  </div>
-                                )}
+                                    <div className="flex items-center gap-2 text-orange-700 dark:text-orange-300">
+                                      <span className="w-2 h-2 rounded-full bg-orange-500" />
+                                      <span>
+                                        Report :{" "}
+                                        {formatDate(iv.candidateProposedDate)}{" "}
+                                        {iv.candidateProposedTime}
+                                      </span>
+                                    </div>
+                                  )}
                               </div>
                             </td>
 
@@ -1951,7 +1963,7 @@ export default function AdminInterviewList() {
                                   className="inline-flex items-center gap-1.5 rounded-full border border-[#6CB33F] bg-[#E9F5E3] hover:bg-[#6CB33F] hover:text-white px-3 py-1.5 text-xs font-bold text-[#4E8F2F] disabled:opacity-50 disabled:cursor-not-allowed transition-all whitespace-nowrap"
                                 >
                                   {confirmingAdmin ===
-                                  (iv.candidatureId || String(iv._id)) ? (
+                                    (iv.candidatureId || String(iv._id)) ? (
                                     <RefreshCcw className="w-3.5 h-3.5 animate-spin" />
                                   ) : (
                                     <CheckCircle2 className="w-3.5 h-3.5" />
@@ -1963,9 +1975,8 @@ export default function AdminInterviewList() {
 
                             <td className="px-6 lg:px-8 py-5 text-right">
                               <ChevronDown
-                                className={`w-5 h-5 text-gray-400 ml-auto transition-transform ${
-                                  isExpanded ? "rotate-180" : ""
-                                }`}
+                                className={`w-5 h-5 text-gray-400 ml-auto transition-transform ${isExpanded ? "rotate-180" : ""
+                                  }`}
                               />
                             </td>
                           </tr>
@@ -1983,28 +1994,44 @@ export default function AdminInterviewList() {
                                   />
 
                                   <DetailCard label="Responsable">
-                                    <div className="space-y-1">
-                                      <div className="text-sm font-medium text-gray-800 dark:text-gray-200 break-words">
-                                        {responsableDisplay}
-                                      </div>
-                                      {responsableEmailDisplay !== "—" && (
-                                        <div className="text-sm text-gray-500 dark:text-gray-400 break-words">
-                                          {responsableEmailDisplay}
+                                    <div className="space-y-3">
+
+                                      {/* INFO RESPONSABLE */}
+                                      <div className="space-y-1">
+                                        <div className="text-sm font-medium text-gray-800 dark:text-gray-200 break-words">
+                                          {responsableDisplay}
                                         </div>
-                                      )}
+
+                                        {responsableEmailDisplay !== "—" && (
+                                          <div className="text-sm text-gray-500 dark:text-gray-400 break-words">
+                                            {responsableEmailDisplay}
+                                          </div>
+                                        )}
+                                      </div>
+
+                                      {/* BOUTON */}
+                                      <button
+                                        onClick={() => router.push(`/recruiter/interviews/${iv._id}/evaluation-response`)}
+                                        className="mt-2 w-full bg-green-100 hover:bg-green-200 text-green-700 py-2 rounded-xl text-sm font-medium transition"
+                                      >
+                                        Voir réponses du responsable
+                                      </button>
+
+
+
                                     </div>
                                   </DetailCard>
 
                                   {iv.status ===
                                     "CANDIDATE_REQUESTED_RESCHEDULE" && (
-                                    <DetailCard
-                                      label="Raison report"
-                                      value={
-                                        iv.candidateRescheduleReason ||
-                                        "Non précisée"
-                                      }
-                                    />
-                                  )}
+                                      <DetailCard
+                                        label="Raison report"
+                                        value={
+                                          iv.candidateRescheduleReason ||
+                                          "Non précisée"
+                                        }
+                                      />
+                                    )}
 
                                   {iv.status === "PENDING_ADMIN_APPROVAL" && (
                                     <DetailCard
@@ -2017,134 +2044,132 @@ export default function AdminInterviewList() {
                                     (siv) =>
                                       siv.status === "CONFIRMED" ||
                                       siv.status ===
-                                        "PENDING_CANDIDATE_CONFIRMATION",
+                                      "PENDING_CANDIDATE_CONFIRMATION",
                                   ) && (
-                                    <DetailCard label="Évaluation">
-                                      <div className="flex flex-col gap-2">
-                                        {allIvs
-                                          .filter(
-                                            (siv) =>
-                                              siv.status === "CONFIRMED" ||
-                                              siv.status ===
+                                      <DetailCard label="Évaluation">
+                                        <div className="flex flex-col gap-2">
+                                          {allIvs
+                                            .filter(
+                                              (siv) =>
+                                                siv.status === "CONFIRMED" ||
+                                                siv.status ===
                                                 "PENDING_CANDIDATE_CONFIRMATION",
-                                          )
-                                          .map((siv) => {
-                                            const stc = resolveTypeConfig(
-                                              siv.interviewType,
-                                            );
-                                            const isRHT =
-                                              isRHPlusTechInterviewFE(
+                                            )
+                                            .map((siv) => {
+                                              const stc = resolveTypeConfig(
                                                 siv.interviewType,
                                               );
-                                            const evalData =
-                                              evaluationsCache[String(siv._id)];
-                                            const hasEval =
-                                              isRHT &&
-                                              evalData !== undefined &&
-                                              evalData !== null;
-                                            const evalLoading =
-                                              isRHT &&
-                                              evaluationsCache[
+                                              const isRHT =
+                                                isRHPlusTechInterviewFE(
+                                                  siv.interviewType,
+                                                );
+                                              const evalData =
+                                                evaluationsCache[String(siv._id)];
+                                              const hasEval =
+                                                isRHT &&
+                                                evalData !== undefined &&
+                                                evalData !== null;
+                                              const evalLoading =
+                                                isRHT &&
+                                                evaluationsCache[
                                                 String(siv._id)
-                                              ] === undefined;
+                                                ] === undefined;
 
-                                            return (
-                                              <div
-                                                key={siv._id}
-                                                className="flex flex-col gap-1.5"
-                                              >
-                                                <button
-                                                  onClick={(e) => {
-                                                    e.stopPropagation();
-                                                    router.push(
-                                                      `/recruiter/interviews/${siv._id}/evaluation`,
-                                                    );
-                                                  }}
-                                                  className={`w-full px-4 py-2.5 rounded-full border font-semibold text-sm transition-colors flex items-center justify-center gap-2 ${
-                                                    hasEval
+                                              return (
+                                                <div
+                                                  key={siv._id}
+                                                  className="flex flex-col gap-1.5"
+                                                >
+                                                  <button
+                                                    onClick={(e) => {
+                                                      e.stopPropagation();
+                                                      router.push(
+                                                        `/recruiter/interviews/${siv._id}/evaluation`,
+                                                      );
+                                                    }}
+                                                    className={`w-full px-4 py-2.5 rounded-full border font-semibold text-sm transition-colors flex items-center justify-center gap-2 ${hasEval
                                                       ? "bg-emerald-50 dark:bg-emerald-950/30 border-emerald-300 dark:border-emerald-700 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-100"
                                                       : "bg-blue-50 dark:bg-blue-950/30 border-blue-200 dark:border-blue-700 text-blue-700 dark:text-blue-300 hover:bg-blue-100"
-                                                  }`}
-                                                >
-                                                  <FileText className="w-4 h-4" />
-                                                  {stc.label}
-                                                  {hasEval && (
-                                                    <CheckCircle2 className="w-3.5 h-3.5 ml-auto text-emerald-500" />
-                                                  )}
-                                                  {evalLoading && isRHT && (
-                                                    <span className="w-3 h-3 border-2 border-blue-300 border-t-blue-600 rounded-full animate-spin ml-auto" />
-                                                  )}
-                                                </button>
-
-                                                {hasEval && (
-                                                  <div className="rounded-xl bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-200 dark:border-emerald-800 px-3 py-2 text-xs">
-                                                    {evalData.evaluationGlobale !=
-                                                      null && (
-                                                      <div className="flex items-center gap-2 mb-1">
-                                                        <span className="font-bold text-emerald-700 dark:text-emerald-400">
-                                                          Score global :
-                                                        </span>
-                                                        <span className="font-extrabold text-emerald-800 dark:text-emerald-300">
-                                                          {evalData.evaluationGlobale}
-                                                          /5
-                                                        </span>
-                                                        <span className="text-amber-500">
-                                                          {"★".repeat(
-                                                            Math.round(
-                                                              evalData.evaluationGlobale,
-                                                            ),
-                                                          )}
-                                                          {"☆".repeat(
-                                                            5 -
-                                                              Math.round(
-                                                                evalData.evaluationGlobale,
-                                                              ),
-                                                          )}
-                                                        </span>
-                                                      </div>
+                                                      }`}
+                                                  >
+                                                    <FileText className="w-4 h-4" />
+                                                    {stc.label}
+                                                    {hasEval && (
+                                                      <CheckCircle2 className="w-3.5 h-3.5 ml-auto text-emerald-500" />
                                                     )}
+                                                    {evalLoading && isRHT && (
+                                                      <span className="w-3 h-3 border-2 border-blue-300 border-t-blue-600 rounded-full animate-spin ml-auto" />
+                                                    )}
+                                                  </button>
 
-                                                    {evalData.decision && (
-                                                      <div className="flex items-center gap-2 mb-1">
-                                                        <span className="font-bold text-gray-600 dark:text-gray-400">
-                                                          Décision :
-                                                        </span>
-                                                        <span
-                                                          className={`font-semibold px-2 py-0.5 rounded-full text-[10px] uppercase tracking-wider ${
-                                                            evalData.decision ===
+                                                  {hasEval && (
+                                                    <div className="rounded-xl bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-200 dark:border-emerald-800 px-3 py-2 text-xs">
+                                                      {evalData.evaluationGlobale !=
+                                                        null && (
+                                                          <div className="flex items-center gap-2 mb-1">
+                                                            <span className="font-bold text-emerald-700 dark:text-emerald-400">
+                                                              Score global :
+                                                            </span>
+                                                            <span className="font-extrabold text-emerald-800 dark:text-emerald-300">
+                                                              {evalData.evaluationGlobale}
+                                                              /5
+                                                            </span>
+                                                            <span className="text-amber-500">
+                                                              {"★".repeat(
+                                                                Math.round(
+                                                                  evalData.evaluationGlobale,
+                                                                ),
+                                                              )}
+                                                              {"☆".repeat(
+                                                                5 -
+                                                                Math.round(
+                                                                  evalData.evaluationGlobale,
+                                                                ),
+                                                              )}
+                                                            </span>
+                                                          </div>
+                                                        )}
+
+                                                      {evalData.decision && (
+                                                        <div className="flex items-center gap-2 mb-1">
+                                                          <span className="font-bold text-gray-600 dark:text-gray-400">
+                                                            Décision :
+                                                          </span>
+                                                          <span
+                                                            className={`font-semibold px-2 py-0.5 rounded-full text-[10px] uppercase tracking-wider ${evalData.decision ===
                                                               "retenu" ||
-                                                            evalData.decision ===
+                                                              evalData.decision ===
                                                               "RETENU"
                                                               ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300"
                                                               : evalData.decision ===
-                                                                    "refuse" ||
-                                                                  evalData.decision ===
-                                                                    "REFUSE"
+                                                                "refuse" ||
+                                                                evalData.decision ===
+                                                                "REFUSE"
                                                                 ? "bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300"
                                                                 : "bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300"
-                                                          }`}
-                                                        >
-                                                          {evalData.decision}
-                                                        </span>
-                                                      </div>
-                                                    )}
+                                                              }`}
+                                                          >
+                                                            {evalData.decision}
+                                                          </span>
+                                                        </div>
+                                                      )}
 
-                                                    {evalData.commentaire && (
-                                                      <p
-                                                        className="text-gray-600 dark:text-gray-400 italic truncate"
-                                                        title={evalData.commentaire}
-                                                      >
-                                                        "{evalData.commentaire}"
-                                                      </p>
-                                                    )}
-                                                  </div>
-                                                )}
-                                              </div>
-                                            );
-                                          })}
-                                      </div>
-                                    </DetailCard>
-                                  )}
+                                                      {evalData.commentaire && (
+                                                        <p
+                                                          className="text-gray-600 dark:text-gray-400 italic truncate"
+                                                          title={evalData.commentaire}
+                                                        >
+                                                          "{evalData.commentaire}"
+                                                        </p>
+                                                      )}
+                                                    </div>
+                                                  )}
+                                                </div>
+                                              );
+                                            })}
+                                        </div>
+                                      </DetailCard>
+                                    )}
 
                                   {(() => {
                                     const dgaNotes = allGroupNotes.filter((n) =>
@@ -2252,11 +2277,10 @@ export default function AdminInterviewList() {
                   <button
                     key={p}
                     onClick={() => setPage(p)}
-                    className={`w-10 h-10 rounded-full border font-bold transition-colors ${
-                      p === page
-                        ? "bg-[#6CB33F] border-[#6CB33F] text-white dark:bg-emerald-600 dark:border-emerald-600"
-                        : "bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300"
-                    }`}
+                    className={`w-10 h-10 rounded-full border font-bold transition-colors ${p === page
+                      ? "bg-[#6CB33F] border-[#6CB33F] text-white dark:bg-emerald-600 dark:border-emerald-600"
+                      : "bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300"
+                      }`}
                   >
                     {p}
                   </button>
