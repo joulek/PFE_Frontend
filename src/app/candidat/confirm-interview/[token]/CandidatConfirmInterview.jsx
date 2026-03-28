@@ -191,7 +191,7 @@ export default function CandidatConfirmInterview({ token }) {
         {/* Body */}
         <div className="p-6 space-y-5">
           <p className="text-sm text-gray-600 dark:text-slate-300 leading-relaxed">
-            Votre entretien RH+Technique a été planifié. Veuillez confirmer votre présence :
+            Votre entretien RH + Technique a été planifié. Veuillez confirmer votre présence :
           </p>
 
           {/* Infos entretien */}
@@ -235,21 +235,7 @@ export default function CandidatConfirmInterview({ token }) {
                 </div>
               </div>
 
-              {interview.recruiterName && (
-                <div className="flex items-center gap-3">
-                  <div className="w-9 h-9 rounded-xl bg-emerald-500/10 dark:bg-emerald-500/15 flex items-center justify-center flex-shrink-0">
-                    <User className="w-4 h-4" style={{ color: OPTY }} />
-                  </div>
-                  <div>
-                    <p className="text-[10px] font-bold text-gray-400 dark:text-slate-400 uppercase tracking-wider">
-                      Recruteur
-                    </p>
-                    <p className="text-sm font-bold text-gray-800 dark:text-white">
-                      {interview.recruiterName}
-                    </p>
-                  </div>
-                </div>
-              )}
+              
             </div>
           )}
 
@@ -276,20 +262,7 @@ export default function CandidatConfirmInterview({ token }) {
             )}
           </button>
 
-          {/* Lien proposer autre date */}
-          <div className="text-center">
-            <p className="text-xs text-gray-400 dark:text-slate-400 mb-2">
-              Cette date ne vous convient pas ?
-            </p>
-            <Link
-              href={`/candidat/reschedule-interview/${token}`}
-              className="inline-flex items-center gap-1.5 text-sm font-semibold transition-colors"
-              style={{ color: OPTY }}
-            >
-              Proposer une autre date
-              <ArrowRight className="w-4 h-4" />
-            </Link>
-          </div>
+       
         </div>
       </div>
     </div>

@@ -577,39 +577,7 @@ export default function ConfirmedCandidaturesPage() {
           </p>
         </div>
 
-        {/* ── Résumé statuts embauche ── */}
-        {!loading && !error && (
-          <div className="grid grid-cols-3 gap-3 mb-6">
-            <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 px-4 py-3 flex items-center gap-3 shadow-sm">
-              <div className="w-8 h-8 rounded-xl bg-gray-100 dark:bg-gray-700 flex items-center justify-center flex-shrink-0">
-                <Users className="w-4 h-4 text-gray-500" />
-              </div>
-              <div>
-                <p className="text-xl font-extrabold text-gray-900 dark:text-white">{stats.pending}</p>
-                <p className="text-xs text-gray-500">En attente</p>
-              </div>
-            </div>
-            <div className="bg-white dark:bg-gray-800 rounded-2xl border border-emerald-200 dark:border-emerald-700 px-4 py-3 flex items-center gap-3 shadow-sm">
-              <div className="w-8 h-8 rounded-xl bg-emerald-50 dark:bg-emerald-950/30 flex items-center justify-center flex-shrink-0">
-                <ThumbsUp className="w-4 h-4 text-emerald-600" />
-              </div>
-              <div>
-                <p className="text-xl font-extrabold text-emerald-700 dark:text-emerald-400">{stats.embauche}</p>
-                <p className="text-xs text-gray-500">Embauchés</p>
-              </div>
-            </div>
-            <div className="bg-white dark:bg-gray-800 rounded-2xl border border-red-200 dark:border-red-800 px-4 py-3 flex items-center gap-3 shadow-sm">
-              <div className="w-8 h-8 rounded-xl bg-red-50 dark:bg-red-950/30 flex items-center justify-center flex-shrink-0">
-                <ThumbsDown className="w-4 h-4 text-red-500" />
-              </div>
-              <div>
-                <p className="text-xl font-extrabold text-red-600 dark:text-red-400">{stats.rejete}</p>
-                <p className="text-xs text-gray-500">Rejetés</p>
-              </div>
-            </div>
-          </div>
-        )}
-
+    
         {/* Bannière RH Nord */}
         <button
           onClick={() => router.push("/recruiter/candidatures-confirmees/rh-nord")}

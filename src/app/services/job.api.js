@@ -41,7 +41,7 @@ export function getMyJobsWithoutQuiz() {
 }
 
 /* =========================
-   ADMIN JOBS
+   ADMIN / SHARED JOBS
 ========================= */
 
 export function getAllJobs() {
@@ -120,7 +120,9 @@ export function getLinkedInAuthUrl(returnJobId = null) {
 export function confirmLinkedInToken(memberId) {
   return api.post("/linkedin/confirm-token", { memberId });
 }
-
+export function deleteMyJob(id) {
+  return api.delete(`/jobs/my-offers/${id}`);
+}
 export function exchangeLinkedInCode(code, state) {
   return api.post("/linkedin/exchange-code", { code, state });
 }

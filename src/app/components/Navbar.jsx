@@ -5,7 +5,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState, useRef, useCallback } from "react";
 import { logout } from "../services/auth.api";
-import { Moon, Sun, Bell, Check, CheckCheck, Briefcase, FileText, X, Calendar, Clock, AlertTriangle } from "lucide-react";
+import { Moon, Sun, Bell, Check, CheckCheck, Briefcase, FileText, X, Calendar, Clock, AlertTriangle, UserCircle, LogOut, ChevronDown } from "lucide-react";
 import { useTheme } from "../providers/ThemeProvider";
 import api from "../services/api";
 import {
@@ -121,7 +121,6 @@ function playNotifSound() {
     const ctx = getAudioCtx();
     const now = ctx.currentTime;
 
-    // Son style "ding" moderne — 3 harmoniques superposées
     const freqs = [880, 1320, 1760];
     freqs.forEach((freq, i) => {
       const osc = ctx.createOscillator();
@@ -130,7 +129,6 @@ function playNotifSound() {
       gain.connect(ctx.destination);
       osc.type = "sine";
       osc.frequency.setValueAtTime(freq, now);
-      // Volume décroissant par harmonique
       const vol = [0.4, 0.15, 0.07][i];
       gain.gain.setValueAtTime(0, now);
       gain.gain.linearRampToValueAtTime(vol, now + 0.01);
@@ -141,11 +139,10 @@ function playNotifSound() {
   } catch { }
 }
 
-/* ─── Dropdown Notifications Mobile (simple) ─── */
+/* ─── Dropdown Notifications Mobile ─── */
 function NotifDropdownMobile({ notifications, loadingNotif, unreadCount, onNotifClick, onMarkAllRead }) {
   return (
     <div className="fixed left-4 right-4 top-[68px] max-h-[70vh] bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl shadow-2xl overflow-hidden z-[9999]">
-      {/* Header */}
       <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100 dark:border-gray-700">
         <h3 className="font-bold text-gray-900 dark:text-white text-sm">Notifications</h3>
         {unreadCount > 0 && (
@@ -185,7 +182,7 @@ function NotifDropdownMobile({ notifications, loadingNotif, unreadCount, onNotif
   );
 }
 
-/* ─── Dropdown Notifications Desktop — style Facebook ─── */
+/* ─── Dropdown Notifications Desktop ─── */
 function NotifDropdownDesktop({ notifications, loadingNotif, unreadCount, onNotifClick, onMarkAllRead }) {
   const [activeTab, setActiveTab] = useState("all");
 
@@ -198,7 +195,6 @@ function NotifDropdownDesktop({ notifications, loadingNotif, unreadCount, onNoti
                     bg-white dark:bg-[#242526] border border-gray-200 dark:border-gray-700"
       style={{ width: "540px", minWidth: "540px" }}>
 
-      {/* Header style Facebook */}
       <div className="px-5 pt-5 pb-3">
         <div className="flex items-center justify-between">
           <h3 className="text-2xl font-bold text-gray-900 dark:text-white">
@@ -214,7 +210,6 @@ function NotifDropdownDesktop({ notifications, loadingNotif, unreadCount, onNoti
           )}
         </div>
 
-        {/* Onglets style Facebook */}
         <div className="flex gap-2 mt-3">
           <button
             onClick={() => setActiveTab("all")}
@@ -244,14 +239,12 @@ function NotifDropdownDesktop({ notifications, loadingNotif, unreadCount, onNoti
         </div>
       </div>
 
-      {/* Section label */}
       {notifications.length > 0 && (
         <div className="px-5 pb-1">
           <p className="text-[13px] font-bold text-gray-500 dark:text-gray-400">Plus tôt</p>
         </div>
       )}
 
-      {/* Liste */}
       <div className="overflow-y-auto" style={{ maxHeight: "460px" }}>
         {loadingNotif ? (
           <div className="flex flex-col items-center justify-center py-14 gap-3">
@@ -285,7 +278,6 @@ function NotifDropdownDesktop({ notifications, loadingNotif, unreadCount, onNoti
                 `}
                 style={{ width: "calc(100% - 16px)" }}
               >
-                {/* Icône grande — style Facebook */}
                 <div className="relative flex-shrink-0">
                   <div className={`w-14 h-14 rounded-full flex items-center justify-center
                     ${!notif.read
@@ -297,7 +289,6 @@ function NotifDropdownDesktop({ notifications, loadingNotif, unreadCount, onNoti
                   </div>
                 </div>
 
-                {/* Texte */}
                 <div className="flex-1 min-w-0 py-1">
                   <p className={`text-[14px] leading-snug break-words
                     ${!notif.read
@@ -314,7 +305,6 @@ function NotifDropdownDesktop({ notifications, loadingNotif, unreadCount, onNoti
                   </p>
                 </div>
 
-                {/* Point bleu non lu */}
                 {!notif.read && (
                   <span className="w-3 h-3 rounded-full bg-[#6CB33F] flex-shrink-0" />
                 )}
@@ -322,6 +312,55 @@ function NotifDropdownDesktop({ notifications, loadingNotif, unreadCount, onNoti
             ))}
           </div>
         )}
+      </div>
+    </div>
+  );
+}
+
+/* ─── User Avatar (initiales) ─── */
+function UserAvatar({ name, size = "sm" }) {
+  const initials = name
+    ? name.trim().split(" ").slice(0, 2).map((w) => w[0]?.toUpperCase()).join("")
+    : "?";
+
+  const sizeClass = size === "sm" ? "w-8 h-8 text-xs" : "w-9 h-9 text-sm";
+
+  return (
+    <span
+      className={`${sizeClass} rounded-full bg-[#6CB33F] text-white font-bold flex items-center justify-center flex-shrink-0 select-none`}
+    >
+      {initials}
+    </span>
+  );
+}
+
+/* ─── User Dropdown (desktop) ─── */
+function UserDropdown({ user, onLogout, onClose }) {
+  const fullName = user?.name || user?.fullName || user?.nom || `${user?.prenom || ""} ${user?.nom || ""}`.trim() || "Utilisateur";
+
+  return (
+    <div
+      className="absolute right-0 mt-2 w-56 rounded-2xl shadow-2xl border bg-white dark:bg-[#242526] border-gray-200 dark:border-gray-700 overflow-hidden z-[9999]"
+      style={{ top: "100%" }}
+    >
+      {/* Infos utilisateur */}
+      <div className="px-4 py-3 border-b border-gray-100 dark:border-gray-700 flex items-center gap-3">
+        <UserAvatar name={fullName} size="md" />
+        <div className="min-w-0">
+          <p className="text-sm font-bold text-gray-900 dark:text-white truncate">{fullName}</p>
+          <p className="text-xs text-gray-400 dark:text-gray-500 truncate">{user?.email || user?.role || ""}</p>
+        </div>
+      </div>
+
+      {/* Bouton déconnexion */}
+      <div className="p-2">
+        <button
+          onClick={onLogout}
+          className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+        >
+          <LogOut className="w-4 h-4" />
+          Déconnexion
+        </button>
       </div>
     </div>
   );
@@ -335,7 +374,7 @@ export default function Navbar() {
   const [user, setUser] = useState(null);
   const [openMobile, setOpenMobile] = useState(false);
   const [openCandidaturesRM, setOpenCandidaturesRM] = useState(false);
-  const [openFormulairesRM, setOpenFormulairesRM] = useState(false); // ✅ NOUVEAU
+  const [openFormulairesRM, setOpenFormulairesRM] = useState(false);
   const [openCandidatures, setOpenCandidatures] = useState(false);
   const [openAdmin, setOpenAdmin] = useState(false);
   const [openFormulaires, setOpenFormulaires] = useState(false);
@@ -352,6 +391,10 @@ export default function Navbar() {
   const dropdownRef = useRef(null);
   const mobileDropdownRef = useRef(null);
   const prevUnreadRef = useRef(null);
+
+  // ✅ User dropdown state
+  const [openUserMenu, setOpenUserMenu] = useState(false);
+  const userMenuRef = useRef(null);
 
   useEffect(() => {
     const loadUser = () => {
@@ -372,7 +415,7 @@ export default function Navbar() {
   useEffect(() => {
     setOpenMobile(false);
     setOpenCandidaturesRM(false);
-    setOpenFormulairesRM(false); // ✅ NOUVEAU
+    setOpenFormulairesRM(false);
     setOpenCandidatures(false);
     setOpenAdmin(false);
     setOpenFormulaires(false);
@@ -380,6 +423,7 @@ export default function Navbar() {
     setOpenNordRecrutement(false);
     setOpenNordEntretiens(false);
     setOpenNotif(false);
+    setOpenUserMenu(false);
   }, [pathname]);
 
   // ✅ Fetch unread count toutes les 30s
@@ -388,7 +432,6 @@ export default function Navbar() {
     try {
       const res = await getUnreadCount();
       const newCount = res.data.count || 0;
-      // ✅ Jouer le son si nouvelles notifs détectées
       if (prevUnreadRef.current !== null && newCount > prevUnreadRef.current) {
         playNotifSound();
       }
@@ -404,12 +447,12 @@ export default function Navbar() {
   }, [fetchUnreadCount]);
 
   const handleOpenNotif = async () => {
-    // Débloquer l'AudioContext dès que l'utilisateur clique sur la cloche
     try { getAudioCtx(); } catch { }
     const willOpen = !openNotif;
     setOpenNotif(willOpen);
+    setOpenUserMenu(false);
     setOpenCandidaturesRM(false);
-    setOpenFormulairesRM(false); // ✅ NOUVEAU
+    setOpenFormulairesRM(false);
     setOpenCandidatures(false);
     setOpenAdmin(false);
     setOpenFormulaires(false);
@@ -449,7 +492,7 @@ export default function Navbar() {
     } catch { }
   };
 
-  // ✅ Fermer en cliquant en dehors
+  // ✅ Fermer en cliquant en dehors (notifs + user menu)
   useEffect(() => {
     const handleClickOutside = (e) => {
       const inBell = notifRef.current && notifRef.current.contains(e.target);
@@ -457,6 +500,11 @@ export default function Navbar() {
       const inMobileDropdown = mobileDropdownRef.current && mobileDropdownRef.current.contains(e.target);
       if (!inBell && !inDropdown && !inMobileDropdown) {
         setOpenNotif(false);
+      }
+
+      const inUserMenu = userMenuRef.current && userMenuRef.current.contains(e.target);
+      if (!inUserMenu) {
+        setOpenUserMenu(false);
       }
     };
     document.addEventListener("mousedown", handleClickOutside);
@@ -476,7 +524,6 @@ export default function Navbar() {
     pathname.startsWith("/ResponsableMetier/candidatures_Analysis") ||
     pathname.startsWith("/ResponsableMetier/list-entretien");
 
-  // ✅ NOUVEAU — section Formulaires RM
   const isInFormulairesRM =
     pathname.startsWith("/ResponsableMetier/quiz") ||
     pathname.startsWith("/fiche_renseignement");
@@ -523,6 +570,11 @@ export default function Navbar() {
     }
   }
 
+  // ✅ Nom complet de l'utilisateur connecté
+  const userFullName = user
+    ? (user.name || user.fullName || `${user.prenom || ""} ${user.nom || ""}`.trim() || "Utilisateur")
+    : "";
+
   const linkBase = "px-3 py-2 rounded-full font-semibold transition text-sm whitespace-nowrap";
   const activeLink = "bg-[#6CB33F] text-white shadow";
   const inactiveLink = "text-gray-600 dark:text-gray-300 hover:text-[#4E8F2F] dark:hover:text-[#86efac]";
@@ -534,7 +586,7 @@ export default function Navbar() {
   const dropdownActive = "bg-[#6CB33F]/10 text-[#4E8F2F] font-semibold";
   const dropdownHover = "hover:bg-gray-50 dark:hover:bg-gray-700";
 
-  /* ─── Bouton cloche partagé ─── */
+  /* ─── Bouton cloche ─── */
   const BellButton = ({ isMobile }) => (
     <button
       onClick={handleOpenNotif}
@@ -556,7 +608,6 @@ export default function Navbar() {
     </button>
   );
 
-  // ✅ Helper pour fermer tous les dropdowns RM sauf celui passé
   const closeAllRMDropdowns = (except) => {
     if (except !== "candidatures") setOpenCandidaturesRM(false);
     if (except !== "formulaires") setOpenFormulairesRM(false);
@@ -564,6 +615,7 @@ export default function Navbar() {
     setOpenAdmin(false);
     setOpenFormulaires(false);
     setOpenNotif(false);
+    setOpenUserMenu(false);
   };
 
   return (
@@ -587,7 +639,6 @@ export default function Navbar() {
                   </Link>
                   {user && (
                     <>
-                      {/* CANDIDATURES DROPDOWN */}
                       <div className="relative">
                         <button
                           onClick={() => { closeAllRMDropdowns("candidatures"); setOpenCandidaturesRM((v) => !v); }}
@@ -614,7 +665,6 @@ export default function Navbar() {
                         Mes offres d&apos;emploi
                       </Link>
 
-                      {/* ✅ FORMULAIRES DROPDOWN (Quiz + Fiche) */}
                       <div className="relative">
                         <button
                           onClick={() => { closeAllRMDropdowns("formulaires"); setOpenFormulairesRM((v) => !v); }}
@@ -710,7 +760,7 @@ export default function Navbar() {
                   </Link>
                   <div className="relative">
                     <button
-                      onClick={() => { setOpenNordCandidatures((v) => !v); setOpenNordRecrutement(false); setOpenNordEntretiens(false); setOpenNotif(false); }}
+                      onClick={() => { setOpenNordCandidatures((v) => !v); setOpenNordRecrutement(false); setOpenNordEntretiens(false); setOpenNotif(false); setOpenUserMenu(false); }}
                       className={`${linkBase} ${isInNordCandidatures ? activeLink : inactiveLink}`}
                     >
                       Candidatures ▾
@@ -732,7 +782,7 @@ export default function Navbar() {
 
                   <div className="relative">
                     <button
-                      onClick={() => { setOpenNordRecrutement((v) => !v); setOpenNordCandidatures(false); setOpenNordEntretiens(false); setOpenNotif(false); }}
+                      onClick={() => { setOpenNordRecrutement((v) => !v); setOpenNordCandidatures(false); setOpenNordEntretiens(false); setOpenNotif(false); setOpenUserMenu(false); }}
                       className={`${linkBase} ${isInNordRecrutement ? activeLink : inactiveLink}`}
                     >
                       Formulaires ▾
@@ -751,7 +801,7 @@ export default function Navbar() {
 
                   <div className="relative">
                     <button
-                      onClick={() => { setOpenNordEntretiens((v) => !v); setOpenNordCandidatures(false); setOpenNordRecrutement(false); setOpenNotif(false); }}
+                      onClick={() => { setOpenNordEntretiens((v) => !v); setOpenNordCandidatures(false); setOpenNordRecrutement(false); setOpenNotif(false); setOpenUserMenu(false); }}
                       className={`${linkBase} ${isInNordEntretiens ? activeLink : inactiveLink}`}
                     >
                       Entretiens ▾
@@ -783,10 +833,9 @@ export default function Navbar() {
                     Gestion offres
                   </Link>
 
-                  {/* CANDIDATURES DROPDOWN */}
                   <div className="relative">
                     <button
-                      onClick={() => { setOpenCandidatures((v) => !v); setOpenCandidaturesRM(false); setOpenAdmin(false); setOpenFormulaires(false); setOpenNotif(false); }}
+                      onClick={() => { setOpenCandidatures((v) => !v); setOpenCandidaturesRM(false); setOpenAdmin(false); setOpenFormulaires(false); setOpenNotif(false); setOpenUserMenu(false); }}
                       className={`${linkBase} ${isInCandidatures ? activeLink : inactiveLink}`}
                     >
                       Candidatures ▾
@@ -812,16 +861,15 @@ export default function Navbar() {
                           Candidatures confirmées
                         </Link>
                         <Link href="/recruiter/comparisons_list" className={`${dropdownItemBase} ${isActive("/recruiter/comparisons_list") ? dropdownActive : dropdownHover}`}>
-                           Comparaisons Candidatures
+                          Comparaisons Candidatures
                         </Link>
                       </div>
                     )}
                   </div>
 
-                  {/* FORMULAIRES DROPDOWN */}
                   <div className="relative">
                     <button
-                      onClick={() => { setOpenFormulaires((v) => !v); setOpenCandidatures(false); setOpenCandidaturesRM(false); setOpenAdmin(false); setOpenNotif(false); }}
+                      onClick={() => { setOpenFormulaires((v) => !v); setOpenCandidatures(false); setOpenCandidaturesRM(false); setOpenAdmin(false); setOpenNotif(false); setOpenUserMenu(false); }}
                       className={`${linkBase} ${isInFormulaires ? activeLink : inactiveLink}`}
                     >
                       Formulaires ▾
@@ -841,10 +889,9 @@ export default function Navbar() {
                     )}
                   </div>
 
-                  {/* ADMIN DROPDOWN */}
                   <div className="relative">
                     <button
-                      onClick={() => { setOpenAdmin((v) => !v); setOpenCandidatures(false); setOpenCandidaturesRM(false); setOpenFormulaires(false); setOpenNotif(false); }}
+                      onClick={() => { setOpenAdmin((v) => !v); setOpenCandidatures(false); setOpenCandidaturesRM(false); setOpenFormulaires(false); setOpenNotif(false); setOpenUserMenu(false); }}
                       className={`${linkBase} ${isInAdmin ? activeLink : inactiveLink}`}
                     >
                       Administration ▾
@@ -880,21 +927,43 @@ export default function Navbar() {
                 {theme === "dark" ? <Sun className="h-5 w-5 text-amber-400" /> : <Moon className="h-5 w-5 text-gray-700" />}
               </button>
 
-              {/* ✅ NOTIFICATION BELL DESKTOP */}
+              {/* NOTIFICATION BELL DESKTOP */}
               {user && (
                 <div ref={notifRef}>
                   <BellButton isMobile={false} />
                 </div>
               )}
 
+              {/* ✅ USER MENU ou lien login */}
               {!user ? (
                 <Link href="/login" className="font-semibold text-[#6CB33F] hover:underline">
                   Espace recruteur
                 </Link>
               ) : (
-                <button onClick={handleLogout} className="font-semibold text-gray-600 dark:text-gray-300 hover:text-red-600 transition-colors">
-                  Déconnexion
-                </button>
+                <div className="relative" ref={userMenuRef}>
+                  <button
+                    onClick={() => { setOpenUserMenu((v) => !v); setOpenNotif(false); }}
+                    className="flex items-center gap-2 px-3 py-1.5 rounded-full hover:bg-gray-200/70 dark:hover:bg-gray-700/50 transition-colors group"
+                    aria-label="Menu utilisateur"
+                  >
+                    <UserAvatar name={userFullName} size="sm" />
+                    <span className="text-sm font-semibold text-gray-700 dark:text-gray-200 max-w-[140px] truncate">
+                      {userFullName}
+                    </span>
+                    <ChevronDown
+                      className={`w-4 h-4 text-gray-500 dark:text-gray-400 transition-transform duration-200 ${openUserMenu ? "rotate-180" : ""}`}
+                    />
+                  </button>
+
+                  {/* Dropdown menu */}
+                  {openUserMenu && (
+                    <UserDropdown
+                      user={user}
+                      onLogout={handleLogout}
+                      onClose={() => setOpenUserMenu(false)}
+                    />
+                  )}
+                </div>
               )}
             </div>
 
@@ -921,6 +990,18 @@ export default function Navbar() {
           {openMobile && (
             <div className="md:hidden pb-5 pt-2">
               <div className="rounded-2xl bg-white/95 dark:bg-gray-900/85 shadow-xl border border-gray-200/70 dark:border-gray-700/60 p-4 space-y-2 backdrop-blur-sm transition-colors duration-200">
+
+                {/* ✅ Profil utilisateur (mobile) */}
+                {user && (
+                  <div className="flex items-center gap-3 px-4 py-3 mb-2 rounded-xl bg-gray-50 dark:bg-gray-800/60">
+                    <UserAvatar name={userFullName} size="md" />
+                    <div className="min-w-0">
+                      <p className="text-sm font-bold text-gray-900 dark:text-white truncate">{userFullName}</p>
+                      <p className="text-xs text-gray-400 dark:text-gray-500 truncate">{user?.email || user?.role || ""}</p>
+                    </div>
+                  </div>
+                )}
+
                 {/* ── RESPONSABLE METIER ── */}
                 {!isAdmin && !isAssistanteRH && !isAssistanceDirection && !isResponsableRHOPTYLAB && !isResponsableRHNORD && !isDGA && (
                   <>
@@ -929,7 +1010,6 @@ export default function Navbar() {
                     </Link>
                     {user && (
                       <>
-                        {/* CANDIDATURES MOBILE */}
                         <div>
                           <button onClick={() => setOpenCandidaturesRM(!openCandidaturesRM)} className={`w-full text-left px-5 py-3.5 rounded-xl font-medium transition flex items-center justify-between ${isInCandidaturesRM ? "bg-[#6CB33F] text-white" : "text-gray-700 dark:text-gray-200 hover:bg-gray-100/70 dark:hover:bg-gray-800/60"}`}>
                             Candidatures
@@ -954,7 +1034,6 @@ export default function Navbar() {
                           Mes offres d&apos;emploi
                         </Link>
 
-                        {/* ✅ FORMULAIRES MOBILE (Quiz + Fiche) */}
                         <div>
                           <button onClick={() => setOpenFormulairesRM(!openFormulairesRM)} className={`w-full text-left px-5 py-3.5 rounded-xl font-medium transition flex items-center justify-between ${isInFormulairesRM ? "bg-[#6CB33F] text-white" : "text-gray-700 dark:text-gray-200 hover:bg-gray-100/70 dark:hover:bg-gray-800/60"}`}>
                             Formulaires
@@ -1117,7 +1196,7 @@ export default function Navbar() {
                     <Link href="/recruiter/PreInterviewList" className="block px-5 py-3.5 rounded-xl text-gray-700 dark:text-gray-200 hover:bg-gray-100/70 dark:hover:bg-gray-800/60">Liste des pré-sélections</Link>
                     <Link href="/recruiter/tracking" className="block px-5 py-3.5 rounded-xl text-gray-700 dark:text-gray-200 hover:bg-gray-100/70 dark:hover:bg-gray-800/60">Suivi de recrutement</Link>
                     <Link href="/recruiter/candidatures-confirmees" className="block px-5 py-3.5 rounded-xl text-gray-700 dark:text-gray-200 hover:bg-gray-100/70 dark:hover:bg-gray-800/60">Candidatures confirmées</Link>
-                    <Link href="/recruiter/comparisons_list" className={`block px-5 py-3.5 rounded-xl font-medium transition ${isActive("/recruiter/comparisons_list") ? "bg-[#6CB33F] text-white" : "text-gray-700 dark:text-gray-200 hover:bg-gray-100/70 dark:hover:bg-gray-800/60"}`}> Comparaisons Candidatures</Link>
+                    <Link href="/recruiter/comparisons_list" className={`block px-5 py-3.5 rounded-xl font-medium transition ${isActive("/recruiter/comparisons_list") ? "bg-[#6CB33F] text-white" : "text-gray-700 dark:text-gray-200 hover:bg-gray-100/70 dark:hover:bg-gray-800/60"}`}>Comparaisons Candidatures</Link>
 
                     <div className="px-5 py-1">
                       <p className="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-1">Formulaires</p>
@@ -1147,7 +1226,9 @@ export default function Navbar() {
                       Espace recruteur
                     </Link>
                   ) : (
-                    <button onClick={handleLogout} className="w-full text-left px-5 py-3.5 rounded-xl font-semibold text-gray-600 dark:text-gray-300 hover:text-red-600 hover:bg-gray-100/70 dark:hover:bg-gray-800/60">
+                    /* ✅ Déconnexion mobile avec icône */
+                    <button onClick={handleLogout} className="w-full flex items-center gap-3 px-5 py-3.5 rounded-xl font-semibold text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors">
+                      <LogOut className="w-5 h-5" />
                       Déconnexion
                     </button>
                   )}
@@ -1158,7 +1239,7 @@ export default function Navbar() {
         </div>
       </header>
 
-      {/* ✅ NOTIFICATION DROPDOWN MOBILE */}
+      {/* NOTIFICATION DROPDOWN MOBILE */}
       {openNotif && user && (
         <div ref={mobileDropdownRef} className="md:hidden">
           <NotifDropdownMobile
@@ -1171,7 +1252,7 @@ export default function Navbar() {
         </div>
       )}
 
-      {/* ✅ NOTIFICATION DROPDOWN DESKTOP */}
+      {/* NOTIFICATION DROPDOWN DESKTOP */}
       {openNotif && user && (
         <div
           ref={dropdownRef}

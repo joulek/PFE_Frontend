@@ -167,12 +167,48 @@ function StatusBadge({ status }) {
   );
 }
 
+
+const HIRING_STATUS_CONFIG = {
+  EMBAUCHE: {
+    label: "Embauché",
+    dot: "bg-emerald-500",
+    bg: "bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-300",
+  },
+  REJETE: {
+    label: "Rejeté",
+    dot: "bg-red-400",
+    bg: "bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400",
+  },
+};
+
+function HiringStatusBadge({ status }) {
+  if (!status) return <span className="text-gray-400">—</span>;
+
+  const cfg = HIRING_STATUS_CONFIG[status];
+  if (!cfg) return <span className="text-gray-400">—</span>;
+
+  return (
+    <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold ${cfg.bg}`}>
+      <span className={`w-1.5 h-1.5 rounded-full ${cfg.dot}`} />
+      {cfg.label}
+    </span>
+  );
+}
+
 /* ================= TABS ================= */
 const TABS = [
   { key: "TOUS", label: "Tous", Icon: Users },
   { key: "OFFRES", label: "Offres", Icon: Briefcase },
   { key: "RECRUTEMENT", label: "Candidature spontané", Icon: Briefcase },
   { key: "STAGE", label: "Stages", Icon: GraduationCap },
+];
+
+const STATUS_FILTERS = [
+  { key: "ALL", label: "Tous" },
+  { key: "EN_ATTENTE", label: "En attente" },
+  { key: "RETENU", label: "Retenu" },
+  { key: "REJETE", label: "Rejeté" },
+  { key: "EMBAUCHE", label: "Embauché" },
 ];
 
 /* ================= PAGE ================= */
@@ -185,6 +221,7 @@ export default function CandidaturesUnifiedPage() {
   const [activeTab, setActiveTab] = useState("TOUS");
   const [page, setPage] = useState(1);
   const pageSize = 10;
+  const [statusFilter, setStatusFilter] = useState("ALL");
 
   useEffect(() => {
     async function load() {
@@ -224,25 +261,50 @@ export default function CandidaturesUnifiedPage() {
     }),
     [allCandidatures, candidaturesOffres, candidaturesSpontanees]
   );
+const filtered = useMemo(() => {
+  let base =
+    activeTab === "TOUS"
+      ? allCandidatures
+      : activeTab === "OFFRES"
+        ? candidaturesOffres
+        : candidaturesSpontanees.filter((c) => c._source === activeTab);
 
-  const filtered = useMemo(() => {
-    let base =
-      activeTab === "TOUS"
-        ? allCandidatures
-        : activeTab === "OFFRES"
-          ? candidaturesOffres
-          : candidaturesSpontanees.filter((c) => c._source === activeTab);
+  const query = q.toLowerCase().trim();
 
-    const query = q.toLowerCase().trim();
-    if (!query) return base;
+  let result = base;
 
-    return base.filter(
+  // 🔍 recherche
+  if (query) {
+    result = result.filter(
       (c) =>
         getFullName(c).toLowerCase().includes(query) ||
         getEmail(c).toLowerCase().includes(query) ||
         getPoste(c).toLowerCase().includes(query)
     );
-  }, [allCandidatures, candidaturesOffres, candidaturesSpontanees, activeTab, q]);
+  }
+
+  // 🔥 FILTRE STATUS
+  if (statusFilter !== "ALL") {
+    result = result.filter((c) => {
+      // cas recrutement normal
+      if (c.status === statusFilter) return true;
+
+      // cas hiring status
+      if (c.hiringStatus === statusFilter) return true;
+
+      return false;
+    });
+  }
+
+  return result;
+}, [
+  allCandidatures,
+  candidaturesOffres,
+  candidaturesSpontanees,
+  activeTab,
+  q,
+  statusFilter,
+]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
   const paginated = filtered.slice((page - 1) * pageSize, page * pageSize);
@@ -301,6 +363,30 @@ export default function CandidaturesUnifiedPage() {
             );
           })}
         </div>
+
+        {/* STATUS FILTERS */}
+<div className="flex flex-wrap gap-2 mb-6">
+  {STATUS_FILTERS.map((f) => {
+    const active = statusFilter === f.key;
+    return (
+      <button
+        key={f.key}
+        onClick={() => {
+          setStatusFilter(f.key);
+          setPage(1);
+        }}
+        className={`px-4 py-2 rounded-full text-xs font-semibold border transition-all
+          ${
+            active
+              ? "bg-[#6CB33F] border-[#6CB33F] text-white"
+              : "bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300 hover:border-[#6CB33F]"
+          }`}
+      >
+        {f.label}
+      </button>
+    );
+  })}
+</div>
 
         {/* LOADING */}
         {loading && (
@@ -367,11 +453,10 @@ export default function CandidaturesUnifiedPage() {
                     {getPoste(c)}
                   </span>
                   {showSource && (
-                    <span className={`text-xs font-medium px-2 py-1 rounded-full ${
-                      c._source === "OFFRES" ? "bg-blue-50 text-blue-600 dark:bg-blue-900/20 dark:text-blue-300"
+                    <span className={`text-xs font-medium px-2 py-1 rounded-full ${c._source === "OFFRES" ? "bg-blue-50 text-blue-600 dark:bg-blue-900/20 dark:text-blue-300"
                       : c._source === "STAGE" ? "bg-purple-50 text-purple-600 dark:bg-purple-900/20 dark:text-purple-300"
-                      : "bg-gray-100 text-gray-500 dark:bg-gray-700 dark:text-gray-400"
-                    }`}>
+                        : "bg-gray-100 text-gray-500 dark:bg-gray-700 dark:text-gray-400"
+                      }`}>
                       {c._source === "OFFRES" ? "Offre" : c._source === "STAGE" ? "Stage" : "Spontanée"}
                     </span>
                   )}
@@ -421,6 +506,9 @@ export default function CandidaturesUnifiedPage() {
                     {showStatus && (
                       <th className="text-left px-6 py-5 font-extrabold uppercase text-xs tracking-wider">Statut</th>
                     )}
+                    <th className="text-left px-6 py-5 font-extrabold uppercase text-xs tracking-wider">
+                      Recrutement
+                    </th>
                     <th className="text-left px-6 py-5 font-extrabold uppercase text-xs tracking-wider">Date</th>
                     <th className="text-center px-6 py-5 font-extrabold uppercase text-xs tracking-wider">CV</th>
                     {showAction && (
@@ -471,14 +559,13 @@ export default function CandidaturesUnifiedPage() {
                       {/* TYPE */}
                       {showSource && (
                         <td className="px-6 py-5">
-                          <span className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold ${
-                            c._source === "OFFRES" ? "bg-blue-50 text-blue-600 dark:bg-blue-900/20 dark:text-blue-300"
+                          <span className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold ${c._source === "OFFRES" ? "bg-blue-50 text-blue-600 dark:bg-blue-900/20 dark:text-blue-300"
                             : c._source === "STAGE" ? "bg-purple-50 text-purple-600 dark:bg-purple-900/20 dark:text-purple-300"
-                            : "bg-gray-100 text-gray-500 dark:bg-gray-700 dark:text-gray-400"
-                          }`}>
+                              : "bg-gray-100 text-gray-500 dark:bg-gray-700 dark:text-gray-400"
+                            }`}>
                             {c._source === "OFFRES" ? <><Briefcase size={11} /> Offre</>
-                             : c._source === "STAGE" ? <><GraduationCap size={11} /> Stage</>
-                             : "Spontanée"}
+                              : c._source === "STAGE" ? <><GraduationCap size={11} /> Stage</>
+                                : "Spontanée"}
                           </span>
                         </td>
                       )}
@@ -489,6 +576,9 @@ export default function CandidaturesUnifiedPage() {
                           {c.status ? <StatusBadge status={c.status} /> : <span className="text-gray-400">—</span>}
                         </td>
                       )}
+                      <td className="px-6 py-5">
+                        <HiringStatusBadge status={c.hiringStatus} />
+                      </td>
 
                       {/* DATE */}
                       <td className="px-6 py-5 text-gray-500 dark:text-gray-400 whitespace-nowrap">

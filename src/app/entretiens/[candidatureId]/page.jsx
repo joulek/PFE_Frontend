@@ -101,6 +101,13 @@ function scoreTone(score) {
   };
 }
 
+// ✅ FIX : convertit camelCase + snake_case en texte lisible
+function formatKey(key) {
+  return String(key)
+    .replace(/([a-z])([A-Z])/g, "$1 $2") // camelCase → "risk Level"
+    .replace(/_/g, " ");                  // snake_case → espaces
+}
+
 const API_BASE = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000").replace(/\/$/, "");
 
 function resolveCvUrl(raw) {
@@ -232,8 +239,8 @@ function MatchingScoreCard({ label, value }) {
   return (
     <div className={`rounded-2xl border p-4 ${tone.ring} ${tone.bg}`}>
       <div className="flex items-center justify-between gap-3 mb-3">
-        <p className="text-sm font-bold text-[#2F4A31] dark:text-[#DCE9D6]">
-          {label}
+        <p className="text-sm font-bold text-[#2F4A31] dark:text-[#DCE9D6] capitalize">
+          {formatKey(label)}
         </p>
         <span className={`text-base font-extrabold ${tone.text}`}>{score}%</span>
       </div>
@@ -567,10 +574,13 @@ function MatchingTab({ jobMatch }) {
                   </p>
                 ) : (
                   <p className="text-sm leading-6 text-[#345238] dark:text-[#D7E9D5]">
+                    {/* ✅ FIX : formatKey() gère camelCase + snake_case */}
                     <span className="mr-2 font-extrabold uppercase tracking-wide text-[#70906F] dark:text-[#9FBA9C]">
-                      {String(item.key).replace(/_/g, " ")} :
+                      {formatKey(item.key)} :
                     </span>
-                    {typeof item.val === "object"
+                    {Array.isArray(item.val)
+                      ? item.val.join(", ")
+                      : typeof item.val === "object"
                       ? JSON.stringify(item.val)
                       : String(item.val)}
                   </p>
@@ -1029,8 +1039,6 @@ export default function EntretienDetailPage() {
                   </p>
                 </div>
               </div>
-
-         
             </div>
           </div>
 

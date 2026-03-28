@@ -228,4 +228,3 @@ export async function deleteRhNordNote(interviewId) {
   });
 }
 
-

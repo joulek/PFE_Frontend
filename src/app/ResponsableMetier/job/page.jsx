@@ -9,6 +9,7 @@ import {
   getMyOffers,
   updateMyJob,
   getMyAssignedJobs,
+  deleteJob,
 } from "../../services/job.api";
 
 import {
@@ -23,16 +24,13 @@ import {
   MapPin,
   Tag,
   BrainCircuit,
+  GraduationCap,
 } from "lucide-react";
 
 /* ================= UTILS ================= */
 function formatDate(date) {
   if (!date) return "—";
-  try {
-    return new Date(date).toLocaleDateString("fr-FR");
-  } catch {
-    return "—";
-  }
+  try { return new Date(date).toLocaleDateString("fr-FR"); } catch { return "—"; }
 }
 
 function getJobStatus(job) {
@@ -43,105 +41,90 @@ function getJobStatus(job) {
 
 /* ================= OPTIONS ================= */
 const MOTIF_OPTIONS = [
+  { value: "", label: "— Sélectionner —" },
   { value: "NOUVEAU", label: "Nouveau poste" },
   { value: "REMPLACEMENT", label: "Remplacement" },
   { value: "RENFORT", label: "Renfort" },
 ];
-
 const SEXE_OPTIONS = [
+  { value: "", label: "Genre" },
   { value: "H", label: "H" },
   { value: "F", label: "F" },
   { value: "HF", label: "H/F" },
 ];
+const TYPE_STAGE_OPTIONS = [
+  { value: "", label: "Type de stage" },
+  { value: "PFE", label: "Stage PFE" },
+  { value: "ETE", label: "Stage d'été" },
+  { value: "INITIATION", label: "Stage d'initiation" },
+  { value: "ALTERNANCE", label: "Alternance" },
+];
+const DUREE_STAGE_OPTIONS = [
+  { value: "", label: "Durée du stage" },
+  { value: "1_MOIS", label: "1 mois" },
+  { value: "2_MOIS", label: "2 mois" },
+  { value: "3_MOIS", label: "3 mois" },
+  { value: "4_MOIS", label: "4 mois" },
+  { value: "5_MOIS", label: "5 mois" },
+  { value: "6_MOIS", label: "6 mois" },
+];
 
 /* ================= STATUS CONFIG ================= */
 const STATUS_CONFIG = {
-  CONFIRMEE: {
-    label: "Publiée",
-    bg: "bg-green-100 dark:bg-emerald-900/30",
-    text: "text-green-700 dark:text-emerald-400",
-    border: "border-green-200 dark:border-emerald-800",
-    icon: CheckCircle2,
-    cardBorder: "border-green-200 dark:border-emerald-800",
-  },
-  VALIDEE: {
-    label: "Validée",
-    bg: "bg-blue-100 dark:bg-blue-900/30",
-    text: "text-blue-700 dark:text-blue-400",
-    border: "border-blue-200 dark:border-blue-800",
-    icon: CheckCircle2,
-    cardBorder: "border-blue-200 dark:border-blue-800",
-  },
-  EN_ATTENTE: {
-    label: "En attente",
-    bg: "bg-amber-100 dark:bg-amber-900/30",
-    text: "text-amber-700 dark:text-amber-400",
-    border: "border-amber-200 dark:border-amber-800",
-    icon: Clock,
-    cardBorder: "border-amber-700 dark:border-amber-500/40",
-  },
-  REJETEE: {
-    label: "Rejetée",
-    bg: "bg-red-100 dark:bg-red-900/30",
-    text: "text-red-700 dark:text-red-400",
-    border: "border-red-200 dark:border-red-800",
-    icon: XCircle,
-    cardBorder: "border-red-300 dark:border-red-700",
-  },
+  CONFIRMEE: { label: "Publiée", bg: "bg-green-100 dark:bg-emerald-900/30", text: "text-green-700 dark:text-emerald-400", border: "border-green-200 dark:border-emerald-800", icon: CheckCircle2, cardBorder: "border-green-200 dark:border-emerald-800" },
+  VALIDEE:   { label: "Validée",  bg: "bg-blue-100 dark:bg-blue-900/30",    text: "text-blue-700 dark:text-blue-400",    border: "border-blue-200 dark:border-blue-800",    icon: CheckCircle2, cardBorder: "border-blue-200 dark:border-blue-800" },
+  EN_ATTENTE:{ label: "En attente",bg:"bg-amber-100 dark:bg-amber-900/30",  text: "text-amber-700 dark:text-amber-400",  border: "border-amber-200 dark:border-amber-800",  icon: Clock,        cardBorder: "border-amber-700 dark:border-amber-500/40" },
+  REJETEE:   { label: "Rejetée",  bg: "bg-red-100 dark:bg-red-900/30",      text: "text-red-700 dark:text-red-400",      border: "border-red-200 dark:border-red-800",      icon: XCircle,      cardBorder: "border-red-300 dark:border-red-700" },
 };
 
 function StatusBadge({ status }) {
   const config = STATUS_CONFIG[status] || STATUS_CONFIG.EN_ATTENTE;
   const Icon = config.icon;
   return (
-    <span
-      className={`inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1 rounded-full border ${config.bg} ${config.text} ${config.border}`}
-    >
-      <Icon size={13} />
-      {config.label}
+    <span className={`inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1 rounded-full border ${config.bg} ${config.text} ${config.border}`}>
+      <Icon size={13} />{config.label}
     </span>
   );
 }
 
-/* ================= ORIGIN BADGE ================= */
 function OriginBadge({ origin }) {
-  const cfg =
-    origin === "CREATED"
-      ? {
-          label: "Créée",
-          cls: "bg-sky-50 dark:bg-sky-900/20 text-sky-700 dark:text-sky-300 border-sky-200 dark:border-sky-800",
-        }
-      : origin === "ASSIGNED"
-      ? {
-          label: "Assignée",
-          cls: "bg-violet-50 dark:bg-violet-900/20 text-violet-700 dark:text-violet-300 border-violet-200 dark:border-violet-800",
-        }
-      : {
-          label: "Créée & assignée",
-          cls: "bg-teal-50 dark:bg-teal-900/20 text-teal-700 dark:text-teal-300 border-teal-200 dark:border-teal-800",
-        };
-
+  const cfg = origin === "CREATED"
+    ? { label: "Créée", cls: "bg-sky-50 dark:bg-sky-900/20 text-sky-700 dark:text-sky-300 border-sky-200 dark:border-sky-800" }
+    : origin === "ASSIGNED"
+    ? { label: "Assignée", cls: "bg-violet-50 dark:bg-violet-900/20 text-violet-700 dark:text-violet-300 border-violet-200 dark:border-violet-800" }
+    : { label: "Créée & assignée", cls: "bg-teal-50 dark:bg-teal-900/20 text-teal-700 dark:text-teal-300 border-teal-200 dark:border-teal-800" };
   return (
-    <span
-      className={`inline-flex items-center gap-1.5 text-xs font-bold px-3 py-1 rounded-full border ${cfg.cls}`}
-    >
-      <Tag size={13} />
-      {cfg.label}
+    <span className={`inline-flex items-center gap-1.5 text-xs font-bold px-3 py-1 rounded-full border ${cfg.cls}`}>
+      <Tag size={13} />{cfg.label}
     </span>
   );
 }
 
-/* ================= FILTERS ================= */
+/* ── TypeOffreBadge: shows both Stage AND Recrutement ── */
+function TypeOffreBadge({ typeOffre }) {
+  if (typeOffre === "STAGE") {
+    return (
+      <span className="inline-flex items-center gap-1.5 text-xs font-bold px-3 py-1 rounded-full border bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-800">
+        <GraduationCap size={13} />Stage
+      </span>
+    );
+  }
+  return (
+    <span className="inline-flex items-center gap-1.5 text-xs font-bold px-3 py-1 rounded-full border bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800">
+      <Briefcase size={13} />Recrutement
+    </span>
+  );
+}
+
 const STATUS_TABS = [
   { key: "EN_ATTENTE", label: "En attente" },
-  { key: "VALIDEE", label: "Validées" },
+  { key: "VALIDEE",   label: "Validées" },
   { key: "CONFIRMEE", label: "Publiées" },
-  { key: "REJETEE", label: "Rejetées" },
+  { key: "REJETEE",   label: "Rejetées" },
 ];
-
 const ORIGIN_FILTERS = [
-  { key: "all", label: "Toutes" },
-  { key: "CREATED", label: "Créées" },
+  { key: "all",      label: "Toutes" },
+  { key: "CREATED",  label: "Créées" },
   { key: "ASSIGNED", label: "Assignées" },
 ];
 
@@ -151,177 +134,132 @@ const ORIGIN_FILTERS = [
 export default function ResponsableJobsPage() {
   const [jobs, setJobs] = useState([]);
   const [loading, setLoading] = useState(true);
-
   const [activeTab, setActiveTab] = useState("all");
   const [originFilter, setOriginFilter] = useState("all");
-
+  const [typeFilter, setTypeFilter] = useState("all"); // "all" | "EMPLOI" | "STAGE"
   const [expandedJobs, setExpandedJobs] = useState({});
-
   const [page, setPage] = useState(1);
   const pageSize = 6;
-
   const [modalOpen, setModalOpen] = useState(false);
   const [editingJob, setEditingJob] = useState(null);
+  const [deleteConfirm, setDeleteConfirm] = useState(null);
+  const [deleting, setDeleting] = useState(false);
 
   async function loadData() {
     setLoading(true);
     try {
-      const [createdRes, assignedRes] = await Promise.allSettled([
-        getMyOffers(),
-        getMyAssignedJobs(),
-      ]);
-
-      const created = Array.isArray(createdRes?.value?.data) ? createdRes.value.data : [];
+      const [createdRes, assignedRes] = await Promise.allSettled([getMyOffers(), getMyAssignedJobs()]);
+      const created  = Array.isArray(createdRes?.value?.data)  ? createdRes.value.data  : [];
       const assigned = Array.isArray(assignedRes?.value?.data) ? assignedRes.value.data : [];
-
       const map = new Map();
-      for (const j of created) map.set(j._id, { ...j, _origin: "CREATED" });
+      for (const j of created)  map.set(j._id, { ...j, _origin: "CREATED" });
       for (const j of assigned) {
-        if (map.has(j._id)) {
-          map.set(j._id, { ...map.get(j._id), ...j, _origin: "BOTH" });
-        } else {
-          map.set(j._id, { ...j, _origin: "ASSIGNED" });
-        }
+        if (map.has(j._id)) map.set(j._id, { ...map.get(j._id), ...j, _origin: "BOTH" });
+        else                 map.set(j._id, { ...j, _origin: "ASSIGNED" });
       }
-
-      const merged = Array.from(map.values()).map((j) => ({
-        ...j,
-        _status: getJobStatus(j),
-      }));
+      const merged = Array.from(map.values()).map((j) => ({ ...j, _status: getJobStatus(j) }));
       merged.sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
-
       setJobs(merged);
-    } catch (e) {
-      console.error("Erreur chargement jobs:", e);
-      setJobs([]);
-    } finally {
-      setLoading(false);
-    }
+    } catch (e) { console.error("Erreur chargement jobs:", e); setJobs([]); }
+    finally     { setLoading(false); }
   }
 
-  useEffect(() => {
-    loadData();
-  }, []);
+  useEffect(() => { loadData(); }, []);
 
   const detailsBase = "/ResponsableMetier/job";
+  function toggleReadMore(jobId) { setExpandedJobs((prev) => ({ ...prev, [jobId]: !prev[jobId] })); }
 
-  function toggleReadMore(jobId) {
-    setExpandedJobs((prev) => ({ ...prev, [jobId]: !prev[jobId] }));
-  }
-
-  const counts = useMemo(() => {
-    const c = { all: jobs.length, EN_ATTENTE: 0, VALIDEE: 0, CONFIRMEE: 0, REJETEE: 0 };
-    for (const j of jobs) {
-      const s = j._status || getJobStatus(j);
-      if (c[s] !== undefined) c[s] += 1;
-    }
+  /* counts for the type filter bar */
+  const typeCounts = useMemo(() => {
+    const c = { all: jobs.length, EMPLOI: 0, STAGE: 0 };
+    for (const j of jobs) { if (j.typeOffre === "STAGE") c.STAGE++; else c.EMPLOI++; }
     return c;
   }, [jobs]);
+
+  /* counts for status tabs (respects typeFilter + originFilter) */
+  const counts = useMemo(() => {
+    const c = { all: 0, EN_ATTENTE: 0, VALIDEE: 0, CONFIRMEE: 0, REJETEE: 0 };
+    for (const j of jobs) {
+      const matchType   = typeFilter   === "all" || (typeFilter === "STAGE" && j.typeOffre === "STAGE") || (typeFilter === "EMPLOI" && j.typeOffre !== "STAGE");
+      const matchOrigin = originFilter === "all" || (originFilter === "CREATED" && (j._origin === "CREATED" || j._origin === "BOTH")) || (originFilter === "ASSIGNED" && (j._origin === "ASSIGNED" || j._origin === "BOTH"));
+      if (!matchType || !matchOrigin) continue;
+      c.all++;
+      const s = j._status || getJobStatus(j);
+      if (c[s] !== undefined) c[s]++;
+    }
+    return c;
+  }, [jobs, typeFilter, originFilter]);
 
   const originCounts = useMemo(() => {
     const o = { all: jobs.length, CREATED: 0, ASSIGNED: 0 };
     for (const j of jobs) {
-      if (j._origin === "CREATED") o.CREATED++;
+      if (j._origin === "CREATED")  o.CREATED++;
       if (j._origin === "ASSIGNED") o.ASSIGNED++;
-      if (j._origin === "BOTH") {
-        o.CREATED++;
-        o.ASSIGNED++;
-      }
+      if (j._origin === "BOTH")     { o.CREATED++; o.ASSIGNED++; }
     }
     return o;
   }, [jobs]);
 
   const filteredJobs = useMemo(() => {
     let arr = [...jobs];
+    if (typeFilter === "STAGE")  arr = arr.filter((j) => j.typeOffre === "STAGE");
+    else if (typeFilter === "EMPLOI") arr = arr.filter((j) => j.typeOffre !== "STAGE");
     if (originFilter !== "all") {
       arr = arr.filter((j) => {
-        if (originFilter === "CREATED") return j._origin === "CREATED" || j._origin === "BOTH";
+        if (originFilter === "CREATED")  return j._origin === "CREATED"  || j._origin === "BOTH";
         if (originFilter === "ASSIGNED") return j._origin === "ASSIGNED" || j._origin === "BOTH";
         return true;
       });
     }
-    if (activeTab !== "all") {
-      arr = arr.filter((j) => (j._status || getJobStatus(j)) === activeTab);
-    }
+    if (activeTab !== "all") arr = arr.filter((j) => (j._status || getJobStatus(j)) === activeTab);
     return arr;
-  }, [jobs, activeTab, originFilter]);
+  }, [jobs, activeTab, originFilter, typeFilter]);
 
-  const totalPages = Math.max(1, Math.ceil(filteredJobs.length / pageSize));
-  const paginatedJobs = useMemo(() => {
-    const start = (page - 1) * pageSize;
-    return filteredJobs.slice(start, start + pageSize);
-  }, [filteredJobs, page]);
+  const totalPages   = Math.max(1, Math.ceil(filteredJobs.length / pageSize));
+  const paginatedJobs = useMemo(() => { const s = (page-1)*pageSize; return filteredJobs.slice(s, s+pageSize); }, [filteredJobs, page]);
 
-  useEffect(() => {
-    setPage(1);
-  }, [activeTab, originFilter]);
+  useEffect(() => { setPage(1); }, [activeTab, originFilter, typeFilter]);
+  useEffect(() => { if (page > totalPages) setPage(totalPages); }, [page, totalPages]);
 
-  useEffect(() => {
-    if (page > totalPages) setPage(totalPages);
-  }, [page, totalPages]);
-
-  async function handleCreate(payload) {
-    await createJob(payload);
-    setModalOpen(false);
-    setEditingJob(null);
-    await loadData();
+  async function handleCreate(payload) { await createJob(payload); setModalOpen(false); setEditingJob(null); await loadData(); }
+  async function handleUpdate(payload) { await updateMyJob(editingJob?._id, payload); setModalOpen(false); setEditingJob(null); await loadData(); }
+  async function handleDelete(job) {
+    setDeleting(true);
+    try { await deleteJob(job._id); setDeleteConfirm(null); await loadData(); }
+    catch (e) { console.error("Erreur suppression:", e); }
+    finally { setDeleting(false); }
   }
 
-  async function handleUpdate(payload) {
-    await updateMyJob(editingJob?._id, payload);
-    setModalOpen(false);
-    setEditingJob(null);
-    await loadData();
-  }
-
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-[#F0FAF0] dark:bg-gray-950 p-4 md:p-10">
-        <div className="max-w-6xl mx-auto space-y-6 animate-pulse">
-          {[1, 2, 3].map((i) => (
-            <div key={i} className="h-44 bg-white dark:bg-gray-800 rounded-2xl shadow-sm" />
-          ))}
-        </div>
+  if (loading) return (
+    <div className="min-h-screen bg-[#F0FAF0] dark:bg-gray-950 p-4 md:p-10">
+      <div className="max-w-6xl mx-auto space-y-6 animate-pulse">
+        {[1,2,3].map((i) => <div key={i} className="h-44 bg-white dark:bg-gray-800 rounded-2xl shadow-sm" />)}
       </div>
-    );
-  }
+    </div>
+  );
 
   return (
     <div className="min-h-screen bg-[#F0FAF0] dark:bg-gray-950 transition-colors duration-300">
       <div className="max-w-6xl mx-auto px-4 md:px-6 pt-6 md:pt-10 pb-16">
+
+        {/* ── HEADER ── */}
         <div className="flex flex-col md:flex-row md:justify-between md:items-start gap-4 md:gap-6 mb-6 md:mb-8">
           <div className="flex-1">
             <h1 className="text-2xl md:text-4xl font-extrabold text-gray-900 dark:text-white leading-tight">
-              Offres Responsable
-              <br className="md:hidden" />
-              Métier
+              Offres Responsable<br className="md:hidden" /> Métier
             </h1>
-            <p className="text-xs md:text-sm text-gray-500 dark:text-gray-400 mt-2">
-              Tes offres créées + celles assignées
-            </p>
+            <p className="text-xs md:text-sm text-gray-500 dark:text-gray-400 mt-2">Tes offres créées + celles assignées</p>
             <div className="mt-3 text-xs md:text-sm text-gray-600 dark:text-gray-300 space-y-1">
-              <p>
-                Total : <span className="font-extrabold text-[#6CB33F]">{jobs.length}</span> offre(s)
-              </p>
+              <p>Total : <span className="font-extrabold text-[#6CB33F]">{jobs.length}</span> offre(s)</p>
               <p className="flex flex-wrap gap-1 md:gap-2">
-                <span>
-                  <span className="font-semibold">Créées :</span>{" "}
-                  <span className="font-extrabold">{originCounts.CREATED}</span>
-                </span>
+                <span><span className="font-semibold">Créées :</span> <span className="font-extrabold">{originCounts.CREATED}</span></span>
                 <span>—</span>
-                <span>
-                  <span className="font-semibold">Assignées :</span>{" "}
-                  <span className="font-extrabold">{originCounts.ASSIGNED}</span>
-                </span>
+                <span><span className="font-semibold">Assignées :</span> <span className="font-extrabold">{originCounts.ASSIGNED}</span></span>
               </p>
             </div>
           </div>
-
           <button
-            onClick={() => {
-              setEditingJob(null);
-              setModalOpen(true);
-            }}
+            onClick={() => { setEditingJob(null); setModalOpen(true); }}
             className="bg-[#6CB33F] hover:bg-[#4E8F2F] dark:bg-emerald-600 dark:hover:bg-emerald-500
                        text-white px-4 md:px-6 py-2.5 md:py-3 rounded-lg md:rounded-xl font-extrabold shadow transition-colors
                        flex items-center justify-center gap-2 text-sm md:text-base whitespace-nowrap"
@@ -330,114 +268,92 @@ export default function ResponsableJobsPage() {
           </button>
         </div>
 
+        {/* ── TYPE FILTER: Tous / Recrutement / Stages ── */}
+        <div className="flex items-center gap-2 mb-5 flex-wrap">
+          {[
+            { key: "all",    label: "Tous",        count: typeCounts.all,   icon: null,                     activeClass: "bg-[#6CB33F] dark:bg-emerald-600 text-white" },
+            { key: "EMPLOI", label: "Recrutement",  count: typeCounts.EMPLOI,icon: <Briefcase size={14} />,   activeClass: "bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 border-emerald-300 dark:border-emerald-700" },
+            { key: "STAGE",  label: "Stages",       count: typeCounts.STAGE, icon: <GraduationCap size={14}/>, activeClass: "bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 border-blue-300 dark:border-blue-700" },
+          ].map((f) => {
+            const active = typeFilter === f.key;
+            return (
+              <button key={f.key} onClick={() => setTypeFilter(f.key)}
+                className={`inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full text-sm font-bold transition-all duration-150 border ${
+                  active
+                    ? f.activeClass
+                    : "bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300 hover:border-gray-300 dark:hover:border-gray-600"
+                }`}
+              >
+                {f.icon}{f.label}
+                <span className={`text-xs px-1.5 py-0.5 rounded-full font-bold ${
+                  active ? "bg-white/25 dark:bg-black/20" : "bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400"
+                }`}>{f.count}</span>
+              </button>
+            );
+          })}
+        </div>
+
+        {/* ── ORIGIN + STATUS FILTERS ── */}
         <div className="bg-white dark:bg-gray-900/60 border border-gray-200 dark:border-gray-700 rounded-2xl mb-8 overflow-hidden shadow-sm">
+          {/* Origin row */}
           <div className="flex flex-col md:flex-row md:items-center gap-2 md:gap-0 border-b border-gray-100 dark:border-gray-700/60 px-3 md:px-0">
             <div className="md:px-5 md:py-3.5 md:border-r border-gray-100 dark:border-gray-700/60 md:shrink-0">
-              <span className="text-xs font-bold uppercase tracking-widest text-gray-400 dark:text-gray-500 whitespace-nowrap">
-                Origine
-              </span>
+              <span className="text-xs font-bold uppercase tracking-widest text-gray-400 dark:text-gray-500 whitespace-nowrap">Origine</span>
             </div>
             <div className="flex items-center gap-1.5 px-0 md:px-4 py-3 md:py-2.5 flex-wrap">
               {ORIGIN_FILTERS.map((f) => {
                 const active = originFilter === f.key;
                 const badgeCount = f.key === "all" ? originCounts.all : originCounts[f.key] || 0;
                 return (
-                  <button
-                    key={f.key}
-                    onClick={() => setOriginFilter(f.key)}
+                  <button key={f.key} onClick={() => setOriginFilter(f.key)}
                     className={`inline-flex items-center gap-1.5 px-3 md:px-4 py-1 md:py-1.5 rounded-full text-xs md:text-sm font-bold transition-all duration-150 ${
-                      active
-                        ? "bg-gray-900 dark:bg-white text-white dark:text-gray-900"
-                        : "text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
+                      active ? "bg-gray-900 dark:bg-white text-white dark:text-gray-900" : "text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
                     }`}
                   >
                     {f.label}
-                    <span
-                      className={`text-xs px-1.5 py-0.5 rounded-full font-bold ${
-                        active
-                          ? "bg-white/20 dark:bg-gray-900/20 text-white dark:text-gray-900"
-                          : "bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400"
-                      }`}
-                    >
-                      {badgeCount}
-                    </span>
+                    <span className={`text-xs px-1.5 py-0.5 rounded-full font-bold ${active ? "bg-white/20 dark:bg-gray-900/20" : "bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400"}`}>{badgeCount}</span>
                   </button>
                 );
               })}
             </div>
           </div>
 
+          {/* Status row */}
           <div className="flex flex-col md:flex-row md:items-center gap-2 md:gap-0 px-3 md:px-0">
             <div className="md:px-5 md:py-3.5 md:border-r border-gray-100 dark:border-gray-700/60 md:shrink-0">
-              <span className="text-xs font-bold uppercase tracking-widest text-gray-400 dark:text-gray-500 whitespace-nowrap">
-                Statut
-              </span>
+              <span className="text-xs font-bold uppercase tracking-widest text-gray-400 dark:text-gray-500 whitespace-nowrap">Statut</span>
             </div>
-            <div className="flex items-center gap-1 md:gap-1 px-0 md:px-4 py-3 md:py-2.5 flex-wrap overflow-x-auto">
-              <button
-                type="button"
-                onClick={() => setActiveTab("all")}
+            <div className="flex items-center gap-1 px-0 md:px-4 py-3 md:py-2.5 flex-wrap overflow-x-auto">
+              <button type="button" onClick={() => setActiveTab("all")}
                 className={`inline-flex items-center gap-1.5 px-3 md:px-4 py-1 md:py-1.5 rounded-full text-xs md:text-sm font-bold transition-all duration-150 flex-shrink-0 ${
-                  activeTab === "all"
-                    ? "bg-[#6CB33F] dark:bg-emerald-600 text-white"
-                    : "text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
+                  activeTab === "all" ? "bg-[#6CB33F] dark:bg-emerald-600 text-white" : "text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
                 }`}
               >
                 Tous
-                <span
-                  className={`text-xs px-1.5 py-0.5 rounded-full font-bold ${
-                    activeTab === "all"
-                      ? "bg-white/25 text-white"
-                      : "bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400"
-                  }`}
-                >
-                  {counts.all}
-                </span>
+                <span className={`text-xs px-1.5 py-0.5 rounded-full font-bold ${activeTab === "all" ? "bg-white/25 text-white" : "bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400"}`}>{counts.all}</span>
               </button>
-
               <span className="mx-0.5 h-4 w-px bg-gray-200 dark:bg-gray-700 flex-shrink-0" />
-
               {STATUS_TABS.map((tab) => {
                 const active = activeTab === tab.key;
                 const colorMap = {
-                  EN_ATTENTE: active
-                    ? "bg-amber-500 text-white"
-                    : "text-amber-600 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-900/20",
-                  VALIDEE: active
-                    ? "bg-blue-500 text-white"
-                    : "text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20",
-                  CONFIRMEE: active
-                    ? "bg-green-600 text-white"
-                    : "text-green-700 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/20",
-                  REJETEE: active
-                    ? "bg-red-500 text-white"
-                    : "text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20",
+                  EN_ATTENTE: active ? "bg-amber-500 text-white" : "text-amber-600 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-900/20",
+                  VALIDEE:    active ? "bg-blue-500 text-white"  : "text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20",
+                  CONFIRMEE:  active ? "bg-green-600 text-white" : "text-green-700 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/20",
+                  REJETEE:    active ? "bg-red-500 text-white"   : "text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20",
                 };
                 const badgeColor = {
-                  EN_ATTENTE: active
-                    ? "bg-white/25 text-white"
-                    : "bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300",
-                  VALIDEE: active
-                    ? "bg-white/25 text-white"
-                    : "bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300",
-                  CONFIRMEE: active
-                    ? "bg-white/25 text-white"
-                    : "bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300",
-                  REJETEE: active
-                    ? "bg-white/25 text-white"
-                    : "bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300",
+                  EN_ATTENTE: active ? "bg-white/25 text-white" : "bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300",
+                  VALIDEE:    active ? "bg-white/25 text-white" : "bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300",
+                  CONFIRMEE:  active ? "bg-white/25 text-white" : "bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300",
+                  REJETEE:    active ? "bg-white/25 text-white" : "bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300",
                 };
                 return (
-                  <button
-                    key={tab.key}
-                    onClick={() => setActiveTab(tab.key)}
+                  <button key={tab.key} onClick={() => setActiveTab(tab.key)}
                     className={`inline-flex items-center gap-1.5 px-3 md:px-4 py-1 md:py-1.5 rounded-full text-xs md:text-sm font-bold transition-all duration-150 flex-shrink-0 ${colorMap[tab.key]}`}
                   >
                     <span className="hidden sm:inline">{tab.label}</span>
                     <span className="sm:hidden text-xs">{tab.label.split(" ")[0]}</span>
-                    <span className={`text-xs px-1.5 py-0.5 rounded-full font-bold ${badgeColor[tab.key]}`}>
-                      {counts[tab.key] || 0}
-                    </span>
+                    <span className={`text-xs px-1.5 py-0.5 rounded-full font-bold ${badgeColor[tab.key]}`}>{counts[tab.key] || 0}</span>
                   </button>
                 );
               })}
@@ -445,63 +361,58 @@ export default function ResponsableJobsPage() {
           </div>
         </div>
 
+        {/* ── CARDS GRID ── */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
           {paginatedJobs.map((job) => {
             const status = job._status || getJobStatus(job);
             const cfg = STATUS_CONFIG[status] || STATUS_CONFIG.EN_ATTENTE;
             const isExpanded = !!expandedJobs[job._id];
             const hasLongDesc = (job.description || "").length > 160;
+            const isStageJob = job.typeOffre === "STAGE";
+            const isOwner = job._origin === "CREATED" || job._origin === "BOTH";
+            const canEditStage   = isStageJob && isOwner;
+            const canDeleteStage = isStageJob && isOwner;
 
             return (
-              <div
-                key={job._id}
+              <div key={job._id}
                 className={`bg-white dark:bg-gray-800 rounded-2xl shadow p-4 md:p-6 flex flex-col hover:shadow-lg transition-all duration-300 border ${cfg.cardBorder}`}
               >
+                {/* Title + badges */}
                 <div className="flex items-start justify-between gap-2 md:gap-3 mb-3">
                   <div className="min-w-0 flex-1">
-                    <h3 className="text-lg md:text-xl font-extrabold text-gray-900 dark:text-white truncate">
-                      {job.titre || "Sans titre"}
-                    </h3>
+                    <h3 className="text-lg md:text-xl font-extrabold text-gray-900 dark:text-white truncate">{job.titre || "Sans titre"}</h3>
                     <div className="mt-2 flex flex-wrap gap-1.5 md:gap-2">
                       <OriginBadge origin={job._origin || "CREATED"} />
                       <StatusBadge status={status} />
+                      <TypeOffreBadge typeOffre={job.typeOffre} />
                     </div>
                   </div>
                 </div>
 
+                {/* Rejection reason */}
                 {status === "REJETEE" && job.rejectionReason && (
                   <div className="rounded-lg md:rounded-xl border border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-900/20 p-2 md:p-3 mb-3">
-                    <p className="text-xs font-extrabold text-red-600 dark:text-red-400 uppercase mb-1">
-                      Motif du rejet
-                    </p>
-                    <p className="text-xs md:text-sm text-red-700 dark:text-red-300 line-clamp-2">
-                      {job.rejectionReason}
-                    </p>
+                    <p className="text-xs font-extrabold text-red-600 dark:text-red-400 uppercase mb-1">Motif du rejet</p>
+                    <p className="text-xs md:text-sm text-red-700 dark:text-red-300 line-clamp-2">{job.rejectionReason}</p>
                   </div>
                 )}
 
-                <p
-                  className={`text-gray-700 dark:text-gray-200 text-xs md:text-sm mb-2 whitespace-pre-line ${
-                    !isExpanded ? "line-clamp-3" : ""
-                  }`}
-                >
+                {/* Description */}
+                <p className={`text-gray-700 dark:text-gray-200 text-xs md:text-sm mb-2 whitespace-pre-line ${!isExpanded ? "line-clamp-3" : ""}`}>
                   {job.description || "—"}
                 </p>
-
                 {hasLongDesc && (
-                  <button
-                    type="button"
-                    onClick={() => toggleReadMore(job._id)}
-                    className="text-xs md:text-sm text-[#4E8F2F] dark:text-emerald-400 font-extrabold hover:underline self-start mb-2"
-                  >
+                  <button type="button" onClick={() => toggleReadMore(job._id)}
+                    className="text-xs md:text-sm text-[#4E8F2F] dark:text-emerald-400 font-extrabold hover:underline self-start mb-2">
                     {isExpanded ? "Réduire ↑" : "Lire la suite →"}
                   </button>
                 )}
 
                 <div className="border-t border-gray-100 dark:border-gray-700 my-3 md:my-4" />
 
-                <div className="mt-auto relative">
-                  <div className="text-xs md:text-sm text-gray-600 dark:text-gray-300 space-y-1 pr-28 md:pr-32">
+                {/* Meta + actions */}
+                <div className="mt-auto">
+                  <div className="text-xs md:text-sm text-gray-600 dark:text-gray-300 space-y-1 mb-3">
                     {job.lieu && (
                       <div className="flex items-center gap-2 truncate">
                         <MapPin className="w-3.5 h-3.5 md:w-4 md:h-4 text-gray-500 dark:text-gray-400 flex-shrink-0" />
@@ -509,27 +420,26 @@ export default function ResponsableJobsPage() {
                       </div>
                     )}
                     <div className="flex items-center gap-2">
-                      <Calendar size={14} className="text-gray-500 dark:text-gray-400 flex-shrink-0 md:w-4 md:h-4" />
+                      <Calendar size={14} className="text-gray-500 dark:text-gray-400 flex-shrink-0" />
                       <span className="truncate">Créé : {formatDate(job.createdAt)}</span>
                     </div>
                     <div className="flex items-center gap-2">
-                      <CalendarClock size={14} className="text-gray-500 dark:text-gray-400 flex-shrink-0 md:w-4 md:h-4" />
+                      <CalendarClock size={14} className="text-gray-500 dark:text-gray-400 flex-shrink-0" />
                       <span className="truncate">Clôture : {formatDate(job.dateCloture)}</span>
                     </div>
                     {job.confirmedAt && (
                       <div className="flex items-center gap-2">
-                        <CalendarCheck size={14} className="text-gray-500 dark:text-gray-400 flex-shrink-0 md:w-4 md:h-4" />
+                        <CalendarCheck size={14} className="text-gray-500 dark:text-gray-400 flex-shrink-0" />
                         <span className="truncate">Confirmée : {formatDate(job.confirmedAt)}</span>
                       </div>
                     )}
                   </div>
 
-                  <div className="absolute right-0 top-1/2 -translate-y-1/2">
-                    <Link
-                      href={`${detailsBase}/${job._id}`}
-                      className="h-9 md:h-11 px-4 md:px-7 rounded-full font-extrabold text-xs md:text-sm inline-flex items-center justify-center
-                                 bg-[#6CB33F] hover:bg-[#4E8F2F]
-                                 dark:bg-emerald-600 dark:hover:bg-emerald-500
+                  {/* Button row */}
+                  <div className="flex items-center gap-2 justify-end flex-wrap">
+                    <Link href={`${detailsBase}/${job._id}`}
+                      className="h-9 md:h-10 px-4 md:px-6 rounded-full font-extrabold text-xs md:text-sm inline-flex items-center justify-center
+                                 bg-[#6CB33F] hover:bg-[#4E8F2F] dark:bg-emerald-600 dark:hover:bg-emerald-500
                                  text-white shadow-md shadow-green-500/20 transition-colors whitespace-nowrap"
                     >
                       Détails
@@ -543,17 +453,10 @@ export default function ResponsableJobsPage() {
           {filteredJobs.length === 0 && (
             <div className="col-span-full bg-white dark:bg-gray-800 border-2 border-dashed border-[#6CB33F] dark:border-emerald-600 rounded-2xl p-8 md:p-12 text-center">
               <Briefcase className="mx-auto w-8 md:w-10 h-8 md:h-10 text-gray-400 dark:text-gray-500" />
-              <p className="mt-4 text-gray-700 dark:text-gray-200 font-semibold text-sm md:text-base">
-                Aucune offre pour ce filtre.
-              </p>
-              <button
-                onClick={() => {
-                  setEditingJob(null);
-                  setModalOpen(true);
-                }}
+              <p className="mt-4 text-gray-700 dark:text-gray-200 font-semibold text-sm md:text-base">Aucune offre pour ce filtre.</p>
+              <button onClick={() => { setEditingJob(null); setModalOpen(true); }}
                 className="mt-4 inline-flex items-center gap-2 px-4 md:px-5 py-2 md:py-2.5 rounded-full text-xs md:text-sm
-                           bg-[#6CB33F] hover:bg-[#4E8F2F]
-                           dark:bg-emerald-600 dark:hover:bg-emerald-500
+                           bg-[#6CB33F] hover:bg-[#4E8F2F] dark:bg-emerald-600 dark:hover:bg-emerald-500
                            text-white font-extrabold transition-colors"
               >
                 <Plus size={16} /> Proposer une offre
@@ -564,51 +467,68 @@ export default function ResponsableJobsPage() {
 
         {filteredJobs.length > 0 && (
           <div className="mt-8 md:mt-10 flex flex-col md:flex-row md:items-center md:justify-between gap-4 text-xs md:text-sm text-gray-600 dark:text-gray-300">
-            <p>
-              Total : {filteredJobs.length} — Page {page} / {totalPages}
-            </p>
+            <p>Total : {filteredJobs.length} — Page {page} / {totalPages}</p>
             <Pagination currentPage={page} totalPages={totalPages} onPageChange={setPage} />
           </div>
         )}
       </div>
 
+      {/* ── CREATE / EDIT MODAL ── */}
       <JobOfferModal
         open={modalOpen}
-        onClose={() => {
-          setModalOpen(false);
-          setEditingJob(null);
-        }}
+        onClose={() => { setModalOpen(false); setEditingJob(null); }}
         onSubmit={editingJob ? handleUpdate : handleCreate}
         initialData={editingJob}
       />
+
+      {/* ── DELETE CONFIRM MODAL ── */}
+      {deleteConfirm && (
+        <div className="fixed inset-0 z-50 bg-black/40 dark:bg-black/60 flex items-center justify-center p-4"
+          onMouseDown={(e) => { if (e.target === e.currentTarget) setDeleteConfirm(null); }}
+        >
+          <div className="bg-white dark:bg-gray-800 w-full max-w-md rounded-2xl shadow-2xl p-6 sm:p-8">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="h-12 w-12 rounded-2xl bg-red-100 dark:bg-red-900/30 grid place-items-center flex-shrink-0">
+                <XCircle className="text-red-600 dark:text-red-400" size={24} />
+              </div>
+              <div>
+                <h3 className="text-lg font-extrabold text-gray-900 dark:text-white">Supprimer le stage</h3>
+                <p className="text-sm text-gray-500 dark:text-gray-400">Cette action est irréversible.</p>
+              </div>
+            </div>
+            <p className="text-sm text-gray-700 dark:text-gray-200 mb-6">
+              Êtes-vous sûr de vouloir supprimer le stage{" "}
+              <span className="font-bold">« {deleteConfirm.titre} »</span> ?
+            </p>
+            <div className="flex gap-3">
+              <button onClick={() => handleDelete(deleteConfirm)} disabled={deleting}
+                className="flex-1 h-10 rounded-xl font-bold text-sm bg-red-600 hover:bg-red-700 text-white transition-colors disabled:opacity-50">
+                {deleting ? "Suppression..." : "Oui, supprimer"}
+              </button>
+              <button onClick={() => setDeleteConfirm(null)} disabled={deleting}
+                className="flex-1 h-10 rounded-xl font-bold text-sm border border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+                Annuler
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
 
 /* =================================================================
-   MODAL — Create / Edit Job Offer
+   MODAL — Create / Edit (Stage or Emploi)
 ================================================================= */
 function JobOfferModal({ open, onClose, onSubmit, initialData }) {
   const isEditing = !!initialData;
 
   const emptyForm = {
-    titre: "",
-    description: "",
-    lieu: "",
-    dateCloture: "",
-    hardSkills: "",
-    softSkills: "",
-    typeDiplome: "",
-    motif: "",
-    sexe: "",
-    nombrePostes: 1,
-    scores: {
-      skillsFit: 30,
-      experienceFit: 30,
-      projectsFit: 20,
-      educationFit: 10,
-      communicationFit: 10,
-    },
+    typeOffre: "EMPLOI",
+    titre: "", description: "", lieu: "", dateCloture: "",
+    hardSkills: "", softSkills: "", typeDiplome: "", motif: "", sexe: "", nombrePostes: "",
+    scores: { skillsFit: 30, experienceFit: 30, projectsFit: 20, educationFit: 10, communicationFit: 10 },
+    typeStage: "", dureeStage: "",
   };
 
   const [form, setForm] = useState(emptyForm);
@@ -616,8 +536,9 @@ function JobOfferModal({ open, onClose, onSubmit, initialData }) {
   const [submitting, setSubmitting] = useState(false);
   const [generateQuiz, setGenerateQuiz] = useState(true);
   const [numQuestions, setNumQuestions] = useState(25);
+  const isStage = form.typeOffre === "STAGE";
 
-  const SCORE_ITEMS_MODAL = [
+  const SCORE_ITEMS = [
     { key: "skillsFit", label: "Skills Fit" },
     { key: "experienceFit", label: "Professional Experience Fit" },
     { key: "projectsFit", label: "Projects Fit & Impact" },
@@ -627,33 +548,25 @@ function JobOfferModal({ open, onClose, onSubmit, initialData }) {
 
   useEffect(() => {
     if (!open) return;
-
     Promise.resolve().then(() => {
       if (initialData) {
+        const typeOffre = initialData.typeOffre === "STAGE" ? "STAGE" : "EMPLOI";
         setForm({
+          typeOffre,
           titre: initialData.titre || "",
           description: initialData.description || "",
           lieu: initialData.lieu || "",
           dateCloture: initialData.dateCloture ? String(initialData.dateCloture).slice(0, 10) : "",
-          hardSkills: Array.isArray(initialData.hardSkills)
-            ? initialData.hardSkills.join(", ")
-            : initialData.hardSkills || "",
-          softSkills: Array.isArray(initialData.softSkills)
-            ? initialData.softSkills.join(", ")
-            : initialData.softSkills || "",
+          hardSkills: Array.isArray(initialData.hardSkills) ? initialData.hardSkills.join(", ") : initialData.hardSkills || "",
+          softSkills: Array.isArray(initialData.softSkills) ? initialData.softSkills.join(", ") : initialData.softSkills || "",
           typeDiplome: initialData.typeDiplome || "",
           motif: initialData.motif || "",
           sexe: initialData.sexe || "",
-          nombrePostes: initialData.nombrePostes ?? 1,
-          scores: {
-            skillsFit: initialData?.scores?.skillsFit ?? 30,
-            experienceFit: initialData?.scores?.experienceFit ?? 30,
-            projectsFit: initialData?.scores?.projectsFit ?? 20,
-            educationFit: initialData?.scores?.educationFit ?? 10,
-            communicationFit: initialData?.scores?.communicationFit ?? 10,
-          },
+          nombrePostes: initialData.nombrePostes ?? "",
+          scores: { skillsFit: initialData?.scores?.skillsFit ?? 30, experienceFit: initialData?.scores?.experienceFit ?? 30, projectsFit: initialData?.scores?.projectsFit ?? 20, educationFit: initialData?.scores?.educationFit ?? 10, communicationFit: initialData?.scores?.communicationFit ?? 10 },
+          typeStage: initialData.typeStage || "",
+          dureeStage: initialData.dureeStage || "",
         });
-
         setGenerateQuiz(initialData.generateQuiz !== false);
         setNumQuestions(typeof initialData.numQuestions === "number" ? initialData.numQuestions : 25);
       } else {
@@ -661,127 +574,72 @@ function JobOfferModal({ open, onClose, onSubmit, initialData }) {
         setGenerateQuiz(true);
         setNumQuestions(25);
       }
-
-      setFormError("");
-      setSubmitting(false);
+      setFormError(""); setSubmitting(false);
     });
   }, [open, initialData]);
 
   if (!open) return null;
 
-  const totalWeights = Object.values(form.scores || {}).reduce((sum, v) => sum + Number(v || 0), 0);
-  const isValidTotal = totalWeights === 100;
+  const totalWeights = Object.values(form.scores || {}).reduce((s, v) => s + Number(v || 0), 0);
+  const isValidTotal = isStage || totalWeights === 100;
 
   function setWeight(key, value) {
-    setFormError("");
     let v = Number(value);
     if (Number.isNaN(v)) v = 0;
-    if (v < 0) v = 0;
-    if (v > 100) v = 100;
-    setForm((prev) => ({ ...prev, scores: { ...prev.scores, [key]: v } }));
+    if (v < 0) v = 0; if (v > 100) v = 100;
+    setForm((p) => ({ ...p, scores: { ...p.scores, [key]: v } }));
+    setFormError("");
   }
 
-  function handleNumQuestions(val) {
-    let n = parseInt(val, 10);
-    if (isNaN(n) || n < 1) n = 1;
-    if (n > 30) n = 30;
-    setNumQuestions(n);
-  }
-
-  function handleNombrePostes(val) {
-    let n = parseInt(val, 10);
-    if (isNaN(n) || n < 1) n = 1;
-    setForm((prev) => ({ ...prev, nombrePostes: n }));
-  }
-
-  function parseSkills(str) {
-    return String(str || "")
-      .split(",")
-      .map((t) => t.trim())
-      .filter(Boolean);
-  }
+  function parseSkills(str) { return String(str || "").split(",").map((t) => t.trim()).filter(Boolean); }
 
   async function handleSubmit(e) {
-    e.preventDefault();
-    setFormError("");
-
-    if (!form.titre.trim()) return setFormError("❌ Le titre du poste est obligatoire.");
+    e.preventDefault(); setFormError("");
+    if (!form.titre.trim())       return setFormError("❌ Le titre du poste est obligatoire.");
     if (!form.description.trim()) return setFormError("❌ La description est obligatoire.");
-    if (!form.lieu.trim()) return setFormError("❌ Le lieu du poste est obligatoire.");
-    if (!form.dateCloture) return setFormError("❌ La date de clôture est obligatoire.");
-    if (!isValidTotal) return setFormError("❌ La somme des pondérations doit être égale à 100%.");
+    if (!form.lieu.trim())        return setFormError("❌ Le lieu du poste est obligatoire.");
+    if (!form.dateCloture)        return setFormError("❌ La date de clôture est obligatoire.");
+    if (!isStage && !isValidTotal) return setFormError("❌ La somme des pondérations doit être égale à 100%.");
 
+    const nombrePostesNum = form.nombrePostes !== "" ? Number(form.nombrePostes) : undefined;
     const payload = {
-      titre: form.titre.trim(),
-      description: form.description.trim(),
-      lieu: form.lieu.trim(),
+      typeOffre: form.typeOffre,
+      titre: form.titre.trim(), description: form.description.trim(), lieu: form.lieu.trim(),
       dateCloture: form.dateCloture,
-      hardSkills: parseSkills(form.hardSkills),
-      softSkills: parseSkills(form.softSkills),
+      hardSkills: parseSkills(form.hardSkills), softSkills: parseSkills(form.softSkills),
       typeDiplome: form.typeDiplome.trim(),
-      motif: form.motif,
-      sexe: form.sexe,
-      nombrePostes: Number(form.nombrePostes) || 1,
-      scores: form.scores,
-      ...(!isEditing && {
-        generateQuiz,
-        numQuestions: generateQuiz ? numQuestions : 0,
-      }),
+      sexe: form.sexe || undefined,
+      nombrePostes: nombrePostesNum && !isNaN(nombrePostesNum) && nombrePostesNum >= 1 ? nombrePostesNum : undefined,
+      ...(isStage
+        ? { typeStage: form.typeStage || undefined, dureeStage: form.dureeStage || undefined }
+        : { motif: form.motif || undefined, scores: form.scores, ...(!isEditing && { generateQuiz, numQuestions: generateQuiz ? numQuestions : 0 }) }),
     };
-
     setSubmitting(true);
-    try {
-      await onSubmit(payload);
-    } catch (err) {
-      console.error("Erreur submit modal:", err);
-      setFormError("❌ Une erreur est survenue. Vérifie les champs et réessaie.");
-      setSubmitting(false);
-    }
+    try   { await onSubmit(payload); }
+    catch (err) { console.error(err); setFormError("❌ Une erreur est survenue. Vérifie les champs et réessaie."); setSubmitting(false); }
   }
 
-  const inputBase =
-    "w-full h-10 sm:h-11 md:h-12 px-3 sm:px-4 md:px-5 rounded-lg sm:rounded-xl md:rounded-full " +
-    "border border-gray-200 dark:border-gray-600 " +
-    "bg-white dark:bg-gray-700 " +
-    "text-gray-800 dark:text-gray-100 text-sm " +
-    "placeholder-gray-400 dark:placeholder-gray-500 " +
-    "focus:border-[#6CB33F] dark:focus:border-emerald-500 " +
-    "focus:ring-4 focus:ring-[#6CB33F]/15 dark:focus:ring-emerald-500/20 " +
-    "outline-none transition-colors";
-
-  const labelBase =
-    "block text-xs sm:text-sm font-semibold tracking-wide text-gray-700 dark:text-gray-300 mb-2 uppercase";
+  const inputBase = "w-full h-10 sm:h-11 md:h-12 px-3 sm:px-4 md:px-5 rounded-lg sm:rounded-xl md:rounded-full border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 text-sm placeholder-gray-400 dark:placeholder-gray-500 focus:border-[#6CB33F] dark:focus:border-emerald-500 focus:ring-4 focus:ring-[#6CB33F]/15 dark:focus:ring-emerald-500/20 outline-none transition-colors";
+  const labelBase = "block text-xs sm:text-sm font-semibold tracking-wide text-gray-700 dark:text-gray-300 mb-2 uppercase";
 
   return (
-    <div
-      className="fixed inset-0 z-50 bg-black/40 dark:bg-black/60 flex items-center justify-center p-3 sm:p-4 md:p-6"
-      onMouseDown={(e) => {
-        if (e.target === e.currentTarget) onClose();
-      }}
+    <div className="fixed inset-0 z-50 bg-black/40 dark:bg-black/60 flex items-center justify-center p-3 sm:p-4 md:p-6"
+      onMouseDown={(e) => { if (e.target === e.currentTarget) onClose(); }}
     >
       <div className="bg-white dark:bg-gray-800 w-full max-w-2xl rounded-2xl sm:rounded-3xl shadow-2xl overflow-hidden max-h-[95vh] flex flex-col transition-colors duration-300">
+        {/* Header */}
         <div className="px-4 sm:px-6 md:px-8 pt-4 sm:pt-5 md:pt-7 pb-3 sm:pb-4 md:pb-5 border-b border-gray-200 dark:border-gray-700 flex-shrink-0">
           <div className="flex items-start justify-between gap-3 sm:gap-4">
             <div className="flex-1">
               <h2 className="text-xl sm:text-2xl font-extrabold text-gray-900 dark:text-white">
-                {isEditing ? "Modifier l'offre" : "Nouvelle offre"}
+                {isEditing ? (isStage ? "Modifier le stage" : "Modifier l'offre") : "Ajouter une offre"}
               </h2>
               <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 mt-1">
                 Tous les champs marqués <span className="text-red-500">*</span> sont obligatoires.
               </p>
             </div>
-            <button
-              type="button"
-              onClick={onClose}
-              className="shrink-0 h-9 w-9 sm:h-10 sm:w-10 rounded-full grid place-items-center
-                         text-gray-500 dark:text-gray-400
-                         hover:text-gray-800 dark:hover:text-white
-                         hover:bg-gray-100 dark:hover:bg-gray-700
-                         transition-colors text-lg"
-              aria-label="Fermer"
-            >
-              ✕
-            </button>
+            <button type="button" onClick={onClose}
+              className="shrink-0 h-9 w-9 sm:h-10 sm:w-10 rounded-full grid place-items-center text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors text-lg">✕</button>
           </div>
         </div>
 
@@ -789,336 +647,210 @@ function JobOfferModal({ open, onClose, onSubmit, initialData }) {
           <form onSubmit={handleSubmit} noValidate className="px-4 sm:px-6 md:px-8 py-4 sm:py-5 md:py-7">
             <div className="space-y-4 sm:space-y-5 md:space-y-6">
               {formError && (
-                <div className="rounded-lg md:rounded-xl border border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-900/30 p-3 text-xs sm:text-sm font-semibold text-red-700 dark:text-red-400">
-                  {formError}
+                <div className="rounded-lg border border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-900/30 p-3 text-xs sm:text-sm font-semibold text-red-700 dark:text-red-400">{formError}</div>
+              )}
+
+              {/* TYPE D'OFFRE — create only */}
+              {!isEditing && (
+                <div>
+                  <label className={labelBase}>Type d'offre <span className="text-red-500">*</span></label>
+                  <div className="grid grid-cols-2 gap-3">
+                    <button type="button" onClick={() => setForm((p) => ({ ...p, typeOffre: "EMPLOI" }))}
+                      className={`flex items-center justify-center gap-2 h-11 sm:h-12 rounded-xl sm:rounded-2xl font-bold text-sm transition-all border-2 ${
+                        !isStage ? "border-[#6CB33F] bg-[#6CB33F]/10 text-[#4E8F2F] dark:border-emerald-500 dark:bg-emerald-500/10 dark:text-emerald-400"
+                                 : "border-gray-200 dark:border-gray-600 text-gray-600 dark:text-gray-300 hover:border-gray-300 dark:hover:border-gray-500"
+                      }`}>
+                      <Briefcase size={16} /> Offre d'emploi
+                    </button>
+                    <button type="button" onClick={() => setForm((p) => ({ ...p, typeOffre: "STAGE" }))}
+                      className={`flex items-center justify-center gap-2 h-11 sm:h-12 rounded-xl sm:rounded-2xl font-bold text-sm transition-all border-2 ${
+                        isStage ? "border-blue-500 bg-blue-500/10 text-blue-700 dark:border-blue-400 dark:bg-blue-400/10 dark:text-blue-300"
+                                : "border-gray-200 dark:border-gray-600 text-gray-600 dark:text-gray-300 hover:border-gray-300 dark:hover:border-gray-500"
+                      }`}>
+                      <GraduationCap size={16} /> Stage
+                    </button>
+                  </div>
                 </div>
               )}
 
+              {/* TITRE */}
               <div>
-                <label className={labelBase}>
-                  Titre du poste <span className="text-red-500">*</span>
-                </label>
-                <input
-                  value={form.titre}
-                  onChange={(e) => setForm({ ...form, titre: e.target.value })}
-                  className={inputBase}
-                  placeholder="Ex: Fullstack Developer (React/Node)"
-                />
+                <label className={labelBase}>Titre du poste <span className="text-red-500">*</span></label>
+                <input value={form.titre} onChange={(e) => setForm({ ...form, titre: e.target.value })} className={inputBase}
+                  placeholder={isStage ? "Ex: Stage PFE Développeur React" : "Ex: Fullstack Developer (React/Node)"} />
               </div>
 
+              {/* DESCRIPTION */}
               <div>
-                <label className={labelBase}>
-                  Description <span className="text-red-500">*</span>
-                </label>
-                <textarea
-                  rows={4}
-                  value={form.description}
-                  onChange={(e) => setForm({ ...form, description: e.target.value })}
-                  className="w-full px-3 sm:px-4 md:px-5 py-2 sm:py-3 md:py-4 rounded-lg sm:rounded-2xl md:rounded-3xl text-sm
-                             border border-gray-200 dark:border-gray-600
-                             bg-white dark:bg-gray-700
-                             text-gray-800 dark:text-gray-100
-                             placeholder-gray-400 dark:placeholder-gray-500
-                             resize-none
-                             focus:border-[#6CB33F] dark:focus:border-emerald-500
-                             focus:ring-4 focus:ring-[#6CB33F]/15 dark:focus:ring-emerald-500/20
-                             outline-none transition-colors"
-                  placeholder="Décrivez la mission, le profil recherché, responsabilités..."
-                />
+                <label className={labelBase}>Description <span className="text-red-500">*</span></label>
+                <textarea rows={4} value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })}
+                  className="w-full px-3 sm:px-4 md:px-5 py-2 sm:py-3 md:py-4 rounded-lg sm:rounded-2xl md:rounded-3xl text-sm border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 resize-none focus:border-[#6CB33F] dark:focus:border-emerald-500 focus:ring-4 focus:ring-[#6CB33F]/15 dark:focus:ring-emerald-500/20 outline-none transition-colors"
+                  placeholder={isStage ? "Décrivez le sujet du stage, les missions, technologies utilisées..." : "Décrivez la mission, le profil recherché, responsabilités..."} />
               </div>
 
+              {/* LIEU */}
               <div>
-                <label className={labelBase}>
-                  Lieu du poste <span className="text-red-500">*</span>
-                </label>
+                <label className={labelBase}>Lieu du poste <span className="text-red-500">*</span></label>
                 <div className="relative">
-                  <span className="absolute left-3 sm:left-4 md:left-5 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500 pointer-events-none select-none text-base">
-                    📍
-                  </span>
-                  <input
-                    value={form.lieu}
-                    onChange={(e) => setForm({ ...form, lieu: e.target.value })}
-                    placeholder="Ex: Sfax, Tunis, Télétravail..."
-                    className="w-full h-10 sm:h-11 md:h-12 pl-9 sm:pl-10 md:pl-12 pr-3 sm:pr-4 md:pr-5 rounded-lg sm:rounded-xl md:rounded-full text-sm
-                               border border-gray-200 dark:border-gray-600
-                               bg-white dark:bg-gray-700
-                               text-gray-800 dark:text-gray-100
-                               placeholder-gray-400 dark:placeholder-gray-500
-                               focus:border-[#6CB33F] dark:focus:border-emerald-500
-                               focus:ring-4 focus:ring-[#6CB33F]/15 dark:focus:ring-emerald-500/20
-                               outline-none transition-colors"
-                  />
+                  <span className="absolute left-3 sm:left-4 md:left-5 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500 pointer-events-none select-none text-base">📍</span>
+                  <input value={form.lieu} onChange={(e) => setForm({ ...form, lieu: e.target.value })}
+                    placeholder="Ex: Tunis, Sfax, Télétravail, Hybride..."
+                    className="w-full h-10 sm:h-11 md:h-12 pl-9 sm:pl-10 md:pl-12 pr-3 sm:pr-4 md:pr-5 rounded-lg sm:rounded-xl md:rounded-full text-sm border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:border-[#6CB33F] dark:focus:border-emerald-500 focus:ring-4 focus:ring-[#6CB33F]/15 dark:focus:ring-emerald-500/20 outline-none transition-colors" />
                 </div>
               </div>
 
+              {/* DATE DE CLÔTURE */}
               <div>
-                <label className={labelBase}>
-                  Date de clôture <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="date"
-                  value={form.dateCloture}
-                  onChange={(e) => setForm({ ...form, dateCloture: e.target.value })}
-                  min={new Date().toISOString().slice(0, 10)}
-                  className={inputBase}
-                />
+                <label className={labelBase}>Date de clôture <span className="text-red-500">*</span></label>
+                <input type="date" value={form.dateCloture} onChange={(e) => setForm({ ...form, dateCloture: e.target.value })}
+                  min={new Date().toISOString().slice(0, 10)} className={inputBase} />
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-5 md:gap-6">
-                <div>
-                  <label className={labelBase}>Hard Skills</label>
-                  <input
-                    value={form.hardSkills}
-                    onChange={(e) => setForm({ ...form, hardSkills: e.target.value })}
-                    placeholder="React, Node.js, SQL, Docker..."
-                    className={inputBase}
-                  />
-                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1.5">Séparées par une virgule.</p>
-                </div>
-
-                <div>
-                  <label className={labelBase}>Soft Skills</label>
-                  <input
-                    value={form.softSkills}
-                    onChange={(e) => setForm({ ...form, softSkills: e.target.value })}
-                    placeholder="Communication, Leadership..."
-                    className={inputBase}
-                  />
-                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1.5">Séparées par une virgule.</p>
-                </div>
-              </div>
-
+              {/* NOMBRE DE POSTES + TYPE DIPLÔME */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-5 md:gap-6">
                 <div>
                   <label className={labelBase}>Nombre de postes</label>
-                  <input
-                    type="number"
-                    min={1}
-                    value={form.nombrePostes}
-                    onChange={(e) => handleNombrePostes(e.target.value)}
-                    className={inputBase}
-                    placeholder="Ex: 1"
-                  />
+                  <input type="number" min={1} value={form.nombrePostes}
+                    onChange={(e) => setForm((p) => ({ ...p, nombrePostes: e.target.value }))}
+                    className={inputBase} placeholder="Ex: 2, 5, 10..." />
                 </div>
-
                 <div>
                   <label className={labelBase}>Type de diplôme</label>
-                  <input
-                    value={form.typeDiplome}
-                    onChange={(e) => setForm({ ...form, typeDiplome: e.target.value })}
-                    className={inputBase}
-                    placeholder="Ex: Licence, Master, Ingénieur..."
-                  />
-                </div>
-
-                <div>
-                  <label className={labelBase}>Motif</label>
-                  <select
-                    value={form.motif}
-                    onChange={(e) => setForm({ ...form, motif: e.target.value })}
-                    className={inputBase}
-                  >
-                    {MOTIF_OPTIONS.map((option) => (
-                      <option key={option.value} value={option.value}>
-                        {option.label}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                <div>
-                  <label className={labelBase}>Genre</label>
-                  <select
-                    value={form.sexe}
-                    onChange={(e) => setForm({ ...form, sexe: e.target.value })}
-                    className={inputBase}
-                  >
-                    {SEXE_OPTIONS.map((option) => (
-                      <option key={option.value} value={option.value}>
-                        {option.label}
-                      </option>
-                    ))}
-                  </select>
+                  <input value={form.typeDiplome} onChange={(e) => setForm({ ...form, typeDiplome: e.target.value })}
+                    className={inputBase} placeholder="Ex: Licence, Master, Ingénieur..." />
                 </div>
               </div>
 
-              {!isEditing && (
-                <div className="border border-gray-200 dark:border-gray-700 rounded-lg sm:rounded-2xl p-4 sm:p-5 space-y-4">
-                  <label className="flex items-center gap-3 cursor-pointer select-none">
-                    <div className="relative flex-shrink-0">
-                      <input
-                        type="checkbox"
-                        checked={generateQuiz}
-                        onChange={(e) => setGenerateQuiz(e.target.checked)}
-                        className="sr-only"
-                      />
-                      <div
-                        className={`w-10 h-6 sm:w-11 rounded-full transition-colors duration-200 ${
-                          generateQuiz ? "bg-[#6CB33F] dark:bg-emerald-500" : "bg-gray-300 dark:bg-gray-600"
-                        }`}
-                      />
-                      <div
-                        className={`absolute top-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform duration-200 ${
-                          generateQuiz ? "translate-x-5 sm:translate-x-6" : "translate-x-1"
-                        }`}
-                      />
-                    </div>
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <BrainCircuit className="h-4 w-4 text-[#6CB33F] dark:text-emerald-400" />
-                        <span className="text-xs sm:text-sm font-extrabold text-gray-900 dark:text-white">
-                          Générer un quiz technique
-                        </span>
-                      </div>
-                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
-                        Un quiz IA sera créé automatiquement à la publication.
-                      </p>
-                    </div>
-                  </label>
-
-                  {generateQuiz && (
-                    <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 pl-0 sm:pl-14">
-                      <label className="text-xs sm:text-sm font-semibold text-gray-700 dark:text-gray-300 whitespace-nowrap">
-                        Nombre de questions
-                      </label>
-                      <div className="flex items-center gap-2">
-                        <button
-                          type="button"
-                          onClick={() => handleNumQuestions(numQuestions - 1)}
-                          className="w-7 h-7 sm:w-8 sm:h-8 rounded-full border border-gray-200 dark:border-gray-600
-                                     text-gray-700 dark:text-gray-300 font-bold text-sm
-                                     hover:bg-gray-100 dark:hover:bg-gray-700
-                                     transition-colors flex items-center justify-center flex-shrink-0"
-                        >
-                          −
-                        </button>
-                        <input
-                          type="number"
-                          min={1}
-                          max={30}
-                          value={numQuestions}
-                          onChange={(e) => handleNumQuestions(e.target.value)}
-                          className="w-14 h-8 sm:w-16 sm:h-9 text-center rounded-lg sm:rounded-xl text-sm
-                                     border border-gray-200 dark:border-gray-600
-                                     bg-white dark:bg-gray-700
-                                     text-gray-800 dark:text-gray-100 font-bold
-                                     focus:border-[#6CB33F] dark:focus:border-emerald-500
-                                     focus:ring-2 focus:ring-[#6CB33F]/20
-                                     outline-none transition-colors"
-                        />
-                        <button
-                          type="button"
-                          onClick={() => handleNumQuestions(numQuestions + 1)}
-                          className="w-7 h-7 sm:w-8 sm:h-8 rounded-full border border-gray-200 dark:border-gray-600
-                                     text-gray-700 dark:text-gray-300 font-bold text-sm
-                                     hover:bg-gray-100 dark:hover:bg-gray-700
-                                     transition-colors flex items-center justify-center flex-shrink-0"
-                        >
-                          +
-                        </button>
-                        <span className="text-xs text-gray-500 dark:text-gray-400">(max 30)</span>
-                      </div>
-                    </div>
-                  )}
-
-                  {!generateQuiz && (
-                    <p className="pl-0 sm:pl-14 text-xs text-gray-400 dark:text-gray-500 italic">
-                      Aucun quiz ne sera généré. Vous pourrez en créer un manuellement plus tard.
-                    </p>
-                  )}
+              {/* STAGE: TYPE + DURÉE */}
+              {isStage && (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-5 md:gap-6">
+                  <div>
+                    <label className={labelBase}>Type de stage</label>
+                    <select value={form.typeStage} onChange={(e) => setForm({ ...form, typeStage: e.target.value })} className={inputBase}>
+                      {TYPE_STAGE_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+                    </select>
+                  </div>
+                  <div>
+                    <label className={labelBase}>Durée du stage</label>
+                    <select value={form.dureeStage} onChange={(e) => setForm({ ...form, dureeStage: e.target.value })} className={inputBase}>
+                      {DUREE_STAGE_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+                    </select>
+                  </div>
                 </div>
               )}
 
-              <div className="border-t border-gray-200 dark:border-gray-700 pt-5 sm:pt-6">
-                <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-xs sm:text-sm font-extrabold text-gray-900 dark:text-white uppercase tracking-wide">
-                    Pondérations (0 – 100)
-                  </h3>
-                  <span
-                    className={`text-xs sm:text-sm font-extrabold ${
-                      isValidTotal ? "text-green-600 dark:text-emerald-400" : "text-red-600 dark:text-red-400"
-                    }`}
-                  >
-                    Total : {totalWeights}%
-                  </span>
-                </div>
-
-                <div className="space-y-3 sm:space-y-4">
-                  {SCORE_ITEMS_MODAL.map((it) => {
-                    const v = form.scores[it.key] ?? 0;
-                    return (
-                      <div key={it.key} className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
-                        <p className="sm:flex-1 text-xs sm:text-sm font-semibold text-gray-700 dark:text-gray-300">
-                          {it.label}
-                        </p>
-                        <div className="flex items-center gap-2 sm:gap-3">
-                          <input
-                            type="number"
-                            min={0}
-                            max={100}
-                            value={v}
-                            onChange={(e) => setWeight(it.key, e.target.value)}
-                            className="w-20 sm:w-24 h-9 sm:h-11 px-2 sm:px-4 rounded-lg sm:rounded-xl md:rounded-full text-sm
-                                       border border-gray-200 dark:border-gray-600
-                                       bg-white dark:bg-gray-700
-                                       text-gray-800 dark:text-gray-100
-                                       focus:border-[#6CB33F] dark:focus:border-emerald-500
-                                       focus:ring-4 focus:ring-[#6CB33F]/15
-                                       outline-none transition-colors"
-                          />
-                          <span className="text-xs sm:text-sm font-extrabold text-[#4E8F2F] dark:text-emerald-400 w-6">
-                            %
-                          </span>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-
-                {!isValidTotal && (
-                  <p className="mt-3 text-xs font-semibold text-red-600 dark:text-red-400">
-                    La somme doit être égale à 100%.
-                  </p>
+              {/* GENRE + MOTIF */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-5 md:gap-6">
+                {!isStage && (
+                  <div>
+                    <label className={labelBase}>Motif</label>
+                    <select value={form.motif} onChange={(e) => setForm({ ...form, motif: e.target.value })} className={inputBase}>
+                      {MOTIF_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+                    </select>
+                  </div>
                 )}
+                <div className={isStage ? "md:col-span-2" : ""}>
+                  <label className={labelBase}>Genre</label>
+                  <select value={form.sexe} onChange={(e) => setForm({ ...form, sexe: e.target.value })} className={inputBase}>
+                    {SEXE_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+                  </select>
+                </div>
               </div>
+
+              {/* HARD / SOFT SKILLS */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-5 md:gap-6">
+                <div>
+                  <label className={labelBase}>Hard Skills</label>
+                  <input value={form.hardSkills} onChange={(e) => setForm({ ...form, hardSkills: e.target.value })}
+                    placeholder="React, Node.js, SQL, Docker..." className={inputBase} />
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1.5">Compétences techniques — séparées par une virgule.</p>
+                </div>
+                <div>
+                  <label className={labelBase}>Soft Skills</label>
+                  <input value={form.softSkills} onChange={(e) => setForm({ ...form, softSkills: e.target.value })}
+                    placeholder="Communication, Leadership, Esprit d'équipe..." className={inputBase} />
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1.5">Compétences comportementales — séparées par une virgule.</p>
+                </div>
+              </div>
+
+              {/* EMPLOI ONLY: Quiz + Pondérations */}
+              {!isStage && (
+                <>
+                  {!isEditing && (
+                    <div className="border border-gray-200 dark:border-gray-700 rounded-lg sm:rounded-2xl p-4 sm:p-5 space-y-4">
+                      <label className="flex items-center gap-3 cursor-pointer select-none">
+                        <div className="relative flex-shrink-0">
+                          <input type="checkbox" checked={generateQuiz} onChange={(e) => setGenerateQuiz(e.target.checked)} className="sr-only" />
+                          <div className={`w-10 h-6 sm:w-11 rounded-full transition-colors duration-200 ${generateQuiz ? "bg-[#6CB33F] dark:bg-emerald-500" : "bg-gray-300 dark:bg-gray-600"}`} />
+                          <div className={`absolute top-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform duration-200 ${generateQuiz ? "translate-x-5 sm:translate-x-6" : "translate-x-1"}`} />
+                        </div>
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <BrainCircuit className="h-4 w-4 text-[#6CB33F] dark:text-emerald-400" />
+                            <span className="text-xs sm:text-sm font-extrabold text-gray-900 dark:text-white">Générer un quiz technique</span>
+                          </div>
+                          <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Un quiz IA sera créé automatiquement à la publication.</p>
+                        </div>
+                      </label>
+                      {generateQuiz && (
+                        <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 pl-0 sm:pl-14">
+                          <label className="text-xs sm:text-sm font-semibold text-gray-700 dark:text-gray-300 whitespace-nowrap">Nombre de questions</label>
+                          <div className="flex items-center gap-2">
+                            <button type="button" onClick={() => { let n=numQuestions-1; if(n<1)n=1; setNumQuestions(n); }}
+                              className="w-7 h-7 sm:w-8 sm:h-8 rounded-full border border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-300 font-bold text-sm hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors flex items-center justify-center flex-shrink-0">−</button>
+                            <input type="number" min={1} max={30} value={numQuestions}
+                              onChange={(e) => { let n=parseInt(e.target.value,10); if(isNaN(n)||n<1)n=1; if(n>30)n=30; setNumQuestions(n); }}
+                              className="w-14 h-8 sm:w-16 sm:h-9 text-center rounded-lg sm:rounded-xl text-sm border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 font-bold focus:border-[#6CB33F] dark:focus:border-emerald-500 focus:ring-2 focus:ring-[#6CB33F]/20 outline-none transition-colors" />
+                            <button type="button" onClick={() => { let n=numQuestions+1; if(n>30)n=30; setNumQuestions(n); }}
+                              className="w-7 h-7 sm:w-8 sm:h-8 rounded-full border border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-300 font-bold text-sm hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors flex items-center justify-center flex-shrink-0">+</button>
+                            <span className="text-xs text-gray-500 dark:text-gray-400">(max 30)</span>
+                          </div>
+                        </div>
+                      )}
+                      {!generateQuiz && <p className="pl-0 sm:pl-14 text-xs text-gray-400 dark:text-gray-500 italic">Aucun quiz ne sera généré. Vous pourrez en créer un manuellement plus tard.</p>}
+                    </div>
+                  )}
+
+                  <div className="border-t border-gray-200 dark:border-gray-700 pt-5 sm:pt-6">
+                    <div className="flex items-center justify-between mb-4">
+                      <h3 className="text-xs sm:text-sm font-extrabold text-gray-900 dark:text-white uppercase tracking-wide">Pondérations (0 – 100)</h3>
+                      <span className={`text-xs sm:text-sm font-extrabold ${isValidTotal ? "text-green-600 dark:text-emerald-400" : "text-red-600 dark:text-red-400"}`}>Total : {totalWeights}%</span>
+                    </div>
+                    <div className="space-y-3 sm:space-y-4">
+                      {SCORE_ITEMS.map((it) => {
+                        const v = form.scores[it.key] ?? 0;
+                        return (
+                          <div key={it.key} className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
+                            <p className="sm:flex-1 text-xs sm:text-sm font-semibold text-gray-700 dark:text-gray-300">{it.label}</p>
+                            <div className="flex items-center gap-2 sm:gap-3">
+                              <input type="number" min={0} max={100} value={v} onChange={(e) => setWeight(it.key, e.target.value)}
+                                className="w-20 sm:w-24 h-9 sm:h-11 px-2 sm:px-4 rounded-lg sm:rounded-xl md:rounded-full text-sm border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 focus:border-[#6CB33F] dark:focus:border-emerald-500 focus:ring-4 focus:ring-[#6CB33F]/15 outline-none transition-colors" />
+                              <span className="text-xs sm:text-sm font-extrabold text-[#4E8F2F] dark:text-emerald-400 w-6">%</span>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                    {!isValidTotal && <p className="mt-3 text-xs font-semibold text-red-600 dark:text-red-400">La somme doit être égale à 100%.</p>}
+                  </div>
+                </>
+              )}
             </div>
 
+            {/* Footer buttons */}
             <div className="mt-6 sm:mt-7 md:mt-8 pt-4 sm:pt-5 md:pt-6 border-t border-gray-200 dark:border-gray-700 flex flex-col sm:flex-row gap-2.5 sm:gap-4">
-              <button
-                type="submit"
-                disabled={submitting || !isValidTotal}
-                className={`flex-1 h-10 sm:h-11 md:h-12 rounded-lg sm:rounded-xl md:rounded-full font-semibold text-sm transition-colors shadow-sm
-                  ${
-                    isValidTotal && !submitting
-                      ? "bg-[#6CB33F] hover:bg-[#5AA332] dark:bg-emerald-600 dark:hover:bg-emerald-500 text-white"
-                      : "bg-gray-300 dark:bg-gray-600 text-gray-500 dark:text-gray-400 cursor-not-allowed"
-                  }`}
-              >
-                {submitting
-                  ? "Enregistrement..."
-                  : isEditing
-                  ? "Mettre à jour"
-                  : generateQuiz
-                  ? "Créer + Quiz"
-                  : "Créer l'offre"}
+              <button type="submit" disabled={submitting || !isValidTotal}
+                className={`flex-1 h-10 sm:h-11 md:h-12 rounded-lg sm:rounded-xl md:rounded-full font-semibold text-sm transition-colors shadow-sm ${
+                  isValidTotal && !submitting
+                    ? isStage ? "bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-400 text-white"
+                              : "bg-[#6CB33F] hover:bg-[#5AA332] dark:bg-emerald-600 dark:hover:bg-emerald-500 text-white"
+                    : "bg-gray-300 dark:bg-gray-600 text-gray-500 dark:text-gray-400 cursor-not-allowed"
+                }`}>
+                {submitting ? "Enregistrement..." : isEditing ? "Mettre à jour" : isStage ? "Enregistrer" : generateQuiz ? "Créer + Quiz" : "Créer l'offre"}
               </button>
-
-              <button
-                type="button"
-                onClick={() => {
-                  setForm(emptyForm);
-                  setFormError("");
-                  setGenerateQuiz(true);
-                  setNumQuestions(25);
-                  onClose();
-                }}
-                disabled={submitting}
-                className="flex-1 h-10 sm:h-11 md:h-12 rounded-lg sm:rounded-xl md:rounded-full font-semibold text-sm
-                           border border-gray-200 dark:border-gray-600
-                           text-gray-700 dark:text-gray-300
-                           hover:bg-gray-50 dark:hover:bg-gray-700
-                           transition-colors disabled:opacity-50"
-              >
+              <button type="button" disabled={submitting}
+                onClick={() => { setForm(emptyForm); setFormError(""); setGenerateQuiz(true); setNumQuestions(25); onClose(); }}
+                className="flex-1 h-10 sm:h-11 md:h-12 rounded-lg sm:rounded-xl md:rounded-full font-semibold text-sm border border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors disabled:opacity-50">
                 Annuler
               </button>
             </div>

@@ -85,26 +85,40 @@ export default function FicheRenseignementBuilder() {
   const [saving, setSaving] = useState(false);
 
   /* ================= LOAD ================= */
-  useEffect(() => {
-    if (!isEdit) {
-      setLoading(false);
-      return;
-    }
+useEffect(() => {
+  if (!isEdit || !id) {
+    setLoading(false);
+    return;
+  }
 
-    (async () => {
-      try {
-        const res = await getFicheById(id);
-        const fiche = res?.data?.fiche || res?.data;
-        setTitle(fiche?.title || "");
-        setDescription(fiche?.description || "");
-        const qs = ensureIds(fiche?.questions || []);
-        setQuestions(qs.length ? qs : [createQuestion()]);
-        setEnableQuestions((fiche?.questions || []).length > 0);
-      } finally {
-        setLoading(false);
-      }
-    })();
-  }, [id, isEdit]);
+  let mounted = true;
+
+  (async () => {
+    try {
+      const res = await getFicheById(id);
+
+      if (!mounted) return;
+
+      const fiche = res?.data?.fiche || res?.data;
+
+      setTitle(fiche?.title || "");
+      setDescription(fiche?.description || "");
+
+      const qs = ensureIds(fiche?.questions || []);
+      setQuestions(qs.length ? qs : [createQuestion()]);
+      setEnableQuestions((fiche?.questions || []).length > 0);
+
+    } catch (err) {
+      console.error("GET FICHE ERROR:", err);
+    } finally {
+      if (mounted) setLoading(false);
+    }
+  })();
+
+  return () => {
+    mounted = false;
+  };
+}, [id]);
 
   /* ================= QUESTION CRUD ================= */
   const addQuestion = () => setQuestions((p) => [...p, createQuestion()]);
@@ -135,18 +149,18 @@ export default function FicheRenseignementBuilder() {
       p.map((q) =>
         q.id === qid
           ? {
-              ...q,
-              options: q.options.map((o) =>
-                o.id === oid
-                  ? {
-                      ...o,
-                      ...patch,
-                      // ✅ verrouille toujours texte si champ lié activé
-                      otherType: patch?.hasText ? "text" : o.otherType || "text",
-                    }
-                  : o
-              ),
-            }
+            ...q,
+            options: q.options.map((o) =>
+              o.id === oid
+                ? {
+                  ...o,
+                  ...patch,
+                  // ✅ verrouille toujours texte si champ lié activé
+                  otherType: patch?.hasText ? "text" : o.otherType || "text",
+                }
+                : o
+            ),
+          }
           : q
       )
     );
@@ -169,18 +183,18 @@ export default function FicheRenseignementBuilder() {
       p.map((q) =>
         q.id === qid
           ? {
-              ...q,
-              items: q.items.map((it) =>
-                it.id === iid
-                  ? {
-                      ...it,
-                      ...patch,
-                      // ✅ verrouille toujours texte si champ lié activé
-                      otherType: patch?.hasText ? "text" : it.otherType || "text",
-                    }
-                  : it
-              ),
-            }
+            ...q,
+            items: q.items.map((it) =>
+              it.id === iid
+                ? {
+                  ...it,
+                  ...patch,
+                  // ✅ verrouille toujours texte si champ lié activé
+                  otherType: patch?.hasText ? "text" : it.otherType || "text",
+                }
+                : it
+            ),
+          }
           : q
       )
     );
@@ -191,43 +205,30 @@ export default function FicheRenseignementBuilder() {
     );
 
   /* ================= SUBMIT ================= */
-  async function submit() {
-    if (saving) return;
+ async function submit() {
+  if (saving) return;
 
-    try {
-      setSaving(true);
-      const payload = {
-        title: title.trim(),
-        description: description.trim(),
-        questions: enableQuestions ? questions : [],
-      };
+  try {
+    setSaving(true);
 
-      let response;
-      if (isEdit) {
-        response = await updateFiche(id, payload);
-      } else {
-        response = await createFiche(payload);
-      }
+    const payload = {
+      title: title.trim(),
+      description: description.trim(),
+      questions: enableQuestions ? questions : [],
+    };
 
-      if (response && (response.status === 200 || response.status === 201)) {
-        window.location.href = "/recruiter/fiche-renseignement";
-      } else {
-        throw new Error("Réponse invalide du serveur");
-      }
-    } catch (error) {
-      console.error("Erreur lors de l'enregistrement:", error);
-
-      if (error.response) {
-        alert(`Erreur: ${error.response.data?.message || error.message}`);
-      } else if (error.request) {
-        alert("Erreur de connexion au serveur");
-      } else {
-        alert("Une erreur est survenue");
-      }
-
-      setSaving(false);
+    if (isEdit) {
+      await updateFiche(id, payload);
+    } else {
+      await createFiche(payload);
     }
+
+    router.push("/recruiter/fiche-renseignement");
+
+  } catch (error) {
+    console.error("Erreur:", error);
   }
+}
 
   if (loading) {
     return (

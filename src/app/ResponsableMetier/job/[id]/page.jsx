@@ -2,135 +2,64 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { getJobById, updateMyJob } from "../../../services/job.api";
+import { getJobById, updateMyJob, deleteJob ,deleteMyJob } from "../../../services/job.api";
 import {
-  ArrowLeft,
-  Loader2,
-  CheckCircle2,
-  XCircle,
-  Clock,
-  MapPin,
-  Calendar,
-  CalendarClock,
-  Edit2,
-  Briefcase,
-  GraduationCap,
-  Users,
-  User,
-  Tag,
+  ArrowLeft, Loader2, CheckCircle2, XCircle, Clock,
+  MapPin, Calendar, CalendarClock, Edit2, Briefcase,
+  GraduationCap, Users, User, Tag, Trash2, Timer,
 } from "lucide-react";
 
 /* ================= UTILS ================= */
 function formatDate(date) {
   if (!date) return "—";
-  try {
-    return new Date(date).toLocaleDateString("fr-FR");
-  } catch {
-    return "—";
-  }
+  try { return new Date(date).toLocaleDateString("fr-FR"); } catch { return "—"; }
 }
-
 function getJobStatus(job) {
   const s = (job?.status || "").toString().toUpperCase().trim();
   if (["CONFIRMEE", "REJETEE", "EN_ATTENTE", "VALIDEE"].includes(s)) return s;
   return "EN_ATTENTE";
 }
-
 function parseSkills(str) {
-  return String(str || "")
-    .split(",")
-    .map((t) => t.trim())
-    .filter(Boolean);
+  return String(str || "").split(",").map((t) => t.trim()).filter(Boolean);
 }
-
-function clamp(n, min, max) {
-  const x = Number(n);
-  if (Number.isNaN(x)) return min;
-  return Math.min(max, Math.max(min, x));
+function clamp(n, min, max) { const x = Number(n); if (Number.isNaN(x)) return min; return Math.min(max, Math.max(min, x)); }
+function formatMotif(v) { return { NOUVEAU: "Nouveau poste", REMPLACEMENT: "Remplacement", RENFORT: "Renfort" }[v] || v || "—"; }
+function formatSexe(v) { return { H: "H", F: "F", HF: "H/F" }[v] || v || "—"; }
+function formatTypeStage(v) {
+  return { PFE: "Stage PFE", ETE: "Stage d'été", INITIATION: "Stage d'initiation", ALTERNANCE: "Alternance" }[v] || v || "—";
 }
-
-function formatMotif(value) {
-  const map = {
-    NOUVEAU: "Nouveau poste",
-    REMPLACEMENT: "Remplacement",
-    RENFORT: "Renfort",
-  };
-  return map[value] || value || "—";
-}
-
-function formatSexe(value) {
-  const map = {
-    H: "H",
-    F: "F",
-    HF: "H/F",
-  };
-  return map[value] || value || "—";
+function formatDureeStage(v) {
+  return { "1_MOIS": "1 mois", "2_MOIS": "2 mois", "3_MOIS": "3 mois", "4_MOIS": "4 mois", "5_MOIS": "5 mois", "6_MOIS": "6 mois" }[v] || v || "—";
 }
 
 /* ================= OPTIONS ================= */
-const MOTIF_OPTIONS = [
-  { value: "", label: "Motif" },
-  { value: "NOUVEAU", label: "Nouveau poste" },
-  { value: "REMPLACEMENT", label: "Remplacement" },
-  { value: "RENFORT", label: "Renfort" },
-];
-
-const SEXE_OPTIONS = [
-  { value: "", label: "Genre" },
-  { value: "H", label: "H" },
-  { value: "F", label: "F" },
-  { value: "HF", label: "H/F" },
-];
+const MOTIF_OPTIONS = [{ value: "", label: "Motif" }, { value: "NOUVEAU", label: "Nouveau poste" }, { value: "REMPLACEMENT", label: "Remplacement" }, { value: "RENFORT", label: "Renfort" }];
+const SEXE_OPTIONS = [{ value: "", label: "Genre" }, { value: "H", label: "H" }, { value: "F", label: "F" }, { value: "HF", label: "H/F" }];
+const TYPE_STAGE_OPTIONS = [{ value: "", label: "Type de stage" }, { value: "PFE", label: "Stage PFE" }, { value: "ETE", label: "Stage d'été" }, { value: "INITIATION", label: "Stage d'initiation" }, { value: "ALTERNANCE", label: "Alternance" }];
+const DUREE_STAGE_OPTIONS = [{ value: "", label: "Durée du stage" }, { value: "1_MOIS", label: "1 mois" }, { value: "2_MOIS", label: "2 mois" }, { value: "3_MOIS", label: "3 mois" }, { value: "4_MOIS", label: "4 mois" }, { value: "5_MOIS", label: "5 mois" }, { value: "6_MOIS", label: "6 mois" }];
 
 /* ================= UI CONFIG ================= */
 const STATUS_UI = {
-  CONFIRMEE: {
-    label: "Publiée",
-    pill: "bg-green-100 dark:bg-emerald-900/30 text-green-700 dark:text-emerald-400 border-green-200 dark:border-emerald-800",
-    icon: CheckCircle2,
-  },
-  VALIDEE: {
-    label: "Validée",
-    pill: "bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 border-blue-200 dark:border-blue-800",
-    icon: CheckCircle2,
-  },
-  EN_ATTENTE: {
-    label: "En attente",
-    pill: "bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 border-amber-200 dark:border-amber-800",
-    icon: Clock,
-  },
-  REJETEE: {
-    label: "Rejetée",
-    pill: "bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 border-red-200 dark:border-red-800",
-    icon: XCircle,
-  },
+  CONFIRMEE: { label: "Publiée", pill: "bg-green-100 dark:bg-emerald-900/30 text-green-700 dark:text-emerald-400 border-green-200 dark:border-emerald-800", icon: CheckCircle2 },
+  VALIDEE: { label: "Validée", pill: "bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 border-blue-200 dark:border-blue-800", icon: CheckCircle2 },
+  EN_ATTENTE: { label: "En attente", pill: "bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 border-amber-200 dark:border-amber-800", icon: Clock },
+  REJETEE: { label: "Rejetée", pill: "bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 border-red-200 dark:border-red-800", icon: XCircle },
 };
 
 function Pill({ className, children }) {
-  return (
-    <span
-      className={`inline-flex items-center gap-2 text-xs font-semibold px-4 py-1.5 rounded-full border ${className}`}
-    >
-      {children}
-    </span>
-  );
+  return <span className={`inline-flex items-center gap-2 text-xs font-semibold px-4 py-1.5 rounded-full border ${className}`}>{children}</span>;
 }
 
 function InfoCard({ icon: Icon, label, value }) {
   return (
     <div className="rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-4">
       <div className="flex items-start gap-3">
-        <div className="h-12 w-12 rounded-2xl grid place-items-center bg-[#E9F5E3] dark:bg-emerald-900/25 text-[#4E8F2F] dark:text-emerald-400">
+        <div className="h-12 w-12 rounded-2xl grid place-items-center bg-[#E9F5E3] dark:bg-emerald-900/25 text-[#4E8F2F] dark:text-emerald-400 flex-shrink-0">
           <Icon size={20} />
         </div>
-
         <div className="min-w-0">
-          <p className="text-xs font-bold uppercase tracking-wide text-gray-500 dark:text-gray-400">
-            {label}
-          </p>
-          <p className="mt-1 text-sm font-semibold text-gray-900 dark:text-gray-100 break-words">
-            {value || "—"}
-          </p>
+          <p className="text-xs font-bold uppercase tracking-wide text-gray-500 dark:text-gray-400">{label}</p>
+          <p className="mt-1 text-sm font-semibold text-gray-900 dark:text-gray-100 break-words">{value || "—"}</p>
         </div>
       </div>
     </div>
@@ -149,33 +78,32 @@ export default function ResponsableJobDetailsPage() {
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
+  const [deleteConfirm, setDeleteConfirm] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   const status = useMemo(() => getJobStatus(job), [job]);
   const ui = STATUS_UI[status] || STATUS_UI.EN_ATTENTE;
   const StatusIcon = ui.icon;
 
-  const canEdit = status === "EN_ATTENTE";
+  const isStageJob = job?.typeOffre === "STAGE";
+  // Stage jobs: always editable/deletable (no status restriction imposed by admin workflow)
+  // Emploi jobs: editable only when EN_ATTENTE
+  const canEdit = isStageJob || status === "EN_ATTENTE";
+  const canDelete = isStageJob;
 
   async function load() {
     if (!id) return;
     setLoading(true);
-    try {
-      const res = await getJobById(id);
-      setJob(res?.data || null);
-    } catch (e) {
-      console.error("Erreur chargement offre:", e);
-      setJob(null);
-    } finally {
-      setLoading(false);
-    }
+    try { const res = await getJobById(id); setJob(res?.data || null); }
+    catch (e) { console.error("Erreur chargement offre:", e); setJob(null); }
+    finally { setLoading(false); }
   }
 
-  useEffect(() => {
-    load();
-  }, [id]);
+  useEffect(() => { load(); }, [id]);
 
   async function handleUpdate(payload) {
     if (!job?._id) return;
+
     setActionLoading(true);
     try {
       await updateMyJob(job._id, payload);
@@ -188,40 +116,39 @@ export default function ResponsableJobDetailsPage() {
     }
   }
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-[#F0FAF0] dark:bg-gray-950 flex items-center justify-center">
-        <div className="inline-flex items-center gap-3 text-gray-600 dark:text-gray-300">
-          <Loader2 className="animate-spin" /> Chargement...
+async function handleDelete() {
+  if (!job?._id) return;
+  setDeleting(true);
+  try {
+    await deleteMyJob(job._id);
+    router.push("/ResponsableMetier/job");
+  } catch (e) {
+    console.error("Erreur suppression:", e);
+    setDeleting(false);
+    setDeleteConfirm(false);
+  }
+}
+
+  if (loading) return (
+    <div className="min-h-screen bg-[#F0FAF0] dark:bg-gray-950 flex items-center justify-center">
+      <div className="inline-flex items-center gap-3 text-gray-600 dark:text-gray-300"><Loader2 className="animate-spin" /> Chargement...</div>
+    </div>
+  );
+
+  if (!job) return (
+    <div className="min-h-screen bg-[#F0FAF0] dark:bg-gray-950">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 pt-8 sm:pt-10 pb-16">
+        <button onClick={() => router.back()} className="inline-flex items-center gap-2 text-sm font-semibold text-gray-700 dark:text-gray-200 hover:underline">
+          <ArrowLeft size={16} /> Retour
+        </button>
+        <div className="mt-6 bg-white dark:bg-gray-800 rounded-3xl border border-gray-100 dark:border-gray-700 p-10 text-center">
+          <Briefcase className="mx-auto w-10 h-10 text-gray-400 dark:text-gray-500" />
+          <p className="mt-4 text-gray-700 dark:text-gray-200 font-semibold">Offre introuvable</p>
+          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">L&apos;ID est invalide ou l&apos;offre n&apos;est plus accessible.</p>
         </div>
       </div>
-    );
-  }
-
-  if (!job) {
-    return (
-      <div className="min-h-screen bg-[#F0FAF0] dark:bg-gray-950">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 pt-8 sm:pt-10 pb-16">
-          <button
-            onClick={() => router.back()}
-            className="inline-flex items-center gap-2 text-sm font-semibold text-gray-700 dark:text-gray-200 hover:underline"
-          >
-            <ArrowLeft size={16} /> Retour
-          </button>
-
-          <div className="mt-6 bg-white dark:bg-gray-800 rounded-3xl border border-gray-100 dark:border-gray-700 p-10 text-center">
-            <Briefcase className="mx-auto w-10 h-10 text-gray-400 dark:text-gray-500" />
-            <p className="mt-4 text-gray-700 dark:text-gray-200 font-semibold">
-              Offre introuvable
-            </p>
-            <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-              L&apos;ID est invalide ou l&apos;offre n&apos;est plus accessible.
-            </p>
-          </div>
-        </div>
-      </div>
-    );
-  }
+    </div>
+  );
 
   const hardSkills = Array.isArray(job.hardSkills) ? job.hardSkills : [];
   const softSkills = Array.isArray(job.softSkills) ? job.softSkills : [];
@@ -229,112 +156,105 @@ export default function ResponsableJobDetailsPage() {
   return (
     <div className="min-h-screen bg-[#F0FAF0] dark:bg-gray-950 transition-colors duration-300">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 pt-8 sm:pt-10 pb-16">
+
+        {/* Top bar */}
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <button
-            onClick={() => router.back()}
-            className="inline-flex items-center gap-2 text-sm font-semibold text-gray-700 dark:text-gray-200 hover:underline"
-          >
+          <button onClick={() => router.back()} className="inline-flex items-center gap-2 text-sm font-semibold text-gray-700 dark:text-gray-200 hover:underline">
             <ArrowLeft size={16} /> Retour
           </button>
-
           <div className="flex flex-wrap items-center justify-end gap-2">
+            {/* Type offre badge */}
+            {isStageJob ? (
+              <Pill className="bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-800">
+                <GraduationCap size={14} /> Stage
+              </Pill>
+            ) : (
+              <Pill className="bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800">
+                <Briefcase size={14} /> Recrutement
+              </Pill>
+            )}
             <Pill className={ui.pill}>
-              <StatusIcon size={14} />
-              {ui.label}
+              <StatusIcon size={14} />{ui.label}
             </Pill>
           </div>
         </div>
 
+        {/* Main info card */}
         <div className="mt-6 rounded-[32px] border border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-lg overflow-hidden">
           <div className="p-6 sm:p-8">
-            <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-              <div className="min-w-0">
-                <h1 className="text-3xl sm:text-4xl font-extrabold text-gray-900 dark:text-white break-words">
-                  {job.titre || "Sans titre"}
-                </h1>
-              </div>
+            <h1 className="text-3xl sm:text-4xl font-extrabold text-gray-900 dark:text-white break-words">{job.titre || "Sans titre"}</h1>
 
-            </div>
-
+            {/* Info cards grid */}
             <div className="mt-8 grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
               <InfoCard icon={MapPin} label="Lieu" value={job.lieu || "—"} />
               <InfoCard icon={Calendar} label="Date de création" value={formatDate(job.createdAt)} />
               <InfoCard icon={CalendarClock} label="Date de clôture" value={formatDate(job.dateCloture)} />
-              <InfoCard
-                icon={Users}
-                label="Nombre de postes"
-                value={job.nombrePostes ? String(job.nombrePostes) : "—"}
-              />
-              <InfoCard
-                icon={GraduationCap}
-                label="Type de diplôme"
-                value={job.typeDiplome || "—"}
-              />
-              <InfoCard
-                icon={Tag}
-                label="Motif"
-                value={formatMotif(job.motif)}
-              />
-              <InfoCard
-                icon={User}
-                label="Genre"
-                value={formatSexe(job.sexe)}
-              />
+              <InfoCard icon={Users} label="Nombre de postes" value={job.nombrePostes ? String(job.nombrePostes) : "—"} />
+              <InfoCard icon={GraduationCap} label="Type de diplôme" value={job.typeDiplome || "—"} />
+
+              {isStageJob ? (
+                <>
+                  <InfoCard icon={Tag} label="Type de stage" value={formatTypeStage(job.typeStage)} />
+                  <InfoCard icon={Timer} label="Durée du stage" value={formatDureeStage(job.dureeStage)} />
+                  <InfoCard icon={User} label="Genre" value={formatSexe(job.sexe)} />
+                </>
+              ) : (
+                <>
+                  <InfoCard icon={Tag} label="Motif" value={formatMotif(job.motif)} />
+                  <InfoCard icon={User} label="Genre" value={formatSexe(job.sexe)} />
+                </>
+              )}
             </div>
 
+            {/* Rejection reason */}
             {status === "REJETEE" && job.rejectionReason && (
               <div className="mt-6 rounded-2xl border border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-900/20 p-4">
-                <p className="text-xs font-extrabold uppercase tracking-wide text-red-600 dark:text-red-400">
-                  Motif du rejet
-                </p>
-                <p className="mt-1 text-sm text-red-700 dark:text-red-300">
-                  {job.rejectionReason}
-                </p>
+                <p className="text-xs font-extrabold uppercase tracking-wide text-red-600 dark:text-red-400">Motif du rejet</p>
+                <p className="mt-1 text-sm text-red-700 dark:text-red-300">{job.rejectionReason}</p>
               </div>
             )}
           </div>
         </div>
 
+        {/* Description + Actions */}
         <div className="mt-6 grid grid-cols-1 xl:grid-cols-3 gap-6">
           <div className="xl:col-span-2">
             <div className="rounded-[28px] border border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-sm p-6 sm:p-7">
-              <h2 className="text-sm font-extrabold uppercase tracking-wide text-gray-500 dark:text-gray-400">
-                Description
-              </h2>
-              <p className="mt-4 text-gray-700 dark:text-gray-200 whitespace-pre-line leading-relaxed">
-                {job.description || "—"}
-              </p>
+              <h2 className="text-sm font-extrabold uppercase tracking-wide text-gray-500 dark:text-gray-400">Description</h2>
+              <p className="mt-4 text-gray-700 dark:text-gray-200 whitespace-pre-line leading-relaxed">{job.description || "—"}</p>
             </div>
           </div>
 
           <div>
             <div className="rounded-[28px] border border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-sm p-6 sm:p-7">
-              <h3 className="text-sm font-extrabold uppercase tracking-wide text-gray-500 dark:text-gray-400">
-                Actions
-              </h3>
-
+              <h3 className="text-sm font-extrabold uppercase tracking-wide text-gray-500 dark:text-gray-400">Actions</h3>
               <div className="mt-5 space-y-3">
                 {canEdit ? (
-                  <>
-                    <button
-                      onClick={() => setEditOpen(true)}
-                      disabled={actionLoading}
-                      className="w-full h-11 px-5 rounded-full font-semibold inline-flex items-center justify-center gap-2
-                                 bg-[#6CB33F] hover:bg-[#4E8F2F] dark:bg-emerald-600 dark:hover:bg-emerald-500
-                                 text-white transition-colors disabled:opacity-50"
-                    >
-                      <Edit2 size={18} />
-                      Modifier l&apos;offre
-                    </button>
+                  <button onClick={() => setEditOpen(true)} disabled={actionLoading}
+                    className="w-full h-11 px-5 rounded-full font-semibold inline-flex items-center justify-center gap-2
+                               bg-[#6CB33F] hover:bg-[#4E8F2F] dark:bg-emerald-600 dark:hover:bg-emerald-500
+                               text-white transition-colors disabled:opacity-50">
+                    <Edit2 size={18} /> Modifier {isStageJob ? "le stage" : "l'offre"}
+                  </button>
+                ) : null}
 
-                    <p className="text-xs text-gray-500 dark:text-gray-400">
-                      Vous pouvez modifier uniquement les offres{" "}
-                      <span className="font-semibold">en attente</span>.
-                    </p>
-                  </>
-                ) : (
-                  <p className="text-sm text-gray-600 dark:text-gray-300">
-                    Aucune action disponible sur cette offre.
+                {canDelete && (
+                  <button onClick={() => setDeleteConfirm(true)} disabled={deleting}
+                    className="w-full h-11 px-5 rounded-full font-semibold inline-flex items-center justify-center gap-2
+                               border border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-900/20
+                               text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-900/40
+                               transition-colors disabled:opacity-50">
+                    <Trash2 size={18} /> Supprimer le stage
+                  </button>
+                )}
+
+                {!canEdit && !canDelete && (
+                  <p className="text-sm text-gray-600 dark:text-gray-300">Aucune action disponible sur cette offre.</p>
+                )}
+
+                {!isStageJob && status !== "EN_ATTENTE" && (
+                  <p className="text-xs text-gray-500 dark:text-gray-400">
+                    Vous pouvez modifier uniquement les offres <span className="font-semibold">en attente</span>.
                   </p>
                 )}
               </div>
@@ -342,47 +262,30 @@ export default function ResponsableJobDetailsPage() {
           </div>
         </div>
 
+        {/* Skills */}
         <div className="mt-6 grid grid-cols-1 lg:grid-cols-2 gap-6">
           <div className="rounded-[28px] border border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-sm p-6 sm:p-7">
-            <h3 className="text-sm font-extrabold uppercase tracking-wide text-gray-500 dark:text-gray-400">
-              Hard skills
-            </h3>
+            <h3 className="text-sm font-extrabold uppercase tracking-wide text-gray-500 dark:text-gray-400">Hard skills</h3>
             <div className="mt-4 flex flex-wrap gap-2">
               {hardSkills.map((s, i) => (
-                <span
-                  key={i}
-                  className="bg-[#E9F5E3] dark:bg-gray-700 text-[#4E8F2F] dark:text-emerald-400 text-xs font-semibold px-3 py-1 rounded-full border border-[#d7ebcf] dark:border-gray-600"
-                >
-                  {s}
-                </span>
+                <span key={i} className="bg-[#E9F5E3] dark:bg-gray-700 text-[#4E8F2F] dark:text-emerald-400 text-xs font-semibold px-3 py-1 rounded-full border border-[#d7ebcf] dark:border-gray-600">{s}</span>
               ))}
-              {!hardSkills.length && (
-                <span className="text-sm text-gray-500 dark:text-gray-400">—</span>
-              )}
+              {!hardSkills.length && <span className="text-sm text-gray-500 dark:text-gray-400">—</span>}
             </div>
           </div>
-
           <div className="rounded-[28px] border border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-sm p-6 sm:p-7">
-            <h3 className="text-sm font-extrabold uppercase tracking-wide text-gray-500 dark:text-gray-400">
-              Soft skills
-            </h3>
+            <h3 className="text-sm font-extrabold uppercase tracking-wide text-gray-500 dark:text-gray-400">Soft skills</h3>
             <div className="mt-4 flex flex-wrap gap-2">
               {softSkills.map((s, i) => (
-                <span
-                  key={i}
-                  className="bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-300 text-xs font-semibold px-3 py-1 rounded-full border border-blue-100 dark:border-blue-900"
-                >
-                  {s}
-                </span>
+                <span key={i} className="bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-300 text-xs font-semibold px-3 py-1 rounded-full border border-blue-100 dark:border-blue-900">{s}</span>
               ))}
-              {!softSkills.length && (
-                <span className="text-sm text-gray-500 dark:text-gray-400">—</span>
-              )}
+              {!softSkills.length && <span className="text-sm text-gray-500 dark:text-gray-400">—</span>}
             </div>
           </div>
         </div>
       </div>
 
+      {/* ── EDIT MODAL ── */}
       <EditJobModal
         open={editOpen}
         onClose={() => setEditOpen(false)}
@@ -390,344 +293,262 @@ export default function ResponsableJobDetailsPage() {
         loading={actionLoading}
         onSubmit={handleUpdate}
       />
+
+      {/* ── DELETE CONFIRM MODAL ── */}
+      {deleteConfirm && (
+        <div className="fixed inset-0 z-50 bg-black/40 dark:bg-black/60 flex items-center justify-center p-4"
+          onMouseDown={(e) => { if (e.target === e.currentTarget) setDeleteConfirm(false); }}
+        >
+          <div className="bg-white dark:bg-gray-800 w-full max-w-md rounded-2xl shadow-2xl p-6 sm:p-8">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="h-12 w-12 rounded-2xl bg-red-100 dark:bg-red-900/30 grid place-items-center flex-shrink-0">
+                <Trash2 className="text-red-600 dark:text-red-400" size={22} />
+              </div>
+              <div>
+                <h3 className="text-lg font-extrabold text-gray-900 dark:text-white">Supprimer le stage</h3>
+                <p className="text-sm text-gray-500 dark:text-gray-400">Cette action est irréversible.</p>
+              </div>
+            </div>
+            <p className="text-sm text-gray-700 dark:text-gray-200 mb-6">
+              Êtes-vous sûr de vouloir supprimer le stage <span className="font-bold">« {job.titre} »</span> ?
+            </p>
+            <div className="flex gap-3">
+              <button onClick={handleDelete} disabled={deleting}
+                className="flex-1 h-10 rounded-xl font-bold text-sm bg-red-600 hover:bg-red-700 text-white transition-colors disabled:opacity-50">
+                {deleting ? "Suppression..." : "Oui, supprimer"}
+              </button>
+              <button onClick={() => setDeleteConfirm(false)} disabled={deleting}
+                className="flex-1 h-10 rounded-xl font-bold text-sm border border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+                Annuler
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
 
 /* =================================================================
-   MODAL — Modifier
+   MODAL — Edit Job / Stage
 ================================================================= */
 function EditJobModal({ open, onClose, initialData, onSubmit, loading }) {
   const isOpen = !!open;
+  const isStageJob = initialData?.typeOffre === "STAGE";
 
   const [form, setForm] = useState({
-    titre: "",
-    description: "",
-    hardSkills: "",
-    softSkills: "",
-    dateCloture: "",
-    lieu: "",
-    typeDiplome: "",
-    motif: "",
-    sexe: "",
+    titre: "", description: "", hardSkills: "", softSkills: "",
+    dateCloture: "", lieu: "", typeDiplome: "", motif: "", sexe: "",
     nombrePostes: 1,
-    scores: {
-      skillsFit: 30,
-      experienceFit: 30,
-      projectsFit: 20,
-      educationFit: 10,
-      communicationFit: 10,
-    },
+    // Emploi
+    scores: { skillsFit: 30, experienceFit: 30, projectsFit: 20, educationFit: 10, communicationFit: 10 },
+    // Stage
+    typeStage: "", dureeStage: "",
   });
-
   const [error, setError] = useState("");
 
   useEffect(() => {
     if (!isOpen) return;
-
     setError("");
     setForm({
       titre: initialData?.titre || "",
       description: initialData?.description || "",
-      hardSkills: Array.isArray(initialData?.hardSkills)
-        ? initialData.hardSkills.join(", ")
-        : initialData?.hardSkills || "",
-      softSkills: Array.isArray(initialData?.softSkills)
-        ? initialData.softSkills.join(", ")
-        : initialData?.softSkills || "",
-      dateCloture: initialData?.dateCloture
-        ? String(initialData.dateCloture).slice(0, 10)
-        : "",
+      hardSkills: Array.isArray(initialData?.hardSkills) ? initialData.hardSkills.join(", ") : initialData?.hardSkills || "",
+      softSkills: Array.isArray(initialData?.softSkills) ? initialData.softSkills.join(", ") : initialData?.softSkills || "",
+      dateCloture: initialData?.dateCloture ? String(initialData.dateCloture).slice(0, 10) : "",
       lieu: initialData?.lieu || "",
       typeDiplome: initialData?.typeDiplome || "",
       motif: initialData?.motif || "",
       sexe: initialData?.sexe || "",
       nombrePostes: initialData?.nombrePostes ?? 1,
-      scores: {
-        skillsFit: initialData?.scores?.skillsFit ?? 30,
-        experienceFit: initialData?.scores?.experienceFit ?? 30,
-        projectsFit: initialData?.scores?.projectsFit ?? 20,
-        educationFit: initialData?.scores?.educationFit ?? 10,
-        communicationFit: initialData?.scores?.communicationFit ?? 10,
-      },
+      scores: { skillsFit: initialData?.scores?.skillsFit ?? 30, experienceFit: initialData?.scores?.experienceFit ?? 30, projectsFit: initialData?.scores?.projectsFit ?? 20, educationFit: initialData?.scores?.educationFit ?? 10, communicationFit: initialData?.scores?.communicationFit ?? 10 },
+      typeStage: initialData?.typeStage || "",
+      dureeStage: initialData?.dureeStage || "",
     });
   }, [isOpen, initialData]);
 
   if (!isOpen) return null;
 
-  const totalWeights = Object.values(form.scores || {}).reduce(
-    (sum, v) => sum + Number(v || 0),
-    0
-  );
-  const isValidTotal = totalWeights === 100;
+  const totalWeights = Object.values(form.scores || {}).reduce((s, v) => s + Number(v || 0), 0);
+  const isValidTotal = isStageJob || totalWeights === 100;
 
-  function setScore(key, value) {
-    setError("");
-    const v = clamp(value, 0, 100);
-    setForm((p) => ({ ...p, scores: { ...p.scores, [key]: v } }));
-  }
-
-  function handleNombrePostes(val) {
-    let n = parseInt(val, 10);
-    if (isNaN(n) || n < 1) n = 1;
-    setForm((prev) => ({ ...prev, nombrePostes: n }));
-  }
+  function setScore(key, value) { setError(""); const v = clamp(value, 0, 100); setForm((p) => ({ ...p, scores: { ...p.scores, [key]: v } })); }
 
   async function handleSubmit(e) {
-    e.preventDefault();
-    setError("");
-
+    e.preventDefault(); setError("");
     if (!form.titre.trim()) return setError("❌ Le titre est obligatoire.");
     if (!form.description.trim()) return setError("❌ La description est obligatoire.");
     if (!form.lieu.trim()) return setError("❌ Le lieu est obligatoire.");
     if (!form.dateCloture) return setError("❌ La date de clôture est obligatoire.");
-    if (!isValidTotal) {
-      return setError("❌ La somme des pondérations doit être égale à 100%.");
-    }
+    if (!isStageJob && !isValidTotal) return setError("❌ La somme des pondérations doit être égale à 100%.");
 
-    await onSubmit({
-      titre: form.titre.trim(),
-      description: form.description.trim(),
-      lieu: form.lieu.trim(),
+    const payload = {
+      titre: form.titre.trim(), description: form.description.trim(), lieu: form.lieu.trim(),
       dateCloture: form.dateCloture,
-      hardSkills: parseSkills(form.hardSkills),
-      softSkills: parseSkills(form.softSkills),
-      typeDiplome: form.typeDiplome.trim(),
-      motif: form.motif,
-      sexe: form.sexe,
+      hardSkills: parseSkills(form.hardSkills), softSkills: parseSkills(form.softSkills),
+      typeDiplome: form.typeDiplome.trim(), sexe: form.sexe,
       nombrePostes: Number(form.nombrePostes) || 1,
-      scores: {
-        skillsFit: Number(form.scores.skillsFit) || 0,
-        experienceFit: Number(form.scores.experienceFit) || 0,
-        projectsFit: Number(form.scores.projectsFit) || 0,
-        educationFit: Number(form.scores.educationFit) || 0,
-        communicationFit: Number(form.scores.communicationFit) || 0,
-      },
-    });
+      ...(isStageJob
+        ? { typeStage: form.typeStage || undefined, dureeStage: form.dureeStage || undefined }
+        : { motif: form.motif, scores: { skillsFit: Number(form.scores.skillsFit) || 0, experienceFit: Number(form.scores.experienceFit) || 0, projectsFit: Number(form.scores.projectsFit) || 0, educationFit: Number(form.scores.educationFit) || 0, communicationFit: Number(form.scores.communicationFit) || 0 } }),
+    };
+    await onSubmit(payload);
   }
 
-  const inputBase =
-    "w-full h-11 px-5 rounded-full border border-gray-200 dark:border-gray-600 " +
-    "bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 " +
-    "placeholder-gray-400 dark:placeholder-gray-500 " +
-    "focus:border-[#6CB33F] dark:focus:border-emerald-500 " +
-    "focus:ring-4 focus:ring-[#6CB33F]/15 dark:focus:ring-emerald-500/20 " +
-    "outline-none transition-colors";
-
-  const labelBase =
-    "block text-xs font-semibold tracking-wide text-gray-700 dark:text-gray-300 mb-2 uppercase";
+  const inputBase = "w-full h-11 px-5 rounded-full border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:border-[#6CB33F] dark:focus:border-emerald-500 focus:ring-4 focus:ring-[#6CB33F]/15 dark:focus:ring-emerald-500/20 outline-none transition-colors";
+  const labelBase = "block text-xs font-semibold tracking-wide text-gray-700 dark:text-gray-300 mb-2 uppercase";
 
   return (
-    <div
-      className="fixed inset-0 z-50 bg-black/40 dark:bg-black/60 flex items-center justify-center p-4"
-      onMouseDown={(e) => {
-        if (e.target === e.currentTarget) onClose();
-      }}
+    <div className="fixed inset-0 z-50 bg-black/40 dark:bg-black/60 flex items-center justify-center p-4"
+      onMouseDown={(e) => { if (e.target === e.currentTarget) onClose(); }}
     >
       <div className="bg-white dark:bg-gray-800 w-full max-w-2xl rounded-3xl shadow-2xl max-h-[90vh] flex flex-col overflow-hidden">
+        {/* Header */}
         <div className="px-6 sm:px-8 pt-6 sm:pt-7 pb-5 flex items-start justify-between flex-shrink-0">
           <div>
-            <h2 className="text-2xl font-extrabold text-gray-900 dark:text-white">
-              Modifier l&apos;offre
+            <h2 className="text-2xl font-extrabold text-gray-900 dark:text-white flex items-center gap-2">
+              {isStageJob ? <><GraduationCap size={22} className="text-blue-500" /> Modifier le stage</> : <><Edit2 size={20} className="text-emerald-500" /> Modifier l&apos;offre</>}
             </h2>
             <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-              Disponible uniquement pour les offres en attente.
+              {isStageJob ? "Modification disponible pour tous les stages." : "Disponible uniquement pour les offres en attente."}
             </p>
           </div>
-
-          <button
-            onClick={onClose}
-            className="h-10 w-10 rounded-full grid place-items-center text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-          >
-            ✕
-          </button>
+          <button onClick={onClose} className="h-10 w-10 rounded-full grid place-items-center text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">✕</button>
         </div>
 
         <div className="border-t border-gray-200 dark:border-gray-700" />
 
         <form onSubmit={handleSubmit} className="px-6 sm:px-8 py-6 space-y-5 overflow-y-auto">
           {error && (
-            <div className="rounded-xl border border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-900/30 p-3 text-sm font-semibold text-red-700 dark:text-red-400">
-              {error}
-            </div>
+            <div className="rounded-xl border border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-900/30 p-3 text-sm font-semibold text-red-700 dark:text-red-400">{error}</div>
           )}
 
           <div>
             <label className={labelBase}>Titre</label>
-            <input
-              className={inputBase}
-              value={form.titre}
-              onChange={(e) => setForm({ ...form, titre: e.target.value })}
-            />
+            <input className={inputBase} value={form.titre} onChange={(e) => setForm({ ...form, titre: e.target.value })} />
           </div>
 
           <div>
             <label className={labelBase}>Description</label>
-            <textarea
-              rows={5}
-              className="w-full px-5 py-4 rounded-3xl border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 resize-none focus:border-[#6CB33F] dark:focus:border-emerald-500 focus:ring-4 focus:ring-[#6CB33F]/15 dark:focus:ring-emerald-500/20 outline-none transition-colors"
-              value={form.description}
-              onChange={(e) => setForm({ ...form, description: e.target.value })}
-            />
+            <textarea rows={5} value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })}
+              className="w-full px-5 py-4 rounded-3xl border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 resize-none focus:border-[#6CB33F] dark:focus:border-emerald-500 focus:ring-4 focus:ring-[#6CB33F]/15 dark:focus:ring-emerald-500/20 outline-none transition-colors" />
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
             <div>
               <label className={labelBase}>Lieu</label>
-              <input
-                className={inputBase}
-                value={form.lieu}
-                onChange={(e) => setForm({ ...form, lieu: e.target.value })}
-              />
+              <input className={inputBase} value={form.lieu} onChange={(e) => setForm({ ...form, lieu: e.target.value })} />
             </div>
             <div>
               <label className={labelBase}>Date de clôture</label>
-              <input
-                type="date"
-                className={inputBase}
-                value={form.dateCloture}
-                min={new Date().toISOString().slice(0, 10)}
-                onChange={(e) => setForm({ ...form, dateCloture: e.target.value })}
-              />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-            <div>
-              <label className={labelBase}>Hard Skills (virgule)</label>
-              <input
-                className={inputBase}
-                value={form.hardSkills}
-                onChange={(e) => setForm({ ...form, hardSkills: e.target.value })}
-                placeholder="React, Node.js, MongoDB..."
-              />
-            </div>
-            <div>
-              <label className={labelBase}>Soft Skills (virgule)</label>
-              <input
-                className={inputBase}
-                value={form.softSkills}
-                onChange={(e) => setForm({ ...form, softSkills: e.target.value })}
-                placeholder="Communication, Leadership..."
-              />
+              <input type="date" className={inputBase} value={form.dateCloture} min={new Date().toISOString().slice(0, 10)} onChange={(e) => setForm({ ...form, dateCloture: e.target.value })} />
             </div>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
             <div>
               <label className={labelBase}>Nombre de postes</label>
-              <input
-                type="number"
-                min={1}
-                className={inputBase}
-                value={form.nombrePostes}
-                onChange={(e) => handleNombrePostes(e.target.value)}
-              />
+              <input type="number" min={1} className={inputBase} value={form.nombrePostes} onChange={(e) => { let n = parseInt(e.target.value, 10); if (isNaN(n) || n < 1) n = 1; setForm((p) => ({ ...p, nombrePostes: n })); }} />
             </div>
-
             <div>
               <label className={labelBase}>Type de diplôme</label>
-              <input
-                className={inputBase}
-                value={form.typeDiplome}
-                onChange={(e) => setForm({ ...form, typeDiplome: e.target.value })}
-                placeholder="Ex: Licence, Master, Ingénieur..."
-              />
+              <input className={inputBase} value={form.typeDiplome} onChange={(e) => setForm({ ...form, typeDiplome: e.target.value })} placeholder="Ex: Licence, Master, Ingénieur..." />
             </div>
+          </div>
 
-            <div>
-              <label className={labelBase}>Motif</label>
-              <select
-                className={inputBase}
-                value={form.motif}
-                onChange={(e) => setForm({ ...form, motif: e.target.value })}
-              >
-                {MOTIF_OPTIONS.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
+          {/* Stage-specific */}
+          {isStageJob && (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+              <div>
+                <label className={labelBase}>Type de stage</label>
+                <select className={inputBase} value={form.typeStage} onChange={(e) => setForm({ ...form, typeStage: e.target.value })}>
+                  {TYPE_STAGE_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+                </select>
+              </div>
+              <div>
+                <label className={labelBase}>Durée du stage</label>
+                <select className={inputBase} value={form.dureeStage} onChange={(e) => setForm({ ...form, dureeStage: e.target.value })}>
+                  {DUREE_STAGE_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+                </select>
+              </div>
             </div>
+          )}
 
+          {/* Emploi-specific: Motif */}
+          {!isStageJob && (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+              <div>
+                <label className={labelBase}>Motif</label>
+                <select className={inputBase} value={form.motif} onChange={(e) => setForm({ ...form, motif: e.target.value })}>
+                  {MOTIF_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+                </select>
+              </div>
+              <div>
+                <label className={labelBase}>Genre</label>
+                <select className={inputBase} value={form.sexe} onChange={(e) => setForm({ ...form, sexe: e.target.value })}>
+                  {SEXE_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+                </select>
+              </div>
+            </div>
+          )}
+          {isStageJob && (
             <div>
               <label className={labelBase}>Genre</label>
-              <select
-                className={inputBase}
-                value={form.sexe}
-                onChange={(e) => setForm({ ...form, sexe: e.target.value })}
-              >
-                {SEXE_OPTIONS.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
+              <select className={inputBase} value={form.sexe} onChange={(e) => setForm({ ...form, sexe: e.target.value })}>
+                {SEXE_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
               </select>
             </div>
+          )}
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+            <div>
+              <label className={labelBase}>Hard Skills (virgule)</label>
+              <input className={inputBase} value={form.hardSkills} onChange={(e) => setForm({ ...form, hardSkills: e.target.value })} placeholder="React, Node.js, MongoDB..." />
+            </div>
+            <div>
+              <label className={labelBase}>Soft Skills (virgule)</label>
+              <input className={inputBase} value={form.softSkills} onChange={(e) => setForm({ ...form, softSkills: e.target.value })} placeholder="Communication, Leadership..." />
+            </div>
           </div>
 
-          <div className="border-t border-gray-200 dark:border-gray-700 pt-6">
-            <div className="flex items-center justify-between mb-6">
-              <h3 className="text-lg font-extrabold text-gray-900 dark:text-white">
-                PONDÉRATIONS (0 – 100)
-              </h3>
-
-              <span
-                className={`text-sm font-extrabold ${
-                  isValidTotal
-                    ? "text-green-600 dark:text-emerald-400"
-                    : "text-red-600 dark:text-red-400"
-                }`}
-              >
-                Total : {totalWeights}%
-              </span>
-            </div>
-
-            <div className="space-y-6">
-              {[
-                { key: "skillsFit", label: "Skills Fit" },
-                { key: "experienceFit", label: "Professional Experience Fit" },
-                { key: "projectsFit", label: "Projects Fit & Impact" },
-                { key: "educationFit", label: "Education / Certifications" },
-                { key: "communicationFit", label: "Communication / Clarity signals" },
-              ].map((item) => (
-                <div key={item.key} className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-                  <span className="text-sm font-semibold text-gray-700 dark:text-gray-200">
-                    {item.label}
-                  </span>
-
-                  <div className="flex items-center gap-3">
-                    <input
-                      type="number"
-                      min={0}
-                      max={100}
-                      value={form.scores[item.key]}
-                      onChange={(e) => setScore(item.key, e.target.value)}
-                      className="w-24 h-11 rounded-full border border-gray-300 dark:border-gray-600 bg-gray-100 dark:bg-gray-700 text-center text-base font-semibold text-gray-800 dark:text-white focus:outline-none focus:border-[#6CB33F] focus:ring-2 focus:ring-[#6CB33F]/20 transition"
-                    />
-                    <span className="text-green-600 dark:text-emerald-400 font-bold">
-                      %
-                    </span>
+          {/* Pondérations — emploi only */}
+          {!isStageJob && (
+            <div className="border-t border-gray-200 dark:border-gray-700 pt-6">
+              <div className="flex items-center justify-between mb-6">
+                <h3 className="text-lg font-extrabold text-gray-900 dark:text-white">PONDÉRATIONS (0 – 100)</h3>
+                <span className={`text-sm font-extrabold ${isValidTotal ? "text-green-600 dark:text-emerald-400" : "text-red-600 dark:text-red-400"}`}>Total : {totalWeights}%</span>
+              </div>
+              <div className="space-y-6">
+                {[
+                  { key: "skillsFit", label: "Skills Fit" },
+                  { key: "experienceFit", label: "Professional Experience Fit" },
+                  { key: "projectsFit", label: "Projects Fit & Impact" },
+                  { key: "educationFit", label: "Education / Certifications" },
+                  { key: "communicationFit", label: "Communication / Clarity signals" },
+                ].map((item) => (
+                  <div key={item.key} className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                    <span className="text-sm font-semibold text-gray-700 dark:text-gray-200">{item.label}</span>
+                    <div className="flex items-center gap-3">
+                      <input type="number" min={0} max={100} value={form.scores[item.key]}
+                        onChange={(e) => setScore(item.key, e.target.value)}
+                        className="w-24 h-11 rounded-full border border-gray-300 dark:border-gray-600 bg-gray-100 dark:bg-gray-700 text-center text-base font-semibold text-gray-800 dark:text-white focus:outline-none focus:border-[#6CB33F] focus:ring-2 focus:ring-[#6CB33F]/20 transition" />
+                      <span className="text-green-600 dark:text-emerald-400 font-bold">%</span>
+                    </div>
                   </div>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
-          </div>
+          )}
 
           <div className="flex flex-col sm:flex-row justify-end gap-3 pt-2">
-            <button
-              type="button"
-              onClick={onClose}
-              className="h-11 px-6 rounded-full border border-gray-200 dark:border-gray-600 text-gray-800 dark:text-gray-200 font-semibold hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
-            >
+            <button type="button" onClick={onClose}
+              className="h-11 px-6 rounded-full border border-gray-200 dark:border-gray-600 text-gray-800 dark:text-gray-200 font-semibold hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
               Annuler
             </button>
-
-            <button
-              type="submit"
-              disabled={loading || !isValidTotal}
-              className="h-11 px-6 rounded-full bg-[#6CB33F] hover:bg-[#4E8F2F] dark:bg-emerald-600 dark:hover:bg-emerald-500 text-white font-semibold transition-colors disabled:opacity-50"
-            >
+            <button type="submit" disabled={loading || !isValidTotal}
+              className={`h-11 px-6 rounded-full font-semibold transition-colors disabled:opacity-50 ${isStageJob ? "bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-400 text-white"
+                  : "bg-[#6CB33F] hover:bg-[#4E8F2F] dark:bg-emerald-600 dark:hover:bg-emerald-500 text-white"
+                }`}>
               {loading ? "Enregistrement..." : "Enregistrer"}
             </button>
           </div>

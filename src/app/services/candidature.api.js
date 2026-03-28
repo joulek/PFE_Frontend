@@ -9,8 +9,8 @@ export const getCondidatureCount = () => api.get("/candidatures/count");
 export const getCandidaturesAnalysis = () => api.get("/candidatures/analysis");
 export const getMyCandidatures = () => api.get("/candidatures/my");
 export const getMyAnalysis = () => api.get("/candidatures/my-analysis");
-export const getMyCandidaturesCreated = () => api.get("/candidatures/my-created");   // ✅ NOUVEAU
-export const getAnalysisNord = () => api.get("/candidatures/analysis-nord");          // ✅ NOUVEAU
+export const getMyCandidaturesCreated = () => api.get("/candidatures/my-created");
+export const getAnalysisNord = () => api.get("/candidatures/analysis-nord");
 export const getMatchingStats = () => api.get("/candidatures/stats/matching");
 export const getAcademicStats = () => api.get("/candidatures/stats/academic");
 
@@ -44,43 +44,27 @@ export const getPreInterviewCandidates = async () => {
   return data;
 };
 
-export async function getDgaMyInterviews({
-  page = 1,
-  limit = 15,
-  search = "",
-} = {}) {
-  const params = new URLSearchParams({
-    page: String(page),
-    limit: String(limit),
-  });
-
-  if (search.trim()) {
-    params.set("search", search.trim());
-  }
-
-  const { data } = await api.get(
-    `/api/interviews/dga/my-interviews?${params.toString()}`
-  );
+// ─── DGA ──────────────────────────────────────────────────────
+export async function getDgaMyInterviews({ page = 1, limit = 15, search = "" } = {}) {
+  const params = new URLSearchParams({ page: String(page), limit: String(limit) });
+  if (search.trim()) params.set("search", search.trim());
+  const { data } = await api.get(`/api/interviews/dga/my-interviews?${params}`);
   return data;
 }
 
 export async function confirmDgaInterview(interviewId) {
-  const { data } = await api.post(
-    `/api/interviews/${interviewId}/confirm-dga`
-  );
+  const { data } = await api.post(`/api/interviews/${interviewId}/confirm-dga`);
   return data;
 }
 
+// Notes DGA (liées à candidatureId via /api/interviews/:candidatureId/notes)
 export async function getInterviewNotes(candidatureId) {
   const { data } = await api.get(`/api/interviews/${candidatureId}/notes`);
   return data;
 }
 
 export async function createInterviewNote(candidatureId, payload) {
-  const { data } = await api.post(
-    `/api/interviews/${candidatureId}/notes`,
-    payload
-  );
+  const { data } = await api.post(`/api/interviews/${candidatureId}/notes`, payload);
   return data;
 }
 
@@ -98,3 +82,4 @@ export async function deleteInterviewNote(candidatureId, noteId) {
   );
   return data;
 }
+

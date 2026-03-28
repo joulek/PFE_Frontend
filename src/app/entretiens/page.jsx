@@ -73,14 +73,14 @@ function DgaBadge() {
 /* ══════════════════════════════════════════════════════════════════
  * PAGE PRINCIPALE
  * ══════════════════════════════════════════════════════════════════ */
-const LIMIT = 15;
+const LIMIT = 5;
 const TABLE_HEADERS = [
   "Candidat",
   "Poste",
   "Date DGA",
   "Heure",
   "Lieu",
-  "Responsable RH",
+
   "Statut",
   "Actions",
 ];
@@ -353,30 +353,7 @@ export default function EntretiensPage() {
                             </div>
                           </td>
 
-                          <td className="px-5 py-4">
-                            {iv.responsableName || iv.responsableEmail ? (
-                              <div className="flex items-center gap-2">
-                                <div className="w-7 h-7 rounded-full bg-[#E9F5E3] dark:bg-emerald-900/30 flex items-center justify-center flex-shrink-0">
-                                  <UserCheck className="w-3.5 h-3.5 text-[#4E8F2F]" />
-                                </div>
-                                <div className="min-w-0">
-                                  {iv.responsableName && (
-                                    <p className="font-semibold text-xs truncate max-w-[120px]">
-                                      {iv.responsableName}
-                                    </p>
-                                  )}
-                                  {iv.responsableEmail && (
-                                    <p className="text-[11px] text-gray-400 truncate max-w-[120px] flex items-center gap-1">
-                                      <Mail className="w-2.5 h-2.5 flex-shrink-0" />
-                                      {iv.responsableEmail}
-                                    </p>
-                                  )}
-                                </div>
-                              </div>
-                            ) : (
-                              <span className="text-xs text-gray-300">—</span>
-                            )}
-                          </td>
+                        
 
                           <td className="px-5 py-4">
                             <DgaBadge />
