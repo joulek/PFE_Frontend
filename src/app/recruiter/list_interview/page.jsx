@@ -576,6 +576,15 @@ function InterviewCard({ iv, onExpand, isExpanded, onConfirmAdmin, confirmingAdm
             {iv.status === "CANDIDATE_REQUESTED_RESCHEDULE" && <DetailCard label="Raison report" value={iv.candidateRescheduleReason || "Non précisée"} />}
             {iv.status === "PENDING_ADMIN_APPROVAL" && <DetailCard label="Nouvelle date proposée" value={`${formatDate(iv.responsableProposedDate)} ${iv.responsableProposedTime || ""}`} />}
 
+            {iv.responsable_rh_optylab != null && (
+              <DetailCard label="Note RH Optylab">
+                <div className="flex items-center gap-2">
+                  <span className="font-extrabold text-blue-700 dark:text-blue-300 text-lg">{iv.responsable_rh_optylab}/5</span>
+                  <span className="text-amber-500">{"★".repeat(Math.round(iv.responsable_rh_optylab))}{"☆".repeat(5 - Math.round(iv.responsable_rh_optylab))}</span>
+                </div>
+              </DetailCard>
+            )}
+
             {allIvs.some((siv) => siv.status === "CONFIRMED" || siv.status === "PENDING_CANDIDATE_CONFIRMATION") && (
               <DetailCard label="Évaluation">
                 <div className="flex flex-col gap-2">
@@ -886,7 +895,7 @@ export default function AdminInterviewList() {
             {/* ══ VUE DESKTOP (tableau) — visible >= lg ══ */}
             <div className="hidden lg:block bg-white dark:bg-gray-800 rounded-3xl shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden transition-colors duration-300">
               <div className="overflow-x-auto">
-                <table className="w-full text-sm min-w-[1100px]">
+                <table className="w-full text-sm min-w-[1250px]">
                   <thead className="bg-[#E9F5E3] dark:bg-gray-700 text-[#4E8F2F] dark:text-emerald-400">
                     <tr>
                       <th className="px-4 py-5 w-10"></th>
@@ -896,6 +905,7 @@ export default function AdminInterviewList() {
                       <th className="text-left px-6 lg:px-8 py-5 font-extrabold uppercase text-xs tracking-wider">Statut</th>
                       <th className="text-left px-6 lg:px-8 py-5 font-extrabold uppercase text-xs tracking-wider">Planification</th>
                       <th className="text-left px-6 lg:px-8 py-5 font-extrabold uppercase text-xs tracking-wider">Éval. DGA</th>
+                      <th className="text-left px-6 lg:px-8 py-5 font-extrabold uppercase text-xs tracking-wider">Note RH</th>
                       <th className="text-left px-6 lg:px-8 py-5 font-extrabold uppercase text-xs tracking-wider">Confirmer</th>
                       <th className="text-right px-6 lg:px-8 py-5 font-extrabold uppercase text-xs tracking-wider">Détails</th>
                     </tr>
@@ -969,6 +979,17 @@ export default function AdminInterviewList() {
                               </div>
                             </td>
                             <td className="px-6 lg:px-8 py-5">
+                              {iv.responsable_rh_optylab ? (
+                                <div className="flex flex-col gap-1">
+                                  <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold border bg-blue-50 dark:bg-blue-950/30 border-blue-200 dark:border-blue-700 text-blue-700 dark:text-blue-300 whitespace-nowrap">
+                                    <Star className="w-3.5 h-3.5 fill-current" />{iv.responsable_rh_optylab}/5
+                                  </span>
+                                </div>
+                              ) : (
+                                <span className="text-xs text-gray-400 dark:text-gray-500">—</span>
+                              )}
+                            </td>
+                            <td className="px-6 lg:px-8 py-5">
                               {iv.adminConfirmed === true ? (
                                 <div className="flex flex-col gap-0.5">
                                   <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-200 bg-emerald-50 dark:border-emerald-700 dark:bg-emerald-950/30 px-3 py-1.5 text-xs font-bold text-emerald-700 dark:text-emerald-300 whitespace-nowrap"><CheckCircle2 className="w-3.5 h-3.5" />Confirmé</span>
@@ -985,7 +1006,7 @@ export default function AdminInterviewList() {
 
                           {isExpanded && (
                             <tr>
-                              <td colSpan={9} className="px-6 lg:px-8 pb-6 bg-green-50/20 dark:bg-gray-900/20">
+                              <td colSpan={10} className="px-6 lg:px-8 pb-6 bg-green-50/20 dark:bg-gray-900/20">
                                 <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 pt-4">
                                   <DetailCard label="Poste" value={iv.jobTitle || "—"} />
                                   <DetailCard label="Responsable">
@@ -1000,6 +1021,15 @@ export default function AdminInterviewList() {
 
                                   {iv.status === "CANDIDATE_REQUESTED_RESCHEDULE" && <DetailCard label="Raison report" value={iv.candidateRescheduleReason || "Non précisée"} />}
                                   {iv.status === "PENDING_ADMIN_APPROVAL" && <DetailCard label="Nouvelle date proposée" value={`${formatDate(iv.responsableProposedDate)} ${iv.responsableProposedTime || ""}`} />}
+
+                                  {iv.responsable_rh_optylab != null && (
+                                    <DetailCard label="Note RH Optylab">
+                                      <div className="flex items-center gap-2">
+                                        <span className="font-extrabold text-blue-700 dark:text-blue-300 text-lg">{iv.responsable_rh_optylab}/5</span>
+                                        <span className="text-amber-500">{"★".repeat(Math.round(iv.responsable_rh_optylab))}{"☆".repeat(5 - Math.round(iv.responsable_rh_optylab))}</span>
+                                      </div>
+                                    </DetailCard>
+                                  )}
 
                                   {allIvs.some((siv) => siv.status === "CONFIRMED" || siv.status === "PENDING_CANDIDATE_CONFIRMATION") && (
                                     <DetailCard label="Évaluation">
