@@ -14,15 +14,21 @@ import {
   CheckCircle2,
 } from "lucide-react";
 
+// ✅ Capitalise la première lettre (ex: "jeudi 2 avril 2026" → "Jeudi 2 avril 2026")
+function capitalize(str) {
+  if (!str || typeof str !== "string") return str;
+  return str.charAt(0).toUpperCase() + str.slice(1);
+}
+
 function formatDateFR(d) {
   if (!d) return "—";
   const date = new Date(d);
-  return date.toLocaleDateString("fr-FR", {
+  return capitalize(date.toLocaleDateString("fr-FR", {
     weekday: "long",
     day: "numeric",
     month: "long",
     year: "numeric",
-  });
+  }));
 }
 
 export default function ConfirmInterviewPage() {
@@ -128,7 +134,7 @@ export default function ConfirmInterviewPage() {
           {/* Infos */}
           {!loading && iv && !error && (
             <>
-              <div >
+              <div>
                 <h1 className="text-[30px] sm:text-[30px] font-extrabold text-[#4E9A2F] dark:text-[#8FD168] leading-[1.15]">
                   Invitation à un entretien RH
                 </h1>
@@ -142,7 +148,7 @@ export default function ConfirmInterviewPage() {
                 </p>
               </div>
 
-              <div className="mt-8 ">
+              <div className="mt-8">
                 <div className="text-gray-500 dark:text-gray-400 text-[15px]">
                   Poste
                 </div>
@@ -175,7 +181,7 @@ export default function ConfirmInterviewPage() {
               </div>
 
               <div className="mt-6 text-sm text-center text-gray-500 dark:text-gray-400">
-                En confirmant, le recruteur sera notifié dans l’application et
+                En confirmant, le recruteur sera notifié dans l'application et
                 par email.
               </div>
 

@@ -18,6 +18,12 @@ const API_BASE = process.env.NEXT_PUBLIC_API_URL || "";
 const OPTY = "#4E8F2F";
 const OPTY_D = "#3d7524";
 
+// ✅ Capitalise la première lettre (ex: "jeudi 2 avril 2026" → "Jeudi 2 avril 2026")
+function capitalize(str) {
+  if (!str || typeof str !== "string") return str;
+  return str.charAt(0).toUpperCase() + str.slice(1);
+}
+
 export default function CandidatConfirmInterview({ token }) {
   const [status, setStatus] = useState("loading"); // loading | info | confirming | success | error
   const [interview, setInterview] = useState(null);
@@ -141,8 +147,9 @@ export default function CandidatConfirmInterview({ token }) {
               <div className="mt-4 p-4 bg-[#F0FAF0] dark:bg-emerald-950/40 rounded-2xl border border-emerald-200/60 dark:border-emerald-900/40 text-left space-y-2">
                 <div className="flex items-center gap-2 text-sm">
                   <Calendar className="w-4 h-4 flex-shrink-0" style={{ color: OPTY }} />
+                  {/* ✅ Date capitalisée */}
                   <span className="font-semibold text-gray-700 dark:text-slate-200">
-                    {interview.date}
+                    {capitalize(interview.date)}
                   </span>
                 </div>
                 <div className="flex items-center gap-2 text-sm">
@@ -205,7 +212,10 @@ export default function CandidatConfirmInterview({ token }) {
                   <p className="text-[10px] font-bold text-gray-400 dark:text-slate-400 uppercase tracking-wider">
                     Date
                   </p>
-                  <p className="text-sm font-bold text-gray-800 dark:text-white">{interview.date}</p>
+                  {/* ✅ Date capitalisée */}
+                  <p className="text-sm font-bold text-gray-800 dark:text-white">
+                    {capitalize(interview.date)}
+                  </p>
                 </div>
               </div>
 
@@ -234,8 +244,6 @@ export default function CandidatConfirmInterview({ token }) {
                   </p>
                 </div>
               </div>
-
-              
             </div>
           )}
 
@@ -261,8 +269,6 @@ export default function CandidatConfirmInterview({ token }) {
               </>
             )}
           </button>
-
-       
         </div>
       </div>
     </div>
