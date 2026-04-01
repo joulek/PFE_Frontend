@@ -271,6 +271,36 @@ async function apiFetch(path, options = {}) {
   return res.json();
 }
 
+// ✅ HELPER : décoder le token JWT pour obtenir l'email de l'utilisateur connecté
+function getCurrentUserEmailFromToken() {
+  try {
+    const token =
+      (typeof localStorage !== "undefined" && localStorage.getItem("token")) ||
+      (typeof sessionStorage !== "undefined" && sessionStorage.getItem("token")) ||
+      "";
+    if (!token) return "";
+    const payload = JSON.parse(atob(token.split(".")[1]));
+    return payload.email || payload.sub || "";
+  } catch {
+    return "";
+  }
+}
+
+// ✅ HELPER : décoder le token JWT pour obtenir le rôle de l'utilisateur connecté
+function getCurrentUserRoleFromToken() {
+  try {
+    const token =
+      (typeof localStorage !== "undefined" && localStorage.getItem("token")) ||
+      (typeof sessionStorage !== "undefined" && sessionStorage.getItem("token")) ||
+      "";
+    if (!token) return "";
+    const payload = JSON.parse(atob(token.split(".")[1]));
+    return payload.role || "";
+  } catch {
+    return "";
+  }
+}
+
 const STATUS_CONFIG = {
   PENDING_CONFIRMATION: { label: "Attente ResponsableMétier", short: "Attente Resp.", color: "text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-700 bg-amber-50 dark:bg-amber-950/30", dot: "bg-amber-500" },
   PENDING_CANDIDATE_CONFIRMATION: { label: "Attente candidat", short: "Attente candidat", color: "text-sky-700 dark:text-sky-300 border-sky-200 dark:border-sky-700 bg-sky-50 dark:bg-sky-950/30", dot: "bg-sky-500" },
@@ -485,7 +515,8 @@ function CancelInterviewModal({ open, onClose, onConfirm, reason, setReason, loa
 
 
 /* ══════ MOBILE INTERVIEW CARD ══════ */
-function InterviewCard({ iv, onExpand, isExpanded, onConfirmAdmin, confirmingAdmin, onApprove, onReject, actionLoading, evaluationsCache, fetchEvaluationIfNeeded, router }) {
+// ✅ FIX : ajout de currentUserEmail en prop
+function InterviewCard({ iv, onExpand, isExpanded, onConfirmAdmin, confirmingAdmin, onApprove, onReject, actionLoading, evaluationsCache, fetchEvaluationIfNeeded, router, currentUserEmail }) {
   const allIvs = [iv, ...(iv.siblings || [])];
   const ivWithDga = allIvs.find((siv) => siv.dgaInterview);
   const allGroupNotes = Array.from(new Map(allIvs.flatMap((siv) => siv.allEntretienNotes || []).map((n) => [String(n._id || n.createdAt), n])).values());
@@ -500,15 +531,23 @@ function InterviewCard({ iv, onExpand, isExpanded, onConfirmAdmin, confirmingAdm
   const responsableItem = allIvs.find((siv) => siv.responsableName || siv.assignedUserName || siv.assignedUserEmail || siv.responsableEmail);
   const responsableDisplay = responsableItem?.responsableName || responsableItem?.assignedUserName || responsableItem?.responsableEmail || responsableItem?.assignedUserEmail || "—";
   const responsableEmailDisplay = responsableItem?.responsableEmail || responsableItem?.assignedUserEmail || "—";
-const hasResponsableEvaluation = allIvs.some(
-  (siv) =>
-    siv.entretienNotes &&
-    siv.entretienNotes.some(
-      (note) =>
-        note.type &&
-        note.type.toLowerCase().includes("responsable")
-    )
-);
+
+  // ✅ FIX : vérifier si le responsable est le même que l'utilisateur connecté (admin)
+  const isResponsableCurrentUser =
+    currentUserEmail &&
+    responsableEmailDisplay !== "—" &&
+    responsableEmailDisplay.toLowerCase() === currentUserEmail.toLowerCase();
+
+  const hasResponsableEvaluation = allIvs.some(
+    (siv) =>
+      siv.entretienNotes &&
+      siv.entretienNotes.some(
+        (note) =>
+          note.type &&
+          note.type.toLowerCase().includes("responsable")
+      )
+  );
+
   return (
     <div className={`bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden transition-all ${isCancelled ? "opacity-60" : ""}`}>
       {/* Header card */}
@@ -578,7 +617,15 @@ const hasResponsableEvaluation = allIvs.some(
               <div className="space-y-2">
                 <div className="text-sm font-medium text-gray-800 dark:text-gray-200 break-words">{responsableDisplay}</div>
                 {responsableEmailDisplay !== "—" && <div className="text-xs text-gray-500 dark:text-gray-400 break-words">{responsableEmailDisplay}</div>}
-                <button onClick={() => router.push(`/recruiter/interviews/${iv._id}/evaluation-response`)} className="w-full bg-green-100 hover:bg-green-200 text-green-700 py-2 rounded-xl text-sm font-medium transition">Voir réponses du responsable</button>
+                {/* ✅ FIX : n'afficher le bouton que si le responsable n'est PAS l'utilisateur connecté */}
+                {!isResponsableCurrentUser && (
+                  <button
+                    onClick={() => router.push(`/recruiter/interviews/${iv._id}/evaluation-response`)}
+                    className="w-full bg-green-100 hover:bg-green-200 text-green-700 py-2 rounded-xl text-sm font-medium transition"
+                  >
+                    Voir réponses du responsable
+                  </button>
+                )}
               </div>
             </DetailCard>
 
@@ -690,6 +737,15 @@ export default function AdminInterviewList() {
   const [evaluationMap, setEvaluationMap] = useState({});
   const [openEvalId, setOpenEvalId] = useState(null);
   const [selectedForCompare, setSelectedForCompare] = useState([]);
+
+  // ✅ FIX : récupérer l'email et le rôle de l'utilisateur connecté depuis le token JWT
+  const [currentUserEmail, setCurrentUserEmail] = useState("");
+  const [currentUserRole, setCurrentUserRole] = useState("");
+
+  useEffect(() => {
+    setCurrentUserEmail(getCurrentUserEmailFromToken());
+    setCurrentUserRole(getCurrentUserRoleFromToken());
+  }, []);
 
   function toggleSelectForCompare(iv, e) {
     e.stopPropagation();
@@ -897,6 +953,7 @@ export default function AdminInterviewList() {
                   evaluationsCache={evaluationsCache}
                   fetchEvaluationIfNeeded={fetchEvaluationIfNeeded}
                   router={router}
+                  currentUserEmail={currentUserEmail}  // ✅ FIX : passer l'email courant
                 />
               ))}
             </div>
@@ -937,6 +994,12 @@ export default function AdminInterviewList() {
                       const responsableItem = allIvs.find((siv) => siv.responsableName || siv.assignedUserName || siv.assignedUserEmail || siv.responsableEmail);
                       const responsableDisplay = responsableItem?.responsableName || responsableItem?.assignedUserName || responsableItem?.responsableEmail || responsableItem?.assignedUserEmail || "—";
                       const responsableEmailDisplay = responsableItem?.responsableEmail || responsableItem?.assignedUserEmail || "—";
+
+                      // ✅ FIX : vérifier si le responsable est l'utilisateur connecté (admin)
+                      const isResponsableCurrentUser =
+                        currentUserEmail &&
+                        responsableEmailDisplay !== "—" &&
+                        responsableEmailDisplay.toLowerCase() === currentUserEmail.toLowerCase();
 
                       return (
                         <React.Fragment key={iv._groupKey || String(iv._id)}>
@@ -1024,7 +1087,15 @@ export default function AdminInterviewList() {
                                         <div className="text-sm font-medium text-gray-800 dark:text-gray-200 break-words">{responsableDisplay}</div>
                                         {responsableEmailDisplay !== "—" && <div className="text-sm text-gray-500 dark:text-gray-400 break-words">{responsableEmailDisplay}</div>}
                                       </div>
-                                      <button onClick={() => router.push(`/recruiter/interviews/${iv._id}/evaluation-response`)} className="mt-2 w-full bg-green-100 hover:bg-green-200 text-green-700 py-2 rounded-xl text-sm font-medium transition">Voir réponses du responsable</button>
+                                      {/* ✅ FIX : masquer le bouton si le responsable est l'utilisateur connecté */}
+                                      {!isResponsableCurrentUser && (
+                                        <button
+                                          onClick={() => router.push(`/recruiter/interviews/${iv._id}/evaluation-response`)}
+                                          className="mt-2 w-full bg-green-100 hover:bg-green-200 text-green-700 py-2 rounded-xl text-sm font-medium transition"
+                                        >
+                                          Voir réponses du responsable
+                                        </button>
+                                      )}
                                     </div>
                                   </DetailCard>
 
