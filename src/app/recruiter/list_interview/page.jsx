@@ -33,8 +33,8 @@ function MiniCalendarPicker({ selectedDate, onSelect }) {
     selectedDate ? new Date(selectedDate).getMonth() : today.getMonth(),
   );
 
-  const MONTHS_FR = ["Janvier","Février","Mars","Avril","Mai","Juin","Juillet","Août","Septembre","Octobre","Novembre","Décembre"];
-  const DAYS_FR = ["Lu","Ma","Me","Je","Ve","Sa","Di"];
+  const MONTHS_FR = ["Janvier", "Février", "Mars", "Avril", "Mai", "Juin", "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre"];
+  const DAYS_FR = ["Lu", "Ma", "Me", "Je", "Ve", "Sa", "Di"];
 
   const firstDay = new Date(viewYear, viewMonth, 1);
   const startOffset = (firstDay.getDay() + 6) % 7;
@@ -234,7 +234,7 @@ function DgaScheduleModal({ interview, onSuccess }) {
                   <div className="flex flex-col gap-1">
                     <label className="text-[11px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Heure <span className="text-red-400">*</span></label>
                     <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
-                      {["08:00","08:30","09:00","09:30","10:00","10:30","11:00","11:30","14:00","14:30","15:00","15:30","16:00","16:30"].map((t) => (
+                      {["08:00", "08:30", "09:00", "09:30", "10:00", "10:30", "11:00", "11:30", "14:00", "14:30", "15:00", "15:30", "16:00", "16:30"].map((t) => (
                         <button key={t} type="button" onClick={() => setForm((prev) => ({ ...prev, dgaTime: t }))}
                           className={`px-3 py-2 rounded-xl text-xs font-semibold border transition-all ${form.dgaTime === t ? "bg-[#6CB33F] border-[#6CB33F] text-white shadow-sm" : "border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400 hover:border-[#6CB33F]/50 hover:text-[#4E8F2F] hover:bg-[#F1FAF4] dark:hover:bg-emerald-950/20"}`}
                         >{t}</button>
@@ -483,6 +483,7 @@ function CancelInterviewModal({ open, onClose, onConfirm, reason, setReason, loa
   );
 }
 
+
 /* ══════ MOBILE INTERVIEW CARD ══════ */
 function InterviewCard({ iv, onExpand, isExpanded, onConfirmAdmin, confirmingAdmin, onApprove, onReject, actionLoading, evaluationsCache, fetchEvaluationIfNeeded, router }) {
   const allIvs = [iv, ...(iv.siblings || [])];
@@ -499,7 +500,15 @@ function InterviewCard({ iv, onExpand, isExpanded, onConfirmAdmin, confirmingAdm
   const responsableItem = allIvs.find((siv) => siv.responsableName || siv.assignedUserName || siv.assignedUserEmail || siv.responsableEmail);
   const responsableDisplay = responsableItem?.responsableName || responsableItem?.assignedUserName || responsableItem?.responsableEmail || responsableItem?.assignedUserEmail || "—";
   const responsableEmailDisplay = responsableItem?.responsableEmail || responsableItem?.assignedUserEmail || "—";
-
+const hasResponsableEvaluation = allIvs.some(
+  (siv) =>
+    siv.entretienNotes &&
+    siv.entretienNotes.some(
+      (note) =>
+        note.type &&
+        note.type.toLowerCase().includes("responsable")
+    )
+);
   return (
     <div className={`bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden transition-all ${isCancelled ? "opacity-60" : ""}`}>
       {/* Header card */}
@@ -533,7 +542,7 @@ function InterviewCard({ iv, onExpand, isExpanded, onConfirmAdmin, confirmingAdm
             <FileText className="w-3.5 h-3.5" />{isExpanded ? "Masquer" : "Voir détails"}
           </button>
         ) : (
-          <DgaScheduleModal interview={ivWithDga || iv} onSuccess={() => {}} />
+          <DgaScheduleModal interview={ivWithDga || iv} onSuccess={() => { }} />
         )}
         {score !== null && <ScoreBadge score={score} />}
 
@@ -813,7 +822,7 @@ export default function AdminInterviewList() {
         {/* Filtres */}
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-6">
           <div className="flex flex-wrap gap-2">
-            {["ALL","CONFIRMED","PENDING_CONFIRMATION","PENDING_ADMIN_APPROVAL"].map((s) => {
+            {["ALL", "CONFIRMED", "PENDING_CONFIRMATION", "PENDING_ADMIN_APPROVAL"].map((s) => {
               const cfg = s === "ALL" ? { short: "Tous", dot: null } : STATUS_CONFIG[s];
               const isActive = statusFilter === s;
               return (

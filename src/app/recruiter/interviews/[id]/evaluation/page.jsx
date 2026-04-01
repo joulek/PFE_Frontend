@@ -132,6 +132,11 @@ export default function InterviewEvaluationPage() {
       ? "Admin / Recruteur"
       : "Recruteur";
 
+  // ✅ Redirection explicite vers la page de l'entretien (jamais router.back())
+  const goBackToInterview = () => {
+    router.push(`/recruiter/list_interview/`);
+  };
+
   useEffect(() => {
     if (!interviewId) {
       setError("ID d'entretien manquant");
@@ -158,7 +163,6 @@ export default function InterviewEvaluationPage() {
           ? [...formData.criteria]
               .map((c) => ({
                 ...c,
-                // ✅ Normaliser _id en string pour usage comme clé d'objet JS
                 _id: c._id?.$oid || String(c._id || ""),
               }))
               .sort(
@@ -178,14 +182,11 @@ export default function InterviewEvaluationPage() {
           const newRatings = {};
           const newComments = {};
 
-          // ✅ FIX : normaliser criterionId en string
-          // En DB, criterionId est un ObjectId → MongoDB le sérialise en string via JSON,
-          // mais on s'assure que la clé est toujours une string pour matcher criterion._id
           (existingEval.ratings || []).forEach((r) => {
             const key = r.criterionId?.$oid || String(r.criterionId || "");
             if (key) {
-              newRatings[key]   = r.value;
-              newComments[key]  = r.comment || "";
+              newRatings[key]  = r.value;
+              newComments[key] = r.comment || "";
             }
           });
 
@@ -212,17 +213,11 @@ export default function InterviewEvaluationPage() {
   }, [criteria, ratings]);
 
   const updateRating = (criterionId, value) => {
-    setRatings((prev) => ({
-      ...prev,
-      [criterionId]: value,
-    }));
+    setRatings((prev) => ({ ...prev, [criterionId]: value }));
   };
 
   const updateComment = (criterionId, value) => {
-    setComments((prev) => ({
-      ...prev,
-      [criterionId]: value,
-    }));
+    setComments((prev) => ({ ...prev, [criterionId]: value }));
   };
 
   const handleSave = async () => {
@@ -261,8 +256,9 @@ export default function InterviewEvaluationPage() {
       console.log("✅ Evaluation saved");
       setSuccess(true);
 
+      // ✅ FIX : redirection explicite vers la page de l'entretien
       setTimeout(() => {
-        router.back();
+        goBackToInterview();
       }, 2000);
     } catch (err) {
       console.error("❌ Save error:", err);
@@ -293,7 +289,7 @@ export default function InterviewEvaluationPage() {
         <div className="mx-auto max-w-4xl">
           <button
             type="button"
-            onClick={() => router.back()}
+            onClick={goBackToInterview}
             className="mb-6 sm:mb-8 flex items-center gap-2 text-[#6CB33F] hover:opacity-80"
           >
             <ArrowLeft size={20} />
@@ -322,9 +318,10 @@ export default function InterviewEvaluationPage() {
     <div className="min-h-screen bg-gradient-to-br from-[#F4FAF2] to-[#E8F5E1] px-4 sm:px-6 py-6 sm:py-8 dark:from-gray-950 dark:to-gray-900">
       <div className="mx-auto max-w-4xl">
         <div className="mb-6 sm:mb-8">
+          {/* ✅ FIX : bouton Retour avec redirection explicite */}
           <button
             type="button"
-            onClick={() => router.back()}
+            onClick={goBackToInterview}
             className="mb-4 sm:mb-6 flex items-center gap-2 text-[#6CB33F] transition hover:opacity-80"
           >
             <ArrowLeft size={20} />
@@ -347,7 +344,7 @@ export default function InterviewEvaluationPage() {
 
               <div>
                 <p className="text-xs sm:text-sm font-semibold uppercase text-gray-500 dark:text-gray-400">
-                  Type d'entretien
+                  Type d&apos;entretien
                 </p>
                 <div className="mt-2 flex flex-wrap gap-2">
                   <span className="inline-flex items-center rounded-full border border-violet-200 bg-violet-50 px-3 sm:px-4 py-1 text-xs sm:text-sm font-semibold text-violet-700 dark:border-violet-700 dark:bg-violet-900/20 dark:text-violet-300">
@@ -383,8 +380,7 @@ export default function InterviewEvaluationPage() {
               </div>
             </div>
 
-
-            {/* ✅ Badge évaluateur — chaque évaluateur a sa propre fiche indépendante */}
+            {/* ✅ Badge évaluateur */}
             <div className="mt-4 rounded-xl border border-[#6CB33F]/30 bg-[#F3FBEA] px-4 py-3 dark:border-[#6CB33F]/20 dark:bg-[#6CB33F]/5">
               <div className="flex items-center gap-3">
                 <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-[#6CB33F] text-xs font-bold text-white">
@@ -453,9 +449,7 @@ export default function InterviewEvaluationPage() {
                               <button
                                 key={score}
                                 type="button"
-                                onClick={() =>
-                                  updateRating(criterion._id, score)
-                                }
+                                onClick={() => updateRating(criterion._id, score)}
                                 className={`flex h-10 w-10 sm:h-12 sm:w-12 items-center justify-center rounded-lg border-2 font-bold transition text-sm sm:text-base ${
                                   ratings[criterion._id] === score
                                     ? "border-[#6CB33F] bg-[#6CB33F] text-white"
@@ -467,8 +461,7 @@ export default function InterviewEvaluationPage() {
                             ))}
                           </div>
                           <p className="text-xs text-gray-500 dark:text-gray-400">
-                            {criterion.scale.min} = Faible | {criterion.scale.max} =
-                            {" "}Excellent
+                            {criterion.scale.min} = Faible | {criterion.scale.max} = Excellent
                           </p>
                         </div>
                       ) : criterion.type === "boolean" ? (
@@ -500,9 +493,7 @@ export default function InterviewEvaluationPage() {
                         <textarea
                           placeholder="Votre évaluation..."
                           value={ratings[criterion._id] || ""}
-                          onChange={(e) =>
-                            updateRating(criterion._id, e.target.value)
-                          }
+                          onChange={(e) => updateRating(criterion._id, e.target.value)}
                           className="w-full rounded-lg sm:rounded-xl border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 px-3 sm:px-4 py-2.5 sm:py-3 text-xs sm:text-sm text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 transition focus:border-[#6CB33F] focus:outline-none"
                           rows={3}
                         />
@@ -517,9 +508,7 @@ export default function InterviewEvaluationPage() {
                       <textarea
                         placeholder="Ajouter un commentaire détaillé..."
                         value={comments[criterion._id] || ""}
-                        onChange={(e) =>
-                          updateComment(criterion._id, e.target.value)
-                        }
+                        onChange={(e) => updateComment(criterion._id, e.target.value)}
                         className="mt-2 w-full rounded-lg sm:rounded-xl border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 px-3 sm:px-4 py-2 text-xs sm:text-sm text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 transition focus:border-[#6CB33F] focus:outline-none"
                         rows={2}
                       />
@@ -581,13 +570,8 @@ export default function InterviewEvaluationPage() {
           {error && (
             <div className="rounded-xl sm:rounded-2xl border-2 border-red-200 bg-red-50 p-3 sm:p-4 dark:border-red-500/30 dark:bg-red-500/10">
               <div className="flex gap-3">
-                <AlertCircle
-                  size={20}
-                  className="mt-0.5 flex-shrink-0 text-red-500"
-                />
-                <p className="text-xs sm:text-sm text-red-700 dark:text-red-400">
-                  {error}
-                </p>
+                <AlertCircle size={20} className="mt-0.5 flex-shrink-0 text-red-500" />
+                <p className="text-xs sm:text-sm text-red-700 dark:text-red-400">{error}</p>
               </div>
             </div>
           )}
@@ -595,10 +579,7 @@ export default function InterviewEvaluationPage() {
           {success && (
             <div className="rounded-xl sm:rounded-2xl border-2 border-green-200 bg-green-50 p-3 sm:p-4 dark:border-green-500/30 dark:bg-green-500/10">
               <div className="flex gap-3">
-                <CheckCircle
-                  size={20}
-                  className="mt-0.5 flex-shrink-0 text-green-600 dark:text-green-400"
-                />
+                <CheckCircle size={20} className="mt-0.5 flex-shrink-0 text-green-600 dark:text-green-400" />
                 <p className="text-xs sm:text-sm text-green-700 dark:text-green-400">
                   Évaluation sauvegardée avec succès !
                 </p>
@@ -607,9 +588,10 @@ export default function InterviewEvaluationPage() {
           )}
 
           <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
+            {/* ✅ FIX : bouton Annuler avec redirection explicite */}
             <button
               type="button"
-              onClick={() => router.back()}
+              onClick={goBackToInterview}
               disabled={saving}
               className="flex-1 rounded-lg sm:rounded-full border-2 border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-4 sm:px-6 py-2.5 sm:py-3 font-semibold text-xs sm:text-sm text-gray-900 dark:text-white transition hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-60"
             >

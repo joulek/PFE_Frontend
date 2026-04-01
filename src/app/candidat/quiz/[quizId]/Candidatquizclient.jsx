@@ -1,6 +1,10 @@
 "use client";
 
-// ✅ À placer dans : app/candidat/quiz/[quizId]/CandidatQuizClient.jsx
+// ✅ À placer dans : app/candidat/quiz/[quizSubmissionId]/CandidatQuizClient.jsx
+// ✅ FIX: Le paramètre de route est maintenant [quizSubmissionId] (pas [quizId])
+//         Le lien envoyé est /candidat/quiz/:quizSubmissionId
+//         On appelle d'abord /quiz-submissions/by-submission/:quizSubmissionId
+//         pour vérifier l'expiration et récupérer le vrai quizId.
 
 import { useEffect, useState, useRef, useCallback, useMemo } from "react";
 import { useParams, useSearchParams, useRouter } from "next/navigation";
@@ -69,10 +73,7 @@ function normalizeOptions(raw) {
 function QuestionCard({ question, selectedAnswer, onSelect, questionNumber, total }) {
   const letters = ["A", "B", "C", "D", "E", "F"];
 
-  // ✅ FIX question text (backend peut envoyer question.question OU question.text sous forme objet)
   const questionText = normalizeText(question?.question ?? question?.text, "Question");
-
-  // ✅ FIX options (backend peut envoyer [{key,text}] -> impossible à render direct)
   const options = normalizeOptions(question?.options);
 
   return (
@@ -86,10 +87,10 @@ function QuestionCard({ question, selectedAnswer, onSelect, questionNumber, tota
           {question?.difficulty && (
             <span
               className={`text-xs px-2 py-0.5 rounded-full font-semibold capitalize ${question.difficulty === "easy"
-                  ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400"
-                  : question.difficulty === "medium"
-                    ? "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400"
-                    : "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400"
+                ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400"
+                : question.difficulty === "medium"
+                  ? "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400"
+                  : "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400"
                 }`}
             >
               {question.difficulty === "easy"
@@ -121,14 +122,14 @@ function QuestionCard({ question, selectedAnswer, onSelect, questionNumber, tota
               key={opt.value ?? i}
               onClick={() => onSelect(opt.value)}
               className={`w-full flex items-center gap-4 p-4 rounded-2xl border-2 text-left transition-all duration-200 group ${isSelected
-                  ? "border-[#6CB33F] bg-[#E9F5E3] dark:bg-emerald-900/20 shadow-md"
-                  : "border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800/50 hover:border-[#6CB33F]/60 dark:hover:border-[#6CB33F]/70 hover:bg-[#E9F5E3]/40 dark:hover:bg-emerald-900/10"
+                ? "border-[#6CB33F] bg-[#E9F5E3] dark:bg-emerald-900/20 shadow-md"
+                : "border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800/50 hover:border-[#6CB33F]/60 dark:hover:border-[#6CB33F]/70 hover:bg-[#E9F5E3]/40 dark:hover:bg-emerald-900/10"
                 }`}
             >
               <span
                 className={`w-9 h-9 rounded-xl flex items-center justify-center text-sm font-extrabold shrink-0 transition-all ${isSelected
-                    ? "bg-[#6CB33F] text-white"
-                    : "bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400 group-hover:bg-[#E9F5E3] dark:group-hover:bg-emerald-900/25 group-hover:text-[#4E8F2F]"
+                  ? "bg-[#6CB33F] text-white"
+                  : "bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400 group-hover:bg-[#E9F5E3] dark:group-hover:bg-emerald-900/25 group-hover:text-[#4E8F2F]"
                   }`}
               >
                 {letters[i] || i + 1}
@@ -136,8 +137,8 @@ function QuestionCard({ question, selectedAnswer, onSelect, questionNumber, tota
 
               <span
                 className={`text-sm sm:text-base font-medium flex-1 leading-snug ${isSelected
-                    ? "text-[#2E6B1F] dark:text-emerald-200"
-                    : "text-gray-700 dark:text-gray-300"
+                  ? "text-[#2E6B1F] dark:text-emerald-200"
+                  : "text-gray-700 dark:text-gray-300"
                   }`}
               >
                 {opt.label}
@@ -158,15 +159,18 @@ function QuestionCard({ question, selectedAnswer, onSelect, questionNumber, tota
 export default function CandidatQuizClient() {
   const router = useRouter();
 
-  // ✅ useParams() récupère { quizId } depuis [quizId]
+  // ✅ FIX: le param de route est maintenant quizSubmissionId
   const params = useParams();
-  const searchParams = useSearchParams();
-  const quizId = params?.quizId;
-  const candidatureId = searchParams?.get("candidatureId");
+  const quizSubmissionId = params?.quizSubmissionId ?? params?.quizId; // compat
+
+  // quizId et candidatureId sont résolus depuis le backend
+  const [resolvedQuizId, setResolvedQuizId] = useState(null);
+  const [resolvedCandidatureId, setResolvedCandidatureId] = useState(null);
 
   const [quiz, setQuiz] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [isExpired, setIsExpired] = useState(false);
 
   const [currentIndex, setCurrentIndex] = useState(0);
   const [answers, setAnswers] = useState({});
@@ -174,54 +178,65 @@ export default function CandidatQuizClient() {
   const [confirming, setConfirming] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [showOverview, setShowOverview] = useState(false);
-  // ── Timer par question (30 secondes par défaut) ──
+
   const TIME_PER_QUESTION = 30;
   const [timeLeft, setTimeLeft] = useState(TIME_PER_QUESTION);
   const timerRef = useRef(null);
 
   /* ── Charger le quiz ── */
   useEffect(() => {
-    if (!quizId) {
-      setError("Quiz ID manquant");
-      setLoading(false);
-      return;
-    }
-
-    if (!candidatureId) {
-      setError("Lien invalide (candidature manquante)");
+    if (!quizSubmissionId) {
+      setError("Lien invalide (identifiant manquant)");
       setLoading(false);
       return;
     }
 
     async function load() {
       try {
-        /* ===============================
-           1️⃣ ACCÈS UNIQUE — bloquer dès la 1ère visite
-        =============================== */
         const API_BASE = process.env.NEXT_PUBLIC_API_URL;
-        const accessRes = await fetch(`${API_BASE}/quizzes/${quizId}/access`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ candidatureId }),
-        });
 
-        if (!accessRes.ok) {
-          const accessData = await accessRes.json().catch(() => ({}));
-          if (accessRes.status === 403) {
-            setError("⛔ Accès refusé. Vous avez déjà accédé à ce quiz. Un seul accès est autorisé.");
+        /* ===============================
+           1️⃣ VÉRIFICATION EXPIRATION via quizSubmissionId
+           ✅ FIX PRINCIPAL : c'est ici que l'expiration est vérifiée
+        =============================== */
+        const subRes = await fetch(
+          `${API_BASE}/quiz-submissions/by-submission/${quizSubmissionId}`
+        );
+
+        const subData = await subRes.json().catch(() => ({}));
+
+        if (!subRes.ok) {
+          if (subData.expired) {
+            setIsExpired(true);
+            setError(subData.message || "Ce lien a expiré.");
+          } else if (subData.alreadySubmitted) {
+            setError("Ce quiz a déjà été soumis.");
+          } else if (subRes.status === 404) {
+            setError("Lien invalide ou introuvable.");
           } else {
-            setError(accessData.message || "Lien invalide.");
+            setError(subData.message || "Accès refusé.");
           }
           setLoading(false);
           return;
         }
+
+        const { quizId, candidatureId } = subData;
+
+        if (!quizId) {
+          setError("Quiz introuvable pour ce lien.");
+          setLoading(false);
+          return;
+        }
+
+        setResolvedQuizId(quizId);
+        setResolvedCandidatureId(candidatureId);
 
         /* ===============================
            2️⃣ CHECK DÉJÀ SOUMIS
         =============================== */
         const checkRes = await checkQuizAlreadySubmitted(quizId, candidatureId);
         if (checkRes?.data?.alreadySubmitted) {
-          router.replace(`/candidat/quiz/${quizId}/deja-soumis`);
+          router.replace(`/candidat/quiz/${quizSubmissionId}/deja-soumis`);
           return;
         }
 
@@ -233,6 +248,7 @@ export default function CandidatQuizClient() {
 
         if (!data) {
           setError("Quiz introuvable");
+          setLoading(false);
           return;
         }
 
@@ -250,7 +266,7 @@ export default function CandidatQuizClient() {
     }
 
     load();
-  }, [quizId, candidatureId, router]);
+  }, [quizSubmissionId, router]);
 
   const totalQuestions = quiz?.questions?.length || 0;
   const currentQuestion = quiz?.questions?.[currentIndex];
@@ -261,7 +277,6 @@ export default function CandidatQuizClient() {
     setTimeLeft(TIME_PER_QUESTION);
     clearInterval(timerRef.current);
 
-    // stop timer if not ready / modal / submitting
     if (!quiz || confirming || submitting) return;
 
     timerRef.current = setInterval(() => {
@@ -318,20 +333,25 @@ export default function CandidatQuizClient() {
     try {
       const formattedAnswers = Object.entries(answers).map(([order, selectedAnswer]) => ({
         order: Number(order),
-        selectedAnswer, // ✅ toujours string/primitive (pas objet)
+        selectedAnswer,
       }));
 
+      // ✅ FIX : on passe quizSubmissionId au backend pour marquer la submission comme SUBMITTED
       await submitQuiz({
-        quizId,
-        candidatureId: candidatureId || undefined,
+        quizSubmissionId,           // ✅ NOUVEAU — pour tracking expiration
+        quizId: resolvedQuizId,
+        candidatureId: resolvedCandidatureId || undefined,
         answers: formattedAnswers,
       });
 
-      // ✅ IMPORTANT: on ne montre PAS le score au candidat
-      router.replace(`/candidat/quiz/${quizId}/merci`);
+      router.replace(`/candidat/quiz/${quizSubmissionId}/merci`);
       return;
     } catch (e) {
-      setError(e?.response?.data?.message || "Erreur lors de la soumission. Réessayez.");
+      const msg = e?.response?.data?.message || "";
+      if (msg.toLowerCase().includes("expir")) {
+        setIsExpired(true);
+      }
+      setError(msg || "Erreur lors de la soumission. Réessayez.");
     } finally {
       setSubmitting(false);
     }
@@ -383,18 +403,58 @@ export default function CandidatQuizClient() {
       </div>
     );
 
-  if (error)
+  if (error) {
     return (
-      <div className="min-h-[70vh] flex flex-col items-center justify-center text-center p-6">
-        <div className="w-full max-w-lg rounded-3xl bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 shadow p-8">
-          <AlertCircle className="w-10 h-10 text-red-500 mx-auto mb-3" />
-          <h2 className="text-xl font-extrabold text-gray-900 dark:text-white mb-2">
-            Oups !
-          </h2>
-          <p className="text-gray-600 dark:text-gray-300">{error}</p>
+      <div className="min-h-[70vh] flex items-center justify-center p-6 bg-[#eef7f1] dark:bg-gray-950">
+        <div className="w-full max-w-xl rounded-3xl border border-[#b7e4c7] bg-white dark:bg-gray-900 shadow-xl p-10 text-center">
+
+          {/* ICON */}
+          <div className="mx-auto mb-4 flex items-center justify-center">
+            <div className="w-20 h-20 rounded-full bg-[#d1fae5] flex items-center justify-center">
+              <div className="w-12 h-12 rounded-full bg-[#10b981] flex items-center justify-center">
+                <div className="w-4 h-4 rounded-full border-2 border-white" />
+              </div>
+            </div>
+          </div>
+
+          {/* BADGE */}
+          <div className="inline-block px-4 py-1 rounded-full bg-[#d1fae5] text-[#065f46] font-bold text-xs tracking-widest mb-4">
+            ACCÈS REFUSÉ
+          </div>
+
+          {/* TITLE */}
+          <h1 className="text-3xl font-extrabold text-gray-900 dark:text-white mb-4">
+            {isExpired ? "Lien expiré" : "Accès refusé"}
+          </h1>
+
+          {/* MESSAGE */}
+          <p className="text-gray-600 dark:text-gray-300 mb-6">
+            {isExpired
+              ? "⏳ Ce lien n'est plus valide. La durée de validité est dépassée."
+              : error}
+          </p>
+
+          {/* DIVIDER */}
+          <div className="border-t border-gray-200 dark:border-gray-700 mb-6"></div>
+
+          {/* BUTTON */}
+          <button
+            onClick={() => router.replace("/jobs")}
+            className="px-6 py-3 rounded-xl bg-[#10b981] hover:bg-[#059669] text-white font-bold transition"
+          >
+            Retour à l&apos;accueil
+          </button>
+
+          {/* FOOTER */}
+          <p className="mt-4 text-sm text-gray-400">
+            {isExpired
+              ? "Veuillez contacter le recruteur pour recevoir un nouveau lien."
+              : "Chaque quiz est accessible une seule fois."}
+          </p>
         </div>
       </div>
     );
+  }
 
   /* ── Overview ── */
   if (showOverview && quiz) {
@@ -431,8 +491,8 @@ export default function CandidatQuizClient() {
                       setShowOverview(false);
                     }}
                     className={`relative px-3 py-3 rounded-2xl border-2 text-sm font-bold transition ${answered
-                        ? "border-[#6CB33F] bg-[#E9F5E3] dark:bg-emerald-900/20 text-[#2E6B1F] dark:text-emerald-200"
-                        : "border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200 hover:border-[#6CB33F]/60 dark:hover:border-[#6CB33F]/70"
+                      ? "border-[#6CB33F] bg-[#E9F5E3] dark:bg-emerald-900/20 text-[#2E6B1F] dark:text-emerald-200"
+                      : "border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200 hover:border-[#6CB33F]/60 dark:hover:border-[#6CB33F]/70"
                       }`}
                   >
                     Q{idx + 1}
@@ -515,23 +575,23 @@ export default function CandidatQuizClient() {
 
           {/* Bottom actions */}
           <div className="mt-8 flex items-center justify-end gap-3">
-              {currentIndex < totalQuestions - 1 ? (
-                <button
-                  onClick={goNext}
-                  className="inline-flex items-center gap-2 px-5 py-2.5 rounded-2xl bg-[#6CB33F] hover:bg-[#4E8F2F] text-white font-extrabold transition"
-                >
-                  Suivant
-                  <ChevronRight className="w-4 h-4" />
-                </button>
-              ) : (
-                <button
-                  onClick={() => setConfirming(true)}
-                  className="inline-flex items-center gap-2 px-5 py-2.5 rounded-2xl bg-[#6CB33F] hover:bg-[#4E8F2F] text-white font-extrabold transition"
-                >
-                  Terminer
-                  <CheckCircle2 className="w-5 h-5" />
-                </button>
-              )}
+            {currentIndex < totalQuestions - 1 ? (
+              <button
+                onClick={goNext}
+                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-2xl bg-[#6CB33F] hover:bg-[#4E8F2F] text-white font-extrabold transition"
+              >
+                Suivant
+                <ChevronRight className="w-4 h-4" />
+              </button>
+            ) : (
+              <button
+                onClick={() => setConfirming(true)}
+                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-2xl bg-[#6CB33F] hover:bg-[#4E8F2F] text-white font-extrabold transition"
+              >
+                Terminer
+                <CheckCircle2 className="w-5 h-5" />
+              </button>
+            )}
           </div>
 
           {!selectedAnswer && (

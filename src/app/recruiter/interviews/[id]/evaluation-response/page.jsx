@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { Star, ArrowLeft, FileText, CheckCircle2, XCircle, AlertCircle } from "lucide-react";
 
 // ─── helpers ────────────────────────────────────────────────────────────────
@@ -26,6 +26,7 @@ function getInitials(name) {
 
 export default function EvaluationResponsePage() {
   const { id } = useParams();
+  const router = useRouter();
 
   const [evaluation, setEvaluation] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -48,7 +49,6 @@ export default function EvaluationResponsePage() {
         return res.json();
       })
       .then((data) => {
-        // support both { evaluation: {...} } and flat object
         setEvaluation(data?.evaluation || data || null);
         setLoading(false);
       })
@@ -80,6 +80,13 @@ export default function EvaluationResponsePage() {
           </div>
           <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-2">Évaluation introuvable</h2>
           <p className="text-sm text-gray-500 dark:text-gray-400">Aucune évaluation n&apos;a été trouvée pour cet entretien.</p>
+          <button
+            onClick={() => router.push(`/recruiter/list_interview/`)}
+            className="mt-6 inline-flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400 hover:text-[#4E8F2F] dark:hover:text-emerald-400 transition-colors font-medium"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            Retour à la liste des entretiens
+          </button>
         </div>
       </div>
     );
@@ -91,8 +98,7 @@ export default function EvaluationResponsePage() {
     evaluation?.evaluatedByName ||
     evaluation?.responsableName ||
     evaluation?.assignedUserName ||
-    evaluation?.evaluatedBy ||
-    null;
+    "Responsable métier";
 
   const evaluatorEmail =
     evaluation?.evaluatedByEmail ||
@@ -120,7 +126,7 @@ export default function EvaluationResponsePage() {
 
         {/* ── BACK ── */}
         <button
-          onClick={() => window.history.back()}
+          onClick={() => router.push(`/recruiter/list_interview/`)}
           className="inline-flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400 hover:text-[#4E8F2F] dark:hover:text-emerald-400 transition-colors font-medium"
         >
           <ArrowLeft className="w-4 h-4" />
@@ -278,11 +284,10 @@ export default function EvaluationResponsePage() {
                   {[1, 2, 3, 4, 5].map((n) => (
                     <Star
                       key={n}
-                      className={`w-6 h-6 transition-colors ${
-                        n <= overallRating
+                      className={`w-6 h-6 transition-colors ${n <= overallRating
                           ? "text-[#6CB33F] fill-[#6CB33F]"
                           : "text-gray-200 dark:text-gray-700"
-                      }`}
+                        }`}
                     />
                   ))}
                 </div>
@@ -303,14 +308,14 @@ export default function EvaluationResponsePage() {
                 ${String(decision).toLowerCase().includes("retenu")
                   ? "bg-emerald-50 dark:bg-emerald-950/30 border-emerald-200 dark:border-emerald-700 text-emerald-700 dark:text-emerald-300"
                   : String(decision).toLowerCase().includes("refus") || String(decision).toLowerCase().includes("rejet")
-                  ? "bg-red-50 dark:bg-red-950/30 border-red-200 dark:border-red-700 text-red-700 dark:text-red-300"
-                  : "bg-amber-50 dark:bg-amber-950/30 border-amber-200 dark:border-amber-700 text-amber-700 dark:text-amber-300"
+                    ? "bg-red-50 dark:bg-red-950/30 border-red-200 dark:border-red-700 text-red-700 dark:text-red-300"
+                    : "bg-amber-50 dark:bg-amber-950/30 border-amber-200 dark:border-amber-700 text-amber-700 dark:text-amber-300"
                 }`}>
                 {String(decision).toLowerCase().includes("retenu")
                   ? <CheckCircle2 className="w-4 h-4" />
                   : String(decision).toLowerCase().includes("refus") || String(decision).toLowerCase().includes("rejet")
-                  ? <XCircle className="w-4 h-4" />
-                  : <AlertCircle className="w-4 h-4" />
+                    ? <XCircle className="w-4 h-4" />
+                    : <AlertCircle className="w-4 h-4" />
                 }
                 {decision}
               </span>

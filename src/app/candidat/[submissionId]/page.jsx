@@ -169,9 +169,23 @@ export default function CandidatFicheWizardPage() {
           return;
         }
 
-        // ✅ ÉTAPE 1 — Charger la submission
-        const resSub = await getSubmissionById(submissionId);
-        const submission = resSub?.data?.submission;
+        // ✅ ÉTAPE 1 — Charger la submission + vérification expiration
+        // fetch natif pour contrôler précisément le status HTTP (axios peut ne pas lever sur 403)
+        const rawSub = await fetch(`${API_BASE}/fiche-submissions/${submissionId}`);
+        const subData = await rawSub.json().catch(() => ({}));
+
+        if (!rawSub.ok) {
+          if (rawSub.status === 403 && subData?.expired) {
+            setError("expir — Ce lien a expiré. Veuillez contacter le recruteur.");
+          } else if (rawSub.status === 404) {
+            setError("Lien invalide ou introuvable.");
+          } else {
+            setError(subData?.message || "Accès refusé.");
+          }
+          return;
+        }
+
+        const submission = subData?.submission;
         if (!submission) {
           setError("Soumission introuvable.");
           return;
@@ -189,7 +203,10 @@ export default function CandidatFicheWizardPage() {
 
         if (!accessRes.ok) {
           const accessData = await accessRes.json().catch(() => ({}));
-          if (accessRes.status === 403) {
+          if (accessRes.status === 403 && accessData?.expired) {
+            // Expiration détectée à l'étape 2 (fiche_controller)
+            setError("expir — " + (accessData.message || "Ce lien a expiré."));
+          } else if (accessRes.status === 403) {
             setError("⛔ Accès refusé. Vous avez déjà accédé à cette fiche. Un seul accès est autorisé.");
           } else {
             setError(accessData.message || "Lien invalide.");
@@ -329,15 +346,26 @@ export default function CandidatFicheWizardPage() {
       />
     );
 
-  if (error && !fiche)
-    return (
-      <div className="min-h-screen bg-[#F0FAF0] dark:bg-gray-950 flex items-center justify-center p-6">
-        <div className="max-w-lg text-center">
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-3">Erreur</h1>
-          <p className="text-red-600 dark:text-red-400">{error}</p>
-        </div>
-      </div>
-    );
+ if (error && !fiche) {
+  const isExpired = error.toLowerCase().includes("expir");
+
+  return (
+    <AccessDeniedLikeQuiz
+      title={isExpired ? "Lien expiré" : "Accès refusé"}
+      subtitle={
+        isExpired
+          ? "Ce lien n'est plus valide. La durée de validité (48 heures) est dépassée."
+          : error
+      }
+      hint={
+        isExpired
+          ? "Veuillez contacter le recruteur pour recevoir un nouveau lien."
+          : "Chaque fiche est accessible une seule fois."
+      }
+      onHome={() => router.replace("/jobs")}
+    />
+  );
+}
 
   if (total === 0)
     return (

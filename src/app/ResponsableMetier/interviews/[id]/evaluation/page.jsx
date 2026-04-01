@@ -262,7 +262,7 @@ export default function InterviewEvaluationPage() {
       setSuccess(true);
 
       setTimeout(() => {
-        router.back();
+        router.push("/list-entretien");
       }, 2000);
     } catch (err) {
       console.error("❌ Save error:", err);
@@ -293,7 +293,7 @@ export default function InterviewEvaluationPage() {
         <div className="mx-auto max-w-4xl">
           <button
             type="button"
-            onClick={() => router.back()}
+            onClick={() => router.push(`/list-entretien`)}
             className="mb-6 sm:mb-8 flex items-center gap-2 text-[#6CB33F] hover:opacity-80"
           >
             <ArrowLeft size={20} />
