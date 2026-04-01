@@ -100,12 +100,11 @@ function Avatar({ name }) {
 function HiringStatusButtons({ candidature, onStatusChange }) {
   const storageKey = `hiring_status_${candidature._id}`;
   const [status, setStatus] = useState(() => {
-    // Priorité : valeur DB, puis localStorage
     if (candidature.hiringStatus) return candidature.hiringStatus;
     try { return localStorage.getItem(storageKey) || null; } catch { return null; }
   });
   const [loading, setLoading] = useState(false);
-  const [confirm, setConfirm] = useState(null); // "EMBAUCHE" | "REJETE" | null
+  const [confirm, setConfirm] = useState(null);
 
   async function applyStatus(newStatus) {
     setLoading(true);
@@ -122,7 +121,6 @@ function HiringStatusButtons({ candidature, onStatusChange }) {
     }
   }
 
-  // ── Affichage statut final ──
   if (status === "EMBAUCHE") {
     return (
       <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs font-bold whitespace-nowrap">
@@ -138,7 +136,6 @@ function HiringStatusButtons({ candidature, onStatusChange }) {
     );
   }
 
-  // ── Dialogue de confirmation inline ──
   if (confirm) {
     const isHire = confirm === "EMBAUCHE";
     return (
@@ -147,51 +144,34 @@ function HiringStatusButtons({ candidature, onStatusChange }) {
         <span className="whitespace-nowrap">
           {isHire ? "Confirmer l'embauche ?" : "Confirmer le rejet ?"}
         </span>
-        <button
-          onClick={() => applyStatus(confirm)}
-          disabled={loading}
-          className={`ml-1 px-2.5 py-1 rounded-full text-white font-bold transition-colors ${isHire ? "bg-emerald-600 hover:bg-emerald-700" : "bg-red-500 hover:bg-red-600"}`}
-        >
+        <button onClick={() => applyStatus(confirm)} disabled={loading}
+          className={`ml-1 px-2.5 py-1 rounded-full text-white font-bold transition-colors ${isHire ? "bg-emerald-600 hover:bg-emerald-700" : "bg-red-500 hover:bg-red-600"}`}>
           {loading ? <Loader2 className="w-3 h-3 animate-spin" /> : "Oui"}
         </button>
-        <button
-          onClick={() => setConfirm(null)}
-          disabled={loading}
-          className="px-2.5 py-1 rounded-full border border-gray-300 text-gray-500 hover:bg-gray-100 font-bold transition-colors"
-        >
+        <button onClick={() => setConfirm(null)} disabled={loading}
+          className="px-2.5 py-1 rounded-full border border-gray-300 text-gray-500 hover:bg-gray-100 font-bold transition-colors">
           Non
         </button>
       </div>
     );
   }
 
-  // ── Boutons d'action ──
   return (
     <div className="flex items-center gap-2">
-      <button
-        onClick={() => setConfirm("EMBAUCHE")}
-        disabled={loading}
-        title="Embaucher ce candidat"
-        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-emerald-500 hover:bg-emerald-600 disabled:opacity-60 text-white text-xs font-bold transition-colors shadow-sm whitespace-nowrap"
-      >
-        <ThumbsUp className="w-3.5 h-3.5" />
-        Embaucher
+      <button onClick={() => setConfirm("EMBAUCHE")} disabled={loading} title="Embaucher ce candidat"
+        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-emerald-500 hover:bg-emerald-600 disabled:opacity-60 text-white text-xs font-bold transition-colors shadow-sm whitespace-nowrap">
+        <ThumbsUp className="w-3.5 h-3.5" />Embaucher
       </button>
-      <button
-        onClick={() => setConfirm("REJETE")}
-        disabled={loading}
-        title="Rejeter ce candidat"
-        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-red-50 hover:bg-red-100 border border-red-200 disabled:opacity-60 text-red-600 text-xs font-bold transition-colors whitespace-nowrap"
-      >
-        <ThumbsDown className="w-3.5 h-3.5" />
-        Rejeter
+      <button onClick={() => setConfirm("REJETE")} disabled={loading} title="Rejeter ce candidat"
+        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-red-50 hover:bg-red-100 border border-red-200 disabled:opacity-60 text-red-600 text-xs font-bold transition-colors whitespace-nowrap">
+        <ThumbsDown className="w-3.5 h-3.5" />Rejeter
       </button>
     </div>
   );
 }
 
 /* ══════════════════════════════════════════════════════════════
- *  INSERT EMPLOYEE MODAL (inchangé)
+ *  INSERT EMPLOYEE MODAL
  * ══════════════════════════════════════════════════════════════ */
 function InsertEmployeeModal({ candidature, onClose, onSuccess }) {
   function extractFromCandidature(raw) {
@@ -272,9 +252,7 @@ function InsertEmployeeModal({ candidature, onClose, onSuccess }) {
     load();
   }, [candidature._id]);
 
-  function handleChange(key, val) {
-    setForm((prev) => ({ ...prev, [key]: val }));
-  }
+  function handleChange(key, val) { setForm((prev) => ({ ...prev, [key]: val })); }
 
   const missingFields = ALL_FIELDS.filter((k) => !form[k]);
   const hasMissing = missingFields.length > 0;
@@ -324,8 +302,7 @@ function InsertEmployeeModal({ candidature, onClose, onSuccess }) {
           </div>
           {loadingData && (
             <div className="flex items-center gap-2 text-xs text-gray-400">
-              <Loader2 className="w-4 h-4 animate-spin text-[#6CB33F]" />
-              Récupération...
+              <Loader2 className="w-4 h-4 animate-spin text-[#6CB33F]" />Récupération...
             </div>
           )}
           {!loadingData && !hasMissing && (
@@ -425,15 +402,12 @@ function InsertEmployeeButton({ candidature }) {
 
   return (
     <>
-      <button
-        onClick={() => !status && setShowModal(true)}
-        disabled={!!status}
+      <button onClick={() => !status && setShowModal(true)} disabled={!!status}
         title={status === "done" ? "Employé déjà ajouté" : status === "exists" ? "Déjà enregistré" : "Insérer comme employé"}
         className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold transition-colors shadow-sm whitespace-nowrap
           ${status === "done" ? "bg-emerald-50 border border-emerald-200 text-emerald-700 cursor-not-allowed opacity-80"
             : status === "exists" ? "bg-gray-100 border border-gray-200 text-gray-400 cursor-not-allowed opacity-70"
-            : "bg-[#6CB33F] hover:bg-[#4E8F2F] text-white cursor-pointer"}`}
-      >
+            : "bg-[#6CB33F] hover:bg-[#4E8F2F] text-white cursor-pointer"}`}>
         {status === "done" ? <><CheckCircle2 className="w-3.5 h-3.5" /> Ajouté ✓</>
           : status === "exists" ? <>Déjà employé</>
           : <><UserPlus className="w-3.5 h-3.5" /> Insérer Employé</>}
@@ -461,12 +435,12 @@ function ConfirmBadge({ confirmed, label, date, optional = false }) {
 }
 
 const FILTERS = [
-  { key: "all", label: "Tous" },
-  { key: "admin", label: "Confirmés Admin" },
-  { key: "dga", label: "Confirmés DGA" },
-  { key: "admin_dga", label: "Confirmés Admin & DGA" },
-  { key: "embauche", label: "Embauchés" },
-  { key: "rejete", label: "Rejetés" },
+  { key: "all",       label: "Tous",               color: "default" },
+  { key: "admin",     label: "Confirmés Admin",     color: "default" },
+  { key: "dga",       label: "Confirmés DGA",       color: "default" },
+  { key: "admin_dga", label: "Admin & DGA",         color: "default" },
+  { key: "embauche",  label: "Embauchés",           color: "green"   },
+  { key: "rejete",    label: "Rejetés",             color: "red"     },
 ];
 
 export default function ConfirmedCandidaturesPage() {
@@ -513,10 +487,9 @@ export default function ConfirmedCandidaturesPage() {
         candidatureId: iv.candidatureId || null,
         employeeCreated: iv.employeeCreated || false,
         employeeId: iv.employeeId || null,
-        hiringStatus: iv.hiringStatus || null, // ← EMBAUCHE | REJETE | null
+        hiringStatus: iv.hiringStatus || null,
       }));
 
-      // Filtres locaux
       if (filter === "admin")     list = list.filter((c) => c.adminConfirmed);
       if (filter === "dga")       list = list.filter((c) => c.dgaConfirmed);
       if (filter === "admin_dga") list = list.filter((c) => c.adminConfirmed && c.dgaConfirmed);
@@ -534,11 +507,8 @@ export default function ConfirmedCandidaturesPage() {
 
   useEffect(() => { fetchData(); }, [fetchData]);
 
-  // Mise à jour locale du statut sans refetch complet
   function handleStatusChange(candidatureId, newStatus) {
-    setData((prev) =>
-      prev.map((c) => c._id === candidatureId ? { ...c, hiringStatus: newStatus } : c)
-    );
+    setData((prev) => prev.map((c) => c._id === candidatureId ? { ...c, hiringStatus: newStatus } : c));
   }
 
   const filtered = useMemo(() => {
@@ -552,7 +522,6 @@ export default function ConfirmedCandidaturesPage() {
     );
   }, [data, search]);
 
-  // Compteurs résumé
   const stats = useMemo(() => ({
     total: filtered.length,
     embauche: filtered.filter((c) => c.hiringStatus === "EMBAUCHE").length,
@@ -577,7 +546,6 @@ export default function ConfirmedCandidaturesPage() {
           </p>
         </div>
 
-    
         {/* Bannière RH Nord */}
         <button
           onClick={() => router.push("/recruiter/candidatures-confirmees/rh-nord")}
@@ -588,8 +556,12 @@ export default function ConfirmedCandidaturesPage() {
               <Users className="w-5 h-5 text-[#4E8F2F] dark:text-emerald-400" />
             </div>
             <div className="text-left">
-              <p className="font-extrabold text-gray-900 dark:text-white text-sm">Candidats confirmés par Responsable RH Nord</p>
-              <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Entretiens validés et confirmés par l&apos;équipe RH Nord — liste séparée</p>
+              <p className="font-extrabold text-gray-900 dark:text-white text-sm">
+                Candidats confirmés par Responsable RH Nord
+              </p>
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                Entretiens validés et confirmés par l&apos;équipe RH Nord — liste séparée
+              </p>
             </div>
           </div>
           <div className="flex items-center gap-3 flex-shrink-0">
@@ -602,36 +574,87 @@ export default function ConfirmedCandidaturesPage() {
           </div>
         </button>
 
-        {/* Filtres + Recherche */}
-        <div className="flex flex-col sm:flex-row gap-3 mb-6">
-          <div className="flex items-center gap-2 bg-white dark:bg-gray-800 rounded-full border border-gray-200 dark:border-gray-700 px-3 py-2 shadow-sm flex-wrap">
-            <Filter className="w-4 h-4 text-gray-400 flex-shrink-0" />
-            {FILTERS.map((f) => (
-              <button key={f.key} onClick={() => setFilter(f.key)}
-                className={`px-3 py-1 rounded-full text-xs font-bold transition-all ${filter === f.key
-                  ? f.key === "embauche" ? "bg-emerald-500 text-white"
-                    : f.key === "rejete" ? "bg-red-500 text-white"
-                    : "bg-[#4E8F2F] text-white"
-                  : "text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700"}`}>
-                {f.label}
-              </button>
-            ))}
+        {/* ══ FILTRES + RECHERCHE — RESPONSIVE ══ */}
+        <div className="flex flex-col gap-3 mb-6">
+
+          {/* Ligne 1 : Pills de filtres — scrollable horizontalement sur mobile */}
+          <div className="w-full bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm">
+            <div className="flex items-center gap-2 px-3 py-2.5 overflow-x-auto scrollbar-none">
+              <Filter className="w-4 h-4 text-gray-400 flex-shrink-0" />
+              <div className="flex items-center gap-2 flex-nowrap">
+                {FILTERS.map((f) => {
+                  const isActive = filter === f.key;
+                  let cls = "";
+                  if (isActive) {
+                    if (f.color === "green") cls = "bg-emerald-500 text-white shadow-sm";
+                    else if (f.color === "red") cls = "bg-red-500 text-white shadow-sm";
+                    else cls = "bg-[#4E8F2F] text-white shadow-sm";
+                  } else {
+                    if (f.color === "green") cls = "text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-950/20 border border-emerald-200 dark:border-emerald-800";
+                    else if (f.color === "red") cls = "text-red-500 hover:bg-red-50 dark:hover:bg-red-950/20 border border-red-200 dark:border-red-800";
+                    else cls = "text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 border border-transparent";
+                  }
+                  return (
+                    <button
+                      key={f.key}
+                      onClick={() => setFilter(f.key)}
+                      className={`px-3.5 py-1.5 rounded-full text-xs font-bold transition-all whitespace-nowrap flex-shrink-0 ${cls}`}
+                    >
+                      {f.label}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
           </div>
 
-          <div className="flex-1 bg-white dark:bg-gray-800 rounded-full border border-gray-200 dark:border-gray-700 px-4 py-3 flex items-center gap-3 shadow-sm">
+          {/* Ligne 2 : Barre de recherche */}
+          <div className="w-full bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 px-4 py-3 flex items-center gap-3 shadow-sm">
             <Search className="w-4 h-4 text-[#4E8F2F] flex-shrink-0" />
-            <input type="text" value={search} onChange={(e) => setSearch(e.target.value)}
+            <input
+              type="text"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
               placeholder="Rechercher (nom, email, poste)…"
-              className="w-full outline-none text-sm bg-transparent text-gray-700 dark:text-gray-300 placeholder-gray-400" />
+              className="w-full outline-none text-sm bg-transparent text-gray-700 dark:text-gray-300 placeholder-gray-400 dark:placeholder-gray-500"
+            />
             {search && (
-              <button onClick={() => setSearch("")} className="text-gray-400 hover:text-gray-600">
+              <button onClick={() => setSearch("")} className="text-gray-400 hover:text-gray-600 flex-shrink-0">
                 <X className="w-4 h-4" />
               </button>
             )}
-            <button onClick={() => fetchData(true)} className="text-gray-400 hover:text-[#4E8F2F] transition-colors flex-shrink-0">
+            <button
+              onClick={() => fetchData(true)}
+              className="text-gray-400 hover:text-[#4E8F2F] transition-colors flex-shrink-0"
+              title="Actualiser"
+            >
               <RefreshCw className={`w-4 h-4 ${refreshing ? "animate-spin" : ""}`} />
             </button>
           </div>
+
+          {/* Ligne 3 : Compteurs résumé (mobile-friendly) */}
+          {!loading && (
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="text-xs text-gray-500 dark:text-gray-400 font-medium">
+                {stats.total} résultat{stats.total > 1 ? "s" : ""}
+              </span>
+              {stats.embauche > 0 && (
+                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-700 text-[11px] font-bold">
+                  <ThumbsUp className="w-3 h-3" />{stats.embauche} embauché{stats.embauche > 1 ? "s" : ""}
+                </span>
+              )}
+              {stats.rejete > 0 && (
+                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-red-50 border border-red-200 text-red-600 text-[11px] font-bold">
+                  <ThumbsDown className="w-3 h-3" />{stats.rejete} rejeté{stats.rejete > 1 ? "s" : ""}
+                </span>
+              )}
+              {stats.pending > 0 && (
+                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-500 text-[11px] font-bold">
+                  {stats.pending} en attente
+                </span>
+              )}
+            </div>
+          )}
         </div>
 
         {/* Tableau */}
@@ -679,7 +702,6 @@ export default function ConfirmedCandidaturesPage() {
                           : c.hiringStatus === "REJETE" ? "bg-red-50/30 dark:bg-red-950/10 hover:bg-red-50/50 dark:hover:bg-red-950/20"
                           : "bg-white dark:bg-[#0B1220] hover:bg-[#F0FAF0] dark:hover:bg-[#1A2332]"}`}>
 
-                      {/* Candidat */}
                       <td className="px-5 py-4">
                         <div className="flex items-center gap-3">
                           {(() => {
@@ -708,7 +730,6 @@ export default function ConfirmedCandidaturesPage() {
                         </div>
                       </td>
 
-                      {/* Poste */}
                       <td className="px-5 py-4">
                         <span className="flex items-center gap-2 text-gray-700 dark:text-gray-300 font-medium">
                           <Briefcase className="w-4 h-4 text-gray-400 flex-shrink-0" />
@@ -716,17 +737,14 @@ export default function ConfirmedCandidaturesPage() {
                         </span>
                       </td>
 
-                      {/* Confirmation Admin */}
                       <td className="px-5 py-4">
                         <ConfirmBadge confirmed={c.adminConfirmed} label="Admin ✓" date={c.adminConfirmedAt} />
                       </td>
 
-                      {/* Confirmation DGA */}
                       <td className="px-5 py-4">
                         <ConfirmBadge confirmed={c.dgaConfirmed} label="DGA ✓" date={c.dgaConfirmedAt} optional={true} />
                       </td>
 
-                      {/* Date candidature */}
                       <td className="px-5 py-4">
                         <span className="flex items-center gap-2 text-gray-500 text-xs">
                           <Calendar className="w-3.5 h-3.5" />
@@ -734,12 +752,10 @@ export default function ConfirmedCandidaturesPage() {
                         </span>
                       </td>
 
-                      {/* ── DÉCISION EMBAUCHE ── */}
                       <td className="px-5 py-4">
                         <HiringStatusButtons candidature={c} onStatusChange={handleStatusChange} />
                       </td>
 
-                      {/* Insérer Employé */}
                       <td className="px-5 py-4">
                         <InsertEmployeeButton candidature={c} />
                       </td>
@@ -750,6 +766,7 @@ export default function ConfirmedCandidaturesPage() {
             </div>
           )}
         </div>
+
       </div>
     </div>
   );

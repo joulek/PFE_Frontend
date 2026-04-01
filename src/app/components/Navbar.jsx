@@ -991,16 +991,31 @@ export default function Navbar() {
             <div className="md:hidden pb-5 pt-2">
               <div className="rounded-2xl bg-white/95 dark:bg-gray-900/85 shadow-xl border border-gray-200/70 dark:border-gray-700/60 p-4 space-y-2 backdrop-blur-sm transition-colors duration-200">
 
-                {/* ✅ Profil utilisateur (mobile) */}
-                {user && (
-                  <div className="flex items-center gap-3 px-4 py-3 mb-2 rounded-xl bg-gray-50 dark:bg-gray-800/60">
-                    <UserAvatar name={userFullName} size="md" />
-                    <div className="min-w-0">
-                      <p className="text-sm font-bold text-gray-900 dark:text-white truncate">{userFullName}</p>
-                      <p className="text-xs text-gray-400 dark:text-gray-500 truncate">{user?.email || user?.role || ""}</p>
-                    </div>
-                  </div>
-                )}
+                {/* MOBILE RIGHT */}
+                <div className="md:hidden flex items-center gap-2">
+                  {user && (
+                    <>
+                      {/* Nom utilisateur visible sur mobile */}
+                      <div className="flex items-center gap-1.5">
+                        <UserAvatar name={userFullName} size="sm" />
+                        <span className="text-xs font-semibold text-gray-700 dark:text-gray-200 max-w-[80px] truncate hidden xs:block">
+                          {userFullName.split(" ")[0]}
+                        </span>
+                      </div>
+                      <div ref={notifRef}>
+                        <BellButton isMobile={true} />
+                      </div>
+                    </>
+                  )}
+                  <button
+                    onClick={() => setOpenMobile((v) => !v)}
+                    className="p-2 rounded-lg hover:bg-gray-100/70 dark:hover:bg-gray-700/50 transition-colors"
+                  >
+                    <svg className="w-6 h-6 text-gray-700 dark:text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                    </svg>
+                  </button>
+                </div>
 
                 {/* ── RESPONSABLE METIER ── */}
                 {!isAdmin && !isAssistanteRH && !isAssistanceDirection && !isResponsableRHOPTYLAB && !isResponsableRHNORD && !isDGA && (

@@ -8,7 +8,6 @@ import {
   createJob,
   getMyOffers,
   updateMyJob,
-  getMyAssignedJobs,
 } from "../../services/job.api";
 
 import {
@@ -23,7 +22,6 @@ import {
   MapPin,
   Tag,
   BrainCircuit,
-  Send,
 } from "lucide-react";
 
 /* ================= UTILS ================= */
@@ -40,20 +38,6 @@ function getJobStatus(job) {
   const s = (job?.status || "").toString().toUpperCase().trim();
   if (["CONFIRMEE", "REJETEE", "EN_ATTENTE", "VALIDEE"].includes(s)) return s;
   return "EN_ATTENTE";
-}
-
-function parseSkillsField(value) {
-  if (Array.isArray(value)) return value.map(String).map((x) => x.trim()).filter(Boolean);
-  return String(value || "")
-    .split(",")
-    .map((t) => t.trim())
-    .filter(Boolean);
-}
-
-function clamp(n, min, max) {
-  const x = Number(n);
-  if (Number.isNaN(x)) return min;
-  return Math.min(max, Math.max(min, x));
 }
 
 const CONTRACT_OPTIONS = [
@@ -144,45 +128,17 @@ function StatusBadge({ status }) {
   );
 }
 
-/* ================= ORIGIN BADGE ================= */
-function OriginBadge({ origin }) {
-  const cfg =
-    origin === "CREATED"
-      ? {
-          label: "Créée",
-          cls: "bg-sky-50 dark:bg-sky-900/20 text-sky-700 dark:text-sky-300 border-sky-200 dark:border-sky-800",
-        }
-      : origin === "ASSIGNED"
-      ? {
-          label: "Assignée",
-          cls: "bg-violet-50 dark:bg-violet-900/20 text-violet-700 dark:text-violet-300 border-violet-200 dark:border-violet-800",
-        }
-      : {
-          label: "Créée & assignée",
-          cls: "bg-teal-50 dark:bg-teal-900/20 text-teal-700 dark:text-teal-300 border-teal-200 dark:border-teal-800",
-        };
-
-  return (
-    <span
-      className={`inline-flex items-center gap-1.5 text-xs font-bold px-3 py-1 rounded-full border ${cfg.cls}`}
-    >
-      <Tag size={13} />
-      {cfg.label}
-    </span>
-  );
-}
-
 /* ================= TYPE OFFRE BADGE ================= */
 function TypeOffreBadge({ typeOffre }) {
-  const isStage = (typeOffre || '').toUpperCase() === 'STAGE';
+  const isStage = (typeOffre || "").toUpperCase() === "STAGE";
   return isStage ? (
     <span className="inline-flex items-center gap-1.5 text-xs font-bold px-3 py-1 rounded-full border bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-800">
-      <svg xmlns='http://www.w3.org/2000/svg' width='13' height='13' viewBox='0 0 24 24' fill='none' stroke='currentColor' strokeWidth='2' strokeLinecap='round' strokeLinejoin='round'><path d='M22 10v6M2 10l10-5 10 5-10 5z'/><path d='M6 12v5c3 3 9 3 12 0v-5'/></svg>
+      <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>
       Stage
     </span>
   ) : (
     <span className="inline-flex items-center gap-1.5 text-xs font-bold px-3 py-1 rounded-full border bg-gray-50 dark:bg-gray-700/40 text-gray-600 dark:text-gray-300 border-gray-200 dark:border-gray-600">
-      <svg xmlns='http://www.w3.org/2000/svg' width='13' height='13' viewBox='0 0 24 24' fill='none' stroke='currentColor' strokeWidth='2' strokeLinecap='round' strokeLinejoin='round'><rect width='20' height='14' x='2' y='7' rx='2' ry='2'/><path d='M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16'/></svg>
+      <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="20" height="14" x="2" y="7" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
       Emploi
     </span>
   );
@@ -196,30 +152,21 @@ const STATUS_TABS = [
   { key: "REJETEE", label: "Rejetées" },
 ];
 
-const ORIGIN_FILTERS = [
-  { key: "all", label: "Toutes" },
-  { key: "CREATED", label: "Créées" },
-  { key: "ASSIGNED", label: "Assignées" },
-];
-
 const TYPE_OFFRE_FILTERS = [
-  { key: 'all', label: 'Tous' },
-  { key: 'JOB', label: 'Recrutement' },
-  { key: 'STAGE', label: 'Stages' },
+  { key: "all", label: "Tous" },
+  { key: "JOB", label: "Recrutement" },
+  { key: "STAGE", label: "Stages" },
 ];
 
 /* =================================================================
    PAGE
 ================================================================= */
-export default function ResponsableJobsPage() {
+export default function RHNordJobsPage() {
   const [jobs, setJobs] = useState([]);
   const [loading, setLoading] = useState(true);
 
   const [activeTab, setActiveTab] = useState("all");
-  const [originFilter, setOriginFilter] = useState("all");
-
   const [typeOffreFilter, setTypeOffreFilter] = useState("all");
-
   const [expandedJobs, setExpandedJobs] = useState({});
 
   const [page, setPage] = useState(1);
@@ -231,33 +178,14 @@ export default function ResponsableJobsPage() {
   async function loadData() {
     setLoading(true);
     try {
-      const [createdRes, assignedRes] = await Promise.allSettled([
-        getMyOffers(),
-        getMyAssignedJobs(),
-      ]);
-
-      const created = Array.isArray(createdRes?.value?.data) ? createdRes.value.data : [];
-      const assigned = Array.isArray(assignedRes?.value?.data) ? assignedRes.value.data : [];
-
-      const map = new Map();
-      for (const j of created) map.set(j._id, { ...j, _origin: "CREATED" });
-      for (const j of assigned) {
-        if (map.has(j._id)) {
-          map.set(j._id, { ...map.get(j._id), ...j, _origin: "BOTH" });
-        } else {
-          map.set(j._id, { ...j, _origin: "ASSIGNED" });
-        }
-      }
-
-      const merged = Array.from(map.values()).map((j) => ({
-        ...j,
-        _status: getJobStatus(j),
-      }));
-      merged.sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
-
-      setJobs(merged);
+      const res = await getMyOffers();
+      const data = Array.isArray(res?.data) ? res.data : [];
+      const sorted = data
+        .map((j) => ({ ...j, _status: getJobStatus(j) }))
+        .sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
+      setJobs(sorted);
     } catch (e) {
-      console.error("Erreur chargement jobs:", e);
+      console.error("Erreur chargement offres:", e);
       setJobs([]);
     } finally {
       setLoading(false);
@@ -268,7 +196,7 @@ export default function ResponsableJobsPage() {
     loadData();
   }, []);
 
-  const detailsBase = "/ResponsableMetier/job";
+  const detailsBase = "/Responsable_RH_Nord/job";
 
   function toggleReadMore(jobId) {
     setExpandedJobs((prev) => ({ ...prev, [jobId]: !prev[jobId] }));
@@ -283,16 +211,6 @@ export default function ResponsableJobsPage() {
     return c;
   }, [jobs]);
 
-  const originCounts = useMemo(() => {
-    const o = { all: jobs.length, CREATED: 0, ASSIGNED: 0 };
-    for (const j of jobs) {
-      if (j._origin === "CREATED") o.CREATED++;
-      if (j._origin === "ASSIGNED") o.ASSIGNED++;
-      if (j._origin === "BOTH") { o.CREATED++; o.ASSIGNED++; }
-    }
-    return o;
-  }, [jobs]);
-
   const typeOffreCounts = useMemo(() => {
     const t = { all: jobs.length, JOB: 0, STAGE: 0 };
     for (const j of jobs) {
@@ -305,25 +223,17 @@ export default function ResponsableJobsPage() {
 
   const filteredJobs = useMemo(() => {
     let arr = [...jobs];
-    if (originFilter !== "all") {
-      arr = arr.filter((j) => {
-        if (originFilter === "CREATED") return j._origin === "CREATED" || j._origin === "BOTH";
-        if (originFilter === "ASSIGNED") return j._origin === "ASSIGNED" || j._origin === "BOTH";
-        return true;
-      });
-    }
     if (typeOffreFilter !== "all") {
       arr = arr.filter((j) => {
         const type = (j.typeOffre || "JOB").toUpperCase();
-        if (typeOffreFilter === "STAGE") return type === "STAGE";
-        return type !== "STAGE";
+        return typeOffreFilter === "STAGE" ? type === "STAGE" : type !== "STAGE";
       });
     }
     if (activeTab !== "all") {
       arr = arr.filter((j) => (j._status || getJobStatus(j)) === activeTab);
     }
     return arr;
-  }, [jobs, activeTab, originFilter, typeOffreFilter]);
+  }, [jobs, activeTab, typeOffreFilter]);
 
   const totalPages = Math.max(1, Math.ceil(filteredJobs.length / pageSize));
   const paginatedJobs = useMemo(() => {
@@ -331,7 +241,7 @@ export default function ResponsableJobsPage() {
     return filteredJobs.slice(start, start + pageSize);
   }, [filteredJobs, page]);
 
-  useEffect(() => { setPage(1); }, [activeTab, originFilter, typeOffreFilter]);
+  useEffect(() => { setPage(1); }, [activeTab, typeOffreFilter]);
   useEffect(() => { if (page > totalPages) setPage(totalPages); }, [page, totalPages]);
 
   async function handleCreate(payload) {
@@ -368,18 +278,13 @@ export default function ResponsableJobsPage() {
         <div className="flex flex-col md:flex-row md:justify-between md:items-start gap-4 md:gap-6 mb-6 md:mb-8">
           <div className="flex-1">
             <h1 className="text-2xl md:text-4xl font-extrabold text-gray-900 dark:text-white leading-tight">
-              Offres Responsable<br className="md:hidden" /> Métier
+              Mes Offres d'emploi
             </h1>
             <p className="text-xs md:text-sm text-gray-500 dark:text-gray-400 mt-2">
-              Tes offres créées + celles assignées
+              Gérez vos offres créées
             </p>
-            <div className="mt-3 text-xs md:text-sm text-gray-600 dark:text-gray-300 space-y-1">
+            <div className="mt-3 text-xs md:text-sm text-gray-600 dark:text-gray-300">
               <p>Total : <span className="font-extrabold text-[#6CB33F]">{jobs.length}</span> offre(s)</p>
-              <p className="flex flex-wrap gap-1 md:gap-2">
-                <span><span className="font-semibold">Créées :</span> <span className="font-extrabold">{originCounts.CREATED}</span></span>
-                <span>—</span>
-                <span><span className="font-semibold">Assignées :</span> <span className="font-extrabold">{originCounts.ASSIGNED}</span></span>
-              </p>
             </div>
           </div>
 
@@ -396,40 +301,7 @@ export default function ResponsableJobsPage() {
         {/* FILTER BAR */}
         <div className="bg-white dark:bg-gray-900/60 border border-gray-200 dark:border-gray-700 rounded-2xl mb-8 overflow-hidden shadow-sm">
 
-          {/* ROW 1 — Origine */}
-          <div className="flex flex-col md:flex-row md:items-center gap-2 md:gap-0 border-b border-gray-100 dark:border-gray-700/60 px-3 md:px-0">
-            <div className="md:px-5 md:py-3.5 md:border-r border-gray-100 dark:border-gray-700/60 md:shrink-0">
-              <span className="text-xs font-bold uppercase tracking-widest text-gray-400 dark:text-gray-500 whitespace-nowrap">
-                Origine
-              </span>
-            </div>
-            <div className="flex items-center gap-1.5 px-0 md:px-4 py-3 md:py-2.5 flex-wrap">
-              {ORIGIN_FILTERS.map((f) => {
-                const active = originFilter === f.key;
-                const badgeCount = f.key === "all" ? originCounts.all : originCounts[f.key] || 0;
-                return (
-                  <button
-                    key={f.key}
-                    onClick={() => setOriginFilter(f.key)}
-                    className={`inline-flex items-center gap-1.5 px-3 md:px-4 py-1 md:py-1.5 rounded-full text-xs md:text-sm font-bold transition-all duration-150 ${active
-                        ? "bg-gray-900 dark:bg-white text-white dark:text-gray-900"
-                        : "text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
-                      }`}
-                  >
-                    {f.label}
-                    <span className={`text-xs px-1.5 py-0.5 rounded-full font-bold ${active
-                        ? "bg-white/20 dark:bg-gray-900/20 text-white dark:text-gray-900"
-                        : "bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400"
-                      }`}>
-                      {badgeCount}
-                    </span>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* ROW 2 — Type d'offre */}
+          {/* ROW 1 — Type d'offre */}
           <div className="flex flex-col md:flex-row md:items-center gap-2 md:gap-0 border-b border-gray-100 dark:border-gray-700/60 px-3 md:px-0">
             <div className="md:px-5 md:py-3.5 md:border-r border-gray-100 dark:border-gray-700/60 md:shrink-0">
               <span className="text-xs font-bold uppercase tracking-widest text-gray-400 dark:text-gray-500 whitespace-nowrap">
@@ -440,11 +312,12 @@ export default function ResponsableJobsPage() {
               {TYPE_OFFRE_FILTERS.map((f) => {
                 const active = typeOffreFilter === f.key;
                 const count = f.key === "all" ? typeOffreCounts.all : typeOffreCounts[f.key] || 0;
-                const colorActive = f.key === "JOB"
-                  ? "bg-gray-700 dark:bg-gray-200 text-white dark:text-gray-900"
-                  : f.key === "STAGE"
-                  ? "bg-blue-500 text-white"
-                  : "bg-gray-900 dark:bg-white text-white dark:text-gray-900";
+                const colorActive =
+                  f.key === "JOB"
+                    ? "bg-gray-700 dark:bg-gray-200 text-white dark:text-gray-900"
+                    : f.key === "STAGE"
+                    ? "bg-blue-500 text-white"
+                    : "bg-gray-900 dark:bg-white text-white dark:text-gray-900";
                 return (
                   <button
                     key={f.key}
@@ -475,7 +348,7 @@ export default function ResponsableJobsPage() {
             </div>
           </div>
 
-          {/* ROW 3 — Statut */}
+          {/* ROW 2 — Statut */}
           <div className="flex flex-col md:flex-row md:items-center gap-2 md:gap-0 px-3 md:px-0">
             <div className="md:px-5 md:py-3.5 md:border-r border-gray-100 dark:border-gray-700/60 md:shrink-0">
               <span className="text-xs font-bold uppercase tracking-widest text-gray-400 dark:text-gray-500 whitespace-nowrap">
@@ -486,16 +359,18 @@ export default function ResponsableJobsPage() {
               <button
                 type="button"
                 onClick={() => setActiveTab("all")}
-                className={`inline-flex items-center gap-1.5 px-3 md:px-4 py-1 md:py-1.5 rounded-full text-xs md:text-sm font-bold transition-all duration-150 flex-shrink-0 ${activeTab === "all"
+                className={`inline-flex items-center gap-1.5 px-3 md:px-4 py-1 md:py-1.5 rounded-full text-xs md:text-sm font-bold transition-all duration-150 flex-shrink-0 ${
+                  activeTab === "all"
                     ? "bg-[#6CB33F] dark:bg-emerald-600 text-white"
                     : "text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
-                  }`}
+                }`}
               >
                 Tous
-                <span className={`text-xs px-1.5 py-0.5 rounded-full font-bold ${activeTab === "all"
+                <span className={`text-xs px-1.5 py-0.5 rounded-full font-bold ${
+                  activeTab === "all"
                     ? "bg-white/25 text-white"
                     : "bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400"
-                  }`}>
+                }`}>
                   {counts.all}
                 </span>
               </button>
@@ -554,7 +429,6 @@ export default function ResponsableJobsPage() {
                     </h3>
                     <div className="mt-2 flex flex-wrap gap-1.5 md:gap-2">
                       <TypeOffreBadge typeOffre={job.typeOffre} />
-                      <OriginBadge origin={job._origin || "CREATED"} />
                       <StatusBadge status={status} />
                     </div>
                   </div>
@@ -669,26 +543,20 @@ function JobOfferModal({ open, onClose, onSubmit, initialData }) {
 
   const emptyForm = {
     typeOffre: "JOB",
-
     titre: "",
     description: "",
     lieu: "",
     dateCloture: "",
-
     salaire: "",
     nombrePostes: "",
     typeDiplome: "",
-
     typeContrat: "",
     motif: "",
     sexe: "",
-
     typeStage: "",
     dureeStage: "",
-
     hardSkills: "",
     softSkills: "",
-
     scores: {
       skillsFit: 30,
       experienceFit: 30,
@@ -798,13 +666,10 @@ function JobOfferModal({ open, onClose, onSubmit, initialData }) {
     if (!form.description.trim()) return setFormError("❌ La description est obligatoire.");
     if (!form.lieu.trim()) return setFormError("❌ Le lieu du poste est obligatoire.");
     if (!form.dateCloture) return setFormError("❌ La date de clôture est obligatoire.");
-    
-    // ✅ VALIDATION CORRIGÉE: Pondérations UNIQUEMENT pour les emplois
     if (!isStage && !isValidTotal) {
       return setFormError("❌ La somme des pondérations doit être égale à 100%.");
     }
 
-    // ✅ CONSTRUCTION DU PAYLOAD COMPLÈTE ET CORRIGÉE
     const payload = {
       typeOffre: form.typeOffre,
       titre: form.titre.trim(),
@@ -813,13 +678,9 @@ function JobOfferModal({ open, onClose, onSubmit, initialData }) {
       dateCloture: form.dateCloture,
       hardSkills: parseSkills(form.hardSkills),
       softSkills: parseSkills(form.softSkills),
-
-      // Champs communs (optionnels)
       ...(form.nombrePostes && { nombrePostes: form.nombrePostes }),
       ...(form.typeDiplome && { typeDiplome: form.typeDiplome }),
-      ...(form.sexe && { sexe: form.sexe }), // ✅ Important: backend attend "sexe"
-
-      // ✅ CHAMPS SPÉCIFIQUES À L'EMPLOI
+      ...(form.sexe && { sexe: form.sexe }),
       ...(form.typeOffre === "JOB" && {
         salaire: form.salaire || undefined,
         typeContrat: form.typeContrat || undefined,
@@ -834,15 +695,11 @@ function JobOfferModal({ open, onClose, onSubmit, initialData }) {
         generateQuiz: !isEditing && generateQuiz,
         numQuestions: !isEditing && generateQuiz ? numQuestions : 0,
       }),
-
-      // ✅ CHAMPS SPÉCIFIQUES AU STAGE (C'ÉTAIT LE PROBLÈME!)
       ...(form.typeOffre === "STAGE" && {
         typeStage: form.typeStage || undefined,
         dureeStage: form.dureeStage || undefined,
       }),
     };
-
-    console.log("📤 Envoi du payload:", payload); // ✅ DEBUG
 
     setSubmitting(true);
     try {
@@ -914,7 +771,6 @@ function JobOfferModal({ open, onClose, onSubmit, initialData }) {
           <form onSubmit={handleSubmit} noValidate className="px-4 sm:px-6 md:px-8 py-4 sm:py-5 md:py-7">
             <div className="space-y-4 sm:space-y-5 md:space-y-6">
 
-              {/* ERROR */}
               {formError && (
                 <div className="rounded-lg md:rounded-xl border border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-900/30 p-3 text-xs sm:text-sm font-semibold text-red-700 dark:text-red-400">
                   {formError}
@@ -1032,88 +888,51 @@ function JobOfferModal({ open, onClose, onSubmit, initialData }) {
                 />
               </div>
 
-              {/* ── JOB-ONLY FIELDS ── */}
+              {/* JOB-ONLY FIELDS */}
               {!isStage && (
                 <>
-                  {/* SALAIRE + NOMBRE DE POSTES */}
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-5 md:gap-6">
                     <div>
                       <label className={labelBase}>Salaire</label>
-                      <input
-                        value={form.salaire}
-                        onChange={(e) => setForm({ ...form, salaire: e.target.value })}
-                        placeholder="Ex: 2000 TND / 2000-2500"
-                        className={inputBase}
-                      />
+                      <input value={form.salaire} onChange={(e) => setForm({ ...form, salaire: e.target.value })} placeholder="Ex: 2000 TND / 2000-2500" className={inputBase} />
                     </div>
                     <div>
                       <label className={labelBase}>Nombre de postes</label>
-                      <input
-                        value={form.nombrePostes}
-                        onChange={(e) => setForm({ ...form, nombrePostes: e.target.value })}
-                        placeholder="Ex: 2, 5, 10..."
-                        className={inputBase}
-                      />
+                      <input value={form.nombrePostes} onChange={(e) => setForm({ ...form, nombrePostes: e.target.value })} placeholder="Ex: 2, 5, 10..." className={inputBase} />
                     </div>
                   </div>
 
-                  {/* TYPE DE DIPLÔME + TYPE DE CONTRAT */}
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-5 md:gap-6">
                     <div>
                       <label className={labelBase}>Type de diplôme</label>
-                      <input
-                        value={form.typeDiplome}
-                        onChange={(e) => setForm({ ...form, typeDiplome: e.target.value })}
-                        placeholder="Ex: Licence, Master, Ingénieur..."
-                        className={inputBase}
-                      />
+                      <input value={form.typeDiplome} onChange={(e) => setForm({ ...form, typeDiplome: e.target.value })} placeholder="Ex: Licence, Master, Ingénieur..." className={inputBase} />
                     </div>
                     <div>
                       <label className={labelBase}>Type de contrat</label>
                       <div className="relative">
-                        <select
-                          value={form.typeContrat}
-                          onChange={(e) => setForm({ ...form, typeContrat: e.target.value })}
-                          className={selectBase}
-                        >
-                          {CONTRACT_OPTIONS.map((o) => (
-                            <option key={o.value} value={o.value}>{o.label}</option>
-                          ))}
+                        <select value={form.typeContrat} onChange={(e) => setForm({ ...form, typeContrat: e.target.value })} className={selectBase}>
+                          {CONTRACT_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
                         </select>
                         <span className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-gray-400">▾</span>
                       </div>
                     </div>
                   </div>
 
-                  {/* MOTIF + GENRE */}
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-5 md:gap-6">
                     <div>
                       <label className={labelBase}>Motif</label>
                       <div className="relative">
-                        <select
-                          value={form.motif}
-                          onChange={(e) => setForm({ ...form, motif: e.target.value })}
-                          className={selectBase}
-                        >
-                          {MOTIF_OPTIONS.map((o) => (
-                            <option key={o.value} value={o.value}>{o.label}</option>
-                          ))}
+                        <select value={form.motif} onChange={(e) => setForm({ ...form, motif: e.target.value })} className={selectBase}>
+                          {MOTIF_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
                         </select>
                         <span className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-gray-400">▾</span>
                       </div>
                     </div>
-
                     <div>
                       <label className={labelBase}>Genre</label>
                       <div className="relative">
-                        <select
-                          value={form.sexe}
-                          onChange={(e) => setForm({ ...form, sexe: e.target.value })}
-                          className={selectBase}
-                        >
-                          {SEXE_OPTIONS.map((o) => (
-                            <option key={o.value} value={o.value}>{o.label}</option>
-                          ))}
+                        <select value={form.sexe} onChange={(e) => setForm({ ...form, sexe: e.target.value })} className={selectBase}>
+                          {SEXE_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
                         </select>
                         <span className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-gray-400">▾</span>
                       </div>
@@ -1122,44 +941,26 @@ function JobOfferModal({ open, onClose, onSubmit, initialData }) {
                 </>
               )}
 
-              {/* ── STAGE-ONLY FIELDS ── */}
+              {/* STAGE-ONLY FIELDS */}
               {isStage && (
                 <>
-                  {/* NOMBRE DE POSTES + TYPE DE DIPLÔME */}
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-5 md:gap-6">
                     <div>
                       <label className={labelBase}>Nombre de postes</label>
-                      <input
-                        value={form.nombrePostes}
-                        onChange={(e) => setForm({ ...form, nombrePostes: e.target.value })}
-                        placeholder="Ex: 2, 5, 10..."
-                        className={inputBase}
-                      />
+                      <input value={form.nombrePostes} onChange={(e) => setForm({ ...form, nombrePostes: e.target.value })} placeholder="Ex: 2, 5, 10..." className={inputBase} />
                     </div>
                     <div>
                       <label className={labelBase}>Type de diplôme</label>
-                      <input
-                        value={form.typeDiplome}
-                        onChange={(e) => setForm({ ...form, typeDiplome: e.target.value })}
-                        placeholder="Ex: Licence, Master, Ingénieur..."
-                        className={inputBase}
-                      />
+                      <input value={form.typeDiplome} onChange={(e) => setForm({ ...form, typeDiplome: e.target.value })} placeholder="Ex: Licence, Master, Ingénieur..." className={inputBase} />
                     </div>
                   </div>
 
-                  {/* TYPE DE STAGE + DURÉE DU STAGE */}
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-5 md:gap-6">
                     <div>
                       <label className={labelBase}>Type de stage</label>
                       <div className="relative">
-                        <select
-                          value={form.typeStage}
-                          onChange={(e) => setForm({ ...form, typeStage: e.target.value })}
-                          className={selectBase}
-                        >
-                          {STAGE_CONTRAT_OPTIONS.map((o) => (
-                            <option key={o.value} value={o.value}>{o.label}</option>
-                          ))}
+                        <select value={form.typeStage} onChange={(e) => setForm({ ...form, typeStage: e.target.value })} className={selectBase}>
+                          {STAGE_CONTRAT_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
                         </select>
                         <span className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-gray-400">▾</span>
                       </div>
@@ -1167,32 +968,19 @@ function JobOfferModal({ open, onClose, onSubmit, initialData }) {
                     <div>
                       <label className={labelBase}>Durée du stage</label>
                       <div className="relative">
-                        <select
-                          value={form.dureeStage}
-                          onChange={(e) => setForm({ ...form, dureeStage: e.target.value })}
-                          className={selectBase}
-                        >
-                          {DUREE_STAGE_OPTIONS.map((o) => (
-                            <option key={o.value} value={o.value}>{o.label}</option>
-                          ))}
+                        <select value={form.dureeStage} onChange={(e) => setForm({ ...form, dureeStage: e.target.value })} className={selectBase}>
+                          {DUREE_STAGE_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
                         </select>
                         <span className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-gray-400">▾</span>
                       </div>
                     </div>
                   </div>
 
-                  {/* GENRE */}
                   <div>
                     <label className={labelBase}>Genre</label>
                     <div className="relative">
-                      <select
-                        value={form.sexe}
-                        onChange={(e) => setForm({ ...form, sexe: e.target.value })}
-                        className={selectBase}
-                      >
-                        {SEXE_OPTIONS.map((o) => (
-                          <option key={o.value} value={o.value}>{o.label}</option>
-                        ))}
+                      <select value={form.sexe} onChange={(e) => setForm({ ...form, sexe: e.target.value })} className={selectBase}>
+                        {SEXE_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
                       </select>
                       <span className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-gray-400">▾</span>
                     </div>
@@ -1204,41 +992,22 @@ function JobOfferModal({ open, onClose, onSubmit, initialData }) {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-5 md:gap-6">
                 <div>
                   <label className={labelBase}>Hard Skills</label>
-                  <input
-                    value={form.hardSkills}
-                    onChange={(e) => setForm({ ...form, hardSkills: e.target.value })}
-                    placeholder="React, Node.js, SQL, Docker..."
-                    className={inputBase}
-                  />
-                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1.5">
-                    Compétences techniques — séparées par une virgule.
-                  </p>
+                  <input value={form.hardSkills} onChange={(e) => setForm({ ...form, hardSkills: e.target.value })} placeholder="React, Node.js, SQL, Docker..." className={inputBase} />
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1.5">Compétences techniques — séparées par une virgule.</p>
                 </div>
                 <div>
                   <label className={labelBase}>Soft Skills</label>
-                  <input
-                    value={form.softSkills}
-                    onChange={(e) => setForm({ ...form, softSkills: e.target.value })}
-                    placeholder="Communication, Leadership, Esprit..."
-                    className={inputBase}
-                  />
-                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1.5">
-                    Compétences comportementales — séparées par une virgule.
-                  </p>
+                  <input value={form.softSkills} onChange={(e) => setForm({ ...form, softSkills: e.target.value })} placeholder="Communication, Leadership, Esprit..." className={inputBase} />
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1.5">Compétences comportementales — séparées par une virgule.</p>
                 </div>
               </div>
 
-              {/* QUIZ — uniquement en création et pour les offres d'emploi */}
+              {/* QUIZ */}
               {!isEditing && !isStage && (
                 <div className="border border-gray-200 dark:border-gray-700 rounded-lg sm:rounded-2xl p-4 sm:p-5 space-y-4">
                   <label className="flex items-center gap-3 cursor-pointer select-none">
                     <div className="relative flex-shrink-0">
-                      <input
-                        type="checkbox"
-                        checked={generateQuiz}
-                        onChange={(e) => setGenerateQuiz(e.target.checked)}
-                        className="sr-only"
-                      />
+                      <input type="checkbox" checked={generateQuiz} onChange={(e) => setGenerateQuiz(e.target.checked)} className="sr-only" />
                       <div className={`w-10 h-6 sm:w-11 rounded-full transition-colors duration-200 ${generateQuiz ? "bg-[#6CB33F] dark:bg-emerald-500" : "bg-gray-300 dark:bg-gray-600"}`} />
                       <div className={`absolute top-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform duration-200 ${generateQuiz ? "translate-x-5 sm:translate-x-6" : "translate-x-1"}`} />
                     </div>
@@ -1247,108 +1016,56 @@ function JobOfferModal({ open, onClose, onSubmit, initialData }) {
                         <BrainCircuit className="h-4 w-4 text-[#6CB33F] dark:text-emerald-400" />
                         <span className="text-xs sm:text-sm font-extrabold text-gray-900 dark:text-white">Générer un quiz technique</span>
                       </div>
-                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
-                        Un quiz IA sera créé automatiquement à la publication.
-                      </p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Un quiz IA sera créé automatiquement à la publication.</p>
                     </div>
                   </label>
 
                   {generateQuiz && (
                     <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 pl-0 sm:pl-14">
-                      <label className="text-xs sm:text-sm font-semibold text-gray-700 dark:text-gray-300 whitespace-nowrap">
-                        Nombre de questions
-                      </label>
+                      <label className="text-xs sm:text-sm font-semibold text-gray-700 dark:text-gray-300 whitespace-nowrap">Nombre de questions</label>
                       <div className="flex items-center gap-2">
-                        <button
-                          type="button"
-                          onClick={() => handleNumQuestions(numQuestions - 1)}
-                          className="w-7 h-7 sm:w-8 sm:h-8 rounded-full border border-gray-200 dark:border-gray-600
-                                     text-gray-700 dark:text-gray-300 font-bold text-sm
-                                     hover:bg-gray-100 dark:hover:bg-gray-700
-                                     transition-colors flex items-center justify-center flex-shrink-0"
-                        >−</button>
-                        <input
-                          type="number"
-                          min={1}
-                          max={30}
-                          value={numQuestions}
-                          onChange={(e) => handleNumQuestions(e.target.value)}
-                          className="w-14 h-8 sm:w-16 sm:h-9 text-center rounded-lg sm:rounded-xl text-sm
-                                     border border-gray-200 dark:border-gray-600
-                                     bg-white dark:bg-gray-700
-                                     text-gray-800 dark:text-gray-100 font-bold
-                                     focus:border-[#6CB33F] dark:focus:border-emerald-500
-                                     focus:ring-2 focus:ring-[#6CB33F]/20
-                                     outline-none transition-colors"
-                        />
-                        <button
-                          type="button"
-                          onClick={() => handleNumQuestions(numQuestions + 1)}
-                          className="w-7 h-7 sm:w-8 sm:h-8 rounded-full border border-gray-200 dark:border-gray-600
-                                     text-gray-700 dark:text-gray-300 font-bold text-sm
-                                     hover:bg-gray-100 dark:hover:bg-gray-700
-                                     transition-colors flex items-center justify-center flex-shrink-0"
-                        >+</button>
+                        <button type="button" onClick={() => handleNumQuestions(numQuestions - 1)} className="w-7 h-7 sm:w-8 sm:h-8 rounded-full border border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-300 font-bold text-sm hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors flex items-center justify-center flex-shrink-0">−</button>
+                        <input type="number" min={1} max={30} value={numQuestions} onChange={(e) => handleNumQuestions(e.target.value)} className="w-14 h-8 sm:w-16 sm:h-9 text-center rounded-lg sm:rounded-xl text-sm border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 font-bold focus:border-[#6CB33F] dark:focus:border-emerald-500 focus:ring-2 focus:ring-[#6CB33F]/20 outline-none transition-colors" />
+                        <button type="button" onClick={() => handleNumQuestions(numQuestions + 1)} className="w-7 h-7 sm:w-8 sm:h-8 rounded-full border border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-300 font-bold text-sm hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors flex items-center justify-center flex-shrink-0">+</button>
                         <span className="text-xs text-gray-500 dark:text-gray-400">(max 30)</span>
                       </div>
                     </div>
                   )}
 
                   {!generateQuiz && (
-                    <p className="pl-0 sm:pl-14 text-xs text-gray-400 dark:text-gray-500 italic">
-                      Aucun quiz ne sera généré. Vous pourrez en créer un manuellement plus tard.
-                    </p>
+                    <p className="pl-0 sm:pl-14 text-xs text-gray-400 dark:text-gray-500 italic">Aucun quiz ne sera généré. Vous pourrez en créer un manuellement plus tard.</p>
                   )}
                 </div>
               )}
 
-              {/* PONDÉRATIONS — uniquement pour les offres d'emploi */}
-              {!isStage && <div className="border-t border-gray-200 dark:border-gray-700 pt-5 sm:pt-6">
-                <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-xs sm:text-sm font-extrabold text-gray-900 dark:text-white uppercase tracking-wide">
-                    Pondérations (0 – 100)
-                  </h3>
-                  <span className={`text-xs sm:text-sm font-extrabold ${isValidTotal ? "text-green-600 dark:text-emerald-400" : "text-red-600 dark:text-red-400"}`}>
-                    Total : {totalWeights}%
-                  </span>
-                </div>
-
-                <div className="space-y-3 sm:space-y-4">
-                  {SCORE_ITEMS_MODAL.map((it) => {
-                    const v = form.scores[it.key] ?? 0;
-                    return (
-                      <div key={it.key} className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
-                        <p className="sm:flex-1 text-xs sm:text-sm font-semibold text-gray-700 dark:text-gray-300">
-                          {it.label}
-                        </p>
-                        <div className="flex items-center gap-2 sm:gap-3">
-                          <input
-                            type="number"
-                            min={0}
-                            max={100}
-                            value={v}
-                            onChange={(e) => setWeight(it.key, e.target.value)}
-                            className="w-20 sm:w-24 h-9 sm:h-11 px-2 sm:px-4 rounded-lg sm:rounded-xl md:rounded-full text-sm
-                                       border border-gray-200 dark:border-gray-600
-                                       bg-white dark:bg-gray-700
-                                       text-gray-800 dark:text-gray-100
-                                       focus:border-[#6CB33F] dark:focus:border-emerald-500
-                                       focus:ring-4 focus:ring-[#6CB33F]/15
-                                       outline-none transition-colors"
-                          />
-                          <span className="text-xs sm:text-sm font-extrabold text-[#4E8F2F] dark:text-emerald-400 w-6">%</span>
+              {/* PONDÉRATIONS */}
+              {!isStage && (
+                <div className="border-t border-gray-200 dark:border-gray-700 pt-5 sm:pt-6">
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-xs sm:text-sm font-extrabold text-gray-900 dark:text-white uppercase tracking-wide">Pondérations (0 – 100)</h3>
+                    <span className={`text-xs sm:text-sm font-extrabold ${isValidTotal ? "text-green-600 dark:text-emerald-400" : "text-red-600 dark:text-red-400"}`}>
+                      Total : {totalWeights}%
+                    </span>
+                  </div>
+                  <div className="space-y-3 sm:space-y-4">
+                    {SCORE_ITEMS_MODAL.map((it) => {
+                      const v = form.scores[it.key] ?? 0;
+                      return (
+                        <div key={it.key} className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
+                          <p className="sm:flex-1 text-xs sm:text-sm font-semibold text-gray-700 dark:text-gray-300">{it.label}</p>
+                          <div className="flex items-center gap-2 sm:gap-3">
+                            <input type="number" min={0} max={100} value={v} onChange={(e) => setWeight(it.key, e.target.value)} className="w-20 sm:w-24 h-9 sm:h-11 px-2 sm:px-4 rounded-lg sm:rounded-xl md:rounded-full text-sm border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 focus:border-[#6CB33F] dark:focus:border-emerald-500 focus:ring-4 focus:ring-[#6CB33F]/15 outline-none transition-colors" />
+                            <span className="text-xs sm:text-sm font-extrabold text-[#4E8F2F] dark:text-emerald-400 w-6">%</span>
+                          </div>
                         </div>
-                      </div>
-                    );
-                  })}
+                      );
+                    })}
+                  </div>
+                  {!isValidTotal && (
+                    <p className="mt-3 text-xs font-semibold text-red-600 dark:text-red-400">La somme doit être égale à 100%.</p>
+                  )}
                 </div>
-
-                {!isValidTotal && (
-                  <p className="mt-3 text-xs font-semibold text-red-600 dark:text-red-400">
-                    La somme doit être égale à 100%.
-                  </p>
-                )}
-              </div>}
+              )}
             </div>
 
             {/* FOOTER */}
@@ -1356,36 +1073,20 @@ function JobOfferModal({ open, onClose, onSubmit, initialData }) {
               <button
                 type="submit"
                 disabled={submitting || (!isStage && !isValidTotal)}
-                className={`flex-1 h-10 sm:h-11 md:h-12 rounded-lg sm:rounded-xl md:rounded-full font-semibold text-sm transition-colors shadow-sm
-                  ${(isStage || isValidTotal) && !submitting
+                className={`flex-1 h-10 sm:h-11 md:h-12 rounded-lg sm:rounded-xl md:rounded-full font-semibold text-sm transition-colors shadow-sm ${
+                  (isStage || isValidTotal) && !submitting
                     ? "bg-[#6CB33F] hover:bg-[#5AA332] dark:bg-emerald-600 dark:hover:bg-emerald-500 text-white"
                     : "bg-gray-300 dark:bg-gray-600 text-gray-500 dark:text-gray-400 cursor-not-allowed"
-                  }`}
+                }`}
               >
-                {submitting
-                  ? "Enregistrement..."
-                  : isEditing
-                  ? "Mettre à jour"
-                  : !isStage && generateQuiz
-                  ? `Créer + Quiz`
-                  : "Enregistrer"}
+                {submitting ? "Enregistrement..." : isEditing ? "Mettre à jour" : !isStage && generateQuiz ? "Créer + Quiz" : "Enregistrer"}
               </button>
 
               <button
                 type="button"
-                onClick={() => {
-                  setForm(emptyForm);
-                  setFormError("");
-                  setGenerateQuiz(true);
-                  setNumQuestions(25);
-                  onClose();
-                }}
+                onClick={() => { setForm(emptyForm); setFormError(""); setGenerateQuiz(true); setNumQuestions(25); onClose(); }}
                 disabled={submitting}
-                className="flex-1 h-10 sm:h-11 md:h-12 rounded-lg sm:rounded-xl md:rounded-full font-semibold text-sm
-                           border border-gray-200 dark:border-gray-600
-                           text-gray-700 dark:text-gray-300
-                           hover:bg-gray-50 dark:hover:bg-gray-700
-                           transition-colors disabled:opacity-50"
+                className="flex-1 h-10 sm:h-11 md:h-12 rounded-lg sm:rounded-xl md:rounded-full font-semibold text-sm border border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors disabled:opacity-50"
               >
                 Annuler
               </button>

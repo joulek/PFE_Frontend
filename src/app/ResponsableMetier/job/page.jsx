@@ -145,25 +145,55 @@ export default function ResponsableJobsPage() {
   const [deleteConfirm, setDeleteConfirm] = useState(null);
   const [deleting, setDeleting] = useState(false);
 
-  async function loadData() {
-    setLoading(true);
-    try {
-      const [createdRes, assignedRes] = await Promise.allSettled([getMyOffers(), getMyAssignedJobs()]);
-      const created  = Array.isArray(createdRes?.value?.data)  ? createdRes.value.data  : [];
-      const assigned = Array.isArray(assignedRes?.value?.data) ? assignedRes.value.data : [];
-      const map = new Map();
-      for (const j of created)  map.set(j._id, { ...j, _origin: "CREATED" });
-      for (const j of assigned) {
-        if (map.has(j._id)) map.set(j._id, { ...map.get(j._id), ...j, _origin: "BOTH" });
-        else                 map.set(j._id, { ...j, _origin: "ASSIGNED" });
-      }
-      const merged = Array.from(map.values()).map((j) => ({ ...j, _status: getJobStatus(j) }));
-      merged.sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
-      setJobs(merged);
-    } catch (e) { console.error("Erreur chargement jobs:", e); setJobs([]); }
-    finally     { setLoading(false); }
-  }
+async function loadData() {
+  setLoading(true);
+  try {
+    const [createdRes, assignedRes] = await Promise.allSettled([
+      getMyOffers(),
+      getMyAssignedJobs()
+    ]);
 
+    // 🔥 CORRECTION ICI (vérifier fulfilled)
+    const created =
+      createdRes.status === "fulfilled" && Array.isArray(createdRes.value?.data)
+        ? createdRes.value.data
+        : [];
+
+    const assigned =
+      assignedRes.status === "fulfilled" && Array.isArray(assignedRes.value?.data)
+        ? assignedRes.value.data
+        : [];
+
+    const map = new Map();
+
+    for (const j of created) {
+      map.set(j._id, { ...j, _origin: "CREATED" });
+    }
+
+    for (const j of assigned) {
+      if (map.has(j._id)) {
+        map.set(j._id, { ...map.get(j._id), ...j, _origin: "BOTH" });
+      } else {
+        map.set(j._id, { ...j, _origin: "ASSIGNED" });
+      }
+    }
+
+    const merged = Array.from(map.values()).map((j) => ({
+      ...j,
+      _status: getJobStatus(j),
+    }));
+
+    merged.sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
+
+    setJobs(merged);
+
+  } catch (e) {
+    console.error("Erreur chargement jobs:", e);
+    setJobs([]);
+  } finally {
+    setLoading(false);
+  }
+}
   useEffect(() => { loadData(); }, []);
 
   const detailsBase = "/ResponsableMetier/job";
@@ -761,13 +791,13 @@ function JobOfferModal({ open, onClose, onSubmit, initialData }) {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-5 md:gap-6">
                 <div>
                   <label className={labelBase}>Hard Skills</label>
-                  <input value={form.hardSkills} onChange={(e) => setForm({ ...form, hardSkills: e.target.value })}
+                  <input value={form.hardSkills} data-cy="hardSkills" onChange={(e) => setForm({ ...form, hardSkills: e.target.value })}
                     placeholder="React, Node.js, SQL, Docker..." className={inputBase} />
                   <p className="text-xs text-gray-500 dark:text-gray-400 mt-1.5">Compétences techniques — séparées par une virgule.</p>
                 </div>
                 <div>
                   <label className={labelBase}>Soft Skills</label>
-                  <input value={form.softSkills} onChange={(e) => setForm({ ...form, softSkills: e.target.value })}
+                  <input value={form.softSkills} data-cy="softSkills" onChange={(e) => setForm({ ...form, softSkills: e.target.value })}
                     placeholder="Communication, Leadership, Esprit d'équipe..." className={inputBase} />
                   <p className="text-xs text-gray-500 dark:text-gray-400 mt-1.5">Compétences comportementales — séparées par une virgule.</p>
                 </div>
@@ -839,7 +869,7 @@ function JobOfferModal({ open, onClose, onSubmit, initialData }) {
 
             {/* Footer buttons */}
             <div className="mt-6 sm:mt-7 md:mt-8 pt-4 sm:pt-5 md:pt-6 border-t border-gray-200 dark:border-gray-700 flex flex-col sm:flex-row gap-2.5 sm:gap-4">
-              <button type="submit" disabled={submitting || !isValidTotal}
+              <button type="submit"     data-cy="submitJob" disabled={submitting || !isValidTotal}
                 className={`flex-1 h-10 sm:h-11 md:h-12 rounded-lg sm:rounded-xl md:rounded-full font-semibold text-sm transition-colors shadow-sm ${
                   isValidTotal && !submitting
                     ? isStage ? "bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-400 text-white"

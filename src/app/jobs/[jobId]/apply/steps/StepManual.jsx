@@ -471,22 +471,41 @@ export default function StepManual({ parsedCV, cvFileUrl, onBack, onSubmit }) {
       render: () => (
         <div className="space-y-6">
           <div className="space-y-3">
-            <p className="text-sm font-semibold text-gray-700 dark:text-gray-300">Activités / Vie associative (une ligne = une activité)</p>
-            <textarea data-cy="activites"
+            <p className="text-sm font-semibold text-gray-700 dark:text-gray-300">
+              Activités / Vie associative (une ligne = une activité)
+            </p>
+            <textarea
+              data-cy="activites"
               className="w-full min-h-[140px] px-5 py-3 border border-gray-200 dark:border-gray-600 rounded-2xl bg-white dark:bg-gray-800 focus:ring-2 focus:ring-green-500 outline-none transition placeholder:text-gray-400 text-gray-900 dark:text-gray-100"
               placeholder={`Ex :\nBénévolat\nClub de programmation`}
               value={safeArr(form.activites).join("\n")}
-              onChange={(e) => setForm((prev) => ({ ...prev, activites: e.target.value.split("\n").map((x) => x.trim()).filter(Boolean) }))}
+              onChange={(e) =>
+                setForm((prev) => ({
+                  ...prev,
+                  // ✅ Ne PAS filtrer ni trimmer pendant la frappe
+                  // On garde les lignes vides pour permettre Entrée + Espace
+                  activites: e.target.value.split("\n"),
+                }))
+              }
             />
           </div>
           <div className="h-px bg-gray-200 dark:bg-gray-700" />
           <div className="space-y-3">
-            <p className="text-sm font-semibold text-gray-700 dark:text-gray-300">Centres d'intérêt (une ligne = un centre d'intérêt)</p>
-            <textarea data-cy="centres-interet"
+            <p className="text-sm font-semibold text-gray-700 dark:text-gray-300">
+              Centres d'intérêt (une ligne = un centre d'intérêt)
+            </p>
+            <textarea
+              data-cy="centres-interet"
               className="w-full min-h-[140px] px-5 py-3 border border-gray-200 dark:border-gray-600 rounded-2xl bg-white dark:bg-gray-800 focus:ring-2 focus:ring-green-500 outline-none transition placeholder:text-gray-400 text-gray-900 dark:text-gray-100"
               placeholder={`Ex :\nSport\nLecture`}
               value={safeArr(form.centres_interet).join("\n")}
-              onChange={(e) => setForm((prev) => ({ ...prev, centres_interet: e.target.value.split("\n").map((x) => x.trim()).filter(Boolean) }))}
+              onChange={(e) =>
+                setForm((prev) => ({
+                  ...prev,
+                  // ✅ Même chose ici
+                  centres_interet: e.target.value.split("\n"),
+                }))
+              }
             />
           </div>
         </div>

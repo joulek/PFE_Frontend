@@ -240,7 +240,7 @@ export default function ApplicationDetailPage() {
 
             <button
               onClick={() => updateStatus("VU")}
-              disabled={updating}
+              disabled={updating} data-cy="btn-vu"
               className="px-5 py-2 rounded-full border text-sm hover:bg-gray-100 dark:hover:bg-gray-700"
             >
               Marquer comme vu
@@ -248,7 +248,7 @@ export default function ApplicationDetailPage() {
 
             <button
               onClick={() => updateStatus("EN_ATTENTE")}
-              disabled={updating}
+              disabled={updating}  data-cy="btn-reset"
               className="px-5 py-2 rounded-full border text-sm hover:bg-gray-100 dark:hover:bg-gray-700"
             >
               Réinitialiser
@@ -260,7 +260,7 @@ export default function ApplicationDetailPage() {
 
             <button
               onClick={() => updateStatus("REJETE")}
-              disabled={updating}
+              disabled={updating} data-cy="btn-refuser"
               className="px-5 py-2 rounded-full bg-red-100 text-red-600 font-semibold"
             >
               Refuser
@@ -268,7 +268,7 @@ export default function ApplicationDetailPage() {
 
             <button
               onClick={() => updateStatus("RETENU")}
-              disabled={updating}
+              disabled={updating} data-cy="btn-accepter"
               className="px-5 py-2 rounded-full bg-[#6CB33F] text-white font-semibold"
             >
               Accepter la candidature

@@ -1,0 +1,239 @@
+{
+  "myOffers": {
+    "data": [
+      {
+        "_id": "job-001",
+        "titre": "Développeur Fullstack React/Node",
+        "status": "EN_ATTENTE",
+        "typeOffre": "JOB",
+        "description": "Développement d'applications web modernes.",
+        "lieu": "Tunis",
+        "dateCloture": "2026-06-30",
+        "createdAt": "2026-03-01T10:00:00.000Z",
+        "hardSkills": ["React", "Node.js"],
+        "softSkills": ["Communication"],
+        "scores": {
+          "skillsFit": 30,
+          "experienceFit": 30,
+          "projectsFit": 20,
+          "educationFit": 10,
+          "communicationFit": 10
+        }
+      },
+      {
+        "_id": "job-002",
+        "titre": "Ingénieur DevOps",
+        "status": "CONFIRMEE",
+        "typeOffre": "JOB",
+        "description": "Gestion de l'infrastructure cloud.",
+        "lieu": "Sfax",
+        "dateCloture": "2026-07-15",
+        "createdAt": "2026-02-15T10:00:00.000Z",
+        "confirmedAt": "2026-02-20T10:00:00.000Z",
+        "hardSkills": ["AWS", "Docker"],
+        "softSkills": ["Rigueur"],
+        "scores": {
+          "skillsFit": 40,
+          "experienceFit": 30,
+          "projectsFit": 15,
+          "educationFit": 10,
+          "communicationFit": 5
+        }
+      },
+      {
+        "_id": "stage-001",
+        "titre": "Stage PFE Développeur React",
+        "status": "VALIDEE",
+        "typeOffre": "STAGE",
+        "description": "Stage de fin d'études dans l'équipe frontend.",
+        "lieu": "Tunis",
+        "dateCloture": "2026-08-31",
+        "createdAt": "2026-03-10T10:00:00.000Z",
+        "hardSkills": ["React", "TypeScript"],
+        "softSkills": ["Autonomie"]
+      },
+      {
+        "_id": "job-003",
+        "titre": "Analyste Data",
+        "status": "REJETEE",
+        "typeOffre": "JOB",
+        "description": "Analyse de données business.",
+        "lieu": "Tunis",
+        "dateCloture": "2026-05-01",
+        "createdAt": "2026-01-20T10:00:00.000Z",
+        "rejectionReason": "Manque de détails sur les missions",
+        "hardSkills": ["Python", "SQL"],
+        "softSkills": ["Analytique"],
+        "scores": {
+          "skillsFit": 30,
+          "experienceFit": 30,
+          "projectsFit": 20,
+          "educationFit": 10,
+          "communicationFit": 10
+        }
+      }
+    ]
+  },
+
+  "createJob": {
+    "data": {
+      "_id": "new-job-999",
+      "titre": "Développeur Fullstack React/Node",
+      "status": "EN_ATTENTE",
+      "typeOffre": "JOB",
+      "description": "Rejoignez notre équipe.",
+      "lieu": "Tunis",
+      "dateCloture": "2026-06-30",
+      "createdAt": "2026-03-30T10:00:00.000Z",
+      "hardSkills": ["React", "Node.js", "MongoDB"],
+      "softSkills": ["Communication", "Leadership"],
+      "scores": {
+        "skillsFit": 40,
+        "experienceFit": 30,
+        "projectsFit": 15,
+        "educationFit": 10,
+        "communicationFit": 5
+      },
+      "generateQuiz": true,
+      "numQuestions": 25
+    }
+  },
+
+  "updateJob": {
+    "data": {
+      "_id": "edit-job-002",
+      "titre": "Titre modifié",
+      "status": "EN_ATTENTE",
+      "typeOffre": "JOB",
+      "description": "Description mise à jour",
+      "lieu": "Tunis",
+      "dateCloture": "2026-07-01",
+      "createdAt": "2026-03-01T10:00:00.000Z",
+      "hardSkills": ["React", "Vue.js"],
+      "softSkills": ["Teamwork"],
+      "scores": {
+        "skillsFit": 30,
+        "experienceFit": 30,
+        "projectsFit": 20,
+        "educationFit": 10,
+        "communicationFit": 10
+      }
+    }
+  },
+
+  "jobDetail": {
+    "data": {
+      "_id": "detail-job-001",
+      "titre": "Ingénieur Cloud AWS",
+      "status": "EN_ATTENTE",
+      "typeOffre": "JOB",
+      "description": "Mission cloud AWS sur infrastructure critique.",
+      "lieu": "Tunis",
+      "createdAt": "2026-03-01T10:00:00.000Z",
+      "dateCloture": "2026-06-15",
+      "salaire": "3000 TND",
+      "nombrePostes": "2",
+      "typeDiplome": "Ingénieur",
+      "typeContrat": "CDI",
+      "motif": "NOUVEAU",
+      "sexe": "HF",
+      "hardSkills": ["AWS", "Terraform", "Kubernetes"],
+      "softSkills": ["Communication", "Autonomie"],
+      "scores": {
+        "skillsFit": 30,
+        "experienceFit": 30,
+        "projectsFit": 20,
+        "educationFit": 10,
+        "communicationFit": 10
+      }
+    }
+  },
+
+  "emptyOffers": {
+    "data": []
+  },
+
+  "manyOffers": {
+    "data": [
+      { "_id": "job-p1", "titre": "Offre 1", "status": "EN_ATTENTE", "typeOffre": "JOB", "description": "Description", "createdAt": "2026-03-01T10:00:00.000Z" },
+      { "_id": "job-p2", "titre": "Offre 2", "status": "EN_ATTENTE", "typeOffre": "JOB", "description": "Description", "createdAt": "2026-03-01T10:00:00.000Z" },
+      { "_id": "job-p3", "titre": "Offre 3", "status": "CONFIRMEE", "typeOffre": "JOB", "description": "Description", "createdAt": "2026-03-01T10:00:00.000Z" },
+      { "_id": "job-p4", "titre": "Offre 4", "status": "VALIDEE",   "typeOffre": "STAGE","description": "Description", "createdAt": "2026-03-01T10:00:00.000Z" },
+      { "_id": "job-p5", "titre": "Offre 5", "status": "REJETEE",   "typeOffre": "JOB", "description": "Description", "createdAt": "2026-03-01T10:00:00.000Z", "rejectionReason": "Motif" },
+      { "_id": "job-p6", "titre": "Offre 6", "status": "EN_ATTENTE","typeOffre": "STAGE","description": "Description", "createdAt": "2026-03-01T10:00:00.000Z" },
+      { "_id": "job-p7", "titre": "Offre 7", "status": "CONFIRMEE", "typeOffre": "JOB", "description": "Description", "createdAt": "2026-03-01T10:00:00.000Z" },
+      { "_id": "job-p8", "titre": "Offre 8", "status": "VALIDEE",   "typeOffre": "JOB", "description": "Description", "createdAt": "2026-03-01T10:00:00.000Z" }
+    ]
+  },
+
+  "longDescOffer": {
+    "data": [
+      {
+        "_id": "j-long",
+        "titre": "Offre avec description longue",
+        "status": "EN_ATTENTE",
+        "typeOffre": "JOB",
+        "description": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.",
+        "createdAt": "2026-03-01T10:00:00.000Z"
+      }
+    ]
+  },
+
+  "mixedStatusOffers": {
+    "data": [
+      { "_id": "j1", "titre": "Dev React",    "status": "EN_ATTENTE", "typeOffre": "JOB",   "description": "Desc", "createdAt": "2026-03-01T10:00:00.000Z" },
+      { "_id": "j2", "titre": "Dev Python",   "status": "CONFIRMEE",  "typeOffre": "JOB",   "description": "Desc", "createdAt": "2026-03-01T10:00:00.000Z" },
+      { "_id": "j3", "titre": "Stage Angular","status": "REJETEE",    "typeOffre": "STAGE", "description": "Desc", "createdAt": "2026-03-01T10:00:00.000Z", "rejectionReason": "Manque de détails" },
+      { "_id": "j4", "titre": "Stage Vue",    "status": "VALIDEE",    "typeOffre": "STAGE", "description": "Desc", "createdAt": "2026-03-01T10:00:00.000Z" }
+    ]
+  },
+
+  "jobConfirmee": {
+    "data": {
+      "_id": "job-CONFIRMEE",
+      "titre": "Offre CONFIRMEE",
+      "status": "CONFIRMEE",
+      "typeOffre": "JOB",
+      "description": "Desc",
+      "lieu": "Tunis",
+      "createdAt": "2026-03-01T10:00:00.000Z",
+      "dateCloture": "2026-06-10",
+      "hardSkills": [],
+      "softSkills": [],
+      "scores": { "skillsFit": 30, "experienceFit": 30, "projectsFit": 20, "educationFit": 10, "communicationFit": 10 }
+    }
+  },
+
+  "jobRejetee": {
+    "data": {
+      "_id": "job-REJETEE",
+      "titre": "Offre REJETEE",
+      "status": "REJETEE",
+      "typeOffre": "JOB",
+      "description": "Desc",
+      "lieu": "Tunis",
+      "createdAt": "2026-03-01T10:00:00.000Z",
+      "dateCloture": "2026-06-10",
+      "hardSkills": [],
+      "softSkills": [],
+      "rejectionReason": "Informations insuffisantes",
+      "scores": { "skillsFit": 30, "experienceFit": 30, "projectsFit": 20, "educationFit": 10, "communicationFit": 10 }
+    }
+  },
+
+  "jobValidee": {
+    "data": {
+      "_id": "job-VALIDEE",
+      "titre": "Offre VALIDEE",
+      "status": "VALIDEE",
+      "typeOffre": "JOB",
+      "description": "Desc",
+      "lieu": "Tunis",
+      "createdAt": "2026-03-01T10:00:00.000Z",
+      "dateCloture": "2026-06-10",
+      "hardSkills": [],
+      "softSkills": [],
+      "scores": { "skillsFit": 30, "experienceFit": 30, "projectsFit": 20, "educationFit": 10, "communicationFit": 10 }
+    }
+  }
+}

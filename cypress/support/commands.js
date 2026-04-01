@@ -6,35 +6,23 @@ const API_URL = "http://localhost:5000";
 // ✅ LOGIN ADMIN (TOKEN + SESSION)
 // ======================================================
 Cypress.Commands.add("loginAsAdmin", () => {
-  const email = "admin@optylab.tn";
+  const email = "joulekyosr123@gmail.com";
   const role = "ADMIN";
 
   cy.session("admin-session", () => {
     cy.task("generateToken", { role, email }).then((token) => {
 
-      // 👉 stocker token comme ton app attend
-      window.localStorage.setItem("token", token);
+      cy.window().then((win) => {
+        win.localStorage.setItem("token", token);
+        win.localStorage.setItem("user", JSON.stringify({ email, role }));
+      });
 
-      // 👉 si ton app utilise autre clé
-      window.localStorage.setItem("user", JSON.stringify({
-        email,
-        role,
-      }));
-
-      // 👉 mock login API (optionnel mais utile)
-      cy.intercept("POST", `${API_URL}/users/login`, {
-        statusCode: 200,
-        body: {
-          token,
-          user: { email, role },
-        },
-      }).as("login");
+      // ✅ 🔥 LE FIX CRITIQUE
+      cy.setCookie("role", role);
+      cy.setCookie("token", token);
 
     });
   });
-
-  // ⚠️ important après session
-  cy.visit("/utilisateurs");
 });
 
 
@@ -42,23 +30,83 @@ Cypress.Commands.add("loginAsAdmin", () => {
 // ✅ LOGIN RESPONSABLE METIER
 // ======================================================
 Cypress.Commands.add("loginAsResponsable", () => {
-  const email = "responsable@optylab.tn";
+  const email = "joulekrebah@gmail.com";
   const role = "RESPONSABLE_METIER";
 
   cy.session("responsable-session", () => {
     cy.task("generateToken", { role, email }).then((token) => {
 
-      window.localStorage.setItem("token", token);
+      cy.window().then((win) => {
+        win.localStorage.setItem("token", token);
+        win.localStorage.setItem("user", JSON.stringify({
+          email,
+          role,
+        }));
+      });
 
-      window.localStorage.setItem("user", JSON.stringify({
-        email,
-        role,
-      }));
+      // 🔥 IMPORTANT (comme admin)
+      cy.setCookie("role", role);
+      cy.setCookie("token", token);
 
     });
   });
+});
 
-  cy.visit("/utilisateurs");
+
+
+
+// ======================================================
+// ✅ LOGIN RESPONSABLE RH NORD
+// ======================================================
+Cypress.Commands.add("loginAsRHNord", () => {
+  const email = "ynitylearn@gmail.com";
+  const role = "RESPONSABLE_RH_NORD";
+
+  cy.session("rh-nord-session", () => {
+    cy.task("generateToken", { role, email }).then((token) => {
+
+      cy.window().then((win) => {
+        win.localStorage.setItem("token", token);
+        win.localStorage.setItem("user", JSON.stringify({
+          email,
+          role,
+        }));
+      });
+
+      cy.setCookie("role", role);
+      cy.setCookie("token", token);
+
+    });
+  });
+});
+
+
+
+
+
+// ======================================================
+// ✅ LOGIN RESPONSABLE RH OPTYLAB
+// ======================================================
+Cypress.Commands.add("loginAsRHOPTYLAB", () => {
+  const email = "rim12rimh@gmail.com";
+  const role = "RESPONSABLE_RH_OPTYLAB";
+
+  cy.session("rh-optylab-session", () => {
+    cy.task("generateToken", { role, email }).then((token) => {
+
+      cy.window().then((win) => {
+        win.localStorage.setItem("token", token);
+        win.localStorage.setItem("user", JSON.stringify({
+          email,
+          role,
+        }));
+      });
+
+      cy.setCookie("role", role);
+      cy.setCookie("token", token);
+
+    });
+  });
 });
 
 
@@ -66,13 +114,15 @@ Cypress.Commands.add("loginAsResponsable", () => {
 // ✅ LOGOUT
 // ======================================================
 Cypress.Commands.add("logout", () => {
-  window.localStorage.clear();
+  cy.window().then((win) => {
+    win.localStorage.clear();
+  });
   cy.visit("/login");
 });
 
 
 // ======================================================
-// ✅ HELPER SELECTOR (BEST PRACTICE)
+// ✅ HELPER SELECTOR
 // ======================================================
 Cypress.Commands.add("getByTestId", (testId) => {
   return cy.get(`[data-testid="${testId}"]`);
@@ -89,7 +139,7 @@ Cypress.Commands.add("waitForUsers", () => {
 
 
 // ======================================================
-// ✅ CLICK SAFE (évite problème hidden)
+// ✅ CLICK SAFE
 // ======================================================
 Cypress.Commands.add("clickVisible", (selector) => {
   cy.get(selector)
@@ -115,13 +165,12 @@ Cypress.Commands.add("typeInput", (selector, value) => {
 // ✅ CONFIRM MODAL (SUPPRESSION)
 // ======================================================
 Cypress.Commands.add("confirmDelete", () => {
-  cy.contains("Confirmer la suppression").should("be.visible");
-  cy.contains("Supprimer").click();
+  cy.get('[data-cy="confirm-delete"]').should("be.visible").click();
 });
 
 
 // ======================================================
-// ✅ WAIT UI UPDATE (fallback)
+// ✅ WAIT UI UPDATE
 // ======================================================
 Cypress.Commands.add("waitUI", (time = 500) => {
   cy.wait(time);

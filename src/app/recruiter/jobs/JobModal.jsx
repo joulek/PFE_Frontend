@@ -43,6 +43,19 @@ const DUREE_STAGE_OPTIONS = [
   { value: "6_MOIS", label: "6 mois" },
 ];
 
+function SelectWrapper({ children }) {
+  return (
+    <div className="relative">
+      {children}
+      <span className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M4 6L8 10L12 6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+      </span>
+    </div>
+  );
+}
+
 export default function JobModal({
   open,
   onClose,
@@ -51,7 +64,7 @@ export default function JobModal({
   users = [],
 }) {
   const emptyForm = {
-    typeOffre: "EMPLOI", // EMPLOI | STAGE
+    typeOffre: "EMPLOI",
     titre: "",
     description: "",
     softSkills: "",
@@ -64,7 +77,7 @@ export default function JobModal({
     sexe: "",
     typeDiplome: "",
     dureeStage: "",
-    nombrePostes: "",  // ✅ NOUVEAU
+    nombrePostes: "",
     scores: {
       skillsFit: 30,
       experienceFit: 30,
@@ -118,7 +131,7 @@ export default function JobModal({
           sexe: initialData.sexe ?? "",
           typeDiplome: initialData.typeDiplome ?? "",
           dureeStage: initialData.dureeStage ?? "",
-          nombrePostes: initialData?.nombrePostes ? String(initialData.nombrePostes) : "",  // ✅ NOUVEAU
+          nombrePostes: initialData?.nombrePostes ? String(initialData.nombrePostes) : "",
           scores: {
             skillsFit: initialData?.scores?.skillsFit ?? 30,
             experienceFit: initialData?.scores?.experienceFit ?? 30,
@@ -129,7 +142,7 @@ export default function JobModal({
         });
         const id =
           Array.isArray(initialData.assignedUserIds) &&
-          initialData.assignedUserIds.length > 0
+            initialData.assignedUserIds.length > 0
             ? typeof initialData.assignedUserIds[0] === "string"
               ? initialData.assignedUserIds[0]
               : initialData.assignedUserIds[0]?._id
@@ -204,7 +217,6 @@ export default function JobModal({
 
     onSubmit({
       typeOffre: form.typeOffre,
-      // ✅ Stage publié automatiquement, offre d'emploi passe par validation
       ...(form.typeOffre === "STAGE" && !isEditMode && { status: "CONFIRMEE" }),
       titre: form.titre.trim(),
       description: form.description.trim(),
@@ -220,7 +232,7 @@ export default function JobModal({
       sexe: String(form.sexe || "").trim(),
       typeDiplome: String(form.typeDiplome || "").trim(),
       dureeStage: String(form.dureeStage || "").trim(),
-      nombrePostes: form.nombrePostes ? parseInt(form.nombrePostes, 10) : undefined,  // ✅ NOUVEAU
+      nombrePostes: form.nombrePostes ? parseInt(form.nombrePostes, 10) : undefined,
       ...(!isEditMode && {
         generateQuiz,
         numQuestions: generateQuiz ? numQuestions : 0,
@@ -239,13 +251,14 @@ export default function JobModal({
     "outline-none transition-colors";
 
   const selectBase =
-    "w-full h-11 sm:h-12 px-4 sm:px-5 rounded-xl sm:rounded-full " +
+    "w-full h-11 sm:h-12 px-4 sm:px-5 pr-10 rounded-xl sm:rounded-full " +
     "border border-gray-200 dark:border-gray-600 " +
     "bg-white dark:bg-gray-700 " +
     "text-gray-800 dark:text-gray-100 " +
     "focus:border-[#6CB33F] dark:focus:border-emerald-500 " +
     "focus:ring-4 focus:ring-[#6CB33F]/15 dark:focus:ring-emerald-500/20 " +
-    "outline-none transition-colors";
+    "outline-none transition-colors " +
+    "appearance-none";
 
   const labelBase =
     "block text-xs sm:text-sm font-semibold tracking-wide text-gray-700 dark:text-gray-300 mb-2 uppercase";
@@ -253,12 +266,16 @@ export default function JobModal({
   return (
     <div
       className="fixed inset-0 z-50 bg-black/40 dark:bg-black/60 flex items-center justify-center p-4 sm:p-6"
+      data-cy="job-modal-backdrop"
       onMouseDown={(e) => {
         if (e.target === e.currentTarget) onClose();
       }}
     >
-      <div className="bg-white dark:bg-gray-800 w-full max-w-2xl rounded-2xl sm:rounded-3xl shadow-2xl overflow-hidden max-h-[90vh] flex flex-col transition-colors duration-300">
-        {/* HEADER */}
+      <div
+        className="bg-white dark:bg-gray-800 w-full max-w-2xl rounded-2xl sm:rounded-3xl shadow-2xl overflow-hidden max-h-[90vh] flex flex-col transition-colors duration-300"
+        data-cy="job-modal"
+      >
+        {/* ── HEADER ── */}
         <div className="px-5 sm:px-8 pt-5 sm:pt-7 pb-4 sm:pb-5 border-b border-gray-200 dark:border-gray-700">
           <div className="flex items-start justify-between gap-4">
             <div>
@@ -272,10 +289,10 @@ export default function JobModal({
             <button
               type="button"
               onClick={onClose}
-              className="shrink-0 h-10 w-10 rounded-full grid place-items-center 
-                         text-gray-500 dark:text-gray-400 
-                         hover:text-gray-800 dark:hover:text-white 
-                         hover:bg-gray-100 dark:hover:bg-gray-700 
+              className="shrink-0 h-10 w-10 rounded-full grid place-items-center
+                         text-gray-500 dark:text-gray-400
+                         hover:text-gray-800 dark:hover:text-white
+                         hover:bg-gray-100 dark:hover:bg-gray-700
                          transition-colors"
               aria-label="Fermer"
             >
@@ -284,19 +301,22 @@ export default function JobModal({
           </div>
         </div>
 
-        {/* BODY */}
+        {/* ── BODY ── */}
         <div className="overflow-y-auto">
           <form onSubmit={handleSubmit} noValidate className="px-5 sm:px-8 py-5 sm:py-7">
             <div className="space-y-5 sm:space-y-6">
 
               {/* ERROR */}
               {formError && (
-                <div className="rounded-xl border border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-900/30 p-3 text-sm font-semibold text-red-700 dark:text-red-400">
+                <div
+                  data-cy="form-error"
+                  className="rounded-xl border border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-900/30 p-3 text-sm font-semibold text-red-700 dark:text-red-400"
+                >
                   {formError}
                 </div>
               )}
 
-              {/* ✅ TYPE D'OFFRE TOGGLE */}
+              {/* TYPE D'OFFRE TOGGLE */}
               <div>
                 <label className={labelBase}>
                   Type d&apos;offre <span className="text-red-500">*</span>
@@ -304,6 +324,7 @@ export default function JobModal({
                 <div className="flex gap-3">
                   <button
                     type="button"
+                    data-cy="type-emploi"
                     onClick={() => setForm({ ...form, typeOffre: "EMPLOI", typeContrat: "", dureeStage: "" })}
                     className={`flex-1 h-12 rounded-xl flex items-center justify-center gap-2 font-semibold text-sm border-2 transition-all duration-200
                       ${form.typeOffre === "EMPLOI"
@@ -316,12 +337,13 @@ export default function JobModal({
                   </button>
                   <button
                     type="button"
+                    data-cy="type-stage"
                     onClick={() => setForm({ ...form, typeOffre: "STAGE", typeContrat: "", dureeStage: "" })}
                     className={`flex-1 h-12 rounded-xl flex items-center justify-center gap-2 font-semibold text-sm border-2 transition-all duration-200
-${form.typeOffre === "STAGE"
-  ? "bg-blue-500 border-blue-500 text-white shadow-md"
-  : "bg-white dark:bg-gray-700 border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:border-blue-400"
-}`}
+                      ${form.typeOffre === "STAGE"
+                        ? "bg-blue-500 border-blue-500 text-white shadow-md"
+                        : "bg-white dark:bg-gray-700 border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:border-blue-400"
+                      }`}
                   >
                     <GraduationCap size={16} />
                     Stage
@@ -335,6 +357,7 @@ ${form.typeOffre === "STAGE"
                   Titre du poste <span className="text-red-500">*</span>
                 </label>
                 <input
+                  data-cy="input-titre"
                   value={form.titre}
                   onChange={(e) => setForm({ ...form, titre: e.target.value })}
                   className={inputBase}
@@ -349,16 +372,17 @@ ${form.typeOffre === "STAGE"
                 </label>
                 <textarea
                   rows={5}
+                  data-cy="input-description"
                   value={form.description}
                   onChange={(e) => setForm({ ...form, description: e.target.value })}
-                  className="w-full px-4 sm:px-5 py-3 sm:py-4 rounded-2xl sm:rounded-3xl 
-                             border border-gray-200 dark:border-gray-600 
-                             bg-white dark:bg-gray-700 
+                  className="w-full px-4 sm:px-5 py-3 sm:py-4 rounded-2xl sm:rounded-3xl
+                             border border-gray-200 dark:border-gray-600
+                             bg-white dark:bg-gray-700
                              text-gray-800 dark:text-gray-100
                              placeholder-gray-400 dark:placeholder-gray-500
                              resize-none
-                             focus:border-[#6CB33F] dark:focus:border-emerald-500 
-                             focus:ring-4 focus:ring-[#6CB33F]/15 dark:focus:ring-emerald-500/20 
+                             focus:border-[#6CB33F] dark:focus:border-emerald-500
+                             focus:ring-4 focus:ring-[#6CB33F]/15 dark:focus:ring-emerald-500/20
                              outline-none transition-colors"
                   placeholder={isStage ? "Décrivez le sujet du stage, les missions, technologies utilisées..." : "Décrivez la mission, le profil recherché, responsabilités..."}
                 />
@@ -374,16 +398,17 @@ ${form.typeOffre === "STAGE"
                     📍
                   </span>
                   <input
+                    data-cy="input-lieu"
                     value={form.lieu}
                     onChange={(e) => setForm({ ...form, lieu: e.target.value })}
                     placeholder="Ex: Tunis, Sfax, Télétravail, Hybride..."
-                    className="w-full h-11 sm:h-12 pl-10 pr-4 rounded-xl sm:rounded-full 
-                               border border-gray-200 dark:border-gray-600 
-                               bg-white dark:bg-gray-700 
+                    className="w-full h-11 sm:h-12 pl-10 pr-4 rounded-xl sm:rounded-full
+                               border border-gray-200 dark:border-gray-600
+                               bg-white dark:bg-gray-700
                                text-gray-800 dark:text-gray-100
                                placeholder-gray-400 dark:placeholder-gray-500
-                               focus:border-[#6CB33F] dark:focus:border-emerald-500 
-                               focus:ring-4 focus:ring-[#6CB33F]/15 dark:focus:ring-emerald-500/20 
+                               focus:border-[#6CB33F] dark:focus:border-emerald-500
+                               focus:ring-4 focus:ring-[#6CB33F]/15 dark:focus:ring-emerald-500/20
                                outline-none transition-colors"
                   />
                 </div>
@@ -396,6 +421,7 @@ ${form.typeOffre === "STAGE"
                 </label>
                 <input
                   type="date"
+                  data-cy="input-dateCloture"
                   value={form.dateCloture}
                   onChange={(e) => setForm({ ...form, dateCloture: e.target.value })}
                   min={new Date().toISOString().slice(0, 10)}
@@ -403,13 +429,15 @@ ${form.typeOffre === "STAGE"
                 />
               </div>
 
-              {/* CHAMPS OPTIONNELS — ADAPTÉS AU TYPE */}
+              {/* CHAMPS OPTIONNELS */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-5 sm:gap-6">
+
                 {/* Salaire — emploi seulement */}
                 {!isStage && (
                   <div>
                     <label className={labelBase}>Salaire</label>
                     <input
+                      data-cy="input-salaire"
                       value={form.salaire}
                       onChange={(e) => setForm({ ...form, salaire: e.target.value })}
                       placeholder="Ex: 2000 TND / 2000-2500"
@@ -418,13 +446,14 @@ ${form.typeOffre === "STAGE"
                   </div>
                 )}
 
-                {/* ✅ NOUVEAU - Nombre de postes */}
+                {/* Nombre de postes */}
                 <div>
                   <label className={labelBase}>Nombre de postes</label>
                   <input
                     type="number"
                     min="1"
                     max="999"
+                    data-cy="input-nombrePostes"
                     value={form.nombrePostes}
                     onChange={(e) => setForm({ ...form, nombrePostes: e.target.value })}
                     placeholder="Ex: 2, 5, 10..."
@@ -446,74 +475,87 @@ ${form.typeOffre === "STAGE"
                 {/* Type contrat emploi OU type stage */}
                 <div>
                   <label className={labelBase}>{isStage ? "Type de stage" : "Type de contrat"}</label>
-                  <select
-                    value={form.typeContrat}
-                    onChange={(e) => setForm({ ...form, typeContrat: e.target.value })}
-                    className={selectBase}
-                  >
-                    {(isStage ? STAGE_CONTRAT_OPTIONS : CONTRACT_OPTIONS).map((o) => (
-                      <option key={o.value} value={o.value}>
-                        {o.label}
-                      </option>
-                    ))}
-                  </select>
+                  <SelectWrapper>
+                    <select
+                      data-cy="select-typeContrat"
+                      value={form.typeContrat}
+                      onChange={(e) => setForm({ ...form, typeContrat: e.target.value })}
+                      className={selectBase}
+                    >
+                      {(isStage ? STAGE_CONTRAT_OPTIONS : CONTRACT_OPTIONS).map((o) => (
+                        <option key={o.value} value={o.value}>
+                          {o.label}
+                        </option>
+                      ))}
+                    </select>
+                  </SelectWrapper>
                 </div>
 
                 {/* Durée stage OU Motif emploi */}
                 {isStage ? (
                   <div>
                     <label className={labelBase}>Durée du stage</label>
-                    <select
-                      value={form.dureeStage}
-                      onChange={(e) => setForm({ ...form, dureeStage: e.target.value })}
-                      className={selectBase}
-                    >
-                      {DUREE_STAGE_OPTIONS.map((o) => (
-                        <option key={o.value} value={o.value}>
-                          {o.label}
-                        </option>
-                      ))}
-                    </select>
+                    <SelectWrapper>
+                      <select
+                        data-cy="select-dureeStage"
+                        value={form.dureeStage}
+                        onChange={(e) => setForm({ ...form, dureeStage: e.target.value })}
+                        className={selectBase}
+                      >
+                        {DUREE_STAGE_OPTIONS.map((o) => (
+                          <option key={o.value} value={o.value}>
+                            {o.label}
+                          </option>
+                        ))}
+                      </select>
+                    </SelectWrapper>
                   </div>
                 ) : (
                   <div>
                     <label className={labelBase}>Motif</label>
-                    <select
-                      value={form.motif}
-                      onChange={(e) => setForm({ ...form, motif: e.target.value })}
-                      className={selectBase}
-                    >
-                      {MOTIF_OPTIONS.map((o) => (
-                        <option key={o.value} value={o.value}>
-                          {o.label}
-                        </option>
-                      ))}
-                    </select>
+                    <SelectWrapper>
+                      <select
+                        data-cy="select-motif"
+                        value={form.motif}
+                        onChange={(e) => setForm({ ...form, motif: e.target.value })}
+                        className={selectBase}
+                      >
+                        {MOTIF_OPTIONS.map((o) => (
+                          <option key={o.value} value={o.value}>
+                            {o.label}
+                          </option>
+                        ))}
+                      </select>
+                    </SelectWrapper>
                   </div>
                 )}
 
                 {/* Sexe */}
                 <div className="md:col-span-2">
                   <label className={labelBase}>Genre</label>
-                  <select
-                    value={form.sexe}
-                    onChange={(e) => setForm({ ...form, sexe: e.target.value })}
-                    className={selectBase}
-                  >
-                    {SEXE_OPTIONS.map((o) => (
-                      <option key={o.value} value={o.value}>
-                        {o.label}
-                      </option>
-                    ))}
-                  </select>
+                  <SelectWrapper>
+                    <select
+                      data-cy="select-sexe"
+                      value={form.sexe}
+                      onChange={(e) => setForm({ ...form, sexe: e.target.value })}
+                      className={selectBase}
+                    >
+                      {SEXE_OPTIONS.map((o) => (
+                        <option key={o.value} value={o.value}>
+                          {o.label}
+                        </option>
+                      ))}
+                    </select>
+                  </SelectWrapper>
                 </div>
               </div>
 
-              {/* SKILLS GRID */}
+              {/* SKILLS */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-5 sm:gap-6">
                 <div>
                   <label className={labelBase}>Hard Skills</label>
                   <input
+                    data-cy="input-hardSkills"
                     value={form.hardSkills}
                     onChange={(e) => setForm({ ...form, hardSkills: e.target.value })}
                     placeholder="React, Node.js, SQL, Docker..."
@@ -526,6 +568,7 @@ ${form.typeOffre === "STAGE"
                 <div>
                   <label className={labelBase}>Soft Skills</label>
                   <input
+                    data-cy="input-softSkills"
                     value={form.softSkills}
                     onChange={(e) => setForm({ ...form, softSkills: e.target.value })}
                     placeholder="Communication, Leadership, Esprit d'équipe..."
@@ -537,36 +580,41 @@ ${form.typeOffre === "STAGE"
                 </div>
               </div>
 
-              {/* SELECT USERS — emploi seulement */}
-              {!isStage && <div>
-                <label className={labelBase}>Affectation responsable métier</label>
-                <select
-                  value={assignedUserId}
-                  onChange={(e) => setAssignedUserId(e.target.value)}
-                  className="w-full h-12 px-4 py-3 rounded-2xl 
-                             border border-gray-200 dark:border-gray-600 
-                             bg-white dark:bg-gray-700 
-                             text-gray-800 dark:text-gray-100
-                             focus:border-[#6CB33F] dark:focus:border-emerald-500 
-                             focus:ring-4 focus:ring-[#6CB33F]/15 dark:focus:ring-emerald-500/20 
-                             outline-none transition-colors"
-                >
-                  <option value="">-- Choisir un utilisateur --</option>
-                  {users.filter(u => u.role === "RESPONSABLE_METIER").map((u) => (
-                    <option key={u._id} value={u._id}>
-                      {u.prenom} {u.nom}{u.poste ? ` — ${u.poste}` : ""}
-                    </option>
-                  ))}
-                </select>
-              </div>}
+              {/* AFFECTATION RESPONSABLE — emploi seulement */}
+              {!isStage && (
+                <div>
+                  <label className={labelBase}>Affectation responsable métier</label>
+                  <SelectWrapper>
+                    <select
+                      value={assignedUserId}  data-cy="select-user" 
+                      onChange={(e) => setAssignedUserId(e.target.value)}
+                      className="w-full h-12 px-4 py-3 pr-10 rounded-2xl
+                                 border border-gray-200 dark:border-gray-600
+                                 bg-white dark:bg-gray-700
+                                 text-gray-800 dark:text-gray-100
+                                 focus:border-[#6CB33F] dark:focus:border-emerald-500
+                                 focus:ring-4 focus:ring-[#6CB33F]/15 dark:focus:ring-emerald-500/20
+                                 outline-none transition-colors appearance-none"
+                    >
+                      <option value="">-- Choisir un utilisateur --</option>
+                      {users.filter((u) => u.role === "RESPONSABLE_METIER").map((u) => (
+                        <option key={u._id} value={u._id}>
+                          {u.prenom} {u.nom}{u.poste ? ` — ${u.poste}` : ""}
+                        </option>
+                      ))}
+                    </select>
+                  </SelectWrapper>
+                </div>
+              )}
 
-              {/* QUIZ — uniquement en mode création et emploi */}
+              {/* QUIZ — création + emploi uniquement */}
               {!isStage && !isEditMode && (
-                <div className="border border-gray-200 dark:border-gray-700 rounded-2xl p-5 space-y-4">
+                <div data-cy="quiz-section" className="border border-gray-200 dark:border-gray-700 rounded-2xl p-5 space-y-4">
                   <label className="flex items-center gap-3 cursor-pointer select-none">
                     <div className="relative">
                       <input
                         type="checkbox"
+                        data-cy="quiz-toggle"
                         checked={generateQuiz}
                         onChange={(e) => setGenerateQuiz(e.target.checked)}
                         className="sr-only"
@@ -604,8 +652,9 @@ ${form.typeOffre === "STAGE"
                         <div className="flex flex-wrap items-center gap-2">
                           <button
                             type="button"
+                            data-cy="quiz-btn-minus"
                             onClick={() => handleNumQuestions(numQuestions - 1)}
-                            className="w-8 h-8 rounded-full border border-gray-200 dark:border-gray-600 
+                            className="w-8 h-8 rounded-full border border-gray-200 dark:border-gray-600
                                        text-gray-700 dark:text-gray-300 font-bold
                                        hover:bg-gray-100 dark:hover:bg-gray-700
                                        transition-colors flex items-center justify-center"
@@ -616,11 +665,12 @@ ${form.typeOffre === "STAGE"
                             type="number"
                             min={1}
                             max={30}
+                            data-cy="quiz-num-questions"
                             value={numQuestions}
                             onChange={(e) => handleNumQuestions(e.target.value)}
-                            className="w-16 h-9 text-center rounded-xl 
-                                       border border-gray-200 dark:border-gray-600 
-                                       bg-white dark:bg-gray-700 
+                            className="w-16 h-9 text-center rounded-xl
+                                       border border-gray-200 dark:border-gray-600
+                                       bg-white dark:bg-gray-700
                                        text-gray-800 dark:text-gray-100 font-bold
                                        focus:border-[#6CB33F] dark:focus:border-emerald-500
                                        focus:ring-2 focus:ring-[#6CB33F]/20 dark:focus:ring-emerald-500/20
@@ -628,8 +678,9 @@ ${form.typeOffre === "STAGE"
                           />
                           <button
                             type="button"
+                            data-cy="quiz-btn-plus"
                             onClick={() => handleNumQuestions(numQuestions + 1)}
-                            className="w-8 h-8 rounded-full border border-gray-200 dark:border-gray-600 
+                            className="w-8 h-8 rounded-full border border-gray-200 dark:border-gray-600
                                        text-gray-700 dark:text-gray-300 font-bold
                                        hover:bg-gray-100 dark:hover:bg-gray-700
                                        transition-colors flex items-center justify-center"
@@ -650,69 +701,73 @@ ${form.typeOffre === "STAGE"
                 </div>
               )}
 
-              {/* WEIGHTS — emploi seulement */}
-              {!isStage && <div className="border-t border-gray-200 dark:border-gray-700 pt-6">
-                <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-sm font-extrabold text-gray-900 dark:text-white uppercase tracking-wide">
-                    Pondérations (0 – 100)
-                  </h3>
-                  <span
-                    className={`text-sm font-extrabold ${
-                      isValidTotal ? "text-green-600 dark:text-emerald-400" : "text-red-600 dark:text-red-400"
-                    }`}
-                  >
-                    Total : {totalWeights}%
-                  </span>
-                </div>
+              {/* PONDÉRATIONS — emploi seulement */}
+              {!isStage && (
+                <div data-cy="section-weights" className="border-t border-gray-200 dark:border-gray-700 pt-6">
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-sm font-extrabold text-gray-900 dark:text-white uppercase tracking-wide">
+                      Pondérations (0 – 100)
+                    </h3>
+                    <span
+                      data-cy="weights-total"
+                      className={`text-sm font-extrabold ${
+                        isValidTotal ? "text-green-600 dark:text-emerald-400" : "text-red-600 dark:text-red-400"
+                      }`}
+                    >
+                      Total : {totalWeights}%
+                    </span>
+                  </div>
 
-                <div className="space-y-4">
-                  {items.map((it) => {
-                    const v = form.scores[it.key] ?? 0;
-                    return (
-                      <div key={it.key} className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4">
-                        <p className="sm:flex-1 text-sm font-semibold text-gray-700 dark:text-gray-300">
-                          {it.label}
-                        </p>
-                        <div className="flex items-center gap-3">
-                          <input
-                            type="number"
-                            min={0}
-                            max={100}
-                            value={v}
-                            onChange={(e) => setWeight(it.key, e.target.value)}
-                            className="w-24 h-11 px-4 rounded-xl sm:rounded-full 
-                                       border border-gray-200 dark:border-gray-600 
-                                       bg-white dark:bg-gray-700 
-                                       text-gray-800 dark:text-gray-100
-                                       focus:border-[#6CB33F] dark:focus:border-emerald-500 
-                                       focus:ring-4 focus:ring-[#6CB33F]/15 dark:focus:ring-emerald-500/20 
-                                       outline-none transition-colors"
-                          />
-                          <span className="text-sm font-extrabold text-[#4E8F2F] dark:text-emerald-400 w-10">%</span>
+                  <div className="space-y-4">
+                    {items.map((it) => {
+                      const v = form.scores[it.key] ?? 0;
+                      return (
+                        <div key={it.key} className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4">
+                          <p className="sm:flex-1 text-sm font-semibold text-gray-700 dark:text-gray-300">
+                            {it.label}
+                          </p>
+                          <div className="flex items-center gap-3">
+                            <input
+                              type="number"
+                              min={0}
+                              max={100}
+                              data-cy={`weight-${it.key}`}
+                              value={v}
+                              onChange={(e) => setWeight(it.key, e.target.value)}
+                              className="w-24 h-11 px-4 rounded-xl sm:rounded-full
+                                         border border-gray-200 dark:border-gray-600
+                                         bg-white dark:bg-gray-700
+                                         text-gray-800 dark:text-gray-100
+                                         focus:border-[#6CB33F] dark:focus:border-emerald-500
+                                         focus:ring-4 focus:ring-[#6CB33F]/15 dark:focus:ring-emerald-500/20
+                                         outline-none transition-colors"
+                            />
+                            <span className="text-sm font-extrabold text-[#4E8F2F] dark:text-emerald-400 w-10">%</span>
+                          </div>
                         </div>
-                      </div>
-                    );
-                  })}
-                </div>
+                      );
+                    })}
+                  </div>
 
-                {!isValidTotal && (
-                  <p className="mt-3 text-xs font-semibold text-red-600 dark:text-red-400">
-                    La somme des pondérations doit être égale à 100% pour pouvoir enregistrer.
-                  </p>
-                )}
-              </div>}
+                  {!isValidTotal && (
+                    <p data-cy="weights-error" className="mt-3 text-xs font-semibold text-red-600 dark:text-red-400">
+                      La somme des pondérations doit être égale à 100% pour pouvoir enregistrer.
+                    </p>
+                  )}
+                </div>
+              )}
             </div>
 
-            {/* FOOTER */}
+            {/* ── FOOTER ── */}
             <div className="mt-7 sm:mt-8 pt-5 sm:pt-6 border-t border-gray-200 dark:border-gray-700 flex flex-col sm:flex-row gap-3 sm:gap-4">
               <button
                 type="submit"
+                data-cy="submit-btn"
                 disabled={!isStage && !isValidTotal}
                 className={`sm:flex-1 h-11 sm:h-12 rounded-xl sm:rounded-full font-semibold transition-colors shadow-sm
-                  ${
-                    isStage || isValidTotal
-                      ? "bg-[#6CB33F] hover:bg-[#5AA332] dark:bg-emerald-600 dark:hover:bg-emerald-500 text-white"
-                      : "bg-gray-300 dark:bg-gray-600 text-gray-500 dark:text-gray-400 cursor-not-allowed"
+                  ${isStage || isValidTotal
+                    ? "bg-[#6CB33F] hover:bg-[#5AA332] dark:bg-emerald-600 dark:hover:bg-emerald-500 text-white"
+                    : "bg-gray-300 dark:bg-gray-600 text-gray-500 dark:text-gray-400 cursor-not-allowed"
                   }`}
               >
                 {!isStage && !isEditMode && generateQuiz
@@ -722,6 +777,7 @@ ${form.typeOffre === "STAGE"
 
               <button
                 type="button"
+                data-cy="cancel-btn"
                 onClick={() => {
                   setForm(emptyForm);
                   setFormError("");
@@ -730,10 +786,10 @@ ${form.typeOffre === "STAGE"
                   setNumQuestions(25);
                   onClose();
                 }}
-                className="sm:flex-1 h-11 sm:h-12 rounded-xl sm:rounded-full font-semibold 
-                           border border-gray-200 dark:border-gray-600 
-                           text-gray-700 dark:text-gray-300 
-                           hover:bg-gray-50 dark:hover:bg-gray-700 
+                className="sm:flex-1 h-11 sm:h-12 rounded-xl sm:rounded-full font-semibold
+                           border border-gray-200 dark:border-gray-600
+                           text-gray-700 dark:text-gray-300
+                           hover:bg-gray-50 dark:hover:bg-gray-700
                            transition-colors"
               >
                 Annuler

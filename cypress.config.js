@@ -29,7 +29,7 @@ module.exports = defineConfig({
               poste: "",
             },
             secret,
-            { expiresIn: "1h" }
+            { expiresIn: "5h" }
           );
 
           return token;

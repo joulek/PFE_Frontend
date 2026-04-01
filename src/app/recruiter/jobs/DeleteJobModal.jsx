@@ -5,13 +5,17 @@ export default function DeleteJobModal({ open, onClose, onConfirm, job }) {
 
   return (
     <div
+      data-cy="delete-modal-backdrop"
       className="fixed inset-0 z-50 bg-black/40 dark:bg-black/60 flex items-center justify-center px-4"
       onMouseDown={(e) => {
         if (e.target === e.currentTarget) onClose();
       }}
     >
-      <div className="bg-white dark:bg-gray-800 w-full max-w-2xl rounded-[32px] shadow-2xl overflow-hidden transition-colors duration-300">
-        {/* ===== Header ===== */}
+      <div
+        data-cy="delete-modal"
+        className="bg-white dark:bg-gray-800 w-full max-w-2xl rounded-[32px] shadow-2xl overflow-hidden transition-colors duration-300"
+      >
+        {/* ── Header ── */}
         <div className="px-10 pt-8 pb-6">
           <div className="flex items-start justify-between">
             <div>
@@ -26,13 +30,13 @@ export default function DeleteJobModal({ open, onClose, onConfirm, job }) {
             <button
               type="button"
               onClick={onClose}
-              className="h-10 w-10 rounded-full grid place-items-center
-                         text-gray-500 dark:text-gray-400 
-                         hover:text-gray-800 dark:hover:text-white 
-                         hover:bg-gray-100 dark:hover:bg-gray-700 
-                         transition-colors"
               aria-label="Fermer"
               title="Fermer"
+              className="h-10 w-10 rounded-full grid place-items-center
+                         text-gray-500 dark:text-gray-400
+                         hover:text-gray-800 dark:hover:text-white
+                         hover:bg-gray-100 dark:hover:bg-gray-700
+                         transition-colors"
             >
               ✕
             </button>
@@ -41,11 +45,11 @@ export default function DeleteJobModal({ open, onClose, onConfirm, job }) {
 
         <div className="border-t border-gray-200 dark:border-gray-700" />
 
-        {/* ===== Body ===== */}
+        {/* ── Body ── */}
         <div className="px-10 py-8">
           <div className="flex flex-col gap-6">
 
-            {/* Ligne icône + texte */}
+            {/* Icône + texte */}
             <div className="flex items-start gap-6">
               {/* Warning icon */}
               <div className="h-14 w-14 rounded-full bg-red-50 dark:bg-red-900/30 grid place-items-center shrink-0">
@@ -88,15 +92,15 @@ export default function DeleteJobModal({ open, onClose, onConfirm, job }) {
               </div>
             </div>
 
-            {/* Boutons en dessous */}
+            {/* Boutons */}
             <div className="flex justify-end gap-4 pt-4">
               <button
                 type="button"
                 onClick={onClose}
-                className="h-12 px-8 rounded-full 
+                className="h-12 px-8 rounded-full
                            border border-gray-200 dark:border-gray-600
                            text-gray-800 dark:text-gray-200 font-semibold
-                           hover:bg-gray-50 dark:hover:bg-gray-700 
+                           hover:bg-gray-50 dark:hover:bg-gray-700
                            transition-colors"
               >
                 Annuler
@@ -110,7 +114,7 @@ export default function DeleteJobModal({ open, onClose, onConfirm, job }) {
                            bg-red-500 hover:bg-red-600
                            dark:bg-red-600 dark:hover:bg-red-500
                            text-white font-semibold
-                           shadow-md shadow-red-500/30 dark:shadow-red-600/30 
+                           shadow-md shadow-red-500/30 dark:shadow-red-600/30
                            transition-colors"
               >
                 Supprimer

@@ -13,7 +13,6 @@ import {
   publishJobOnLinkedIn,
   getLinkedInAuthUrl,
   checkLinkedInStatus,
-  exchangeLinkedInCode,
   validateJob,
 } from "../../../services/job.api";
 
@@ -73,9 +72,7 @@ function hasValue(v) {
 }
 
 function prettyMotif(v) {
-  const s = String(v || "")
-    .toUpperCase()
-    .trim();
+  const s = String(v || "").toUpperCase().trim();
   if (!s) return "";
   const map = {
     NOUVEAU: "Nouveau poste",
@@ -86,9 +83,7 @@ function prettyMotif(v) {
 }
 
 function prettyContrat(v) {
-  const s = String(v || "")
-    .toUpperCase()
-    .trim();
+  const s = String(v || "").toUpperCase().trim();
   if (!s) return "";
   const map = {
     CDD: "CDD",
@@ -102,9 +97,7 @@ function prettyContrat(v) {
 }
 
 function prettySexe(v) {
-  const s = String(v || "")
-    .toUpperCase()
-    .trim();
+  const s = String(v || "").toUpperCase().trim();
   if (!s) return "";
   const map = { H: "H", F: "F", HF: "HF" };
   return map[s] || v;
@@ -181,16 +174,12 @@ function InfoCard({ icon: Icon, label, value, sub }) {
   );
 }
 
-function IconActionButton({
-  onClick,
-  disabled,
-  title,
-  className = "",
-  children,
-}) {
+/* ✅ CORRIGÉ : suppression de data-cy={dataCy} (variable inexistante) */
+function IconActionButton({ onClick, disabled, title, dataCy, className = "", children }) {
   return (
     <button
       onClick={onClick}
+      data-cy={dataCy}
       disabled={disabled}
       title={title}
       className={`h-10 w-10 rounded-full grid place-items-center bg-white/70 dark:bg-gray-800/60 backdrop-blur border border-gray-100 dark:border-gray-700 transition-colors disabled:opacity-50 ${className}`}
@@ -207,18 +196,14 @@ function LinkedInBadge({ connected }) {
     return (
       <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#0A66C2]/10 dark:bg-[#0A66C2]/20 border border-[#0A66C2]/20">
         <span className="h-2 w-2 rounded-full bg-[#0A66C2] animate-pulse" />
-        <span className="text-xs font-semibold text-[#0A66C2]">
-          LinkedIn connecté
-        </span>
+        <span className="text-xs font-semibold text-[#0A66C2]">LinkedIn connecté</span>
       </div>
     );
   }
   return (
     <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700">
       <Link2 size={11} className="text-amber-600 dark:text-amber-400" />
-      <span className="text-xs font-semibold text-amber-600 dark:text-amber-400">
-        Non connecté
-      </span>
+      <span className="text-xs font-semibold text-amber-600 dark:text-amber-400">Non connecté</span>
     </div>
   );
 }
@@ -232,6 +217,7 @@ function buildExtraPostDetails(job) {
   return `\n\n📌 Détails supplémentaires\n${lines.join("\n")}`;
 }
 
+/* ================= PAGE ================= */
 export default function RecruiterJobDetailsPage() {
   const params = useParams();
   const router = useRouter();
@@ -251,67 +237,43 @@ export default function RecruiterJobDetailsPage() {
   const [reactivateOpen, setReactivateOpen] = useState(false);
   const [newClosingDate, setNewClosingDate] = useState("");
 
-  // LinkedIn state
+  // LinkedIn
   const [liOpen, setLiOpen] = useState(false);
   const [liText, setLiText] = useState("");
   const [liConnected, setLiConnected] = useState(null);
   const [liConnecting, setLiConnecting] = useState(false);
   const [liJustConnected, setLiJustConnected] = useState(false);
-
-  const status = useMemo(() => getJobStatus(job), [job]);
-  const expired = useMemo(() => isExpired(job), [job]);
-  const canPublishLinkedIn = status === "CONFIRMEE" && !expired;
-
-  const ui = STATUS_UI[status] || STATUS_UI.EN_ATTENTE;
-  const StatusIcon = ui.icon;
-
   const [liImage, setLiImage] = useState(null);
   const [liImagePreview, setLiImagePreview] = useState(null);
   const [liSuccess, setLiSuccess] = useState("");
   const [liError, setLiError] = useState("");
+
+  const status = useMemo(() => getJobStatus(job), [job]);
+  const expired = useMemo(() => isExpired(job), [job]);
+  const canPublishLinkedIn = status === "CONFIRMEE" && !expired;
   const alreadyPublished = !!job?.linkedinLastPublishedAt;
 
-  /* ================= RESPONSIBLE ================= */
-  // Trouve le responsable lié à l'offre :
-  // Priorité : premier élément de assignedUserIds, sinon createdBy
+  const ui = STATUS_UI[status] || STATUS_UI.EN_ATTENTE;
+  const StatusIcon = ui.icon;
+
+  /* ─── Responsable ─── */
   const responsible = useMemo(() => {
     if (!users.length || !job) return null;
-
     const assignedId =
       Array.isArray(job.assignedUserIds) && job.assignedUserIds.length > 0
         ? job.assignedUserIds[0]
         : null;
-
     const targetId = assignedId ?? job.createdBy;
     if (!targetId) return null;
-
-    return (
-      users.find(
-        (u) => u._id?.toString() === targetId?.toString()
-      ) || null
-    );
+    return users.find((u) => u._id?.toString() === targetId?.toString()) || null;
   }, [users, job]);
 
-  const onValidate = async () => {
-    try {
-      setActionLoading(true);
-      await validateJob(job._id);
-      await load();
-    } catch (e) {
-      console.error(e);
-      alert(e?.response?.data?.message || "Erreur validation");
-    } finally {
-      setActionLoading(false);
-    }
-  };
-
-  /* ================= LOAD ================= */
+  /* ─── Load ─── */
   async function load() {
     if (!id) return;
     setLoading(true);
     try {
       const res = await getJobById(id);
-      console.log("Offre chargée:", res?.data);
       setJob(res?.data || null);
     } catch (e) {
       console.error("Erreur chargement offre:", e);
@@ -327,10 +289,10 @@ export default function RecruiterJobDetailsPage() {
       const list = Array.isArray(res?.data)
         ? res.data
         : Array.isArray(res?.data?.users)
-          ? res.data.users
-          : Array.isArray(res?.data?.data)
-            ? res.data.data
-            : [];
+        ? res.data.users
+        : Array.isArray(res?.data?.data)
+        ? res.data.data
+        : [];
       setUsers(list);
     } catch {
       setUsers([]);
@@ -351,9 +313,7 @@ export default function RecruiterJobDetailsPage() {
 
   const handleLinkedInCallback = useCallback(() => {
     const linkedinParam = searchParams?.get("linkedin");
-
     if (linkedinParam === "connected") {
-      console.log("✅ LinkedIn connecté (token déjà sauvegardé)");
       setLiConnected(true);
       setLiJustConnected(true);
       router.replace(`/recruiter/jobs/${id}`);
@@ -376,40 +336,45 @@ export default function RecruiterJobDetailsPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  /* ─── LinkedIn text builder ─── */
   function buildDefaultLinkedInText(j) {
     const title = (j?.titre || "").trim();
     const lieu = (j?.lieu || "").trim();
     const desc = (j?.description || "").trim();
+    const hardSkills = Array.isArray(j?.hardSkills) ? j.hardSkills.filter(Boolean) : [];
+    const softSkills = Array.isArray(j?.softSkills) ? j.softSkills.filter(Boolean) : [];
 
-    typeof window !== "undefined"
-      ? `${window.location.origin}/jobs/${j?._id}`
-      : "";
-
-    let t = "";
-    t += `🚀 Nous recrutons \n`;
+    let t = "🚀 Nous recrutons \n";
     if (title) t += ` ${title}`;
     if (lieu) t += `\n📍 ${lieu}`;
-
     if (desc) {
       t += `\n\n📝 À propos du poste\n`;
       t += `${desc.slice(0, 900)}${desc.length > 900 ? "…" : ""}`;
     }
-
-    if (hard.length) {
-      t += `\n\n🧩 Hard skills requis\n`;
-      t += `• ${hard.slice(0, 12).join("\n• ")}`;
+    if (hardSkills.length) {
+      t += `\n\n🧩 Hard skills requis\n• ${hardSkills.slice(0, 12).join("\n• ")}`;
     }
-
-    if (soft.length) {
-      t += `\n\n🤝 Soft skills appréciés\n`;
-      t += `• ${soft.slice(0, 12).join("\n• ")}`;
+    if (softSkills.length) {
+      t += `\n\n🤝 Soft skills appréciés\n• ${softSkills.slice(0, 12).join("\n• ")}`;
     }
-
     t += `\n\n#recrutement #hiring #emploi #jobopportunity #carrière #talent`;
     return t;
   }
 
-  /* ================= ACTIONS ================= */
+  /* ─── Actions ─── */
+  const onValidate = async () => {
+    try {
+      setActionLoading(true);
+      await validateJob(job._id);
+      await load();
+    } catch (e) {
+      console.error(e);
+      alert(e?.response?.data?.message || "Erreur validation");
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
   async function onConfirm() {
     if (!job?._id) return;
     setActionLoading(true);
@@ -499,15 +464,12 @@ export default function RecruiterJobDetailsPage() {
   async function openPublishModal() {
     setLiError("");
     setLiSuccess("");
-
     if (!liConnected) {
       const connected = await checkLinkedIn();
       if (!connected) return;
     }
-
     const baseText = buildDefaultLinkedInText(job);
     const extra = buildExtraPostDetails(job);
-
     setLiText((baseText + extra).trim());
     setLiOpen(true);
   }
@@ -519,30 +481,19 @@ export default function RecruiterJobDetailsPage() {
       setLiSuccess(null);
 
       let finalText = liText.trim();
-
       const extraDetails = [];
-      if (job?.typeContrat) {
-        extraDetails.push(`📄 Type de contrat : ${prettyContrat(job.typeContrat)}`);
-      }
-      if (job?.typeDiplome) {
-        extraDetails.push(`🎓 Type de diplôme : ${job.typeDiplome}`);
-      }
-      if (job?.sexe) {
-        extraDetails.push(`👤 Sexe : ${prettySexe(job.sexe)}`);
-      }
+      if (job?.typeContrat) extraDetails.push(`📄 Type de contrat : ${prettyContrat(job.typeContrat)}`);
+      if (job?.typeDiplome) extraDetails.push(`🎓 Type de diplôme : ${job.typeDiplome}`);
+      if (job?.sexe) extraDetails.push(`👤 Sexe : ${prettySexe(job.sexe)}`);
       if (extraDetails.length > 0) {
-        finalText += `\n\n📌 Détails supplémentaires\n`;
-        finalText += extraDetails.join("\n");
+        finalText += `\n\n📌 Détails supplémentaires\n${extraDetails.join("\n")}`;
       }
 
       const formData = new FormData();
       formData.append("text", finalText);
-      if (liImage) {
-        formData.append("image", liImage);
-      }
+      if (liImage) formData.append("image", liImage);
 
       await publishJobOnLinkedIn(job._id, formData);
-
       setLiSuccess("Publié sur LinkedIn avec succès ✅");
       setLiText("");
       setLiImage(null);
@@ -555,14 +506,10 @@ export default function RecruiterJobDetailsPage() {
     }
   }
 
-  const hard = Array.isArray(job?.hardSkills)
-    ? job.hardSkills.filter(Boolean)
-    : [];
-  const soft = Array.isArray(job?.softSkills)
-    ? job.softSkills.filter(Boolean)
-    : [];
+  const hard = Array.isArray(job?.hardSkills) ? job.hardSkills.filter(Boolean) : [];
+  const soft = Array.isArray(job?.softSkills) ? job.softSkills.filter(Boolean) : [];
 
-  /* ================= UI STATES ================= */
+  /* ─── Loading / Not found ─── */
   if (loading) {
     return (
       <div className="min-h-screen bg-[#F0FAF0] dark:bg-gray-950 flex items-center justify-center">
@@ -585,41 +532,20 @@ export default function RecruiterJobDetailsPage() {
           </Link>
           <div className="mt-6 bg-white dark:bg-gray-800 rounded-3xl border border-gray-100 dark:border-gray-700 p-10 text-center">
             <Briefcase className="mx-auto w-10 h-10 text-gray-400 dark:text-gray-500" />
-            <p className="mt-4 text-gray-700 dark:text-gray-200 font-semibold">
-              Offre introuvable
-            </p>
+            <p className="mt-4 text-gray-700 dark:text-gray-200 font-semibold">Offre introuvable</p>
           </div>
         </div>
       </div>
     );
   }
 
+  /* ─── Données dérivées ─── */
   const detailsRows = [
-    hasValue(job?.typeContrat) && {
-      icon: FileText,
-      label: "Type de contrat",
-      value: prettyContrat(job.typeContrat),
-    },
-    hasValue(job?.motif) && {
-      icon: BadgeInfo,
-      label: "Motif",
-      value: prettyMotif(job.motif),
-    },
-    hasValue(job?.sexe) && {
-      icon: Users,
-      label: "Genre",
-      value: prettySexe(job.sexe),
-    },
-    hasValue(job?.typeDiplome) && {
-      icon: GraduationCap,
-      label: "Type de diplôme",
-      value: String(job.typeDiplome),
-    },
-    hasValue(job?.salaire) && {
-      icon: Wallet,
-      label: "Salaire",
-      value: String(job.salaire),
-    },
+    hasValue(job?.typeContrat) && { icon: FileText, label: "Type de contrat", value: prettyContrat(job.typeContrat) },
+    hasValue(job?.motif) && { icon: BadgeInfo, label: "Motif", value: prettyMotif(job.motif) },
+    hasValue(job?.sexe) && { icon: Users, label: "Genre", value: prettySexe(job.sexe) },
+    hasValue(job?.typeDiplome) && { icon: GraduationCap, label: "Type de diplôme", value: String(job.typeDiplome) },
+    hasValue(job?.salaire) && { icon: Wallet, label: "Salaire", value: String(job.salaire) },
     getFormattedNombrePostes(job?.nombrePostes) && {
       icon: Users,
       label: "Postes disponibles",
@@ -627,22 +553,14 @@ export default function RecruiterJobDetailsPage() {
     },
   ].filter(Boolean);
 
-  // ✅ Nom complet du responsable
   const responsibleName = responsible
-    ? [responsible.prenom, responsible.nom].filter(Boolean).join(" ") ||
-      responsible.email ||
-      "—"
+    ? [responsible.prenom, responsible.nom].filter(Boolean).join(" ") || responsible.email || "—"
     : null;
 
   const topCards = [
     { icon: MapPin, label: "Lieu", value: job.lieu || "—" },
     { icon: Calendar, label: "Date de création", value: formatDate(job.createdAt) },
-    {
-      icon: CalendarClock,
-      label: "Date de clôture",
-      value: formatDate(job.dateCloture),
-    },
-    // ✅ Carte Responsable insérée ici
+    { icon: CalendarClock, label: "Date de clôture", value: formatDate(job.dateCloture) },
     responsibleName && {
       icon: UserCircle,
       label: "Responsable",
@@ -652,25 +570,25 @@ export default function RecruiterJobDetailsPage() {
     ...detailsRows,
   ].filter(Boolean);
 
+  /* ─── Render ─── */
   return (
     <div className="min-h-screen bg-[#F0FAF0] dark:bg-gray-950 transition-colors duration-300">
       <div className="max-w-6xl mx-auto px-6 pt-10 pb-16">
+
+        {/* Toast LinkedIn connecté */}
         {liJustConnected && (
           <div className="fixed top-6 right-6 z-[100] bg-white dark:bg-gray-800 border border-[#0A66C2]/30 rounded-2xl shadow-2xl p-4 flex items-center gap-3">
             <div className="h-10 w-10 rounded-xl bg-[#0A66C2]/10 grid place-items-center flex-shrink-0">
               <Linkedin size={20} className="text-[#0A66C2]" />
             </div>
             <div>
-              <p className="font-semibold text-gray-900 dark:text-white text-sm">
-                LinkedIn connecté ✅
-              </p>
-              <p className="text-xs text-gray-500 dark:text-gray-400">
-                Tu peux maintenant publier tes offres
-              </p>
+              <p className="font-semibold text-gray-900 dark:text-white text-sm">LinkedIn connecté ✅</p>
+              <p className="text-xs text-gray-500 dark:text-gray-400">Tu peux maintenant publier tes offres</p>
             </div>
           </div>
         )}
 
+        {/* Breadcrumb + statut */}
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <Link
             href="/recruiter/jobs"
@@ -688,27 +606,24 @@ export default function RecruiterJobDetailsPage() {
           </div>
         </div>
 
+        {/* Carte principale */}
         <div className="mt-6 rounded-[32px] border border-gray-100 dark:border-gray-700 bg-white/70 dark:bg-gray-800/60 backdrop-blur shadow-lg overflow-hidden">
           <div className="p-8">
             <h1 className="text-3xl sm:text-4xl font-extrabold text-gray-900 dark:text-white">
               {job.titre}
             </h1>
-
             <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               {topCards.map((c, idx) => (
-                <InfoCard
-                  key={idx}
-                  icon={c.icon}
-                  label={c.label}
-                  value={c.value}
-                  sub={c.sub}
-                />
+                <InfoCard key={idx} icon={c.icon} label={c.label} value={c.value} sub={c.sub} />
               ))}
             </div>
           </div>
         </div>
 
+        {/* Corps : description + actions */}
         <div className="mt-6 grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+          {/* Description */}
           <div className="lg:col-span-2 space-y-6">
             <div className="rounded-[28px] border border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-sm p-7">
               <h2 className="text-sm font-extrabold uppercase tracking-wide text-gray-500 dark:text-gray-400">
@@ -720,8 +635,11 @@ export default function RecruiterJobDetailsPage() {
             </div>
           </div>
 
+          {/* Panneau actions */}
           <div>
             <div className="rounded-[28px] border border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-sm p-7 flex flex-col gap-5">
+
+              {/* Titre + boutons edit/delete */}
               <div className="flex items-center justify-between">
                 <h3 className="text-sm font-extrabold uppercase tracking-wide text-gray-500 dark:text-gray-400">
                   Actions
@@ -731,6 +649,7 @@ export default function RecruiterJobDetailsPage() {
                     onClick={() => setEditOpen(true)}
                     disabled={actionLoading}
                     title="Modifier"
+                    dataCy="edit-job-btn"
                     className="text-[#4E8F2F] hover:bg-green-50 dark:hover:bg-emerald-900/30"
                   >
                     <Edit2 size={18} />
@@ -739,6 +658,7 @@ export default function RecruiterJobDetailsPage() {
                     onClick={() => setDeleteOpen(true)}
                     disabled={actionLoading}
                     title="Supprimer"
+                    dataCy="delete-job-btn"
                     className="text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30"
                   >
                     <Trash2 size={18} />
@@ -746,41 +666,38 @@ export default function RecruiterJobDetailsPage() {
                 </div>
               </div>
 
+              {/* Validation / publication / rejet */}
               {(status === "EN_ATTENTE" || status === "VALIDEE") && (
                 <div className="flex flex-col gap-2">
                   {status === "EN_ATTENTE" && (
                     <button
                       onClick={onValidate}
                       disabled={actionLoading}
-                      className="h-11 px-5 rounded-full font-semibold inline-flex items-center justify-center gap-2
-                   bg-sky-600 hover:bg-sky-700 text-white transition-colors disabled:opacity-50"
+                      className="h-11 px-5 rounded-full font-semibold inline-flex items-center justify-center gap-2 bg-sky-600 hover:bg-sky-700 text-white transition-colors disabled:opacity-50"
                     >
                       <CheckCircle2 size={16} /> Valider (étape 1)
                     </button>
                   )}
-
                   {status === "VALIDEE" && (
                     <button
                       onClick={onConfirm}
                       disabled={actionLoading}
-                      className="h-11 px-5 rounded-full font-semibold inline-flex items-center justify-center gap-2
-                   bg-[#6CB33F] hover:bg-[#4E8F2F] text-white transition-colors disabled:opacity-50"
+                      className="h-11 px-5 rounded-full font-semibold inline-flex items-center justify-center gap-2 bg-[#6CB33F] hover:bg-[#4E8F2F] text-white transition-colors disabled:opacity-50"
                     >
                       <CheckCircle2 size={16} /> Publier (étape 2)
                     </button>
                   )}
-
                   <button
                     onClick={() => setRejectOpen(true)}
                     disabled={actionLoading}
-                    className="h-11 px-5 rounded-full font-semibold inline-flex items-center justify-center gap-2
-                 bg-red-500 hover:bg-red-600 text-white transition-colors disabled:opacity-50"
+                    className="h-11 px-5 rounded-full font-semibold inline-flex items-center justify-center gap-2 bg-red-500 hover:bg-red-600 text-white transition-colors disabled:opacity-50"
                   >
                     <XCircle size={16} /> Rejeter
                   </button>
                 </div>
               )}
 
+              {/* Réactiver */}
               {expired && (
                 <button
                   onClick={() => setReactivateOpen(true)}
@@ -791,13 +708,12 @@ export default function RecruiterJobDetailsPage() {
                 </button>
               )}
 
+              {/* LinkedIn */}
               <div className="border-t border-gray-100 dark:border-gray-700 pt-4">
                 <div className="flex items-center justify-between mb-3">
                   <div className="flex items-center gap-2">
                     <Linkedin size={16} className="text-[#0A66C2]" />
-                    <span className="text-sm font-bold text-gray-700 dark:text-gray-200">
-                      LinkedIn
-                    </span>
+                    <span className="text-sm font-bold text-gray-700 dark:text-gray-200">LinkedIn</span>
                   </div>
                   <LinkedInBadge connected={liConnected} />
                 </div>
@@ -807,36 +723,26 @@ export default function RecruiterJobDetailsPage() {
                     onClick={handleConnectLinkedIn}
                     disabled={liConnecting}
                     className={`h-11 px-4 rounded-full font-semibold inline-flex items-center justify-center gap-2 transition-colors
-                      ${
-                        liConnected
-                          ? "bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-600"
-                          : "bg-[#0A66C2]/10 dark:bg-[#0A66C2]/20 text-[#0A66C2] border border-[#0A66C2]/30 hover:bg-[#0A66C2]/20"
+                      ${liConnected
+                        ? "bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-600"
+                        : "bg-[#0A66C2]/10 dark:bg-[#0A66C2]/20 text-[#0A66C2] border border-[#0A66C2]/30 hover:bg-[#0A66C2]/20"
                       } disabled:opacity-50`}
                   >
-                    {liConnecting ? (
-                      <Loader2 size={16} className="animate-spin" />
-                    ) : liConnected ? (
-                      <Link2 size={16} />
-                    ) : (
-                      <ExternalLink size={16} />
-                    )}
                     {liConnecting
-                      ? "Redirection..."
+                      ? <Loader2 size={16} className="animate-spin" />
                       : liConnected
-                        ? "Reconnecter LinkedIn"
-                        : "Connecter LinkedIn"}
+                      ? <Link2 size={16} />
+                      : <ExternalLink size={16} />}
+                    {liConnecting ? "Redirection..." : liConnected ? "Reconnecter LinkedIn" : "Connecter LinkedIn"}
                   </button>
 
                   <button
                     onClick={openPublishModal}
-                    disabled={
-                      !canPublishLinkedIn || !liConnected || actionLoading
-                    }
+                    disabled={!canPublishLinkedIn || !liConnected || actionLoading}
                     className={`h-11 px-4 rounded-full font-semibold inline-flex items-center justify-center gap-2 transition-colors
-                      ${
-                        canPublishLinkedIn && liConnected
-                          ? "bg-[#0A66C2] hover:bg-[#0856a3] text-white shadow-md shadow-[#0A66C2]/20"
-                          : "bg-gray-100 dark:bg-gray-700 text-gray-400 dark:text-gray-500 cursor-not-allowed"
+                      ${canPublishLinkedIn && liConnected
+                        ? "bg-[#0A66C2] hover:bg-[#0856a3] text-white shadow-md shadow-[#0A66C2]/20"
+                        : "bg-gray-100 dark:bg-gray-700 text-gray-400 dark:text-gray-500 cursor-not-allowed"
                       } disabled:opacity-60`}
                   >
                     <Send size={15} />
@@ -845,10 +751,7 @@ export default function RecruiterJobDetailsPage() {
 
                   {!liConnected && canPublishLinkedIn && (
                     <p className="text-xs text-amber-600 dark:text-amber-400 flex items-start gap-1.5 mt-1">
-                      <AlertTriangle
-                        size={12}
-                        className="flex-shrink-0 mt-0.5"
-                      />
+                      <AlertTriangle size={12} className="flex-shrink-0 mt-0.5" />
                       Connecte LinkedIn d&apos;abord pour pouvoir publier.
                     </p>
                   )}
@@ -857,15 +760,14 @@ export default function RecruiterJobDetailsPage() {
 
               {status === "CONFIRMEE" && expired && (
                 <p className="text-xs text-gray-500 dark:text-gray-400">
-                  Cette offre est expirée. Utilise{" "}
-                  <span className="font-semibold">Réactiver</span> pour la
-                  remettre en ligne.
+                  Cette offre est expirée. Utilise <span className="font-semibold">Réactiver</span> pour la remettre en ligne.
                 </p>
               )}
             </div>
           </div>
         </div>
 
+        {/* Hard / Soft Skills */}
         {(hard.length > 0 || soft.length > 0) && (
           <div className="mt-6 grid grid-cols-1 lg:grid-cols-2 gap-6">
             {hard.length > 0 && (
@@ -875,17 +777,13 @@ export default function RecruiterJobDetailsPage() {
                 </h3>
                 <div className="mt-4 flex flex-wrap gap-2">
                   {hard.map((s, i) => (
-                    <span
-                      key={i}
-                      className="bg-[#E9F5E3] dark:bg-gray-700 text-[#4E8F2F] dark:text-emerald-400 text-xs font-semibold px-3 py-1 rounded-full border border-[#d7ebcf] dark:border-gray-600"
-                    >
+                    <span key={i} className="bg-[#E9F5E3] dark:bg-gray-700 text-[#4E8F2F] dark:text-emerald-400 text-xs font-semibold px-3 py-1 rounded-full border border-[#d7ebcf] dark:border-gray-600">
                       {s}
                     </span>
                   ))}
                 </div>
               </div>
             )}
-
             {soft.length > 0 && (
               <div className="rounded-[28px] border border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-sm p-7">
                 <h3 className="text-sm font-extrabold uppercase tracking-wide text-gray-500 dark:text-gray-400">
@@ -893,10 +791,7 @@ export default function RecruiterJobDetailsPage() {
                 </h3>
                 <div className="mt-4 flex flex-wrap gap-2">
                   {soft.map((s, i) => (
-                    <span
-                      key={i}
-                      className="bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-300 text-xs font-semibold px-3 py-1 rounded-full border border-blue-100 dark:border-blue-900"
-                    >
+                    <span key={i} className="bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-300 text-xs font-semibold px-3 py-1 rounded-full border border-blue-100 dark:border-blue-900">
                       {s}
                     </span>
                   ))}
@@ -906,6 +801,7 @@ export default function RecruiterJobDetailsPage() {
           </div>
         )}
 
+        {/* ── Modals ── */}
         <JobModal
           open={editOpen}
           onClose={() => setEditOpen(false)}
@@ -920,26 +816,22 @@ export default function RecruiterJobDetailsPage() {
           onConfirm={handleDeleteConfirmed}
         />
 
+        {/* Modal Rejet */}
         {rejectOpen && (
           <div
             className="fixed inset-0 z-50 bg-black/40 dark:bg-black/60 flex items-center justify-center px-4"
-            onMouseDown={(e) => {
-              if (e.target === e.currentTarget) setRejectOpen(false);
-            }}
+            onMouseDown={(e) => { if (e.target === e.currentTarget) setRejectOpen(false); }}
           >
             <div className="bg-white dark:bg-gray-800 w-full max-w-lg rounded-[32px] shadow-2xl overflow-hidden">
               <div className="px-8 pt-7 pb-5 flex items-start justify-between">
                 <div>
-                  <h2 className="text-2xl font-extrabold text-gray-900 dark:text-white">
-                    Rejeter l&apos;offre
-                  </h2>
-                  <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                    {job?.titre}
-                  </p>
+                  <h2 className="text-2xl font-extrabold text-gray-900 dark:text-white">Rejeter l&apos;offre</h2>
+                  <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">{job?.titre}</p>
                 </div>
                 <button
                   onClick={() => setRejectOpen(false)}
                   className="h-10 w-10 rounded-full grid place-items-center text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                  aria-label="Fermer"
                 >
                   ✕
                 </button>
@@ -975,32 +867,28 @@ export default function RecruiterJobDetailsPage() {
           </div>
         )}
 
+        {/* Modal Réactivation */}
         {reactivateOpen && (
           <div
             className="fixed inset-0 z-50 bg-black/40 dark:bg-black/60 flex items-center justify-center px-4"
-            onMouseDown={(e) => {
-              if (e.target === e.currentTarget) setReactivateOpen(false);
-            }}
+            onMouseDown={(e) => { if (e.target === e.currentTarget) setReactivateOpen(false); }}
           >
             <div className="bg-white dark:bg-gray-800 w-full max-w-lg rounded-[32px] shadow-2xl overflow-hidden">
               <div className="px-8 pt-7 pb-5 flex items-start justify-between">
                 <div>
-                  <h2 className="text-2xl font-extrabold text-gray-900 dark:text-white">
-                    Réactiver l&apos;offre
-                  </h2>
-                  <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                    Choisis une nouvelle date de clôture.
-                  </p>
+                  <h2 className="text-2xl font-extrabold text-gray-900 dark:text-white">Réactiver l&apos;offre</h2>
+                  <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Choisis une nouvelle date de clôture.</p>
                 </div>
                 <button
                   onClick={() => setReactivateOpen(false)}
                   className="h-10 w-10 rounded-full grid place-items-center text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                  aria-label="Fermer"
                 >
                   ✕
                 </button>
               </div>
               <div className="border-t border-gray-200 dark:border-gray-700" />
-              <div className="px-8 py-6 space-y-4 overflow-y-auto">
+              <div className="px-8 py-6 space-y-4">
                 <label className="block text-xs font-semibold tracking-wide text-gray-700 dark:text-gray-300 uppercase">
                   Nouvelle date de clôture
                 </label>
@@ -1031,12 +919,11 @@ export default function RecruiterJobDetailsPage() {
           </div>
         )}
 
+        {/* Modal LinkedIn */}
         {liOpen && (
           <div
             className="fixed inset-0 z-50 bg-black/40 dark:bg-black/60 flex items-center justify-center px-4"
-            onMouseDown={(e) => {
-              if (e.target === e.currentTarget) setLiOpen(false);
-            }}
+            onMouseDown={(e) => { if (e.target === e.currentTarget) setLiOpen(false); }}
           >
             <div className="bg-white dark:bg-gray-800 w-full max-w-2xl rounded-[32px] shadow-2xl max-h-[85vh] flex flex-col overflow-hidden">
               <div className="px-8 pt-8 pb-5 flex justify-between items-start">
@@ -1045,73 +932,50 @@ export default function RecruiterJobDetailsPage() {
                     <Linkedin size={22} className="text-[#0A66C2]" />
                   </div>
                   <div>
-                    <h2 className="text-xl font-extrabold">
-                      Publier sur LinkedIn
-                    </h2>
+                    <h2 className="text-xl font-extrabold">Publier sur LinkedIn</h2>
                     <p className="text-sm text-gray-500">{job?.titre}</p>
                   </div>
                 </div>
-
                 <button
                   onClick={() => setLiOpen(false)}
-                  className="h-10 w-10 rounded-full grid place-items-center text-gray-500 hover:bg-gray-100"
+                  className="h-10 w-10 rounded-full grid place-items-center text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                  aria-label="Fermer"
                 >
                   ✕
                 </button>
               </div>
 
-              <div className="border-t border-gray-200" />
+              <div className="border-t border-gray-200 dark:border-gray-700" />
 
               <div className="px-8 py-6 space-y-4 overflow-y-auto">
                 {liSuccess && (
-                  <div className="p-3 rounded-xl bg-green-50 text-green-700">
+                  <div className="p-3 rounded-xl bg-green-50 dark:bg-green-900/30 text-green-700 dark:text-green-400">
                     {liSuccess}
                   </div>
                 )}
                 {liError && (
-                  <div className="p-3 rounded-xl bg-red-50 text-red-600">
+                  <div className="p-3 rounded-xl bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400">
                     {liError}
                   </div>
                 )}
 
-                <label className="text-xs font-semibold uppercase text-gray-500">
+                <label className="text-xs font-semibold uppercase text-gray-500 dark:text-gray-400">
                   Texte du post
                 </label>
-
                 <textarea
                   rows={8}
                   value={liText}
                   onChange={(e) => setLiText(e.target.value)}
-                  className="
-                    w-full px-5 py-4 rounded-2xl resize-none
-                    border border-gray-200 dark:border-gray-600
-                    bg-gray-50 dark:bg-gray-900
-                    text-gray-900 dark:text-gray-100
-                    placeholder-gray-400 dark:placeholder-gray-500
-                    focus:outline-none focus:ring-2 focus:ring-[#0A66C2]/40
-                  "
+                  className="w-full px-5 py-4 rounded-2xl resize-none border border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[#0A66C2]/40"
                 />
-
-                <p className="text-xs text-right text-gray-400">
-                  {liText.length} / 3000 caractères
-                </p>
+                <p className="text-xs text-right text-gray-400">{liText.length} / 3000 caractères</p>
 
                 <div className="space-y-2">
-                  <label className="text-xs font-semibold uppercase text-gray-500">
+                  <label className="text-xs font-semibold uppercase text-gray-500 dark:text-gray-400">
                     Image (optionnelle)
                   </label>
-
-                  <label
-                    className="relative flex items-center justify-center w-full h-28
-                       border-2 border-dashed border-gray-300
-                       rounded-2xl cursor-pointer
-                       text-sm text-gray-500
-                       hover:bg-gray-50 transition"
-                  >
-                    {!liImagePreview && (
-                      <span>Cliquez pour ajouter une image</span>
-                    )}
-
+                  <label className="relative flex items-center justify-center w-full h-28 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-2xl cursor-pointer text-sm text-gray-500 hover:bg-gray-50 dark:hover:bg-gray-700 transition">
+                    {!liImagePreview && <span>Cliquez pour ajouter une image</span>}
                     <input
                       type="file"
                       accept="image/*"
@@ -1123,21 +987,12 @@ export default function RecruiterJobDetailsPage() {
                         setLiImagePreview(URL.createObjectURL(file));
                       }}
                     />
-
                     {liImagePreview && (
                       <>
-                        <img
-                          src={liImagePreview}
-                          alt="Preview"
-                          className="absolute inset-2 object-contain rounded-xl bg-white"
-                        />
+                        <img src={liImagePreview} alt="Preview" className="absolute inset-2 object-contain rounded-xl bg-white" />
                         <button
                           type="button"
-                          onClick={(e) => {
-                            e.preventDefault();
-                            setLiImage(null);
-                            setLiImagePreview(null);
-                          }}
+                          onClick={(e) => { e.preventDefault(); setLiImage(null); setLiImagePreview(null); }}
                           className="absolute top-2 right-2 w-7 h-7 rounded-full bg-black/70 text-white text-xs flex items-center justify-center"
                         >
                           ✕
@@ -1148,38 +1003,31 @@ export default function RecruiterJobDetailsPage() {
                 </div>
               </div>
 
-              <div className="px-8 py-5 border-t border-gray-200 flex justify-end gap-3">
-                <button
-                  onClick={() => setLiOpen(false)}
-                  className="h-11 px-6 rounded-full border"
-                >
-                  Annuler
-                </button>
+              <div className="px-8 py-5 border-t border-gray-200 dark:border-gray-700 flex justify-end gap-3 items-center">
                 {alreadyPublished && (
-                  <p className="text-xs text-gray-500 dark:text-gray-400">
-                    Déjà publié le{" "}
-                    {new Date(job.linkedinLastPublishedAt).toLocaleDateString(
-                      "fr-FR",
-                    )}
-                    . Tu peux republier.
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mr-auto">
+                    Déjà publié le {new Date(job.linkedinLastPublishedAt).toLocaleDateString("fr-FR")}. Tu peux republier.
                   </p>
                 )}
                 <button
+                  onClick={() => setLiOpen(false)}
+                  className="h-11 px-6 rounded-full border border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-300 font-semibold hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                >
+                  Annuler
+                </button>
+                <button
                   onClick={onPublishLinkedIn}
                   disabled={!liText.trim() || actionLoading}
-                  className="h-11 px-6 rounded-full bg-[#0A66C2] text-white flex items-center gap-2 disabled:opacity-50"
+                  className="h-11 px-6 rounded-full bg-[#0A66C2] text-white font-semibold flex items-center gap-2 disabled:opacity-50 hover:bg-[#0856a3] transition-colors"
                 >
-                  {actionLoading ? (
-                    <Loader2 size={16} className="animate-spin" />
-                  ) : (
-                    <Send size={15} />
-                  )}
+                  {actionLoading ? <Loader2 size={16} className="animate-spin" /> : <Send size={15} />}
                   {alreadyPublished ? "Republier" : "Publier maintenant"}
                 </button>
               </div>
             </div>
           </div>
         )}
+
       </div>
     </div>
   );

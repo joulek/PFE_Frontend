@@ -601,7 +601,7 @@ const filtered = useMemo(() => {
                       {showAction && (
                         <td className="px-6 py-5 text-center">
                           {c._source !== "OFFRES" ? (
-                            <button onClick={() => router.push(`/recruiter/candidatures/${c._id}`)}
+                            <button  data-cy="btn-detail" onClick={() => router.push(`/recruiter/candidatures/${c._id}`)}
                               className="h-9 w-9 inline-flex items-center justify-center rounded-full bg-gray-100 dark:bg-gray-700 hover:bg-[#E9F5E3] dark:hover:bg-gray-600 text-gray-500 dark:text-gray-400 hover:text-[#4E8F2F] transition-colors"
                               title="Voir le détail">
                               <Eye size={15} />

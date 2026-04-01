@@ -34,7 +34,7 @@ export default function StagePostulerPage() {
         setJob(jobData);
         setForm((prev) => ({ ...prev, posteRecherche: jobData?.titre || "" }));
       })
-      .catch(() => {});
+      .catch(() => { });
   }, [jobId]);
 
   function handleFileChange(e) {
@@ -64,7 +64,14 @@ export default function StagePostulerPage() {
       setError("❌ La lettre de motivation est obligatoire.");
       return;
     }
-
+    if (!form.telephone.trim()) {
+      setError("❌ Le téléphone est obligatoire.");
+      return;
+    }
+    if (!cvFile) {
+      setError("❌ Le CV est obligatoire.");
+      return;
+    }
     const formData = new FormData();
     formData.append("prenom", form.prenom.trim());
     formData.append("nom", form.nom.trim());
@@ -123,7 +130,7 @@ export default function StagePostulerPage() {
   return (
     <div className="min-h-screen bg-[#F0FAF0] dark:bg-gray-950 transition-colors">
       <div className="max-w-2xl mx-auto px-6 py-12">
-    
+
 
         <div className="bg-white dark:bg-gray-800 rounded-3xl shadow-lg p-8">
           <div className="flex items-center gap-4 mb-8">
@@ -168,14 +175,19 @@ export default function StagePostulerPage() {
                 <input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} placeholder="email@exemple.com" className={inputBase} />
               </div>
               <div>
-                <label className={labelBase}>Téléphone</label>
-                <input value={form.telephone} onChange={(e) => setForm({ ...form, telephone: e.target.value })} placeholder="+216 XX XXX XXX" className={inputBase} />
+                <label className={labelBase}>Téléphone <span className="text-red-500">*</span></label>
+                <input
+                  value={form.telephone}
+                  onChange={(e) => setForm({ ...form, telephone: e.target.value })}
+                  placeholder="+216 XX XXX XXX"
+                  className={inputBase}
+                />
               </div>
             </div>
 
             <div>
               <label className={labelBase}>Stage recherché</label>
-              <input value={form.posteRecherche} onChange={(e) => setForm({ ...form, posteRecherche: e.target.value })} placeholder="Ex: Stage PFE, Stage d'été..." className={inputBase} />
+              <input value={form.posteRecherche} readOnly onChange={(e) => setForm({ ...form, posteRecherche: e.target.value })} placeholder="Ex: Stage PFE, Stage d'été..." className={inputBase} />
             </div>
 
             <div>
@@ -190,8 +202,7 @@ export default function StagePostulerPage() {
             </div>
 
             <div>
-              <label className={labelBase}>CV (PDF, max 5 Mo)</label>
-              {cvFile ? (
+              <label className={labelBase}>CV (PDF, max 5 Mo) <span className="text-red-500">*</span></label>              {cvFile ? (
                 <div className="flex items-center justify-between p-4 rounded-2xl border border-blue-400 bg-blue-50 dark:bg-blue-950/40 dark:border-blue-700">
                   <div className="flex items-center gap-3 text-sm font-semibold text-blue-600 dark:text-blue-300">
                     <Upload size={16} />

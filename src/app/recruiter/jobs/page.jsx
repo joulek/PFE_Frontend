@@ -93,12 +93,12 @@ function StatusBadges({ status, expired, typeOffre }) {
     <div className="flex flex-wrap items-center justify-end gap-2">
       {/* Badge type offre */}
       {isStage ? (
-        <span className="inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-300 border border-blue-200 dark:border-blue-700">
+        <span  data-cy="job-type-badge" className="inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-300 border border-blue-200 dark:border-blue-700">
           <GraduationCap size={11} />
           Stage
         </span>
       ) : (
-        <span className="inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-full bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 border border-gray-200 dark:border-gray-600">
+        <span data-cy="job-type-badge" className="inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-full bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 border border-gray-200 dark:border-gray-600">
           <Briefcase size={11} />
           Emploi
         </span>
@@ -325,7 +325,7 @@ export default function JobsPage() {
             onClick={() => {
               setEditingJob(null);
               setModalOpen(true);
-            }}
+            }}  data-cy="add-job-btn"
             className="w-full sm:w-auto bg-[#6CB33F] hover:bg-[#4E8F2F] dark:bg-emerald-600 dark:hover:bg-emerald-500
                        text-white px-6 py-3 rounded-xl font-semibold shadow transition-colors"
           >
@@ -441,12 +441,13 @@ export default function JobsPage() {
 
             return (
               <div
-                key={job._id}
+                key={job._id}   data-cy="job-card"
+
                 className={`bg-white dark:bg-gray-800 rounded-2xl shadow p-5 sm:p-6 flex flex-col hover:shadow-lg transition-all duration-300 border ${cfg.cardBorder}`}
               >
                 {/* ✅ responsive header inside card */}
                 <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2 mb-2">
-                  <h3 className="text-lg sm:text-xl font-semibold text-gray-800 dark:text-white">
+                  <h3  data-cy="job-title" className="text-lg sm:text-xl font-semibold text-gray-800 dark:text-white">
                     {job.titre}
                   </h3>
                   <StatusBadges
@@ -468,7 +469,7 @@ export default function JobsPage() {
                     {job.lieu && (
                       <div className="flex items-center gap-2">
                         <MapPin className="w-4 h-4 text-gray-400 dark:text-gray-500" />
-                        <span className="break-words">{job.lieu}</span>
+                        <span  data-cy="job-lieu" className="break-words">{job.lieu}</span>
                       </div>
                     )}
                     <div className="flex items-center gap-2">
@@ -487,7 +488,7 @@ export default function JobsPage() {
                                inline-flex items-center justify-center shrink-0
                                bg-[#6CB33F] hover:bg-[#4E8F2F]
                                dark:bg-emerald-600 dark:hover:bg-emerald-500
-                               text-white transition-colors"
+                               text-white transition-colors"   data-cy="job-details-link"
                   >
                     Détails
                   </Link>
