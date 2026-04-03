@@ -587,26 +587,31 @@ export default function Navbar() {
   const dropdownHover = "hover:bg-gray-50 dark:hover:bg-gray-700";
 
   /* ─── Bouton cloche ─── */
-  const BellButton = ({ isMobile }) => (
-    <button
-      onClick={handleOpenNotif}
-      className={`relative p-2.5 rounded-full transition-colors
-        ${isMobile
-          ? "hover:bg-gray-100/70 dark:hover:bg-gray-700/50"
-          : "hover:bg-gray-200/70 dark:hover:bg-gray-700/50"
-        }`}
-      aria-label="Notifications"
-    >
-      <span className="relative inline-flex">
-        <Bell className="h-5 w-5 text-gray-700 dark:text-gray-300" />
-        {unreadCount > 0 && (
-          <span className="absolute -top-2 -right-2 min-w-[17px] h-[17px] flex items-center justify-center rounded-full bg-red-500 text-white text-[10px] font-bold leading-none shadow-sm">
-            {unreadCount > 99 ? "99+" : unreadCount}
-          </span>
-        )}
-      </span>
-    </button>
-  );
+  const canSeeNotifs = isAdmin || isResponsableRHOPTYLAB;
+
+  const BellButton = ({ isMobile }) => {
+    if (!canSeeNotifs) return null;
+    return (
+      <button
+        onClick={handleOpenNotif}
+        className={`relative p-2.5 rounded-full transition-colors
+          ${isMobile
+            ? "hover:bg-gray-100/70 dark:hover:bg-gray-700/50"
+            : "hover:bg-gray-200/70 dark:hover:bg-gray-700/50"
+          }`}
+        aria-label="Notifications"
+      >
+        <span className="relative inline-flex">
+          <Bell className="h-5 w-5 text-gray-700 dark:text-gray-300" />
+          {unreadCount > 0 && (
+            <span className="absolute -top-2 -right-2 min-w-[17px] h-[17px] flex items-center justify-center rounded-full bg-red-500 text-white text-[10px] font-bold leading-none shadow-sm">
+              {unreadCount > 99 ? "99+" : unreadCount}
+            </span>
+          )}
+        </span>
+      </button>
+    );
+  };
 
   const closeAllRMDropdowns = (except) => {
     if (except !== "candidatures") setOpenCandidaturesRM(false);

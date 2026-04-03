@@ -24,7 +24,7 @@ export default function CandidaturesNordPage() {
   const [page, setPage] = useState(1);
 
   const LIMIT = 10;
-  const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
+  const API_URL = process.env.NEXT_PUBLIC_API_URL ;
 
   const cleanValue = (value) => {
     if (value === null || value === undefined) return "";

@@ -111,7 +111,7 @@ function formatKey(key) {
     .replace(/_/g, " ");
 }
 
-const API_BASE = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000").replace(/\/$/, "");
+const API_BASE = (process.env.NEXT_PUBLIC_API_URL ).replace(/\/$/, "");
 
 function resolveCvUrl(raw) {
   if (!raw) return null;

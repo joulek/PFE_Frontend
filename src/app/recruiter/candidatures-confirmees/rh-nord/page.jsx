@@ -5,14 +5,14 @@ import { useRouter } from "next/navigation";
 import {
   Search, Calendar, Briefcase, CheckCircle2,
   Clock3, XCircle, X, Users, ChevronLeft, Mail, RefreshCw,
-  UserPlus, Loader2, AlertCircle,
+  UserPlus, Loader2, AlertCircle, ThumbsUp, ThumbsDown, AlertTriangle,
 } from "lucide-react";
 import api from "../../../services/api";
 
 // ─────────────────────────────────────────────────────────
 //  Config API
 // ─────────────────────────────────────────────────────────
-const API_BASE = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000").replace(/\/$/, "");
+const API_BASE = (process.env.NEXT_PUBLIC_API_URL ).replace(/\/$/, "");
 
 function getAuthHeaders() {
   const token =
@@ -31,6 +31,91 @@ async function insertEmployee(payload) {
   if (res.status === 409) return { alreadyExists: true, employee: data.employee };
   if (!res.ok) throw new Error(data.message || "Erreur insertion");
   return { alreadyExists: false, employee: data.employee };
+}
+
+async function patchHiringStatus(interviewId, hiringStatus) {
+  const res = await fetch(`${API_BASE}/api/interviews/${interviewId}/hiring-status`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json", ...getAuthHeaders() },
+    body: JSON.stringify({ hiringStatus }),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.message || "Erreur mise à jour statut");
+  return data;
+}
+
+// ─────────────────────────────────────────────────────────
+//  Boutons Embaucher / Rejeter
+// ─────────────────────────────────────────────────────────
+function HiringStatusButtons({ candidature, onStatusChange }) {
+  const storageKey = `hiring_status_${candidature._id}`;
+  const [status, setStatus] = useState(() => {
+    if (candidature.hiringStatus) return candidature.hiringStatus;
+    try { return localStorage.getItem(storageKey) || null; } catch { return null; }
+  });
+  const [loading, setLoading] = useState(false);
+  const [confirm, setConfirm] = useState(null);
+
+  async function applyStatus(newStatus) {
+    setLoading(true);
+    setConfirm(null);
+    try {
+      await patchHiringStatus(candidature._id, newStatus);
+      try { localStorage.setItem(storageKey, newStatus); } catch {}
+      setStatus(newStatus);
+      onStatusChange?.(candidature._id, newStatus);
+    } catch (e) {
+      alert(e.message || "Erreur lors de la mise à jour");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  if (status === "EMBAUCHE") {
+    return (
+      <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs font-bold whitespace-nowrap">
+        <ThumbsUp className="w-3.5 h-3.5" /> Embauché
+      </span>
+    );
+  }
+  if (status === "REJETE") {
+    return (
+      <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-red-50 border border-red-200 text-red-600 text-xs font-bold whitespace-nowrap">
+        <ThumbsDown className="w-3.5 h-3.5" /> Rejeté
+      </span>
+    );
+  }
+
+  if (confirm) {
+    const isHire = confirm === "EMBAUCHE";
+    return (
+      <div className={`flex items-center gap-2 px-3 py-2 rounded-2xl border text-xs font-semibold ${isHire ? "bg-emerald-50 border-emerald-200 text-emerald-800" : "bg-red-50 border-red-200 text-red-700"}`}>
+        <AlertTriangle className="w-3.5 h-3.5 flex-shrink-0" />
+        <span className="whitespace-nowrap">{isHire ? "Confirmer l'embauche ?" : "Confirmer le rejet ?"}</span>
+        <button onClick={() => applyStatus(confirm)} disabled={loading}
+          className={`ml-1 px-2.5 py-1 rounded-full text-white font-bold transition-colors ${isHire ? "bg-emerald-600 hover:bg-emerald-700" : "bg-red-500 hover:bg-red-600"}`}>
+          {loading ? <Loader2 className="w-3 h-3 animate-spin" /> : "Oui"}
+        </button>
+        <button onClick={() => setConfirm(null)} disabled={loading}
+          className="px-2.5 py-1 rounded-full border border-gray-300 text-gray-500 hover:bg-gray-100 font-bold">
+          Non
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex items-center gap-2">
+      <button onClick={() => setConfirm("EMBAUCHE")} disabled={loading}
+        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-emerald-500 hover:bg-emerald-600 disabled:opacity-60 text-white text-xs font-bold transition-colors shadow-sm whitespace-nowrap">
+        <ThumbsUp className="w-3.5 h-3.5" /> Embaucher
+      </button>
+      <button onClick={() => setConfirm("REJETE")} disabled={loading}
+        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-red-50 hover:bg-red-100 border border-red-200 disabled:opacity-60 text-red-600 text-xs font-bold transition-colors whitespace-nowrap">
+        <ThumbsDown className="w-3.5 h-3.5" /> Rejeter
+      </button>
+    </div>
+  );
 }
 
 // ─────────────────────────────────────────────────────────
@@ -601,7 +686,7 @@ export default function RhNordConfirmedPage() {
               <table className="w-full text-sm min-w-[1000px]">
                 <thead className="bg-[#E9F5E3] dark:bg-gray-700 text-[#4E8F2F] dark:text-emerald-400">
                   <tr>
-                    {["Candidat", "Poste", "Date & Heure Entretien", "Confirmé le", "Statut", "Employé"].map((h) => (
+                    {["Candidat", "Poste", "Date & Heure Entretien", "Confirmé le", "Statut", "Décision Embauche", "Employé"].map((h) => (
                       <th key={h} className="text-left px-6 lg:px-8 py-5 font-extrabold uppercase text-xs tracking-wider whitespace-nowrap">
                         {h}
                       </th>
@@ -674,6 +759,11 @@ export default function RhNordConfirmedPage() {
                           <span className="w-2 h-2 rounded-full bg-emerald-500" />
                           Confirmé
                         </span>
+                      </td>
+
+                      {/* Décision Embauche */}
+                      <td className="px-6 lg:px-8 py-5">
+                        <HiringStatusButtons candidature={iv} />
                       </td>
 
                       {/* Employé */}

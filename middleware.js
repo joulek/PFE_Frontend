@@ -29,6 +29,7 @@ export function middleware(req) {
 
   const isAssistanceDirPath     = pathname.startsWith("/entretiens-confirmes");
   const isDGAPath = pathname.startsWith("/entretiens") && !pathname.startsWith("/entretiens-confirmes");
+  const isInterviewDgaPath      = pathname.startsWith("/interviewDga");
   const isFichesPath            = pathname.startsWith("/fiche_renseignement");
   const isResponsableRHOPTYLABPath = pathname.startsWith("/RESPONSABLE_RH_OPTYLAB");
   const isResponsableRHNordPath    = pathname.startsWith("/RESPONSABLE_RH_NORD");
@@ -44,7 +45,7 @@ export function middleware(req) {
 
   const isLoginPage    = pathname.startsWith("/login");
   const isUnauthorized = pathname.startsWith("/unauthorized");
-  const isProtected    = isRecruiterPath || isResponsablePath || isSharedRHPath || isAssistanceDirPath || isCalendarPath || isResponsableRHOPTYLABPath || isResponsableRHNordPath || isFichesPath;
+  const isProtected    = isRecruiterPath || isResponsablePath || isSharedRHPath || isAssistanceDirPath || isCalendarPath || isResponsableRHOPTYLABPath || isResponsableRHNordPath || isFichesPath || isInterviewDgaPath;
 
   const redirect = (to) => {
     const url = req.nextUrl.clone();
@@ -57,7 +58,17 @@ export function middleware(req) {
   };
 
   // 1) Protected + pas connecté => login
-  if (isProtected && !token) return redirect("/login");
+  if (isProtected && !token) {
+    if (isInterviewDgaPath) {
+      const url = req.nextUrl.clone();
+      url.pathname = "/login";
+      url.searchParams.set("redirect", pathname);
+      const res = NextResponse.redirect(url);
+      res.headers.set("Cache-Control", "no-store, no-cache, must-revalidate, private");
+      return res;
+    }
+    return redirect("/login");
+  }
 
   // 2) Routing par rôle
   // /recruiter/* → ADMIN uniquement
@@ -86,10 +97,12 @@ export function middleware(req) {
 
   // 3) Connecté et va /login => redirection selon rôle
  if (isLoginPage && token) {
+    const redirectTo = req.nextUrl.searchParams.get("redirect");
+    if (redirectTo && redirectTo.startsWith("/interviewDga/")) return redirect(redirectTo);
     if (isAdmin)               return redirect("/recruiter/dashboard");
     if (isAssistanteRH)        return redirect("/employees");
     if (isAssistanceDirection) return redirect("/entretiens-confirmes");
-    if (isDGA)                 return redirect("/entretiens"); // ← ajoute ça
+    if (isDGA)                 return redirect("/entretiens");
     if (isResponsableRHOPTYLAB)   return redirect("/RESPONSABLE_RH_OPTYLAB");
     if (isResponsableRHNord)      return redirect("/RESPONSABLE_RH_NORD");
     return redirect("/ResponsableMetier/candidatures");
