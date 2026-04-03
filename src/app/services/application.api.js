@@ -9,6 +9,9 @@ export const createSpontaneousApplication = (formData) =>
     headers: { "Content-Type": "multipart/form-data" },
   });
 
+
+  
+
 /** ✅ Postuler à un stage lié à une offre (FormData avec CV optionnel) */
 export const applyToStage = (jobId, formData) =>
   api.post(`/api/applications/stage/${jobId}`, formData, {
