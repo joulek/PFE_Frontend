@@ -699,7 +699,7 @@ export default function Navbar() {
                     Gestion Employés
                   </Link>
                   <Link href="/utilisateurs" className={`${linkBase} ${isActive("/utilisateurs") ? activeLink : inactiveLink}`}>
-                    Gestion Responsables
+                    Gestion Acteurs
                   </Link>
                   <Link href="/roles" className={`${linkBase} ${isActive("/roles") ? activeLink : inactiveLink}`}>
                     Gestion Rôles
@@ -902,7 +902,7 @@ export default function Navbar() {
                           Gestion des rôles
                         </Link>
                         <Link href="/utilisateurs" className={`${dropdownItemBase} ${isActive("/utilisateurs") ? dropdownActive : dropdownHover}`}>
-                          Gestion Responsables
+                          Gestion Acteurs
                         </Link>
                         <Link href="/employees" className={`${dropdownItemBase} ${isActive("/employees") ? dropdownActive : dropdownHover}`}>
                           Gestion Employés
@@ -1081,7 +1081,7 @@ export default function Navbar() {
                       Gestion Employés
                     </Link>
                     <Link href="/utilisateurs" className={`block px-5 py-3.5 rounded-xl font-medium transition ${isActive("/utilisateur") ? "bg-[#6CB33F] text-white" : "text-gray-700 dark:text-gray-200 hover:bg-gray-100/70 dark:hover:bg-gray-800/60"}`}>
-                      Gestion Responsables
+                      Gestion Acteurs
                     </Link>
                     <Link href="/roles" className={`block px-5 py-3.5 rounded-xl font-medium transition ${isActive("/roles") ? "bg-[#6CB33F] text-white" : "text-gray-700 dark:text-gray-200 hover:bg-gray-100/70 dark:hover:bg-gray-800/60"}`}>
                       Gestion Rôles
@@ -1227,7 +1227,7 @@ export default function Navbar() {
                     </Link>
                     <Link href="/roles" className="block px-5 py-3.5 rounded-xl text-gray-700 dark:text-gray-200 hover:bg-gray-100/70 dark:hover:bg-gray-800/60">Gestion des rôles</Link>
                     <Link href="/employees" className="block px-5 py-3.5 rounded-xl text-gray-700 dark:text-gray-200 hover:bg-gray-100/70 dark:hover:bg-gray-800/60">Gestion des employés</Link>
-                    <Link href="/utilisateurs" className="block px-5 py-3.5 rounded-xl text-gray-700 dark:text-gray-200 hover:bg-gray-100/70 dark:hover:bg-gray-800/60">Gestion des responsables</Link>
+                    <Link href="/utilisateurs" className="block px-5 py-3.5 rounded-xl text-gray-700 dark:text-gray-200 hover:bg-gray-100/70 dark:hover:bg-gray-800/60">Gestion des acteurs</Link>
                     <Link href="/recruiter/calendar" className="block px-5 py-3.5 rounded-xl text-gray-700 dark:text-gray-200 hover:bg-gray-100/70 dark:hover:bg-gray-800/60">Mon Calendrier</Link>
                   </>
                 )}

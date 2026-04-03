@@ -100,7 +100,6 @@ function OriginBadge({ origin }) {
   );
 }
 
-/* ── TypeOffreBadge: shows both Stage AND Recrutement ── */
 function TypeOffreBadge({ typeOffre }) {
   if (typeOffre === "STAGE") {
     return (
@@ -128,6 +127,28 @@ const ORIGIN_FILTERS = [
   { key: "ASSIGNED", label: "Assignées" },
 ];
 
+/* ================= SELECT FIELD (chevron custom) ================= */
+function SelectField({ value, onChange, children, className = "" }) {
+  const selectBase =
+    "w-full h-10 sm:h-11 md:h-12 pl-3 sm:pl-4 md:pl-5 pr-10 rounded-lg sm:rounded-xl md:rounded-full " +
+    "border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 " +
+    "text-gray-800 dark:text-gray-100 text-sm placeholder-gray-400 dark:placeholder-gray-500 " +
+    "focus:border-[#6CB33F] dark:focus:border-emerald-500 focus:ring-4 focus:ring-[#6CB33F]/15 dark:focus:ring-emerald-500/20 " +
+    "outline-none transition-colors appearance-none cursor-pointer";
+  return (
+    <div className="relative">
+      <select value={value} onChange={onChange} className={`${selectBase} ${className}`}>
+        {children}
+      </select>
+      <span className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+          <path d="M4 6l4 4 4-4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+      </span>
+    </div>
+  );
+}
+
 /* =================================================================
    PAGE
 ================================================================= */
@@ -136,7 +157,7 @@ export default function ResponsableJobsPage() {
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("all");
   const [originFilter, setOriginFilter] = useState("all");
-  const [typeFilter, setTypeFilter] = useState("all"); // "all" | "EMPLOI" | "STAGE"
+  const [typeFilter, setTypeFilter] = useState("all");
   const [expandedJobs, setExpandedJobs] = useState({});
   const [page, setPage] = useState(1);
   const pageSize = 6;
@@ -145,68 +166,64 @@ export default function ResponsableJobsPage() {
   const [deleteConfirm, setDeleteConfirm] = useState(null);
   const [deleting, setDeleting] = useState(false);
 
-async function loadData() {
-  setLoading(true);
-  try {
-    const [createdRes, assignedRes] = await Promise.allSettled([
-      getMyOffers(),
-      getMyAssignedJobs()
-    ]);
+  async function loadData() {
+    setLoading(true);
+    try {
+      const [createdRes, assignedRes] = await Promise.allSettled([
+        getMyOffers(),
+        getMyAssignedJobs()
+      ]);
 
-    // 🔥 CORRECTION ICI (vérifier fulfilled)
-    const created =
-      createdRes.status === "fulfilled" && Array.isArray(createdRes.value?.data)
-        ? createdRes.value.data
-        : [];
+      const created =
+        createdRes.status === "fulfilled" && Array.isArray(createdRes.value?.data)
+          ? createdRes.value.data
+          : [];
 
-    const assigned =
-      assignedRes.status === "fulfilled" && Array.isArray(assignedRes.value?.data)
-        ? assignedRes.value.data
-        : [];
+      const assigned =
+        assignedRes.status === "fulfilled" && Array.isArray(assignedRes.value?.data)
+          ? assignedRes.value.data
+          : [];
 
-    const map = new Map();
+      const map = new Map();
 
-    for (const j of created) {
-      map.set(j._id, { ...j, _origin: "CREATED" });
-    }
-
-    for (const j of assigned) {
-      if (map.has(j._id)) {
-        map.set(j._id, { ...map.get(j._id), ...j, _origin: "BOTH" });
-      } else {
-        map.set(j._id, { ...j, _origin: "ASSIGNED" });
+      for (const j of created) {
+        map.set(j._id, { ...j, _origin: "CREATED" });
       }
+
+      for (const j of assigned) {
+        if (map.has(j._id)) {
+          map.set(j._id, { ...map.get(j._id), ...j, _origin: "BOTH" });
+        } else {
+          map.set(j._id, { ...j, _origin: "ASSIGNED" });
+        }
+      }
+
+      const merged = Array.from(map.values()).map((j) => ({
+        ...j,
+        _status: getJobStatus(j),
+      }));
+
+      merged.sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
+      setJobs(merged);
+    } catch (e) {
+      console.error("Erreur chargement jobs:", e);
+      setJobs([]);
+    } finally {
+      setLoading(false);
     }
-
-    const merged = Array.from(map.values()).map((j) => ({
-      ...j,
-      _status: getJobStatus(j),
-    }));
-
-    merged.sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
-
-    setJobs(merged);
-
-  } catch (e) {
-    console.error("Erreur chargement jobs:", e);
-    setJobs([]);
-  } finally {
-    setLoading(false);
   }
-}
+
   useEffect(() => { loadData(); }, []);
 
   const detailsBase = "/ResponsableMetier/job";
   function toggleReadMore(jobId) { setExpandedJobs((prev) => ({ ...prev, [jobId]: !prev[jobId] })); }
 
-  /* counts for the type filter bar */
   const typeCounts = useMemo(() => {
     const c = { all: jobs.length, EMPLOI: 0, STAGE: 0 };
     for (const j of jobs) { if (j.typeOffre === "STAGE") c.STAGE++; else c.EMPLOI++; }
     return c;
   }, [jobs]);
 
-  /* counts for status tabs (respects typeFilter + originFilter) */
   const counts = useMemo(() => {
     const c = { all: 0, EN_ATTENTE: 0, VALIDEE: 0, CONFIRMEE: 0, REJETEE: 0 };
     for (const j of jobs) {
@@ -245,8 +262,8 @@ async function loadData() {
     return arr;
   }, [jobs, activeTab, originFilter, typeFilter]);
 
-  const totalPages   = Math.max(1, Math.ceil(filteredJobs.length / pageSize));
-  const paginatedJobs = useMemo(() => { const s = (page-1)*pageSize; return filteredJobs.slice(s, s+pageSize); }, [filteredJobs, page]);
+  const totalPages    = Math.max(1, Math.ceil(filteredJobs.length / pageSize));
+  const paginatedJobs = useMemo(() => { const s = (page - 1) * pageSize; return filteredJobs.slice(s, s + pageSize); }, [filteredJobs, page]);
 
   useEffect(() => { setPage(1); }, [activeTab, originFilter, typeFilter]);
   useEffect(() => { if (page > totalPages) setPage(totalPages); }, [page, totalPages]);
@@ -263,7 +280,7 @@ async function loadData() {
   if (loading) return (
     <div className="min-h-screen bg-[#F0FAF0] dark:bg-gray-950 p-4 md:p-10">
       <div className="max-w-6xl mx-auto space-y-6 animate-pulse">
-        {[1,2,3].map((i) => <div key={i} className="h-44 bg-white dark:bg-gray-800 rounded-2xl shadow-sm" />)}
+        {[1, 2, 3].map((i) => <div key={i} className="h-44 bg-white dark:bg-gray-800 rounded-2xl shadow-sm" />)}
       </div>
     </div>
   );
@@ -298,12 +315,12 @@ async function loadData() {
           </button>
         </div>
 
-        {/* ── TYPE FILTER: Tous / Recrutement / Stages ── */}
+        {/* ── TYPE FILTER ── */}
         <div className="flex items-center gap-2 mb-5 flex-wrap">
           {[
-            { key: "all",    label: "Tous",        count: typeCounts.all,   icon: null,                     activeClass: "bg-[#6CB33F] dark:bg-emerald-600 text-white" },
-            { key: "EMPLOI", label: "Recrutement",  count: typeCounts.EMPLOI,icon: <Briefcase size={14} />,   activeClass: "bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 border-emerald-300 dark:border-emerald-700" },
-            { key: "STAGE",  label: "Stages",       count: typeCounts.STAGE, icon: <GraduationCap size={14}/>, activeClass: "bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 border-blue-300 dark:border-blue-700" },
+            { key: "all",    label: "Tous",        count: typeCounts.all,    icon: null,                      activeClass: "bg-[#6CB33F] dark:bg-emerald-600 text-white" },
+            { key: "EMPLOI", label: "Recrutement", count: typeCounts.EMPLOI, icon: <Briefcase size={14} />,   activeClass: "bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 border-emerald-300 dark:border-emerald-700" },
+            { key: "STAGE",  label: "Stages",      count: typeCounts.STAGE,  icon: <GraduationCap size={14}/>, activeClass: "bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 border-blue-300 dark:border-blue-700" },
           ].map((f) => {
             const active = typeFilter === f.key;
             return (
@@ -325,7 +342,6 @@ async function loadData() {
 
         {/* ── ORIGIN + STATUS FILTERS ── */}
         <div className="bg-white dark:bg-gray-900/60 border border-gray-200 dark:border-gray-700 rounded-2xl mb-8 overflow-hidden shadow-sm">
-          {/* Origin row */}
           <div className="flex flex-col md:flex-row md:items-center gap-2 md:gap-0 border-b border-gray-100 dark:border-gray-700/60 px-3 md:px-0">
             <div className="md:px-5 md:py-3.5 md:border-r border-gray-100 dark:border-gray-700/60 md:shrink-0">
               <span className="text-xs font-bold uppercase tracking-widest text-gray-400 dark:text-gray-500 whitespace-nowrap">Origine</span>
@@ -348,7 +364,6 @@ async function loadData() {
             </div>
           </div>
 
-          {/* Status row */}
           <div className="flex flex-col md:flex-row md:items-center gap-2 md:gap-0 px-3 md:px-0">
             <div className="md:px-5 md:py-3.5 md:border-r border-gray-100 dark:border-gray-700/60 md:shrink-0">
               <span className="text-xs font-bold uppercase tracking-widest text-gray-400 dark:text-gray-500 whitespace-nowrap">Statut</span>
@@ -400,14 +415,11 @@ async function loadData() {
             const hasLongDesc = (job.description || "").length > 160;
             const isStageJob = job.typeOffre === "STAGE";
             const isOwner = job._origin === "CREATED" || job._origin === "BOTH";
-            const canEditStage   = isStageJob && isOwner;
-            const canDeleteStage = isStageJob && isOwner;
 
             return (
               <div key={job._id}
                 className={`bg-white dark:bg-gray-800 rounded-2xl shadow p-4 md:p-6 flex flex-col hover:shadow-lg transition-all duration-300 border ${cfg.cardBorder}`}
               >
-                {/* Title + badges */}
                 <div className="flex items-start justify-between gap-2 md:gap-3 mb-3">
                   <div className="min-w-0 flex-1">
                     <h3 className="text-lg md:text-xl font-extrabold text-gray-900 dark:text-white truncate">{job.titre || "Sans titre"}</h3>
@@ -419,7 +431,6 @@ async function loadData() {
                   </div>
                 </div>
 
-                {/* Rejection reason */}
                 {status === "REJETEE" && job.rejectionReason && (
                   <div className="rounded-lg md:rounded-xl border border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-900/20 p-2 md:p-3 mb-3">
                     <p className="text-xs font-extrabold text-red-600 dark:text-red-400 uppercase mb-1">Motif du rejet</p>
@@ -427,7 +438,6 @@ async function loadData() {
                   </div>
                 )}
 
-                {/* Description */}
                 <p className={`text-gray-700 dark:text-gray-200 text-xs md:text-sm mb-2 whitespace-pre-line ${!isExpanded ? "line-clamp-3" : ""}`}>
                   {job.description || "—"}
                 </p>
@@ -440,7 +450,6 @@ async function loadData() {
 
                 <div className="border-t border-gray-100 dark:border-gray-700 my-3 md:my-4" />
 
-                {/* Meta + actions */}
                 <div className="mt-auto">
                   <div className="text-xs md:text-sm text-gray-600 dark:text-gray-300 space-y-1 mb-3">
                     {job.lieu && (
@@ -465,7 +474,6 @@ async function loadData() {
                     )}
                   </div>
 
-                  {/* Button row */}
                   <div className="flex items-center gap-2 justify-end flex-wrap">
                     <Link href={`${detailsBase}/${job._id}`}
                       className="h-9 md:h-10 px-4 md:px-6 rounded-full font-extrabold text-xs md:text-sm inline-flex items-center justify-center
@@ -569,10 +577,10 @@ function JobOfferModal({ open, onClose, onSubmit, initialData }) {
   const isStage = form.typeOffre === "STAGE";
 
   const SCORE_ITEMS = [
-    { key: "skillsFit", label: "Skills Fit" },
-    { key: "experienceFit", label: "Professional Experience Fit" },
-    { key: "projectsFit", label: "Projects Fit & Impact" },
-    { key: "educationFit", label: "Education / Certifications" },
+    { key: "skillsFit",        label: "Skills Fit" },
+    { key: "experienceFit",    label: "Professional Experience Fit" },
+    { key: "projectsFit",      label: "Projects Fit & Impact" },
+    { key: "educationFit",     label: "Education / Certifications" },
     { key: "communicationFit", label: "Communication / Clarity signals" },
   ];
 
@@ -583,18 +591,24 @@ function JobOfferModal({ open, onClose, onSubmit, initialData }) {
         const typeOffre = initialData.typeOffre === "STAGE" ? "STAGE" : "EMPLOI";
         setForm({
           typeOffre,
-          titre: initialData.titre || "",
-          description: initialData.description || "",
-          lieu: initialData.lieu || "",
-          dateCloture: initialData.dateCloture ? String(initialData.dateCloture).slice(0, 10) : "",
-          hardSkills: Array.isArray(initialData.hardSkills) ? initialData.hardSkills.join(", ") : initialData.hardSkills || "",
-          softSkills: Array.isArray(initialData.softSkills) ? initialData.softSkills.join(", ") : initialData.softSkills || "",
-          typeDiplome: initialData.typeDiplome || "",
-          motif: initialData.motif || "",
-          sexe: initialData.sexe || "",
+          titre:        initialData.titre || "",
+          description:  initialData.description || "",
+          lieu:         initialData.lieu || "",
+          dateCloture:  initialData.dateCloture ? String(initialData.dateCloture).slice(0, 10) : "",
+          hardSkills:   Array.isArray(initialData.hardSkills) ? initialData.hardSkills.join(", ") : initialData.hardSkills || "",
+          softSkills:   Array.isArray(initialData.softSkills) ? initialData.softSkills.join(", ") : initialData.softSkills || "",
+          typeDiplome:  initialData.typeDiplome || "",
+          motif:        initialData.motif || "",
+          sexe:         initialData.sexe || "",
           nombrePostes: initialData.nombrePostes ?? "",
-          scores: { skillsFit: initialData?.scores?.skillsFit ?? 30, experienceFit: initialData?.scores?.experienceFit ?? 30, projectsFit: initialData?.scores?.projectsFit ?? 20, educationFit: initialData?.scores?.educationFit ?? 10, communicationFit: initialData?.scores?.communicationFit ?? 10 },
-          typeStage: initialData.typeStage || "",
+          scores: {
+            skillsFit:        initialData?.scores?.skillsFit        ?? 30,
+            experienceFit:    initialData?.scores?.experienceFit    ?? 30,
+            projectsFit:      initialData?.scores?.projectsFit      ?? 20,
+            educationFit:     initialData?.scores?.educationFit     ?? 10,
+            communicationFit: initialData?.scores?.communicationFit ?? 10,
+          },
+          typeStage:  initialData.typeStage  || "",
           dureeStage: initialData.dureeStage || "",
         });
         setGenerateQuiz(initialData.generateQuiz !== false);
@@ -633,12 +647,15 @@ function JobOfferModal({ open, onClose, onSubmit, initialData }) {
 
     const nombrePostesNum = form.nombrePostes !== "" ? Number(form.nombrePostes) : undefined;
     const payload = {
-      typeOffre: form.typeOffre,
-      titre: form.titre.trim(), description: form.description.trim(), lieu: form.lieu.trim(),
-      dateCloture: form.dateCloture,
-      hardSkills: parseSkills(form.hardSkills), softSkills: parseSkills(form.softSkills),
-      typeDiplome: form.typeDiplome.trim(),
-      sexe: form.sexe || undefined,
+      typeOffre:    form.typeOffre,
+      titre:        form.titre.trim(),
+      description:  form.description.trim(),
+      lieu:         form.lieu.trim(),
+      dateCloture:  form.dateCloture,
+      hardSkills:   parseSkills(form.hardSkills),
+      softSkills:   parseSkills(form.softSkills),
+      typeDiplome:  form.typeDiplome.trim(),
+      sexe:         form.sexe || undefined,
       nombrePostes: nombrePostesNum && !isNaN(nombrePostesNum) && nombrePostesNum >= 1 ? nombrePostesNum : undefined,
       ...(isStage
         ? { typeStage: form.typeStage || undefined, dureeStage: form.dureeStage || undefined }
@@ -649,14 +666,15 @@ function JobOfferModal({ open, onClose, onSubmit, initialData }) {
     catch (err) { console.error(err); setFormError("❌ Une erreur est survenue. Vérifie les champs et réessaie."); setSubmitting(false); }
   }
 
-  const inputBase = "w-full h-10 sm:h-11 md:h-12 px-3 sm:px-4 md:px-5 rounded-lg sm:rounded-xl md:rounded-full border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 text-sm placeholder-gray-400 dark:placeholder-gray-500 focus:border-[#6CB33F] dark:focus:border-emerald-500 focus:ring-4 focus:ring-[#6CB33F]/15 dark:focus:ring-emerald-500/20 outline-none transition-colors";
-  const labelBase = "block text-xs sm:text-sm font-semibold tracking-wide text-gray-700 dark:text-gray-300 mb-2 uppercase";
+  const inputBase  = "w-full h-10 sm:h-11 md:h-12 px-3 sm:px-4 md:px-5 rounded-lg sm:rounded-xl md:rounded-full border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 text-sm placeholder-gray-400 dark:placeholder-gray-500 focus:border-[#6CB33F] dark:focus:border-emerald-500 focus:ring-4 focus:ring-[#6CB33F]/15 dark:focus:ring-emerald-500/20 outline-none transition-colors";
+  const labelBase  = "block text-xs sm:text-sm font-semibold tracking-wide text-gray-700 dark:text-gray-300 mb-2 uppercase";
 
   return (
     <div className="fixed inset-0 z-50 bg-black/40 dark:bg-black/60 flex items-center justify-center p-3 sm:p-4 md:p-6"
       onMouseDown={(e) => { if (e.target === e.currentTarget) onClose(); }}
     >
       <div className="bg-white dark:bg-gray-800 w-full max-w-2xl rounded-2xl sm:rounded-3xl shadow-2xl overflow-hidden max-h-[95vh] flex flex-col transition-colors duration-300">
+
         {/* Header */}
         <div className="px-4 sm:px-6 md:px-8 pt-4 sm:pt-5 md:pt-7 pb-3 sm:pb-4 md:pb-5 border-b border-gray-200 dark:border-gray-700 flex-shrink-0">
           <div className="flex items-start justify-between gap-3 sm:gap-4">
@@ -669,18 +687,20 @@ function JobOfferModal({ open, onClose, onSubmit, initialData }) {
               </p>
             </div>
             <button type="button" onClick={onClose}
-              className="shrink-0 h-9 w-9 sm:h-10 sm:w-10 rounded-full grid place-items-center text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors text-lg">✕</button>
+              className="shrink-0 h-9 w-9 sm:h-10 sm:w-10 rounded-full grid place-items-center text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors text-lg">✕
+            </button>
           </div>
         </div>
 
         <div className="overflow-y-auto">
           <form onSubmit={handleSubmit} noValidate className="px-4 sm:px-6 md:px-8 py-4 sm:py-5 md:py-7">
             <div className="space-y-4 sm:space-y-5 md:space-y-6">
+
               {formError && (
                 <div className="rounded-lg border border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-900/30 p-3 text-xs sm:text-sm font-semibold text-red-700 dark:text-red-400">{formError}</div>
               )}
 
-              {/* TYPE D'OFFRE — create only */}
+              {/* TYPE D'OFFRE */}
               {!isEditing && (
                 <div>
                   <label className={labelBase}>Type d'offre <span className="text-red-500">*</span></label>
@@ -756,15 +776,15 @@ function JobOfferModal({ open, onClose, onSubmit, initialData }) {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-5 md:gap-6">
                   <div>
                     <label className={labelBase}>Type de stage</label>
-                    <select value={form.typeStage} onChange={(e) => setForm({ ...form, typeStage: e.target.value })} className={inputBase}>
+                    <SelectField value={form.typeStage} onChange={(e) => setForm({ ...form, typeStage: e.target.value })}>
                       {TYPE_STAGE_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
-                    </select>
+                    </SelectField>
                   </div>
                   <div>
                     <label className={labelBase}>Durée du stage</label>
-                    <select value={form.dureeStage} onChange={(e) => setForm({ ...form, dureeStage: e.target.value })} className={inputBase}>
+                    <SelectField value={form.dureeStage} onChange={(e) => setForm({ ...form, dureeStage: e.target.value })}>
                       {DUREE_STAGE_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
-                    </select>
+                    </SelectField>
                   </div>
                 </div>
               )}
@@ -774,16 +794,16 @@ function JobOfferModal({ open, onClose, onSubmit, initialData }) {
                 {!isStage && (
                   <div>
                     <label className={labelBase}>Motif</label>
-                    <select value={form.motif} onChange={(e) => setForm({ ...form, motif: e.target.value })} className={inputBase}>
+                    <SelectField value={form.motif} onChange={(e) => setForm({ ...form, motif: e.target.value })}>
                       {MOTIF_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
-                    </select>
+                    </SelectField>
                   </div>
                 )}
                 <div className={isStage ? "md:col-span-2" : ""}>
                   <label className={labelBase}>Genre</label>
-                  <select value={form.sexe} onChange={(e) => setForm({ ...form, sexe: e.target.value })} className={inputBase}>
+                  <SelectField value={form.sexe} onChange={(e) => setForm({ ...form, sexe: e.target.value })}>
                     {SEXE_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
-                  </select>
+                  </SelectField>
                 </div>
               </div>
 
@@ -826,12 +846,12 @@ function JobOfferModal({ open, onClose, onSubmit, initialData }) {
                         <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 pl-0 sm:pl-14">
                           <label className="text-xs sm:text-sm font-semibold text-gray-700 dark:text-gray-300 whitespace-nowrap">Nombre de questions</label>
                           <div className="flex items-center gap-2">
-                            <button type="button" onClick={() => { let n=numQuestions-1; if(n<1)n=1; setNumQuestions(n); }}
+                            <button type="button" onClick={() => { let n = numQuestions - 1; if (n < 1) n = 1; setNumQuestions(n); }}
                               className="w-7 h-7 sm:w-8 sm:h-8 rounded-full border border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-300 font-bold text-sm hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors flex items-center justify-center flex-shrink-0">−</button>
                             <input type="number" min={1} max={30} value={numQuestions}
-                              onChange={(e) => { let n=parseInt(e.target.value,10); if(isNaN(n)||n<1)n=1; if(n>30)n=30; setNumQuestions(n); }}
+                              onChange={(e) => { let n = parseInt(e.target.value, 10); if (isNaN(n) || n < 1) n = 1; if (n > 30) n = 30; setNumQuestions(n); }}
                               className="w-14 h-8 sm:w-16 sm:h-9 text-center rounded-lg sm:rounded-xl text-sm border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 font-bold focus:border-[#6CB33F] dark:focus:border-emerald-500 focus:ring-2 focus:ring-[#6CB33F]/20 outline-none transition-colors" />
-                            <button type="button" onClick={() => { let n=numQuestions+1; if(n>30)n=30; setNumQuestions(n); }}
+                            <button type="button" onClick={() => { let n = numQuestions + 1; if (n > 30) n = 30; setNumQuestions(n); }}
                               className="w-7 h-7 sm:w-8 sm:h-8 rounded-full border border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-300 font-bold text-sm hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors flex items-center justify-center flex-shrink-0">+</button>
                             <span className="text-xs text-gray-500 dark:text-gray-400">(max 30)</span>
                           </div>
@@ -869,7 +889,7 @@ function JobOfferModal({ open, onClose, onSubmit, initialData }) {
 
             {/* Footer buttons */}
             <div className="mt-6 sm:mt-7 md:mt-8 pt-4 sm:pt-5 md:pt-6 border-t border-gray-200 dark:border-gray-700 flex flex-col sm:flex-row gap-2.5 sm:gap-4">
-              <button type="submit"     data-cy="submitJob" disabled={submitting || !isValidTotal}
+              <button type="submit" data-cy="submitJob" disabled={submitting || !isValidTotal}
                 className={`flex-1 h-10 sm:h-11 md:h-12 rounded-lg sm:rounded-xl md:rounded-full font-semibold text-sm transition-colors shadow-sm ${
                   isValidTotal && !submitting
                     ? isStage ? "bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-400 text-white"

@@ -30,16 +30,19 @@ import {
   ArrowLeft,
   Phone,
   ClipboardList,
+  ClipboardCheck,
 } from "lucide-react";
 import {
   getInterviewNotes,
   createInterviewNote,
   updateInterviewNote,
   deleteInterviewNote,
-getCandidatureById 
+  getCandidatureById,
 } from "../../../services/candidature.api.js";
-
-import {   getInterviewsByCandidature,getConfirmedInterviews  } from "../../../services/interviewApi.js";
+import {
+  getInterviewsByCandidature,
+  getConfirmedInterviews,
+} from "../../../services/interviewApi.js";
 
 /* ══════════════════════════════════════════════════════════════════
  * Helpers
@@ -102,11 +105,10 @@ function scoreTone(score) {
   };
 }
 
-// ✅ FIX : convertit camelCase + snake_case en texte lisible
 function formatKey(key) {
   return String(key)
-    .replace(/([a-z])([A-Z])/g, "$1 $2") // camelCase → "risk Level"
-    .replace(/_/g, " ");                  // snake_case → espaces
+    .replace(/([a-z])([A-Z])/g, "$1 $2")
+    .replace(/_/g, " ");
 }
 
 const API_BASE = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000").replace(/\/$/, "");
@@ -114,8 +116,7 @@ const API_BASE = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000").re
 function resolveCvUrl(raw) {
   if (!raw) return null;
   if (typeof raw === "object") {
-    const candidate =
-      raw.fileUrl || raw.path || raw.filename || raw.originalname || null;
+    const candidate = raw.fileUrl || raw.path || raw.filename || raw.originalname || null;
     if (!candidate) return null;
     return resolveCvUrl(candidate);
   }
@@ -128,7 +129,7 @@ function resolveCvUrl(raw) {
 }
 
 /* ══════════════════════════════════════════════════════════════════
- * UI
+ * UI atoms
  * ══════════════════════════════════════════════════════════════════ */
 function Avatar({ name, size = "xl" }) {
   const sz = {
@@ -139,9 +140,7 @@ function Avatar({ name, size = "xl" }) {
   }[size] || "w-14 h-14 text-base";
 
   return (
-    <div
-      className={`${sz} rounded-full bg-gradient-to-br from-[#6CB33F] to-[#4E8F2F] text-white flex items-center justify-center font-extrabold shadow-md flex-shrink-0`}
-    >
+    <div className={`${sz} rounded-full bg-gradient-to-br from-[#6CB33F] to-[#4E8F2F] text-white flex items-center justify-center font-extrabold shadow-md flex-shrink-0`}>
       {getInitials(name)}
     </div>
   );
@@ -154,11 +153,9 @@ function SectionTitle({ icon: Icon, label, action }) {
         <div className="w-11 h-11 rounded-2xl bg-[#EAF6E4] dark:bg-[#1B2D1C] flex items-center justify-center border border-[#D5EAC8] dark:border-[#2A462C]">
           {Icon && <Icon className="w-5 h-5 text-[#4E8F2F] dark:text-[#8ED973]" />}
         </div>
-        <div>
-          <h3 className="text-lg sm:text-xl font-extrabold text-[#173B20] dark:text-white">
-            {label}
-          </h3>
-        </div>
+        <h3 className="text-lg sm:text-xl font-extrabold text-[#173B20] dark:text-white">
+          {label}
+        </h3>
       </div>
       {action}
     </div>
@@ -170,7 +167,7 @@ function ActionTab({ icon: Icon, label, active, onClick, badge, muted = false })
     <button
       type="button"
       onClick={onClick}
-      className={`group min-w-[150px] sm:min-w-[170px] rounded-2xl border px-4 py-4 text-left transition-all ${
+      className={`group min-w-[130px] sm:min-w-[150px] rounded-2xl border px-4 py-4 text-left transition-all ${
         active
           ? "border-[#6CB33F] bg-[#EEF8E8] dark:bg-[#1A2B1B] dark:border-[#427B38] shadow-sm"
           : muted
@@ -179,42 +176,22 @@ function ActionTab({ icon: Icon, label, active, onClick, badge, muted = false })
       }`}
     >
       <div className="flex items-start justify-between gap-3">
-        <div
-          className={`w-11 h-11 rounded-xl flex items-center justify-center border ${
-            active
-              ? "bg-[#DFF0D2] border-[#BBD9A9] dark:bg-[#223723] dark:border-[#3D6B3A]"
-              : "bg-[#F7FBF4] border-[#E0ECD8] dark:bg-[#18221A] dark:border-[#2A3C2D]"
-          }`}
-        >
-          <Icon
-            className={`w-5 h-5 ${
-              active
-                ? "text-[#4E8F2F] dark:text-[#8ED973]"
-                : "text-[#62895A] dark:text-[#90B886]"
-            }`}
-          />
+        <div className={`w-11 h-11 rounded-xl flex items-center justify-center border ${
+          active
+            ? "bg-[#DFF0D2] border-[#BBD9A9] dark:bg-[#223723] dark:border-[#3D6B3A]"
+            : "bg-[#F7FBF4] border-[#E0ECD8] dark:bg-[#18221A] dark:border-[#2A3C2D]"
+        }`}>
+          <Icon className={`w-5 h-5 ${active ? "text-[#4E8F2F] dark:text-[#8ED973]" : "text-[#62895A] dark:text-[#90B886]"}`} />
         </div>
-
         {badge != null && (
-          <span
-            className={`inline-flex items-center justify-center rounded-full px-2.5 py-1 text-[11px] font-extrabold ${
-              active
-                ? "bg-[#6CB33F] text-white"
-                : "bg-[#EDF6E8] text-[#4E8F2F] dark:bg-[#203123] dark:text-[#98D873]"
-            }`}
-          >
+          <span className={`inline-flex items-center justify-center rounded-full px-2.5 py-1 text-[11px] font-extrabold ${
+            active ? "bg-[#6CB33F] text-white" : "bg-[#EDF6E8] text-[#4E8F2F] dark:bg-[#203123] dark:text-[#98D873]"
+          }`}>
             {badge}
           </span>
         )}
       </div>
-
-      <p
-        className={`mt-3 text-sm font-extrabold ${
-          active
-            ? "text-[#224A25] dark:text-white"
-            : "text-[#294A2D] dark:text-[#E5F2E2]"
-        }`}
-      >
+      <p className={`mt-3 text-sm font-extrabold ${active ? "text-[#224A25] dark:text-white" : "text-[#294A2D] dark:text-[#E5F2E2]"}`}>
         {label}
       </p>
     </button>
@@ -236,20 +213,14 @@ function InfoPill({ icon: Icon, children }) {
 function MatchingScoreCard({ label, value }) {
   const score = normalizeScore(value);
   const tone = scoreTone(score);
-
   return (
     <div className={`rounded-2xl border p-4 ${tone.ring} ${tone.bg}`}>
       <div className="flex items-center justify-between gap-3 mb-3">
-        <p className="text-sm font-bold text-[#2F4A31] dark:text-[#DCE9D6] capitalize">
-          {formatKey(label)}
-        </p>
+        <p className="text-sm font-bold text-[#2F4A31] dark:text-[#DCE9D6] capitalize">{formatKey(label)}</p>
         <span className={`text-base font-extrabold ${tone.text}`}>{score}%</span>
       </div>
       <div className="h-2.5 w-full overflow-hidden rounded-full bg-[#E5EFE0] dark:bg-[#243126]">
-        <div
-          className={`h-full rounded-full ${tone.bar}`}
-          style={{ width: `${score}%` }}
-        />
+        <div className={`h-full rounded-full ${tone.bar}`} style={{ width: `${score}%` }} />
       </div>
     </div>
   );
@@ -263,9 +234,7 @@ function MatchingTab({ jobMatch }) {
           <div className="mb-4 flex h-20 w-20 items-center justify-center rounded-3xl bg-[#EEF8E8] dark:bg-[#1A2B1B]">
             <BarChart2 className="h-10 w-10 text-[#6CB33F]" />
           </div>
-          <p className="text-lg font-bold text-[#244529] dark:text-white">
-            Analyse de matching non disponible
-          </p>
+          <p className="text-lg font-bold text-[#244529] dark:text-white">Analyse de matching non disponible</p>
         </div>
       </div>
     );
@@ -273,31 +242,17 @@ function MatchingTab({ jobMatch }) {
 
   const score = normalizeScore(jobMatch.score);
   const tone = scoreTone(score);
-
   const scoreEntries = Object.entries(jobMatch.detailedScores || {});
   const skills = jobMatch.skillsAnalysis || {};
   const exp = jobMatch.experienceAnalysis || {};
   const risk = jobMatch.riskMitigation || {};
   const next = jobMatch.nextSteps || {};
-
   const hardMatched = skills.hardSkillsMatched || [];
   const hardMissing = skills.hardSkillsMissing || [];
   const softMatched = skills.softSkillsMatched || [];
   const softMissing = skills.softSkillsMissing || [];
-
-  const riskItems = Array.isArray(risk)
-    ? risk
-    : typeof risk === "string"
-    ? [risk]
-    : Object.entries(risk)
-        .filter(([, v]) => v)
-        .map(([k, v]) => ({ key: k, val: v }));
-
-  const nextItems = Array.isArray(next)
-    ? next
-    : typeof next === "string"
-    ? [next]
-    : Object.values(next).filter(Boolean);
+  const riskItems = Array.isArray(risk) ? risk : typeof risk === "string" ? [risk] : Object.entries(risk).filter(([, v]) => v).map(([k, v]) => ({ key: k, val: v }));
+  const nextItems = Array.isArray(next) ? next : typeof next === "string" ? [next] : Object.values(next).filter(Boolean);
 
   return (
     <div className="space-y-6">
@@ -305,44 +260,17 @@ function MatchingTab({ jobMatch }) {
         <div className="flex flex-col gap-6 lg:flex-row lg:items-center">
           <div className="relative flex-shrink-0 self-center lg:self-auto">
             <svg className="h-32 w-32 -rotate-90" viewBox="0 0 36 36">
-              <circle
-                cx="18"
-                cy="18"
-                r="15.9"
-                fill="none"
-                stroke="#DCE8D7"
-                strokeWidth="3.5"
-              />
-              <circle
-                cx="18"
-                cy="18"
-                r="15.9"
-                fill="none"
-                stroke={tone.circle}
-                strokeWidth="3.5"
-                strokeDasharray={`${score} ${100 - score}`}
-                strokeLinecap="round"
-              />
+              <circle cx="18" cy="18" r="15.9" fill="none" stroke="#DCE8D7" strokeWidth="3.5" />
+              <circle cx="18" cy="18" r="15.9" fill="none" stroke={tone.circle} strokeWidth="3.5" strokeDasharray={`${score} ${100 - score}`} strokeLinecap="round" />
             </svg>
             <div className="absolute inset-0 flex flex-col items-center justify-center">
               <span className={`text-3xl font-extrabold ${tone.text}`}>{score}%</span>
             </div>
           </div>
-
           <div className="min-w-0 flex-1">
-            <p className="text-xs font-extrabold uppercase tracking-[0.2em] text-[#6A8A66] dark:text-[#9CB79A]">
-              Matching CV / Offre
-            </p>
-            {jobMatch.recommendation && (
-              <h3 className="mt-2 text-2xl font-extrabold text-[#173B20] capitalize dark:text-white">
-                {jobMatch.recommendation}
-              </h3>
-            )}
-            {jobMatch.summary && (
-              <p className="mt-3 text-sm leading-7 text-[#527053] dark:text-[#A8BDA5]">
-                {jobMatch.summary}
-              </p>
-            )}
+            <p className="text-xs font-extrabold uppercase tracking-[0.2em] text-[#6A8A66] dark:text-[#9CB79A]">Matching CV / Offre</p>
+            {jobMatch.recommendation && <h3 className="mt-2 text-2xl font-extrabold text-[#173B20] capitalize dark:text-white">{jobMatch.recommendation}</h3>}
+            {jobMatch.summary && <p className="mt-3 text-sm leading-7 text-[#527053] dark:text-[#A8BDA5]">{jobMatch.summary}</p>}
           </div>
         </div>
       </div>
@@ -351,9 +279,7 @@ function MatchingTab({ jobMatch }) {
         <div className="rounded-3xl border border-[#D8E8CF] dark:border-[#2C402F] bg-white dark:bg-[#111827] p-5 sm:p-6">
           <SectionTitle icon={BarChart2} label="Scores détaillés" />
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
-            {scoreEntries.map(([key, val]) => (
-              <MatchingScoreCard key={key} label={key} value={val} />
-            ))}
+            {scoreEntries.map(([key, val]) => <MatchingScoreCard key={key} label={key} value={val} />)}
           </div>
         </div>
       )}
@@ -364,33 +290,22 @@ function MatchingTab({ jobMatch }) {
             <SectionTitle icon={TrendingUp} label="Points forts" />
             <div className="space-y-3">
               {jobMatch.strengths.map((item, i) => (
-                <div
-                  key={i}
-                  className="flex items-start gap-3 rounded-2xl border border-[#D8EBCB] bg-[#F5FBF1] px-4 py-3 dark:border-[#29422C] dark:bg-[#18231A]"
-                >
+                <div key={i} className="flex items-start gap-3 rounded-2xl border border-[#D8EBCB] bg-[#F5FBF1] px-4 py-3 dark:border-[#29422C] dark:bg-[#18231A]">
                   <Star className="mt-0.5 h-4 w-4 flex-shrink-0 text-[#6CB33F]" />
-                  <p className="text-sm leading-6 text-[#345238] dark:text-[#D7E9D5]">
-                    {item}
-                  </p>
+                  <p className="text-sm leading-6 text-[#345238] dark:text-[#D7E9D5]">{item}</p>
                 </div>
               ))}
             </div>
           </div>
         )}
-
         {jobMatch.weaknesses?.length > 0 && (
           <div className="rounded-3xl border border-[#D8E8CF] dark:border-[#2C402F] bg-white dark:bg-[#111827] p-5 sm:p-6">
             <SectionTitle icon={TrendingDown} label="Points à améliorer" />
             <div className="space-y-3">
               {jobMatch.weaknesses.map((item, i) => (
-                <div
-                  key={i}
-                  className="flex items-start gap-3 rounded-2xl border border-[#E2EDDA] bg-[#F8FCF6] px-4 py-3 dark:border-[#2A3D2D] dark:bg-[#161F18]"
-                >
+                <div key={i} className="flex items-start gap-3 rounded-2xl border border-[#E2EDDA] bg-[#F8FCF6] px-4 py-3 dark:border-[#2A3D2D] dark:bg-[#161F18]">
                   <AlertTriangle className="mt-0.5 h-4 w-4 flex-shrink-0 text-[#7CBF55]" />
-                  <p className="text-sm leading-6 text-[#345238] dark:text-[#D7E9D5]">
-                    {item}
-                  </p>
+                  <p className="text-sm leading-6 text-[#345238] dark:text-[#D7E9D5]">{item}</p>
                 </div>
               ))}
             </div>
@@ -398,54 +313,34 @@ function MatchingTab({ jobMatch }) {
         )}
       </div>
 
-      {(hardMatched.length > 0 ||
-        hardMissing.length > 0 ||
-        softMatched.length > 0 ||
-        softMissing.length > 0) && (
+      {(hardMatched.length > 0 || hardMissing.length > 0 || softMatched.length > 0 || softMissing.length > 0) && (
         <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
           <div className="rounded-3xl border border-[#D8E8CF] dark:border-[#2C402F] bg-white dark:bg-[#111827] p-5 sm:p-6">
             <SectionTitle icon={Zap} label="Hard Skills" />
             <div className="flex flex-wrap gap-2.5">
               {hardMatched.map((s, i) => (
-                <span
-                  key={`hm-${i}`}
-                  className="inline-flex items-center gap-2 rounded-full border border-[#CFE4C2] bg-[#ECF7E6] px-3.5 py-2 text-xs font-bold text-[#3B6A32] dark:border-[#385A35] dark:bg-[#1D311E] dark:text-[#A7E08D]"
-                >
-                  <CheckCircle className="h-3.5 w-3.5" />
-                  {s}
+                <span key={`hm-${i}`} className="inline-flex items-center gap-2 rounded-full border border-[#CFE4C2] bg-[#ECF7E6] px-3.5 py-2 text-xs font-bold text-[#3B6A32] dark:border-[#385A35] dark:bg-[#1D311E] dark:text-[#A7E08D]">
+                  <CheckCircle className="h-3.5 w-3.5" />{s}
                 </span>
               ))}
               {hardMissing.map((s, i) => (
-                <span
-                  key={`hx-${i}`}
-                  className="inline-flex items-center gap-2 rounded-full border border-[#DCE9D4] bg-[#F7FBF4] px-3.5 py-2 text-xs font-bold text-[#5B775B] dark:border-[#314533] dark:bg-[#172018] dark:text-[#BED0BB]"
-                >
-                  <XCircle className="h-3.5 w-3.5" />
-                  {s}
+                <span key={`hx-${i}`} className="inline-flex items-center gap-2 rounded-full border border-[#DCE9D4] bg-[#F7FBF4] px-3.5 py-2 text-xs font-bold text-[#5B775B] dark:border-[#314533] dark:bg-[#172018] dark:text-[#BED0BB]">
+                  <XCircle className="h-3.5 w-3.5" />{s}
                 </span>
               ))}
             </div>
           </div>
-
           <div className="rounded-3xl border border-[#D8E8CF] dark:border-[#2C402F] bg-white dark:bg-[#111827] p-5 sm:p-6">
             <SectionTitle icon={Star} label="Soft Skills" />
             <div className="flex flex-wrap gap-2.5">
               {softMatched.map((s, i) => (
-                <span
-                  key={`sm-${i}`}
-                  className="inline-flex items-center gap-2 rounded-full border border-[#CFE4C2] bg-[#ECF7E6] px-3.5 py-2 text-xs font-bold text-[#3B6A32] dark:border-[#385A35] dark:bg-[#1D311E] dark:text-[#A7E08D]"
-                >
-                  <CheckCircle className="h-3.5 w-3.5" />
-                  {s}
+                <span key={`sm-${i}`} className="inline-flex items-center gap-2 rounded-full border border-[#CFE4C2] bg-[#ECF7E6] px-3.5 py-2 text-xs font-bold text-[#3B6A32] dark:border-[#385A35] dark:bg-[#1D311E] dark:text-[#A7E08D]">
+                  <CheckCircle className="h-3.5 w-3.5" />{s}
                 </span>
               ))}
               {softMissing.map((s, i) => (
-                <span
-                  key={`sx-${i}`}
-                  className="inline-flex items-center gap-2 rounded-full border border-[#DCE9D4] bg-[#F7FBF4] px-3.5 py-2 text-xs font-bold text-[#5B775B] dark:border-[#314533] dark:bg-[#172018] dark:text-[#BED0BB]"
-                >
-                  <XCircle className="h-3.5 w-3.5" />
-                  {s}
+                <span key={`sx-${i}`} className="inline-flex items-center gap-2 rounded-full border border-[#DCE9D4] bg-[#F7FBF4] px-3.5 py-2 text-xs font-bold text-[#5B775B] dark:border-[#314533] dark:bg-[#172018] dark:text-[#BED0BB]">
+                  <XCircle className="h-3.5 w-3.5" />{s}
                 </span>
               ))}
             </div>
@@ -456,106 +351,14 @@ function MatchingTab({ jobMatch }) {
       {Object.keys(exp).length > 0 && (
         <div className="rounded-3xl border border-[#D8E8CF] dark:border-[#2C402F] bg-white dark:bg-[#111827] p-5 sm:p-6">
           <SectionTitle icon={Briefcase} label="Analyse de l'expérience" />
-
           {(exp.totalYears != null || exp.relevantYears != null || exp.seniorityLevel) && (
             <div className="mb-5 flex flex-wrap gap-2.5">
-              {exp.totalYears != null && (
-                <span className="inline-flex items-center gap-2 rounded-full border border-[#D7E8CF] bg-[#F5FBF1] px-3.5 py-2 text-xs font-bold text-[#426843] dark:border-[#304A33] dark:bg-[#172118] dark:text-[#BDD3B7]">
-                  {exp.totalYears} ans d'expérience totale
-                </span>
-              )}
-              {exp.relevantYears != null && (
-                <span className="inline-flex items-center gap-2 rounded-full border border-[#CFE4C2] bg-[#ECF7E6] px-3.5 py-2 text-xs font-bold text-[#3B6A32] dark:border-[#385A35] dark:bg-[#1D311E] dark:text-[#A7E08D]">
-                  {exp.relevantYears} ans pertinents
-                </span>
-              )}
-              {exp.seniorityLevel && (
-                <span className="inline-flex items-center gap-2 rounded-full border border-[#D7E8CF] bg-[#F5FBF1] px-3.5 py-2 text-xs font-bold text-[#426843] capitalize dark:border-[#304A33] dark:bg-[#172118] dark:text-[#BDD3B7]">
-                  {exp.seniorityLevel}
-                </span>
-              )}
+              {exp.totalYears != null && <span className="inline-flex items-center gap-2 rounded-full border border-[#D7E8CF] bg-[#F5FBF1] px-3.5 py-2 text-xs font-bold text-[#426843] dark:border-[#304A33] dark:bg-[#172118] dark:text-[#BDD3B7]">{exp.totalYears} ans d'expérience totale</span>}
+              {exp.relevantYears != null && <span className="inline-flex items-center gap-2 rounded-full border border-[#CFE4C2] bg-[#ECF7E6] px-3.5 py-2 text-xs font-bold text-[#3B6A32] dark:border-[#385A35] dark:bg-[#1D311E] dark:text-[#A7E08D]">{exp.relevantYears} ans pertinents</span>}
+              {exp.seniorityLevel && <span className="inline-flex items-center gap-2 rounded-full border border-[#D7E8CF] bg-[#F5FBF1] px-3.5 py-2 text-xs font-bold text-[#426843] capitalize dark:border-[#304A33] dark:bg-[#172118] dark:text-[#BDD3B7]">{exp.seniorityLevel}</span>}
             </div>
           )}
-
-          {exp.summary && (
-            <p className="mb-5 text-sm leading-7 text-[#527053] dark:text-[#A8BDA5]">
-              {exp.summary}
-            </p>
-          )}
-
-          {(() => {
-            const raw = exp.breakdown;
-            if (!raw) return null;
-
-            const items = Array.isArray(raw)
-              ? raw
-              : typeof raw === "string"
-              ? (() => {
-                  try {
-                    return JSON.parse(raw);
-                  } catch {
-                    return [{ role: raw }];
-                  }
-                })()
-              : typeof raw === "object"
-              ? [raw]
-              : null;
-
-            if (!items?.length) return null;
-
-            return (
-              <div className="space-y-3">
-                {items.map((item, i) => (
-                  <div
-                    key={i}
-                    className={`rounded-2xl border px-4 py-4 ${
-                      item.relevant
-                        ? "border-[#CFE4C2] bg-[#F2FAED] dark:border-[#355735] dark:bg-[#18251A]"
-                        : "border-[#E1ECDC] bg-[#F9FCF7] dark:border-[#2A3A2D] dark:bg-[#151D17]"
-                    }`}
-                  >
-                    <div className="flex flex-wrap items-start justify-between gap-3">
-                      <div>
-                        <p className="text-sm font-extrabold text-[#173B20] dark:text-white">
-                          {item.role || "—"}
-                        </p>
-                        {item.company && (
-                          <p className="mt-1 text-xs font-semibold text-[#6A8668] dark:text-[#9DB39A]">
-                            {item.company}
-                          </p>
-                        )}
-                      </div>
-
-                      {item.relevant != null && (
-                        <span
-                          className={`rounded-full px-3 py-1 text-[11px] font-extrabold ${
-                            item.relevant
-                              ? "bg-[#E8F5E0] text-[#4E8F2F] dark:bg-[#1D331E] dark:text-[#A7E08D]"
-                              : "bg-[#F2F7EF] text-[#648062] dark:bg-[#1A241B] dark:text-[#B4C7B0]"
-                          }`}
-                        >
-                          {item.relevant ? "Pertinent" : "Non pertinent"}
-                        </span>
-                      )}
-                    </div>
-
-                    <div className="mt-3 flex flex-wrap gap-2">
-                      {item.duration && (
-                        <span className="rounded-full border border-[#D7E8CF] bg-white px-3 py-1 text-[11px] font-bold text-[#547255] dark:border-[#304A33] dark:bg-[#121A14] dark:text-[#B8CDB4]">
-                          {item.duration}
-                        </span>
-                      )}
-                      {item.type && (
-                        <span className="rounded-full border border-[#D7E8CF] bg-white px-3 py-1 text-[11px] font-bold capitalize text-[#547255] dark:border-[#304A33] dark:bg-[#121A14] dark:text-[#B8CDB4]">
-                          {item.type}
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            );
-          })()}
+          {exp.summary && <p className="mb-5 text-sm leading-7 text-[#527053] dark:text-[#A8BDA5]">{exp.summary}</p>}
         </div>
       )}
 
@@ -564,26 +367,14 @@ function MatchingTab({ jobMatch }) {
           <SectionTitle icon={AlertTriangle} label="Points de vigilance" />
           <div className="space-y-3">
             {riskItems.map((item, i) => (
-              <div
-                key={i}
-                className="flex items-start gap-3 rounded-2xl border border-[#E1ECDC] bg-[#F8FCF6] px-4 py-3 dark:border-[#2A3A2D] dark:bg-[#151D17]"
-              >
+              <div key={i} className="flex items-start gap-3 rounded-2xl border border-[#E1ECDC] bg-[#F8FCF6] px-4 py-3 dark:border-[#2A3A2D] dark:bg-[#151D17]">
                 <span className="mt-1 h-2.5 w-2.5 flex-shrink-0 rounded-full bg-[#7DBE56]" />
                 {typeof item === "string" ? (
-                  <p className="text-sm leading-6 text-[#345238] dark:text-[#D7E9D5]">
-                    {item}
-                  </p>
+                  <p className="text-sm leading-6 text-[#345238] dark:text-[#D7E9D5]">{item}</p>
                 ) : (
                   <p className="text-sm leading-6 text-[#345238] dark:text-[#D7E9D5]">
-                    {/* ✅ FIX : formatKey() gère camelCase + snake_case */}
-                    <span className="mr-2 font-extrabold uppercase tracking-wide text-[#70906F] dark:text-[#9FBA9C]">
-                      {formatKey(item.key)} :
-                    </span>
-                    {Array.isArray(item.val)
-                      ? item.val.join(", ")
-                      : typeof item.val === "object"
-                      ? JSON.stringify(item.val)
-                      : String(item.val)}
+                    <span className="mr-2 font-extrabold uppercase tracking-wide text-[#70906F] dark:text-[#9FBA9C]">{formatKey(item.key)} :</span>
+                    {Array.isArray(item.val) ? item.val.join(", ") : typeof item.val === "object" ? JSON.stringify(item.val) : String(item.val)}
                   </p>
                 )}
               </div>
@@ -597,16 +388,9 @@ function MatchingTab({ jobMatch }) {
           <SectionTitle icon={ChevronRight} label="Prochaines étapes" />
           <div className="space-y-3">
             {nextItems.map((item, i) => (
-              <div
-                key={i}
-                className="flex items-start gap-4 rounded-2xl border border-[#D8EBCB] bg-[#F5FBF1] px-4 py-3 dark:border-[#29422C] dark:bg-[#18231A]"
-              >
-                <span className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-[#6CB33F] text-xs font-extrabold text-white">
-                  {i + 1}
-                </span>
-                <p className="text-sm leading-6 text-[#345238] dark:text-[#D7E9D5]">
-                  {typeof item === "object" ? JSON.stringify(item) : String(item)}
-                </p>
+              <div key={i} className="flex items-start gap-4 rounded-2xl border border-[#D8EBCB] bg-[#F5FBF1] px-4 py-3 dark:border-[#29422C] dark:bg-[#18231A]">
+                <span className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-[#6CB33F] text-xs font-extrabold text-white">{i + 1}</span>
+                <p className="text-sm leading-6 text-[#345238] dark:text-[#D7E9D5]">{typeof item === "object" ? JSON.stringify(item) : String(item)}</p>
               </div>
             ))}
           </div>
@@ -643,27 +427,17 @@ function NotesTab({ candidatureId }) {
     }
   }, [candidatureId]);
 
-  useEffect(() => {
-    loadNotes();
-  }, [loadNotes]);
+  useEffect(() => { loadNotes(); }, [loadNotes]);
 
   const handleAdd = async () => {
     if (!text.trim()) return;
     try {
       setSaving(true);
       setError(null);
-      await createInterviewNote(candidatureId, {
-        note: text.trim(),
-        type: "responsable_rh_optylab",
-        stars: 0,
-      });
+      await createInterviewNote(candidatureId, { note: text.trim(), type: "responsable_rh_optylab", stars: 0 });
       setText("");
       await loadNotes();
-    } catch {
-      setError("Erreur lors de l'ajout.");
-    } finally {
-      setSaving(false);
-    }
+    } catch { setError("Erreur lors de l'ajout."); } finally { setSaving(false); }
   };
 
   const handleEdit = async (noteId) => {
@@ -671,17 +445,11 @@ function NotesTab({ candidatureId }) {
     try {
       setSaving(true);
       setError(null);
-      await updateInterviewNote(candidatureId, noteId, {
-        note: editText.trim(),
-      });
+      await updateInterviewNote(candidatureId, noteId, { note: editText.trim() });
       setEditId(null);
       setEditText("");
       await loadNotes();
-    } catch {
-      setError("Erreur lors de la modification.");
-    } finally {
-      setSaving(false);
-    }
+    } catch { setError("Erreur lors de la modification."); } finally { setSaving(false); }
   };
 
   const handleDelete = async (noteId) => {
@@ -690,38 +458,17 @@ function NotesTab({ candidatureId }) {
       setError(null);
       await deleteInterviewNote(candidatureId, noteId);
       await loadNotes();
-    } catch {
-      setError("Erreur lors de la suppression.");
-    } finally {
-      setDeleting(null);
-    }
+    } catch { setError("Erreur lors de la suppression."); } finally { setDeleting(null); }
   };
 
   return (
     <div className="space-y-6">
       <div className="rounded-3xl border border-[#D8E8CF] dark:border-[#2C402F] bg-white dark:bg-[#111827] p-5 sm:p-6">
         <SectionTitle icon={Pencil} label="Ajouter une note" />
-
-        <textarea
-          value={text}
-          onChange={(e) => setText(e.target.value)}
-          placeholder="Votre observation sur ce candidat..."
-          rows={5}
-          className="w-full resize-none rounded-2xl border border-[#D7E8CF] bg-[#F8FCF6] px-4 py-4 text-sm text-[#173B20] placeholder:text-[#8AA087] focus:border-[#6CB33F] focus:outline-none focus:ring-4 focus:ring-[#DFF0D2] dark:border-[#304A33] dark:bg-[#162018] dark:text-white dark:placeholder:text-[#7E967B] dark:focus:ring-[#223824]"
-        />
-
+        <textarea value={text} onChange={(e) => setText(e.target.value)} placeholder="Votre observation sur ce candidat..." rows={5} className="w-full resize-none rounded-2xl border border-[#D7E8CF] bg-[#F8FCF6] px-4 py-4 text-sm text-[#173B20] placeholder:text-[#8AA087] focus:border-[#6CB33F] focus:outline-none focus:ring-4 focus:ring-[#DFF0D2] dark:border-[#304A33] dark:bg-[#162018] dark:text-white dark:placeholder:text-[#7E967B] dark:focus:ring-[#223824]" />
         <div className="mt-4 flex justify-end">
-          <button
-            type="button"
-            onClick={handleAdd}
-            disabled={saving || !text.trim()}
-            className="inline-flex items-center gap-2 rounded-xl bg-[#4E8F2F] hover:bg-[#43792A] disabled:cursor-not-allowed disabled:opacity-50 px-5 py-2.5 text-sm font-bold text-white transition-colors"
-          >
-            {saving ? (
-              <RefreshCw className="w-4 h-4 animate-spin" />
-            ) : (
-              <Send className="w-4 h-4" />
-            )}
+          <button type="button" onClick={handleAdd} disabled={saving || !text.trim()} className="inline-flex items-center gap-2 rounded-xl bg-[#4E8F2F] hover:bg-[#43792A] disabled:cursor-not-allowed disabled:opacity-50 px-5 py-2.5 text-sm font-bold text-white transition-colors">
+            {saving ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
             Envoyer
           </button>
         </div>
@@ -729,120 +476,49 @@ function NotesTab({ candidatureId }) {
 
       {error && (
         <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-600 dark:border-red-900/50 dark:bg-red-950/20 dark:text-red-300">
-          <div className="flex items-center gap-2">
-            <AlertCircle className="w-4 h-4 flex-shrink-0" />
-            {error}
-          </div>
+          <div className="flex items-center gap-2"><AlertCircle className="w-4 h-4 flex-shrink-0" />{error}</div>
         </div>
       )}
 
       <div className="rounded-3xl border border-[#D8E8CF] dark:border-[#2C402F] bg-white dark:bg-[#111827] p-5 sm:p-6">
         <SectionTitle icon={FileText} label={`Notes (${notes.length})`} />
-
         {loading ? (
-          <div className="flex items-center justify-center py-12 text-[#6D8669] dark:text-[#9DB39A]">
-            <RefreshCw className="mr-2 h-5 w-5 animate-spin" />
-            Chargement...
-          </div>
+          <div className="flex items-center justify-center py-12 text-[#6D8669] dark:text-[#9DB39A]"><RefreshCw className="mr-2 h-5 w-5 animate-spin" />Chargement...</div>
         ) : notes.length === 0 ? (
           <div className="flex flex-col items-center gap-3 py-14 text-center">
-            <div className="flex h-20 w-20 items-center justify-center rounded-3xl bg-[#EEF8E8] dark:bg-[#1A2B1B]">
-              <Pencil className="h-9 w-9 text-[#6CB33F]" />
-            </div>
-            <p className="text-base font-bold text-[#35553A] dark:text-[#D7EBD2]">
-              Aucune note pour le moment
-            </p>
+            <div className="flex h-20 w-20 items-center justify-center rounded-3xl bg-[#EEF8E8] dark:bg-[#1A2B1B]"><Pencil className="h-9 w-9 text-[#6CB33F]" /></div>
+            <p className="text-base font-bold text-[#35553A] dark:text-[#D7EBD2]">Aucune note pour le moment</p>
           </div>
         ) : (
           <div className="space-y-4">
             {notes.map((n) => {
               const nid = n._id?.toString?.() || String(n._id || "");
               const isEditing = editId === nid;
-
               return (
-                <div
-                  key={nid}
-                  className="rounded-2xl border border-[#DCE9D4] bg-[#F9FCF7] p-4 dark:border-[#2A3A2D] dark:bg-[#151D17]"
-                >
+                <div key={nid} className="rounded-2xl border border-[#DCE9D4] bg-[#F9FCF7] p-4 dark:border-[#2A3A2D] dark:bg-[#151D17]">
                   {isEditing ? (
                     <div className="space-y-3">
-                      <textarea
-                        value={editText}
-                        onChange={(e) => setEditText(e.target.value)}
-                        rows={4}
-                        className="w-full resize-none rounded-2xl border border-[#D7E8CF] bg-white px-4 py-3 text-sm text-[#173B20] focus:border-[#6CB33F] focus:outline-none focus:ring-4 focus:ring-[#DFF0D2] dark:border-[#304A33] dark:bg-[#111827] dark:text-white dark:focus:ring-[#223824]"
-                      />
+                      <textarea value={editText} onChange={(e) => setEditText(e.target.value)} rows={4} className="w-full resize-none rounded-2xl border border-[#D7E8CF] bg-white px-4 py-3 text-sm text-[#173B20] focus:border-[#6CB33F] focus:outline-none focus:ring-4 focus:ring-[#DFF0D2] dark:border-[#304A33] dark:bg-[#111827] dark:text-white dark:focus:ring-[#223824]" />
                       <div className="flex justify-end gap-2">
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setEditId(null);
-                            setEditText("");
-                          }}
-                          className="rounded-xl border border-[#D8E8CF] bg-white px-4 py-2 text-xs font-bold text-[#567055] hover:bg-[#F6FBF3] dark:border-[#314533] dark:bg-[#111827] dark:text-[#CBDCC8]"
-                        >
-                          Annuler
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => handleEdit(nid)}
-                          disabled={saving}
-                          className="inline-flex items-center gap-1.5 rounded-xl bg-[#4E8F2F] hover:bg-[#43792A] px-4 py-2 text-xs font-bold text-white disabled:opacity-50"
-                        >
-                          {saving ? (
-                            <RefreshCw className="w-3.5 h-3.5 animate-spin" />
-                          ) : (
-                            <CheckCircle className="w-3.5 h-3.5" />
-                          )}
-                          Sauvegarder
+                        <button type="button" onClick={() => { setEditId(null); setEditText(""); }} className="rounded-xl border border-[#D8E8CF] bg-white px-4 py-2 text-xs font-bold text-[#567055] hover:bg-[#F6FBF3] dark:border-[#314533] dark:bg-[#111827] dark:text-[#CBDCC8]">Annuler</button>
+                        <button type="button" onClick={() => handleEdit(nid)} disabled={saving} className="inline-flex items-center gap-1.5 rounded-xl bg-[#4E8F2F] hover:bg-[#43792A] px-4 py-2 text-xs font-bold text-white disabled:opacity-50">
+                          {saving ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <CheckCircle className="w-3.5 h-3.5" />}Sauvegarder
                         </button>
                       </div>
                     </div>
                   ) : (
                     <div className="flex items-start gap-3">
                       <div className="min-w-0 flex-1">
-                        <p className="whitespace-pre-wrap text-sm leading-7 text-[#244529] dark:text-[#E6F1E3]">
-                          {n.note || "—"}
-                        </p>
-
+                        <p className="whitespace-pre-wrap text-sm leading-7 text-[#244529] dark:text-[#E6F1E3]">{n.note || "—"}</p>
                         <div className="mt-3 flex flex-wrap items-center gap-2">
-                          {n.createdAt && (
-                            <span className="rounded-full bg-white px-3 py-1 text-[11px] font-bold text-[#6B8668] dark:bg-[#111827] dark:text-[#9EB49A]">
-                              {formatDate(n.createdAt)}
-                            </span>
-                          )}
-
-                          {n.type && (
-                            <span className="rounded-full bg-[#E8F5E0] px-3 py-1 text-[11px] font-extrabold uppercase tracking-wide text-[#4E8F2F] dark:bg-[#1D331E] dark:text-[#A7E08D]">
-                              {n.type}
-                            </span>
-                          )}
+                          {n.createdAt && <span className="rounded-full bg-white px-3 py-1 text-[11px] font-bold text-[#6B8668] dark:bg-[#111827] dark:text-[#9EB49A]">{formatDate(n.createdAt)}</span>}
+                          {n.type && <span className="rounded-full bg-[#E8F5E0] px-3 py-1 text-[11px] font-extrabold uppercase tracking-wide text-[#4E8F2F] dark:bg-[#1D331E] dark:text-[#A7E08D]">{n.type}</span>}
                         </div>
                       </div>
-
                       <div className="flex items-center gap-2">
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setEditId(nid);
-                            setEditText(n.note || "");
-                          }}
-                          className="flex h-9 w-9 items-center justify-center rounded-xl border border-[#D8E8CF] bg-white text-[#648062] hover:border-[#A7CF94] hover:text-[#4E8F2F] dark:border-[#314533] dark:bg-[#111827] dark:text-[#A8BDA5]"
-                        >
-                          <Pencil className="w-4 h-4" />
-                        </button>
-
-                        <button
-                          type="button"
-                          onClick={() => handleDelete(nid)}
-                          disabled={deleting === nid}
-                          className="flex h-9 w-9 items-center justify-center rounded-xl border border-[#D8E8CF] bg-white text-[#648062] hover:text-red-500 dark:border-[#314533] dark:bg-[#111827] dark:text-[#A8BDA5] disabled:opacity-50"
-                        >
-                          {deleting === nid ? (
-                            <RefreshCw className="w-4 h-4 animate-spin" />
-                          ) : (
-                            <Trash2 className="w-4 h-4" />
-                          )}
+                        <button type="button" onClick={() => { setEditId(nid); setEditText(n.note || ""); }} className="flex h-9 w-9 items-center justify-center rounded-xl border border-[#D8E8CF] bg-white text-[#648062] hover:border-[#A7CF94] hover:text-[#4E8F2F] dark:border-[#314533] dark:bg-[#111827] dark:text-[#A8BDA5]"><Pencil className="w-4 h-4" /></button>
+                        <button type="button" onClick={() => handleDelete(nid)} disabled={deleting === nid} className="flex h-9 w-9 items-center justify-center rounded-xl border border-[#D8E8CF] bg-white text-[#648062] hover:text-red-500 dark:border-[#314533] dark:bg-[#111827] dark:text-[#A8BDA5] disabled:opacity-50">
+                          {deleting === nid ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
                         </button>
                       </div>
                     </div>
@@ -853,6 +529,421 @@ function NotesTab({ candidatureId }) {
           </div>
         )}
       </div>
+    </div>
+  );
+}
+
+/* ══════════════════════════════════════════════════════════════════
+ * ÉVALUATIONS — helpers internes
+ * ══════════════════════════════════════════════════════════════════ */
+function RatingDots({ value, max = 5 }) {
+  const n = Number(value) || 0;
+  return (
+    <div className="flex items-center gap-1.5">
+      {Array.from({ length: max }).map((_, i) => (
+        <span key={i} className={`h-2.5 w-2.5 rounded-full transition-colors ${i < n ? "bg-[#6CB33F]" : "bg-[#E0ECDA] dark:bg-[#2A3D2C]"}`} />
+      ))}
+      <span className="ml-1 text-xs font-extrabold text-[#6A8A66] dark:text-[#9CB79A]">{n}/{max}</span>
+    </div>
+  );
+}
+
+function GlobalScoreBadge({ score }) {
+  const n = normalizeScore(score);
+  const tone = scoreTone(n);
+  return (
+    <div className={`inline-flex flex-col items-center justify-center rounded-2xl border px-5 py-3 ${tone.ring} ${tone.bg}`}>
+      <span className={`text-3xl font-extrabold ${tone.text}`}>{n}%</span>
+      <span className="mt-0.5 text-[11px] font-bold uppercase tracking-widest text-[#6A8A66] dark:text-[#9CB79A]">score global</span>
+    </div>
+  );
+}
+
+/* ══════════════════════════════════════════════════════════════════
+ * ÉVALUATIONS — rendu adaptatif d'un critère selon son type
+ * ══════════════════════════════════════════════════════════════════ */
+function CriterionRow({ r, i }) {
+  const rawType = (r.type || "").toLowerCase().trim();
+  const label = r.label || `Critère ${i + 1}`;
+
+  /* ── BOOLEAN ── */
+  if (rawType === "boolean") {
+    const isYes =
+      r.value === true ||
+      r.value === 1 ||
+      String(r.value).toLowerCase() === "true" ||
+      String(r.value).toLowerCase() === "oui" ||
+      String(r.value) === "1";
+
+    return (
+      <div className="rounded-2xl border border-[#DCE9D4] bg-[#F9FCF7] p-4 dark:border-[#2A3D2C] dark:bg-[#151D17]">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="flex items-center gap-2">
+            <span className="flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full bg-[#DFF0D2] text-[10px] font-extrabold text-[#4E8F2F] dark:bg-[#1D311E] dark:text-[#8ED973]">
+              {i + 1}
+            </span>
+            <p className="text-sm font-extrabold text-[#173B20] dark:text-white">{label}</p>
+            <span className="rounded-full border border-[#D7E8CF] bg-white px-2 py-0.5 text-[9px] font-extrabold uppercase tracking-wider text-[#6A8A66] dark:border-[#304A33] dark:bg-[#111827] dark:text-[#9CB79A]">
+              Booléen
+            </span>
+          </div>
+          <span className={`inline-flex items-center gap-1.5 rounded-full px-4 py-1.5 text-sm font-extrabold border ${
+            isYes
+              ? "bg-[#EAF6E4] border-[#B8D7A8] text-[#2F6F27] dark:bg-[#1D311E] dark:border-[#31582C] dark:text-[#8ED973]"
+              : "bg-[#FFF5F5] border-[#FECACA] text-[#B91C1C] dark:bg-[#2D1515] dark:border-[#7F1D1D] dark:text-[#FCA5A5]"
+          }`}>
+            {isYes
+              ? <><CheckCircle className="w-4 h-4" /> Oui</>
+              : <><XCircle className="w-4 h-4" /> Non</>
+            }
+          </span>
+        </div>
+        {r.comment && (
+          <p className="mt-3 text-xs leading-5 text-[#527053] dark:text-[#A8BDA5] italic border-t border-[#E5EFE0] dark:border-[#243126] pt-2">
+            {r.comment}
+          </p>
+        )}
+      </div>
+    );
+  }
+
+  /* ── CHOICE ── */
+  if (rawType === "choice") {
+    const answer = r.value != null && r.value !== "" ? String(r.value) : null;
+    return (
+      <div className="rounded-2xl border border-[#DCE9D4] bg-[#F9FCF7] p-4 dark:border-[#2A3D2C] dark:bg-[#151D17]">
+        <div className="flex flex-wrap items-start justify-between gap-2 mb-3">
+          <div className="flex items-center gap-2">
+            <span className="flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full bg-[#DFF0D2] text-[10px] font-extrabold text-[#4E8F2F] dark:bg-[#1D311E] dark:text-[#8ED973]">
+              {i + 1}
+            </span>
+            <p className="text-sm font-extrabold text-[#173B20] dark:text-white">{label}</p>
+            <span className="rounded-full border border-[#D7E8CF] bg-white px-2 py-0.5 text-[9px] font-extrabold uppercase tracking-wider text-[#6A8A66] dark:border-[#304A33] dark:bg-[#111827] dark:text-[#9CB79A]">
+              Choix
+            </span>
+          </div>
+        </div>
+        {answer ? (
+          <span className="inline-flex items-center rounded-xl border border-[#CFE4C2] bg-[#ECF7E6] px-3.5 py-2 text-sm font-bold text-[#3B6A32] dark:border-[#385A35] dark:bg-[#1D311E] dark:text-[#A7E08D]">
+            {answer}
+          </span>
+        ) : (
+          <p className="text-xs italic text-[#A5B8A3] dark:text-[#5A7058]">Aucune réponse</p>
+        )}
+        {r.comment && (
+          <p className="mt-3 text-xs leading-5 text-[#527053] dark:text-[#A8BDA5] italic border-t border-[#E5EFE0] dark:border-[#243126] pt-2">
+            {r.comment}
+          </p>
+        )}
+      </div>
+    );
+  }
+
+  /* ── TEXT / TEXTE / TEXTAREA ── */
+  if (rawType === "text" || rawType === "texte" || rawType === "textarea") {
+    const answer = r.value != null && r.value !== "" ? String(r.value) : null;
+    return (
+      <div className="rounded-2xl border border-[#DCE9D4] bg-[#F9FCF7] p-4 dark:border-[#2A3D2C] dark:bg-[#151D17]">
+        <div className="flex flex-wrap items-start justify-between gap-2 mb-3">
+          <div className="flex items-center gap-2">
+            <span className="flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full bg-[#DFF0D2] text-[10px] font-extrabold text-[#4E8F2F] dark:bg-[#1D311E] dark:text-[#8ED973]">
+              {i + 1}
+            </span>
+            <p className="text-sm font-extrabold text-[#173B20] dark:text-white">{label}</p>
+            <span className="rounded-full border border-[#D7E8CF] bg-white px-2 py-0.5 text-[9px] font-extrabold uppercase tracking-wider text-[#6A8A66] dark:border-[#304A33] dark:bg-[#111827] dark:text-[#9CB79A]">
+              Texte
+            </span>
+          </div>
+        </div>
+        {answer ? (
+          <p className="text-sm leading-6 text-[#345238] dark:text-[#D7E9D5] whitespace-pre-wrap bg-white dark:bg-[#111827] rounded-xl border border-[#E0ECD8] dark:border-[#2A3C2D] px-4 py-3">
+            {answer}
+          </p>
+        ) : (
+          <p className="text-xs italic text-[#A5B8A3] dark:text-[#5A7058]">Aucune réponse</p>
+        )}
+        {r.comment && (
+          <p className="mt-3 text-xs leading-5 text-[#527053] dark:text-[#A8BDA5] italic border-t border-[#E5EFE0] dark:border-[#243126] pt-2">
+            {r.comment}
+          </p>
+        )}
+      </div>
+    );
+  }
+
+  /* ── SCORE (par défaut — inclut "score", "", undefined, etc.) ── */
+  const score = normalizeScore(r.value);
+  const tone = scoreTone(score);
+  return (
+    <div className={`rounded-2xl border p-4 ${tone.ring} ${tone.bg}`}>
+      <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+        <div className="flex items-center gap-2">
+          <span className="flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full bg-[#DFF0D2] text-[10px] font-extrabold text-[#4E8F2F] dark:bg-[#1D311E] dark:text-[#8ED973]">
+            {i + 1}
+          </span>
+          <p className="text-sm font-extrabold text-[#173B20] dark:text-white">{label}</p>
+          <span className="rounded-full border border-[#D7E8CF] bg-white px-2 py-0.5 text-[9px] font-extrabold uppercase tracking-wider text-[#6A8A66] dark:border-[#304A33] dark:bg-[#111827] dark:text-[#9CB79A]">
+            Score
+          </span>
+        </div>
+        <RatingDots value={r.value} max={5} />
+      </div>
+      <div className="mb-2 h-2 w-full overflow-hidden rounded-full bg-[#E5EFE0] dark:bg-[#243126]">
+        <div className={`h-full rounded-full transition-all ${tone.bar}`} style={{ width: `${Math.min(score, 100)}%` }} />
+      </div>
+      {r.comment && (
+        <p className="mt-2 text-xs leading-5 text-[#527053] dark:text-[#A8BDA5] italic">
+          {r.comment}
+        </p>
+      )}
+    </div>
+  );
+}
+
+/* ══════════════════════════════════════════════════════════════════
+ * ÉVALUATIONS — carte d'un évaluateur
+ * ══════════════════════════════════════════════════════════════════ */
+function EvaluationCard({ evaluation, role }) {
+  if (!evaluation) {
+    const emptyLabel =
+      role === "admin"
+        ? "Aucune évaluation RH / Recruteur disponible"
+        : "Aucune évaluation Responsable métier disponible";
+    return (
+      <div className="flex flex-col items-center gap-3 py-12 text-center">
+        <div className="flex h-16 w-16 items-center justify-center rounded-3xl bg-[#EEF8E8] dark:bg-[#1A2B1B]">
+          <ClipboardCheck className="h-8 w-8 text-[#6CB33F] opacity-40" />
+        </div>
+        <p className="text-sm font-semibold text-[#7A9878] dark:text-[#7EA47C]">{emptyLabel}</p>
+      </div>
+    );
+  }
+
+  const ratings = evaluation.ratings || [];
+  const notes = evaluation.notes || "";
+  const overallRating = evaluation.overallRating;
+  const evaluatedByName = evaluation.evaluatedByName || evaluation.evaluatedBy || "—";
+  const updatedAt = evaluation.updatedAt || evaluation.createdAt;
+
+  return (
+    <div className="space-y-5">
+      {/* ── Header évaluateur + score global ── */}
+      <div className="flex flex-wrap items-center justify-between gap-4">
+        <div className="flex items-center gap-3">
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#DFF0D2] dark:bg-[#1D311E]">
+            <UserCheck className="h-5 w-5 text-[#4E8F2F] dark:text-[#8ED973]" />
+          </div>
+          <div>
+            <p className="text-[11px] font-extrabold uppercase tracking-[0.15em] text-[#6A8A66] dark:text-[#9CB79A]">Évalué par</p>
+            <p className="text-sm font-extrabold text-[#173B20] dark:text-white">{evaluatedByName}</p>
+          </div>
+        </div>
+        <div className="flex items-center gap-3">
+          {overallRating != null && <GlobalScoreBadge score={overallRating} />}
+          {updatedAt && (
+            <span className="rounded-full border border-[#D7E8CF] bg-white px-3 py-1.5 text-[11px] font-bold text-[#6B8668] dark:border-[#304A33] dark:bg-[#111827] dark:text-[#9EB49A]">
+              {formatDate(updatedAt)}
+            </span>
+          )}
+        </div>
+      </div>
+
+      {/* ── Séparateur ── */}
+      <div className="h-px w-full bg-[#E5EFE0] dark:bg-[#243126]" />
+
+      {/* ── Critères — rendu adaptatif par type ── */}
+      {ratings.length > 0 ? (
+        <div className="space-y-3">
+          {ratings.map((r, i) => (
+            <CriterionRow key={i} r={r} i={i} />
+          ))}
+        </div>
+      ) : (
+        <p className="text-sm text-[#7A9878] dark:text-[#7EA47C]">Aucun critère enregistré.</p>
+      )}
+
+      {/* ── Note générale ── */}
+      {notes && (
+        <div className="rounded-2xl border border-[#D8EBCB] bg-[#F5FBF1] px-4 py-4 dark:border-[#29422C] dark:bg-[#18231A]">
+          <p className="mb-1.5 text-[11px] font-extrabold uppercase tracking-widest text-[#6A8A66] dark:text-[#9CB79A]">Note générale</p>
+          <p className="text-sm leading-6 text-[#345238] dark:text-[#D7E9D5] whitespace-pre-wrap">{notes}</p>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ══════════════════════════════════════════════════════════════════
+ * ÉVALUATIONS — onglet principal
+ * ══════════════════════════════════════════════════════════════════ */
+function EvaluationsTab({ interviewId }) {
+  const [adminEval, setAdminEval] = useState(null);
+  const [responsableEval, setResponsableEval] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [activeCard, setActiveCard] = useState("admin");
+
+  const fetchEvaluations = useCallback(async () => {
+    if (!interviewId) return;
+    setLoading(true);
+    setError(null);
+
+    const token =
+      typeof window !== "undefined"
+        ? localStorage.getItem("token") || sessionStorage.getItem("token") || null
+        : null;
+
+    const headers = {
+      "Content-Type": "application/json",
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    };
+
+    try {
+      const [resAdmin, resResp] = await Promise.allSettled([
+        fetch(`${API_BASE}/api/interviews/${interviewId}/evaluation?viewer=responsable`, { headers }),
+        fetch(`${API_BASE}/api/interviews/${interviewId}/evaluation?viewer=recruteur`, { headers }),
+      ]);
+
+      if (resAdmin.status === "fulfilled" && resAdmin.value.ok) {
+        setAdminEval(await resAdmin.value.json());
+      } else {
+        setAdminEval(null);
+      }
+
+      if (resResp.status === "fulfilled" && resResp.value.ok) {
+        setResponsableEval(await resResp.value.json());
+      } else {
+        setResponsableEval(null);
+      }
+    } catch {
+      setError("Impossible de charger les évaluations.");
+    } finally {
+      setLoading(false);
+    }
+  }, [interviewId]);
+
+  useEffect(() => { fetchEvaluations(); }, [fetchEvaluations]);
+
+  const tabs = [
+    { key: "admin",       label: "RH / Recruteur",     icon: Award,      eval: adminEval },
+    { key: "responsable", label: "Responsable métier", icon: UserCheck,  eval: responsableEval },
+  ];
+
+  return (
+    <div className="space-y-6">
+
+      {/* ── Titre + bouton refresh ── */}
+      <div className="flex items-center justify-between gap-3">
+        <div className="flex items-center gap-3">
+          <div className="w-11 h-11 rounded-2xl bg-[#EAF6E4] dark:bg-[#1B2D1C] flex items-center justify-center border border-[#D5EAC8] dark:border-[#2A462C]">
+            <ClipboardCheck className="w-5 h-5 text-[#4E8F2F] dark:text-[#8ED973]" />
+          </div>
+          <h3 className="text-lg sm:text-xl font-extrabold text-[#173B20] dark:text-white">
+            Fiches d'évaluation
+          </h3>
+        </div>
+        <button
+          type="button"
+          onClick={fetchEvaluations}
+          disabled={loading}
+          title="Rafraîchir"
+          className="flex h-9 w-9 items-center justify-center rounded-xl border border-[#D8E8CF] bg-white text-[#648062] hover:border-[#A7CF94] hover:text-[#4E8F2F] dark:border-[#314533] dark:bg-[#111827] dark:text-[#A8BDA5] disabled:opacity-50 transition-colors"
+        >
+          <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin" : ""}`} />
+        </button>
+      </div>
+
+      {/* ── Synthèse des deux scores ── */}
+      {!loading && (adminEval || responsableEval) && (
+        <div className="grid grid-cols-2 gap-4">
+          {tabs.map((t) => {
+            const tone = scoreTone(normalizeScore(t.eval?.overallRating));
+            return (
+              <button
+                key={t.key}
+                type="button"
+                onClick={() => setActiveCard(t.key)}
+                className={`rounded-2xl border p-4 text-left transition-all ${
+                  activeCard === t.key
+                    ? `${tone.ring} ${tone.bg} shadow-sm`
+                    : "border-[#DCE9D4] bg-white dark:border-[#2A3A2D] dark:bg-[#111827] hover:border-[#BFD8B1]"
+                }`}
+              >
+                <div className="flex items-center gap-2 mb-3">
+                  <t.icon className={`h-4 w-4 ${activeCard === t.key ? "text-[#4E8F2F] dark:text-[#8ED973]" : "text-[#7A9878]"}`} />
+                  <p className="text-xs font-extrabold uppercase tracking-wide text-[#6A8A66] dark:text-[#9CB79A]">{t.label}</p>
+                </div>
+                {t.eval ? (
+                  <div className="flex items-end justify-between gap-2">
+                    <div>
+                      <p className={`text-2xl font-extrabold ${scoreTone(normalizeScore(t.eval.overallRating)).text}`}>
+                        {normalizeScore(t.eval.overallRating)}%
+                      </p>
+                      <p className="text-[11px] font-semibold text-[#7A9878] dark:text-[#7EA47C]">
+                        {t.eval.ratings?.length || 0} critère{t.eval.ratings?.length !== 1 ? "s" : ""}
+                      </p>
+                    </div>
+                    <CheckCircle2 className="h-5 w-5 text-[#6CB33F] flex-shrink-0" />
+                  </div>
+                ) : (
+                  <p className="text-xs font-semibold text-[#A5B8A3] dark:text-[#5A7058]">Non renseignée</p>
+                )}
+              </button>
+            );
+          })}
+        </div>
+      )}
+
+      {/* ── Erreur ── */}
+      {error && (
+        <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-600 dark:border-red-900/50 dark:bg-red-950/20 dark:text-red-300 flex items-center gap-2">
+          <AlertCircle className="w-4 h-4 flex-shrink-0" />{error}
+        </div>
+      )}
+
+      {/* ── Loading ── */}
+      {loading && (
+        <div className="flex items-center justify-center py-16 text-[#6D8669] dark:text-[#9DB39A]">
+          <RefreshCw className="mr-2 h-5 w-5 animate-spin" />Chargement des évaluations...
+        </div>
+      )}
+
+      {/* ── Contenu ── */}
+      {!loading && (
+        <div>
+          {/* Toggle tabs internes */}
+          <div className="mb-5 flex gap-3 overflow-x-auto pb-1">
+            {tabs.map((t) => (
+              <button
+                key={t.key}
+                type="button"
+                onClick={() => setActiveCard(t.key)}
+                className={`inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-extrabold whitespace-nowrap transition-all border ${
+                  activeCard === t.key
+                    ? "bg-[#EEF8E8] border-[#6CB33F] text-[#224A25] dark:bg-[#1A2B1B] dark:border-[#427B38] dark:text-white"
+                    : "bg-white border-[#DCE9D4] text-[#567055] hover:border-[#A7CF94] dark:bg-[#111827] dark:border-[#2A3A2D] dark:text-[#9EB49A]"
+                }`}
+              >
+                <t.icon className="h-4 w-4" />
+                {t.label}
+                {t.eval && (
+                  <span className={`rounded-full px-2 py-0.5 text-[10px] font-extrabold ${
+                    activeCard === t.key ? "bg-[#6CB33F] text-white" : "bg-[#EDF6E8] text-[#4E8F2F] dark:bg-[#203123] dark:text-[#98D873]"
+                  }`}>✓</span>
+                )}
+              </button>
+            ))}
+          </div>
+
+          {/* Fiche active */}
+          <div className="rounded-3xl border border-[#D8E8CF] dark:border-[#2C402F] bg-white dark:bg-[#111827] p-5 sm:p-6">
+            {tabs.map((t) => activeCard === t.key
+              ? <EvaluationCard key={t.key} evaluation={t.eval} role={t.key} />
+              : null
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -869,61 +960,49 @@ export default function EntretienDetailPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [activeTab, setActiveTab] = useState("matching");
-const fetchDetail = useCallback(async () => {
-  if (!candidatureId) return;
-  try {
-    setLoading(true);
-    setError(null);
 
-    const listData = await getConfirmedInterviews({ limit: 100 });
-    const list = listData?.interviews || [];
+  const fetchDetail = useCallback(async () => {
+    if (!candidatureId) return;
+    try {
+      setLoading(true);
+      setError(null);
 
-    // Cherche par candidatureId OU par _id
-    const found = list.find(
-      (i) =>
-        String(i.candidatureId) === candidatureId ||
-        String(i.candidatureIdStr) === candidatureId ||
-        String(i._id) === candidatureId
-    ) || null;
+      const listData = await getConfirmedInterviews({ limit: 100 });
+      const list = listData?.interviews || [];
 
-    if (!found) throw new Error("Entretien introuvable");
+      const found =
+        list.find(
+          (i) =>
+            String(i.candidatureId) === candidatureId ||
+            String(i.candidatureIdStr) === candidatureId ||
+            String(i._id) === candidatureId
+        ) || null;
 
-    setIv({
-      ...found,
-      candidatureId: found.candidatureIdStr || String(found.candidatureId),
-    });
-  } catch (e) {
-    setError(e?.response?.data?.message || e?.message || "Erreur lors du chargement");
-  } finally {
-    setLoading(false);
-  }
-}, [candidatureId]);
-  useEffect(() => {
-    fetchDetail();
-  }, [fetchDetail]);
+      if (!found) throw new Error("Entretien introuvable");
 
-  const handleOpenQuiz = () => {
-    router.push(`/RESPONSABLE_RH_OPTYLAB/entretiens-confirmes/${iv.candidatureId}/quiz-result`);
-  };
+      setIv({
+        ...found,
+        candidatureId: found.candidatureIdStr || String(found.candidatureId),
+      });
+    } catch (e) {
+      setError(e?.response?.data?.message || e?.message || "Erreur lors du chargement");
+    } finally {
+      setLoading(false);
+    }
+  }, [candidatureId]);
 
-  const handleOpenFiche = () => {
-    router.push(`/RESPONSABLE_RH_OPTYLAB/entretiens-confirmes/${iv.candidatureId}/fiche-result`);
-  };
+  useEffect(() => { fetchDetail(); }, [fetchDetail]);
 
-  const handleOpenCv = () => {
-    const url = resolveCvUrl(iv?.cvUrl);
-    if (!url) return;
-    window.open(url, "_blank", "noopener,noreferrer");
-  };
+  const handleOpenQuiz  = () => router.push(`/RESPONSABLE_RH_OPTYLAB/entretiens-confirmes/${iv.candidatureId}/quiz-result`);
+  const handleOpenFiche = () => router.push(`/RESPONSABLE_RH_OPTYLAB/entretiens-confirmes/${iv.candidatureId}/fiche-result`);
+  const handleOpenCv    = () => { const url = resolveCvUrl(iv?.cvUrl); if (url) window.open(url, "_blank", "noopener,noreferrer"); };
 
   if (loading) {
     return (
       <div className="min-h-screen bg-[#F4FAF1] dark:bg-gray-950 flex items-center justify-center">
         <div className="flex flex-col items-center gap-4">
           <div className="h-12 w-12 animate-spin rounded-full border-4 border-[#DDEED3] border-t-[#4E8F2F]" />
-          <p className="text-sm font-semibold text-[#63805F] dark:text-[#9BB197]">
-            Chargement du dossier candidat...
-          </p>
+          <p className="text-sm font-semibold text-[#63805F] dark:text-[#9BB197]">Chargement du dossier candidat...</p>
         </div>
       </div>
     );
@@ -936,16 +1015,9 @@ const fetchDetail = useCallback(async () => {
           <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-red-50">
             <AlertCircle className="h-8 w-8 text-red-500" />
           </div>
-          <h2 className="text-xl font-extrabold text-[#173B20] dark:text-white">
-            {error}
-          </h2>
-          <button
-            type="button"
-            onClick={() => router.back()}
-            className="mt-5 inline-flex items-center gap-2 rounded-full bg-[#4E8F2F] px-5 py-2.5 text-sm font-bold text-white"
-          >
-            <ArrowLeft className="h-4 w-4" />
-            Retour
+          <h2 className="text-xl font-extrabold text-[#173B20] dark:text-white">{error}</h2>
+          <button type="button" onClick={() => router.back()} className="mt-5 inline-flex items-center gap-2 rounded-full bg-[#4E8F2F] px-5 py-2.5 text-sm font-bold text-white">
+            <ArrowLeft className="h-4 w-4" />Retour
           </button>
         </div>
       </div>
@@ -954,130 +1026,64 @@ const fetchDetail = useCallback(async () => {
 
   if (!iv) return null;
 
-  const date = iv.confirmedDate;
-  const time = iv.confirmedTime;
-  const lieu = iv.location;
+  const date  = iv.confirmedDate;
+  const time  = iv.confirmedTime;
+  const lieu  = iv.location;
   const phone = iv?.candidatePhone || iv?.phone || iv?.candidate?.phone || null;
   const cvUrl = resolveCvUrl(iv?.cvUrl);
 
   return (
     <div className="min-h-screen bg-[#F4FAF1] dark:bg-gray-950 text-[#173B20] dark:text-white">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 py-8 sm:py-10">
-        <button
-          type="button"
-          onClick={() => router.push("/RESPONSABLE_RH_OPTYLAB/entretiens-confirmes")}
-          className="mb-6 inline-flex items-center gap-2 text-sm font-bold text-[#5D785D] transition-colors hover:text-[#4E8F2F] dark:text-[#9CB39A] dark:hover:text-[#9ADF77]"
-        >
-          <ArrowLeft className="h-4 w-4" />
-          Retour aux entretiens
+
+        <button type="button" onClick={() => router.push("/RESPONSABLE_RH_OPTYLAB/entretiens-confirmes")} className="mb-6 inline-flex items-center gap-2 text-sm font-bold text-[#5D785D] transition-colors hover:text-[#4E8F2F] dark:text-[#9CB39A] dark:hover:text-[#9ADF77]">
+          <ArrowLeft className="h-4 w-4" />Retour aux entretiens
         </button>
 
+        {/* ── Carte candidat ── */}
         <div className="overflow-hidden rounded-[32px] border border-[#D6E7CE] bg-[#EEF7E9] shadow-sm dark:border-[#2B3F2E] dark:bg-[#101A12]">
           <div className="border-b border-[#D6E7CE] px-5 py-6 sm:px-7 sm:py-7 dark:border-[#263A29]">
             <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
               <div className="flex min-w-0 items-start gap-4 sm:gap-5">
                 <Avatar name={iv.candidateName} size="xl" />
-
                 <div className="min-w-0 flex-1">
-                  <h1 className="truncate text-3xl sm:text-4xl font-extrabold text-[#0D2340] dark:text-white">
-                    {iv.candidateName || "—"}
-                  </h1>
-
+                  <h1 className="truncate text-3xl sm:text-4xl font-extrabold text-[#0D2340] dark:text-white">{iv.candidateName || "—"}</h1>
                   <div className="mt-3 flex flex-wrap items-center gap-4 text-sm font-semibold text-[#48674D] dark:text-[#CFE0CC]">
-                    <div className="inline-flex items-center gap-2">
-                      <Mail className="h-4 w-4 text-[#4E8F2F]" />
-                      <span className="break-all">{iv.candidateEmail || "—"}</span>
-                    </div>
-
-                    {phone && (
-                      <div className="inline-flex items-center gap-2">
-                        <Phone className="h-4 w-4 text-[#4E8F2F]" />
-                        <span>{phone}</span>
-                      </div>
-                    )}
+                    <div className="inline-flex items-center gap-2"><Mail className="h-4 w-4 text-[#4E8F2F]" /><span className="break-all">{iv.candidateEmail || "—"}</span></div>
+                    {phone && <div className="inline-flex items-center gap-2"><Phone className="h-4 w-4 text-[#4E8F2F]" /><span>{phone}</span></div>}
                   </div>
-
-                  <p className="mt-4 text-2xl font-medium text-[#5DA52E] dark:text-[#8ED973]">
-                    {iv.jobTitle || "—"}
-                  </p>
+                  <p className="mt-4 text-2xl font-medium text-[#5DA52E] dark:text-[#8ED973]">{iv.jobTitle || "—"}</p>
                 </div>
               </div>
             </div>
           </div>
-
           <div className="px-5 py-5 sm:px-7 sm:py-6">
-            <div className="mb-4">
-              <p className="text-xs font-extrabold uppercase tracking-[0.2em] text-[#6D8A6B] dark:text-[#93AA90]">
-                Détails de l'entretien
-              </p>
-            </div>
-
+            <p className="mb-4 text-xs font-extrabold uppercase tracking-[0.2em] text-[#6D8A6B] dark:text-[#93AA90]">Détails de l'entretien</p>
             <div className="flex flex-wrap gap-3">
               <InfoPill icon={Briefcase}>{iv.jobTitle || "—"}</InfoPill>
               <InfoPill icon={Calendar}>{formatDate(date)}</InfoPill>
               <InfoPill icon={Clock}>{formatTime(time)}</InfoPill>
               {lieu ? <InfoPill icon={MapPin}>{lieu}</InfoPill> : null}
-              {iv.responsableName || iv.responsableEmail ? (
-                <InfoPill icon={UserCheck}>
-                  {iv.responsableName || iv.responsableEmail}
-                </InfoPill>
-              ) : null}
+              {(iv.responsableName || iv.responsableEmail) ? <InfoPill icon={UserCheck}>{iv.responsableName || iv.responsableEmail}</InfoPill> : null}
             </div>
           </div>
         </div>
 
-        <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-5">
-          <ActionTab
-            icon={Award}
-            label="Quiz"
-            onClick={handleOpenQuiz}
-            badge={
-              iv?.quiz
-                ? `${normalizeScore(
-                    iv.quiz.percentage ??
-                      (iv.quiz.totalQuestions
-                        ? (iv.quiz.score / iv.quiz.totalQuestions) * 100
-                        : 0)
-                  )}%`
-                : null
-            }
-          />
-
-          <ActionTab
-            icon={ClipboardList}
-            label="Fiche"
-            onClick={handleOpenFiche}
-            badge={iv?.fiche ? "OK" : null}
-          />
-
-          <ActionTab
-            icon={FileText}
-            label="CV"
-            onClick={handleOpenCv}
-            muted={!cvUrl}
-          />
-
-          <ActionTab
-            icon={BarChart2}
-            label="Matching"
-            active={activeTab === "matching"}
-            onClick={() => setActiveTab("matching")}
-            badge={iv?.jobMatch ? `${normalizeScore(iv.jobMatch.score)}%` : null}
-          />
-
-          <ActionTab
-            icon={Pencil}
-            label="Notes"
-            active={activeTab === "notes"}
-            onClick={() => setActiveTab("notes")}
-          />
+        {/* ── Onglets de navigation ── */}
+        <div className="mt-6 grid grid-cols-3 gap-3 sm:grid-cols-6">
+          <ActionTab icon={Award}          label="Quiz"         onClick={handleOpenQuiz}  badge={iv?.quiz ? `${normalizeScore(iv.quiz.percentage ?? (iv.quiz.totalQuestions ? (iv.quiz.score / iv.quiz.totalQuestions) * 100 : 0))}%` : null} />
+          <ActionTab icon={ClipboardList}  label="Fiche"        onClick={handleOpenFiche} badge={iv?.fiche ? "OK" : null} />
+          <ActionTab icon={FileText}       label="CV"           onClick={handleOpenCv}    muted={!cvUrl} />
+          <ActionTab icon={BarChart2}      label="Matching"     active={activeTab === "matching"}     onClick={() => setActiveTab("matching")}     badge={iv?.jobMatch ? `${normalizeScore(iv.jobMatch.score)}%` : null} />
+          <ActionTab icon={ClipboardCheck} label="Évaluations"  active={activeTab === "evaluations"}  onClick={() => setActiveTab("evaluations")} />
+          <ActionTab icon={Pencil}         label="Notes"        active={activeTab === "notes"}        onClick={() => setActiveTab("notes")} />
         </div>
 
+        {/* ── Contenu de l'onglet actif ── */}
         <div className="mt-6">
-          {activeTab === "matching" && <MatchingTab jobMatch={iv.jobMatch} />}
-          {activeTab === "notes" && (
-            <NotesTab candidatureId={iv.candidatureId} />
-          )}
+          {activeTab === "matching"    && <MatchingTab    jobMatch={iv.jobMatch} />}
+          {activeTab === "evaluations" && <EvaluationsTab interviewId={String(iv._id)} />}
+          {activeTab === "notes"       && <NotesTab       candidatureId={iv.candidatureId} />}
         </div>
 
         {!cvUrl && (

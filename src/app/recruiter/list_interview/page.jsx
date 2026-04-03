@@ -273,30 +273,20 @@ async function apiFetch(path, options = {}) {
 
 function getCurrentUserEmailFromToken() {
   try {
-    const token =
-      (typeof localStorage !== "undefined" && localStorage.getItem("token")) ||
-      (typeof sessionStorage !== "undefined" && sessionStorage.getItem("token")) ||
-      "";
+    const token = (typeof localStorage !== "undefined" && localStorage.getItem("token")) || (typeof sessionStorage !== "undefined" && sessionStorage.getItem("token")) || "";
     if (!token) return "";
     const payload = JSON.parse(atob(token.split(".")[1]));
     return payload.email || payload.sub || "";
-  } catch {
-    return "";
-  }
+  } catch { return ""; }
 }
 
 function getCurrentUserRoleFromToken() {
   try {
-    const token =
-      (typeof localStorage !== "undefined" && localStorage.getItem("token")) ||
-      (typeof sessionStorage !== "undefined" && sessionStorage.getItem("token")) ||
-      "";
+    const token = (typeof localStorage !== "undefined" && localStorage.getItem("token")) || (typeof sessionStorage !== "undefined" && sessionStorage.getItem("token")) || "";
     if (!token) return "";
     const payload = JSON.parse(atob(token.split(".")[1]));
     return payload.role || "";
-  } catch {
-    return "";
-  }
+  } catch { return ""; }
 }
 
 const STATUS_CONFIG = {
@@ -382,12 +372,38 @@ function ScoreBadge({ score }) {
   );
 }
 
-function DetailCard({ label, value, children }) {
+/* ══════ BOUTON VOIR RÉPONSES RESPONSABLE ══════ */
+function ResponsableEvalButton({ hasEval, isLoading, onClick }) {
+  if (isLoading) {
+    return (
+      <button disabled className="w-full py-2.5 rounded-xl text-sm font-semibold bg-gray-100 dark:bg-gray-700/50 text-gray-400 dark:text-gray-500 cursor-not-allowed flex items-center justify-center gap-2">
+        <span className="w-3.5 h-3.5 border-2 border-gray-300 border-t-gray-500 rounded-full animate-spin" />
+        Vérification…
+      </button>
+    );
+  }
+
+  if (hasEval) {
+    return (
+      <button
+        onClick={onClick}
+        className="w-full bg-[#E9F5E3] hover:bg-[#d7ebcf] dark:bg-emerald-950/30 dark:hover:bg-emerald-900/40 text-[#4E8F2F] dark:text-emerald-400 py-2.5 rounded-xl text-sm font-semibold transition-all flex items-center justify-center gap-2"
+      >
+        <CheckCircle2 className="w-4 h-4" />
+        Voir réponses du responsable
+      </button>
+    );
+  }
+
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 p-4 transition-colors">
-      <div className="text-[11px] uppercase tracking-wider font-bold text-gray-500 dark:text-gray-400 mb-2">{label}</div>
-      {children ? children : <div className="text-sm font-medium text-gray-800 dark:text-gray-200 break-words">{value || "—"}</div>}
-    </div>
+    <button
+      disabled
+      title="Le responsable métier n'a pas encore rempli sa fiche d'évaluation"
+      className="w-full py-2.5 rounded-xl text-sm font-semibold bg-gray-100 dark:bg-gray-700/50 text-gray-400 dark:text-gray-500 cursor-not-allowed border border-dashed border-gray-300 dark:border-gray-600 flex items-center justify-center gap-2"
+    >
+      <Clock3 className="w-3.5 h-3.5" />
+      En attente de l'évaluation
+    </button>
   );
 }
 
@@ -512,7 +528,7 @@ function CancelInterviewModal({ open, onClose, onConfirm, reason, setReason, loa
 }
 
 /* ══════ MOBILE INTERVIEW CARD ══════ */
-function InterviewCard({ iv, onExpand, isExpanded, onConfirmAdmin, confirmingAdmin, onApprove, onReject, actionLoading, evaluationsCache, fetchEvaluationIfNeeded, router, currentUserEmail }) {
+function InterviewCard({ iv, onExpand, isExpanded, onConfirmAdmin, confirmingAdmin, onApprove, onReject, actionLoading, responsableEvalsCache, evalLoadingSet, router, currentUserEmail }) {
   const allIvs = [iv, ...(iv.siblings || [])];
   const ivWithDga = allIvs.find((siv) => siv.dgaInterview);
   const allGroupNotes = Array.from(new Map(allIvs.flatMap((siv) => siv.allEntretienNotes || []).map((n) => [String(n._id || n.createdAt), n])).values());
@@ -533,10 +549,17 @@ function InterviewCard({ iv, onExpand, isExpanded, onConfirmAdmin, confirmingAdm
     responsableEmailDisplay !== "—" &&
     responsableEmailDisplay.toLowerCase() === currentUserEmail.toLowerCase();
 
+  // ✅ Vérifier si la fiche du responsable existe
+  const hasResponsableEval = allIvs.some((siv) => {
+    const cached = responsableEvalsCache[String(siv._id)];
+    return cached !== undefined && cached !== null;
+  });
+
+  const isResponsableEvalLoading = allIvs.some((siv) => evalLoadingSet.has(String(siv._id)));
+
   return (
     <div className={`bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden transition-all ${isCancelled ? "opacity-60" : ""}`}>
-      {/* Header card */}
-      <div className="p-4 flex items-start gap-3" onClick={() => { onExpand(); if (!isExpanded) allIvs.forEach((siv) => { if (isRHPlusTechInterviewFE(siv.interviewType)) fetchEvaluationIfNeeded(String(siv._id)); }); }}>
+      <div className="p-4 flex items-start gap-3" onClick={() => { onExpand(); }}>
         <Avatar name={iv.candidateName} />
         <div className="flex-1 min-w-0">
           <div className="flex items-start justify-between gap-2">
@@ -558,7 +581,6 @@ function InterviewCard({ iv, onExpand, isExpanded, onConfirmAdmin, confirmingAdm
         </div>
       </div>
 
-      {/* Actions rapides */}
       <div className="px-4 pb-4 flex flex-wrap gap-2 border-t border-gray-100 dark:border-gray-700 pt-3">
         {hasDGA && !isCancelled ? (
           <button onClick={onExpand} className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold border bg-emerald-50 dark:bg-emerald-950/30 border-emerald-300 dark:border-emerald-700 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-100 transition-colors whitespace-nowrap">
@@ -568,55 +590,46 @@ function InterviewCard({ iv, onExpand, isExpanded, onConfirmAdmin, confirmingAdm
           <DgaScheduleModal interview={ivWithDga || iv} onSuccess={() => { }} />
         )}
         {score !== null && <ScoreBadge score={score} />}
-
         {iv.adminConfirmed === true ? (
           <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-200 bg-emerald-50 dark:border-emerald-700 dark:bg-emerald-950/30 px-3 py-1.5 text-xs font-bold text-emerald-700 dark:text-emerald-300 whitespace-nowrap">
             <CheckCircle2 className="w-3.5 h-3.5" />Confirmé
           </span>
         ) : (
-          <button
-            onClick={(e) => { e.stopPropagation(); onConfirmAdmin(iv.candidatureId || String(iv._id), e); }}
-            disabled={confirmingAdmin === (iv.candidatureId || String(iv._id))}
-            className="inline-flex items-center gap-1.5 rounded-full border border-[#6CB33F] bg-[#E9F5E3] hover:bg-[#6CB33F] hover:text-white px-3 py-1.5 text-xs font-bold text-[#4E8F2F] disabled:opacity-50 transition-all whitespace-nowrap"
-          >
+          <button onClick={(e) => { e.stopPropagation(); onConfirmAdmin(iv.candidatureId || String(iv._id), e); }} disabled={confirmingAdmin === (iv.candidatureId || String(iv._id))} className="inline-flex items-center gap-1.5 rounded-full border border-[#6CB33F] bg-[#E9F5E3] hover:bg-[#6CB33F] hover:text-white px-3 py-1.5 text-xs font-bold text-[#4E8F2F] disabled:opacity-50 transition-all whitespace-nowrap">
             {confirmingAdmin === (iv.candidatureId || String(iv._id)) ? <RefreshCcw className="w-3.5 h-3.5 animate-spin" /> : <CheckCircle2 className="w-3.5 h-3.5" />}Confirmer
           </button>
         )}
       </div>
 
-      {/* Expanded details — mobile */}
       {isExpanded && (
         <div className="border-t border-gray-100 dark:border-gray-700 px-4 pb-4 pt-3 bg-green-50/20 dark:bg-gray-900/20">
-          {/* titre section */}
           <div className="flex items-center justify-center mb-4">
             <span className="text-[11px] font-extrabold uppercase tracking-widest text-[#4E8F2F] dark:text-emerald-400 border border-[#d7ebcf] dark:border-emerald-800 rounded-full px-4 py-1 bg-[#E9F5E3] dark:bg-emerald-950/20">
               Documents &amp; Évaluations
             </span>
           </div>
           <div className="grid grid-cols-1 gap-3">
+
             {/* Card Responsable */}
             <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 p-4 flex flex-col gap-3">
               <div className="text-[11px] uppercase tracking-wider font-bold text-gray-400 dark:text-gray-500">Responsable</div>
               <div className="flex items-start gap-3">
-                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#6CB33F] to-[#4E8F2F] text-white flex items-center justify-center font-extrabold text-sm flex-shrink-0">
-                  {getInitials(responsableDisplay)}
-                </div>
+                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#6CB33F] to-[#4E8F2F] text-white flex items-center justify-center font-extrabold text-sm flex-shrink-0">{getInitials(responsableDisplay)}</div>
                 <div className="min-w-0">
                   <div className="text-sm font-bold text-gray-800 dark:text-gray-200 break-words">{responsableDisplay}</div>
                   {responsableEmailDisplay !== "—" && <div className="text-xs text-gray-500 dark:text-gray-400 break-words mt-0.5">{responsableEmailDisplay}</div>}
                 </div>
               </div>
               {!isResponsableCurrentUser && (
-                <button
+                <ResponsableEvalButton
+                  hasEval={hasResponsableEval}
+                  isLoading={isResponsableEvalLoading}
                   onClick={() => router.push(`/recruiter/interviews/${iv._id}/evaluation-response`)}
-                  className="w-full bg-[#E9F5E3] hover:bg-[#d7ebcf] dark:bg-emerald-950/30 dark:hover:bg-emerald-900/40 text-[#4E8F2F] dark:text-emerald-400 py-2.5 rounded-xl text-sm font-semibold transition"
-                >
-                  Voir réponses du responsable
-                </button>
+                />
               )}
             </div>
 
-            {/* Planification */}
+            {/* Card Planification */}
             <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 p-4">
               <div className="text-[11px] uppercase tracking-wider font-bold text-gray-400 dark:text-gray-500 mb-2">Planification</div>
               <div className="flex flex-col gap-1.5 text-xs text-gray-600 dark:text-gray-400">
@@ -631,43 +644,8 @@ function InterviewCard({ iv, onExpand, isExpanded, onConfirmAdmin, confirmingAdm
               <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 p-4">
                 <div className="text-[11px] uppercase tracking-wider font-bold text-gray-400 dark:text-gray-500 mb-3">Note RH Optylab</div>
                 <div className="flex items-center gap-3">
-                  <div className="w-14 h-14 rounded-2xl bg-blue-50 dark:bg-blue-950/30 border border-blue-100 dark:border-blue-800 flex items-center justify-center flex-shrink-0">
-                    <span className="font-extrabold text-blue-700 dark:text-blue-300 text-xl">{iv.responsable_rh_optylab}</span>
-                  </div>
-                  <div>
-                    <div className="text-xs text-gray-400 mb-1">sur 5</div>
-                    <span className="text-amber-500 text-base">{"★".repeat(Math.round(iv.responsable_rh_optylab))}{"☆".repeat(5 - Math.round(iv.responsable_rh_optylab))}</span>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* Card Évaluation */}
-            {allIvs.some((siv) => siv.status === "CONFIRMED" || siv.status === "PENDING_CANDIDATE_CONFIRMATION") && (
-              <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 p-4">
-                <div className="text-[11px] uppercase tracking-wider font-bold text-gray-400 dark:text-gray-500 mb-3">Évaluation</div>
-                <div className="flex flex-col gap-2">
-                  {allIvs.filter((siv) => siv.status === "CONFIRMED" || siv.status === "PENDING_CANDIDATE_CONFIRMATION").map((siv) => {
-                    const stc = resolveTypeConfig(siv.interviewType);
-                    const isRHT = isRHPlusTechInterviewFE(siv.interviewType);
-                    const evalData = evaluationsCache[String(siv._id)];
-                    const hasEval = isRHT && evalData !== undefined && evalData !== null;
-                    return (
-                      <div key={siv._id} className="flex flex-col gap-1.5">
-                        <button onClick={(e) => { e.stopPropagation(); router.push(`/recruiter/interviews/${siv._id}/evaluation`); }}
-                          className={`w-full px-4 py-2.5 rounded-xl border font-semibold text-sm transition-colors flex items-center gap-2 ${hasEval ? "bg-emerald-50 dark:bg-emerald-950/30 border-emerald-300 dark:border-emerald-700 text-emerald-700 dark:text-emerald-300" : "bg-violet-50 dark:bg-violet-950/30 border-violet-200 dark:border-violet-700 text-violet-700 dark:text-violet-300"}`}>
-                          <FileText className="w-4 h-4" />{stc.label}{hasEval && <CheckCircle2 className="w-3.5 h-3.5 ml-auto text-emerald-500" />}
-                        </button>
-                        {hasEval && evalData.evaluationGlobale != null && (
-                          <div className="rounded-xl bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-200 dark:border-emerald-800 px-3 py-2 text-xs flex items-center gap-2">
-                            <span className="font-bold text-emerald-700 dark:text-emerald-400">Score :</span>
-                            <span className="font-extrabold text-emerald-800 dark:text-emerald-300">{evalData.evaluationGlobale}/5</span>
-                            <span className="text-amber-500">{"★".repeat(Math.round(evalData.evaluationGlobale))}{"☆".repeat(5 - Math.round(evalData.evaluationGlobale))}</span>
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })}
+                  <div className="w-14 h-14 rounded-2xl bg-blue-50 dark:bg-blue-950/30 border border-blue-100 dark:border-blue-800 flex items-center justify-center flex-shrink-0"><span className="font-extrabold text-blue-700 dark:text-blue-300 text-xl">{iv.responsable_rh_optylab}</span></div>
+                  <div><div className="text-xs text-gray-400 mb-1">sur 5</div><span className="text-amber-500 text-base">{"★".repeat(Math.round(iv.responsable_rh_optylab))}{"☆".repeat(5 - Math.round(iv.responsable_rh_optylab))}</span></div>
                 </div>
               </div>
             )}
@@ -695,7 +673,7 @@ function InterviewCard({ iv, onExpand, isExpanded, onConfirmAdmin, confirmingAdm
               );
             })()}
 
-            {/* Actions admin */}
+            {/* Card Report demandé */}
             {iv.status === "CANDIDATE_REQUESTED_RESCHEDULE" && (
               <div className="bg-white dark:bg-gray-800 rounded-2xl border border-orange-200 dark:border-orange-700 p-4">
                 <div className="text-[11px] uppercase tracking-wider font-bold text-orange-400 mb-2">Report demandé</div>
@@ -703,17 +681,15 @@ function InterviewCard({ iv, onExpand, isExpanded, onConfirmAdmin, confirmingAdm
                 <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">{iv.candidateRescheduleReason || "Raison non précisée"}</div>
               </div>
             )}
+
+            {/* Card Approbation */}
             {iv.status === "PENDING_ADMIN_APPROVAL" && (
               <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 p-4">
                 <div className="text-[11px] uppercase tracking-wider font-bold text-gray-400 dark:text-gray-500 mb-3">Nouvelle date proposée</div>
                 <div className="text-sm font-medium text-gray-800 dark:text-gray-200 mb-3">{`${formatDate(iv.responsableProposedDate)} ${iv.responsableProposedTime || ""}`}</div>
                 <div className="grid grid-cols-2 gap-2">
-                  <button disabled={!!isActioning} onClick={(e) => onApprove(iv._id, e)} className="px-4 py-2.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-700 text-emerald-700 dark:text-emerald-300 font-semibold text-sm hover:bg-emerald-100 transition-colors disabled:opacity-50">
-                    {actionLoading === iv._id + "_approve" ? "…" : "✓ Approuver"}
-                  </button>
-                  <button disabled={!!isActioning} onClick={(e) => onReject(iv._id, e)} className="px-4 py-2.5 rounded-xl bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-700 text-red-700 dark:text-red-300 font-semibold text-sm hover:bg-red-100 transition-colors disabled:opacity-50">
-                    {actionLoading === iv._id + "_reject" ? "…" : "✕ Rejeter"}
-                  </button>
+                  <button disabled={!!isActioning} onClick={(e) => onApprove(iv._id, e)} className="px-4 py-2.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-700 text-emerald-700 dark:text-emerald-300 font-semibold text-sm hover:bg-emerald-100 transition-colors disabled:opacity-50">{actionLoading === iv._id + "_approve" ? "…" : "✓ Approuver"}</button>
+                  <button disabled={!!isActioning} onClick={(e) => onReject(iv._id, e)} className="px-4 py-2.5 rounded-xl bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-700 text-red-700 dark:text-red-300 font-semibold text-sm hover:bg-red-100 transition-colors disabled:opacity-50">{actionLoading === iv._id + "_reject" ? "…" : "✕ Rejeter"}</button>
                 </div>
               </div>
             )}
@@ -728,9 +704,7 @@ export default function AdminInterviewList() {
   const router = useRouter();
 
   const [interviews, setInterviews] = useState([]);
-  const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [statsLoading, setStatsLoading] = useState(true);
   const [error, setError] = useState(null);
   const [actionLoading, setActionLoading] = useState(null);
 
@@ -741,7 +715,11 @@ export default function AdminInterviewList() {
   const [totalPages, setTotalPages] = useState(1);
   const [total, setTotal] = useState(0);
   const [expandedRow, setExpandedRow] = useState(null);
-  const [evaluationsCache, setEvaluationsCache] = useState({});
+
+  // ✅ Cache séparé pour les évaluations du responsable métier
+  const [responsableEvalsCache, setResponsableEvalsCache] = useState({});
+  // ✅ Set des IDs en cours de chargement
+  const [evalLoadingSet, setEvalLoadingSet] = useState(new Set());
 
   const [cancelModalOpen, setCancelModalOpen] = useState(false);
   const [cancelInterviewId, setCancelInterviewId] = useState(null);
@@ -811,17 +789,27 @@ export default function AdminInterviewList() {
     } catch (err) { setError(err.message || "Erreur lors du chargement"); } finally { setLoading(false); }
   }, [page, statusFilter, debouncedSearch]);
 
-  const fetchEvaluationIfNeeded = useCallback(async (interviewId) => {
-    if (evaluationsCache[interviewId] !== undefined) return;
+  // ✅ FETCH ÉVAL RESPONSABLE MÉTIER — viewer=recruteur pour cibler la fiche du responsable
+  const fetchResponsableEval = useCallback(async (interviewId) => {
+    const idStr = String(interviewId);
+    // Déjà chargé ou en cours
+    if (responsableEvalsCache[idStr] !== undefined || evalLoadingSet.has(idStr)) return;
+
+    setEvalLoadingSet((prev) => new Set([...prev, idStr]));
     try {
-      const data = await apiFetch(`/api/interviews/${interviewId}/evaluation`);
-      setEvaluationsCache((prev) => ({ ...prev, [interviewId]: data?.evaluation || null }));
-    } catch { setEvaluationsCache((prev) => ({ ...prev, [interviewId]: null })); }
-  }, [evaluationsCache]);
+      // viewer=recruteur → backend retourne la fiche du RESPONSABLE_METIER
+      const data = await apiFetch(`/api/interviews/${idStr}/evaluation?viewer=recruteur`);
+      setResponsableEvalsCache((prev) => ({ ...prev, [idStr]: data || null }));
+    } catch {
+      // 404 ou erreur = pas de fiche responsable
+      setResponsableEvalsCache((prev) => ({ ...prev, [idStr]: null }));
+    } finally {
+      setEvalLoadingSet((prev) => { const next = new Set(prev); next.delete(idStr); return next; });
+    }
+  }, [responsableEvalsCache, evalLoadingSet]);
 
   const fetchStats = useCallback(async () => {
-    setStatsLoading(true);
-    try { const data = await apiFetch("/api/interviews/admin/stats"); setStats(data.data || {}); } catch { setStats(null); } finally { setStatsLoading(false); }
+    try { await apiFetch("/api/interviews/admin/stats"); } catch { }
   }, []);
 
   useEffect(() => { fetchInterviews(); }, [fetchInterviews]);
@@ -831,7 +819,7 @@ export default function AdminInterviewList() {
     e.stopPropagation();
     if (!confirm("Approuver la modification de cet entretien ?")) return;
     setActionLoading(interviewId + "_approve");
-    try { await apiFetch(`/api/interviews/admin/approve/${interviewId}`, { method: "POST", body: JSON.stringify({}) }); await fetchInterviews(); await fetchStats(); } catch (err) { alert("Erreur : " + (err.message || "Action impossible")); } finally { setActionLoading(null); }
+    try { await apiFetch(`/api/interviews/admin/approve/${interviewId}`, { method: "POST", body: JSON.stringify({}) }); await fetchInterviews(); } catch (err) { alert("Erreur : " + (err.message || "Action impossible")); } finally { setActionLoading(null); }
   }
 
   async function handleReject(interviewId, e) {
@@ -839,7 +827,7 @@ export default function AdminInterviewList() {
     const reason = prompt("Raison du rejet (optionnel) :");
     if (reason === null) return;
     setActionLoading(interviewId + "_reject");
-    try { await apiFetch(`/api/interviews/admin/reject/${interviewId}`, { method: "POST", body: JSON.stringify({ reason }) }); await fetchInterviews(); await fetchStats(); } catch (err) { alert("Erreur : " + (err.message || "Action impossible")); } finally { setActionLoading(null); }
+    try { await apiFetch(`/api/interviews/admin/reject/${interviewId}`, { method: "POST", body: JSON.stringify({ reason }) }); await fetchInterviews(); } catch (err) { alert("Erreur : " + (err.message || "Action impossible")); } finally { setActionLoading(null); }
   }
 
   function openCancelModal(interviewId, e) { e.stopPropagation(); setCancelInterviewId(interviewId); setCancelReason(""); setCancelModalOpen(true); }
@@ -850,11 +838,10 @@ export default function AdminInterviewList() {
     setActionLoading(cancelInterviewId + "_cancel");
     try {
       await apiFetch(`/api/interviews/${cancelInterviewId}`, { method: "DELETE", body: JSON.stringify({ reason: cancelReason }) });
-      await fetchInterviews(); await fetchStats(); setExpandedRow(null); setCancelModalOpen(false); setCancelInterviewId(null); setCancelReason("");
+      await fetchInterviews(); setExpandedRow(null); setCancelModalOpen(false); setCancelInterviewId(null); setCancelReason("");
     } catch (err) { alert("Erreur : " + (err.message || "Action impossible")); } finally { setActionLoading(null); }
   }
 
-  // Grouper les interviews
   const groupedInterviews = (() => {
     const grouped = [];
     const seen = new Map();
@@ -869,9 +856,20 @@ export default function AdminInterviewList() {
     return grouped;
   })();
 
+  // ✅ Déclencher le fetch des évals responsable quand on expand une ligne
+  function handleExpandRow(iv) {
+    const allIvs = [iv, ...(iv.siblings || [])];
+    const newExpanded = expandedRow === iv._id ? null : iv._id;
+    setExpandedRow(newExpanded);
+    if (newExpanded) {
+      // Fetch pour tous les interviews du groupe
+      allIvs.forEach((siv) => fetchResponsableEval(String(siv._id)));
+    }
+  }
+
   return (
     <div className="min-h-screen bg-[#F0FAF0] dark:bg-gray-950 text-gray-900 dark:text-gray-100 transition-colors duration-300">
-      <PlanifierModal open={planifierOpen} onClose={() => setPlanifierOpen(false)} onCreated={async () => { await fetchInterviews(); await fetchStats(); }} />
+      <PlanifierModal open={planifierOpen} onClose={() => setPlanifierOpen(false)} onCreated={async () => { await fetchInterviews(); }} />
       <CancelInterviewModal open={cancelModalOpen} onClose={closeCancelModal} onConfirm={confirmCancelInterview} reason={cancelReason} setReason={setCancelReason} loading={actionLoading === cancelInterviewId + "_cancel"} />
 
       <div className="max-w-full mx-auto px-4 sm:px-6 pt-10 pb-16">
@@ -914,7 +912,6 @@ export default function AdminInterviewList() {
           <div className="text-sm font-medium text-gray-500 dark:text-gray-400">{loading ? "…" : `${total} résultat${total > 1 ? "s" : ""}`}</div>
         </div>
 
-        {/* Loading */}
         {loading && (
           <div className="bg-white dark:bg-gray-800 rounded-3xl shadow-lg border border-gray-200 dark:border-gray-700 p-8 sm:p-12 text-center">
             <div className="flex flex-col items-center justify-center gap-4">
@@ -924,7 +921,6 @@ export default function AdminInterviewList() {
           </div>
         )}
 
-        {/* Error */}
         {!loading && error && (
           <div className="bg-white dark:bg-gray-800 rounded-3xl shadow-lg border border-gray-200 dark:border-gray-700 p-8 sm:p-12 text-center">
             <div className="flex flex-col items-center justify-center gap-4">
@@ -936,7 +932,6 @@ export default function AdminInterviewList() {
           </div>
         )}
 
-        {/* Empty */}
         {!loading && !error && interviews.length === 0 && (
           <div className="bg-white dark:bg-gray-800 rounded-3xl shadow-lg border border-gray-200 dark:border-gray-700 p-8 sm:p-12 text-center">
             <div className="flex flex-col items-center justify-center gap-4">
@@ -949,28 +944,28 @@ export default function AdminInterviewList() {
 
         {!loading && !error && interviews.length > 0 && (
           <>
-            {/* ══ VUE MOBILE (cards) — visible < lg ══ */}
+            {/* ══ VUE MOBILE ══ */}
             <div className="lg:hidden flex flex-col gap-3">
               {groupedInterviews.map((iv) => (
                 <InterviewCard
                   key={iv._groupKey || String(iv._id)}
                   iv={iv}
                   isExpanded={expandedRow === iv._id}
-                  onExpand={() => setExpandedRow(expandedRow === iv._id ? null : iv._id)}
+                  onExpand={() => handleExpandRow(iv)}
                   onConfirmAdmin={handleConfirmAdmin}
                   confirmingAdmin={confirmingAdmin}
                   onApprove={handleApprove}
                   onReject={handleReject}
                   actionLoading={actionLoading}
-                  evaluationsCache={evaluationsCache}
-                  fetchEvaluationIfNeeded={fetchEvaluationIfNeeded}
+                  responsableEvalsCache={responsableEvalsCache}
+                  evalLoadingSet={evalLoadingSet}
                   router={router}
                   currentUserEmail={currentUserEmail}
                 />
               ))}
             </div>
 
-            {/* ══ VUE DESKTOP (tableau) — visible >= lg ══ */}
+            {/* ══ VUE DESKTOP (tableau) ══ */}
             <div className="hidden lg:block bg-white dark:bg-gray-800 rounded-3xl shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden transition-colors duration-300">
               <div className="overflow-x-auto">
                 <table className="w-full text-sm min-w-[1100px]">
@@ -1011,10 +1006,18 @@ export default function AdminInterviewList() {
                         responsableEmailDisplay !== "—" &&
                         responsableEmailDisplay.toLowerCase() === currentUserEmail.toLowerCase();
 
+                      // ✅ Vérification éval responsable dans le cache
+                      const hasResponsableEval = allIvs.some((siv) => {
+                        const cached = responsableEvalsCache[String(siv._id)];
+                        return cached !== undefined && cached !== null;
+                      });
+
+                      const isResponsableEvalLoading = allIvs.some((siv) => evalLoadingSet.has(String(siv._id)));
+
                       return (
                         <React.Fragment key={iv._groupKey || String(iv._id)}>
                           <tr
-                            onClick={() => { const newExpanded = isExpanded ? null : iv._id; setExpandedRow(newExpanded); if (newExpanded) allIvs.forEach((siv) => { if (isRHPlusTechInterviewFE(siv.interviewType)) fetchEvaluationIfNeeded(String(siv._id)); }); }}
+                            onClick={() => handleExpandRow(iv)}
                             className={`hover:bg-green-50/40 dark:hover:bg-gray-700/40 transition-colors cursor-pointer ${isExpanded ? "bg-green-50/30 dark:bg-gray-700/30" : ""} ${isCancelled ? "opacity-60" : ""}`}
                           >
                             <td className="px-4 py-5" onClick={(e) => e.stopPropagation()}>
@@ -1048,11 +1051,10 @@ export default function AdminInterviewList() {
                                 {iv.status === "CANDIDATE_REQUESTED_RESCHEDULE" && <div className="flex items-center gap-2 text-orange-700 dark:text-orange-300"><span className="w-2 h-2 rounded-full bg-orange-500" /><span>Report : {formatDate(iv.candidateProposedDate)} {iv.candidateProposedTime}</span></div>}
                               </div>
                             </td>
-                            {/* Éval. DGA */}
                             <td className="px-6 lg:px-8 py-5">
                               <div className="flex flex-col gap-2">
                                 {hasDGA && !isCancelled ? (
-                                  <button onClick={(e) => { e.stopPropagation(); setExpandedRow(isExpanded ? null : iv._id); }} className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold border bg-emerald-50 dark:bg-emerald-950/30 border-emerald-300 dark:border-emerald-700 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-100 dark:hover:bg-emerald-900/40 transition-colors whitespace-nowrap">
+                                  <button onClick={(e) => { e.stopPropagation(); handleExpandRow(iv); }} className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold border bg-emerald-50 dark:bg-emerald-950/30 border-emerald-300 dark:border-emerald-700 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-100 dark:hover:bg-emerald-900/40 transition-colors whitespace-nowrap">
                                     <FileText className="w-3.5 h-3.5" />{isExpanded ? "Masquer" : "Voir détails"}
                                   </button>
                                 ) : (
@@ -1061,7 +1063,6 @@ export default function AdminInterviewList() {
                                 {dgaNote && (<><ScoreBadge score={score} />{comment ? <span className="text-xs text-gray-500 dark:text-gray-400 truncate max-w-[170px]" title={comment}>{comment}</span> : null}</>)}
                               </div>
                             </td>
-                            {/* Confirmer */}
                             <td className="px-6 lg:px-8 py-5">
                               {iv.adminConfirmed === true ? (
                                 <div className="flex flex-col gap-0.5">
@@ -1077,39 +1078,36 @@ export default function AdminInterviewList() {
                             <td className="px-6 lg:px-8 py-5 text-right"><ChevronDown className={`w-5 h-5 text-gray-400 ml-auto transition-transform ${isExpanded ? "rotate-180" : ""}`} /></td>
                           </tr>
 
-                          {/* ══ EXPANDED ROW DESKTOP — style Documents & Évaluations ══ */}
+                          {/* ══ EXPANDED ROW DESKTOP ══ */}
                           {isExpanded && (
                             <tr>
-                              <td colSpan={9} className="px-6 lg:px-8 pb-8 bg-green-50/20 dark:bg-gray-900/20">
-                                {/* Titre section */}
-                                {/* ── Séparateur avec label ── */}
-                                <div className="flex items-center gap-3 mb-4">
+                              <td colSpan={9} className="px-6 lg:px-8 pt-6 pb-8 bg-green-50/20 dark:bg-gray-900/20">
+                                <div className="flex items-center gap-3 mb-6">
                                   <div className="h-px flex-1 bg-gradient-to-r from-transparent via-[#c5ddb5] dark:via-gray-600 to-transparent" />
-                                  <span className="text-[10px] uppercase tracking-widest font-bold text-[#4E8F2F] dark:text-emerald-500 bg-[#E9F5E3] dark:bg-emerald-950/30 px-3 py-1 rounded-full">Documents & évaluations</span>
+                                  <span className="text-[10px] uppercase tracking-widest font-bold text-[#4E8F2F] dark:text-emerald-500 bg-[#E9F5E3] dark:bg-emerald-950/30 px-3 py-1 rounded-full whitespace-nowrap">
+                                    Documents &amp; évaluations
+                                  </span>
                                   <div className="h-px flex-1 bg-gradient-to-r from-transparent via-[#c5ddb5] dark:via-gray-600 to-transparent" />
                                 </div>
 
                                 <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
 
-                                  {/* Card Responsable */}
+                                  {/* ✅ Card Responsable avec bouton conditionnel */}
                                   <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 p-5 flex flex-col gap-3">
                                     <div className="text-[11px] uppercase tracking-wider font-bold text-gray-400 dark:text-gray-500">Responsable</div>
                                     <div className="flex items-start gap-3">
-                                      <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#6CB33F] to-[#4E8F2F] text-white flex items-center justify-center font-extrabold text-sm flex-shrink-0">
-                                        {getInitials(responsableDisplay)}
-                                      </div>
+                                      <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#6CB33F] to-[#4E8F2F] text-white flex items-center justify-center font-extrabold text-sm flex-shrink-0">{getInitials(responsableDisplay)}</div>
                                       <div className="min-w-0">
                                         <div className="text-sm font-bold text-gray-800 dark:text-gray-200 break-words">{responsableDisplay}</div>
                                         {responsableEmailDisplay !== "—" && <div className="text-xs text-gray-500 dark:text-gray-400 break-words mt-0.5">{responsableEmailDisplay}</div>}
                                       </div>
                                     </div>
                                     {!isResponsableCurrentUser && (
-                                      <button
+                                      <ResponsableEvalButton
+                                        hasEval={hasResponsableEval}
+                                        isLoading={isResponsableEvalLoading}
                                         onClick={() => router.push(`/recruiter/interviews/${iv._id}/evaluation-response`)}
-                                        className="mt-auto w-full bg-[#E9F5E3] hover:bg-[#d7ebcf] dark:bg-emerald-950/30 dark:hover:bg-emerald-900/40 text-[#4E8F2F] dark:text-emerald-400 py-2.5 rounded-xl text-sm font-semibold transition"
-                                      >
-                                        Voir réponses du responsable
-                                      </button>
+                                      />
                                     )}
                                   </div>
 
@@ -1118,62 +1116,32 @@ export default function AdminInterviewList() {
                                     <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 p-5 flex flex-col gap-3">
                                       <div className="text-[11px] uppercase tracking-wider font-bold text-gray-400 dark:text-gray-500">Note RH Optylab</div>
                                       <div className="flex items-center gap-4 mt-1">
-                                        <div className="w-16 h-16 rounded-2xl bg-blue-50 dark:bg-blue-950/30 border border-blue-100 dark:border-blue-800 flex items-center justify-center flex-shrink-0">
-                                          <span className="font-extrabold text-blue-700 dark:text-blue-300 text-2xl">{iv.responsable_rh_optylab}</span>
-                                        </div>
-                                        <div>
-                                          <div className="text-xs text-gray-400 mb-1">sur 5</div>
-                                          <div className="text-amber-500 text-lg">{"★".repeat(Math.round(iv.responsable_rh_optylab))}{"☆".repeat(5 - Math.round(iv.responsable_rh_optylab))}</div>
-                                        </div>
+                                        <div className="w-16 h-16 rounded-2xl bg-blue-50 dark:bg-blue-950/30 border border-blue-100 dark:border-blue-800 flex items-center justify-center flex-shrink-0"><span className="font-extrabold text-blue-700 dark:text-blue-300 text-2xl">{iv.responsable_rh_optylab}</span></div>
+                                        <div><div className="text-xs text-gray-400 mb-1">sur 5</div><div className="text-amber-500 text-lg">{"★".repeat(Math.round(iv.responsable_rh_optylab))}{"☆".repeat(5 - Math.round(iv.responsable_rh_optylab))}</div></div>
                                       </div>
                                     </div>
                                   ) : (
-                                    /* placeholder vide pour maintenir la grille si pas de note RH */
                                     <div className="bg-white dark:bg-gray-800 rounded-2xl border border-dashed border-gray-200 dark:border-gray-700 p-5 flex flex-col items-center justify-center gap-2 opacity-50">
                                       <Star className="w-6 h-6 text-gray-300 dark:text-gray-600" />
                                       <div className="text-xs text-gray-400 dark:text-gray-500 text-center">Aucune note RH</div>
                                     </div>
                                   )}
 
-                                  {/* Card Évaluation par type */}
+                                  {/* Card Évaluation */}
                                   {allIvs.some((siv) => siv.status === "CONFIRMED" || siv.status === "PENDING_CANDIDATE_CONFIRMATION") ? (
                                     <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 p-5 flex flex-col gap-3">
                                       <div className="text-[11px] uppercase tracking-wider font-bold text-gray-400 dark:text-gray-500">Évaluation</div>
                                       <div className="flex flex-col gap-2">
                                         {allIvs.filter((siv) => siv.status === "CONFIRMED" || siv.status === "PENDING_CANDIDATE_CONFIRMATION").map((siv) => {
                                           const stc = resolveTypeConfig(siv.interviewType);
-                                          const isRHT = isRHPlusTechInterviewFE(siv.interviewType);
-                                          const evalData = evaluationsCache[String(siv._id)];
-                                          const hasEval = isRHT && evalData !== undefined && evalData !== null;
-                                          const evalLoading = isRHT && evaluationsCache[String(siv._id)] === undefined;
                                           return (
                                             <div key={siv._id} className="flex flex-col gap-1.5">
                                               <button
                                                 onClick={(e) => { e.stopPropagation(); router.push(`/recruiter/interviews/${siv._id}/evaluation`); }}
-                                                className={`w-full px-4 py-2.5 rounded-xl border font-semibold text-sm transition-colors flex items-center gap-2 ${hasEval ? "bg-emerald-50 dark:bg-emerald-950/30 border-emerald-300 dark:border-emerald-700 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-100" : "bg-violet-50 dark:bg-violet-950/30 border-violet-200 dark:border-violet-700 text-violet-700 dark:text-violet-300 hover:bg-violet-100"}`}
+                                                className="w-full px-4 py-2.5 rounded-xl border font-semibold text-sm transition-colors flex items-center gap-2 bg-violet-50 dark:bg-violet-950/30 border-violet-200 dark:border-violet-700 text-violet-700 dark:text-violet-300 hover:bg-violet-100"
                                               >
                                                 <FileText className="w-4 h-4" />{stc.label}
-                                                {hasEval && <CheckCircle2 className="w-3.5 h-3.5 ml-auto text-emerald-500" />}
-                                                {evalLoading && isRHT && <span className="w-3 h-3 border-2 border-violet-300 border-t-violet-600 rounded-full animate-spin ml-auto" />}
                                               </button>
-                                              {hasEval && (
-                                                <div className="rounded-xl bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-200 dark:border-emerald-800 px-3 py-2 text-xs">
-                                                  {evalData.evaluationGlobale != null && (
-                                                    <div className="flex items-center gap-2 mb-1">
-                                                      <span className="font-bold text-emerald-700 dark:text-emerald-400">Score :</span>
-                                                      <span className="font-extrabold text-emerald-800 dark:text-emerald-300">{evalData.evaluationGlobale}/5</span>
-                                                      <span className="text-amber-500">{"★".repeat(Math.round(evalData.evaluationGlobale))}{"☆".repeat(5 - Math.round(evalData.evaluationGlobale))}</span>
-                                                    </div>
-                                                  )}
-                                                  {evalData.decision && (
-                                                    <div className="flex items-center gap-2">
-                                                      <span className="font-bold text-gray-600 dark:text-gray-400">Décision :</span>
-                                                      <span className={`font-semibold px-2 py-0.5 rounded-full text-[10px] uppercase tracking-wider ${evalData.decision === "retenu" || evalData.decision === "RETENU" ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300" : evalData.decision === "refuse" || evalData.decision === "REFUSE" ? "bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300" : "bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300"}`}>{evalData.decision}</span>
-                                                    </div>
-                                                  )}
-                                                  {evalData.commentaire && <p className="text-gray-600 dark:text-gray-400 italic truncate mt-1" title={evalData.commentaire}>"{evalData.commentaire}"</p>}
-                                                </div>
-                                              )}
                                             </div>
                                           );
                                         })}

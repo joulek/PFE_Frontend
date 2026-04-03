@@ -69,7 +69,7 @@ function EmployeeCombobox({
   employees,
   value,
   onChange,
-  placeholder = "Choisir un responsable...",
+  placeholder = "Choisir un acteur...",
 }) {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
@@ -203,7 +203,7 @@ function EmployeeCombobox({
           </div>
 
           <div className="px-4 py-2 border-t border-gray-100 dark:border-gray-700 text-xs text-gray-500 dark:text-gray-400">
-            {filtered.length} responsable(s)
+            {filtered.length} acteur(s)
           </div>
         </div>
       )}
@@ -569,7 +569,7 @@ export default function GestionResponsableMetierPage() {
     <div className="min-h-screen bg-[#F0FAF0] dark:bg-gray-950 px-4 sm:px-6 py-10 transition-colors duration-300">
       <div className="mx-auto max-w-6xl">
         <h1 className="text-4xl font-extrabold text-gray-900 dark:text-white mb-6">
-          Liste des responsables métier
+          Liste des acteurs internes 
         </h1>
 
         {/* SEARCH + ADD */}
@@ -598,7 +598,7 @@ export default function GestionResponsableMetierPage() {
               shadow-md transition-colors whitespace-nowrap"
           >
             <User className="h-4 w-4" />
-            Ajouter un responsable
+            Ajouter un acteur
           </button>
         </div>
 
@@ -610,7 +610,7 @@ export default function GestionResponsableMetierPage() {
             </div>
           ) : paginatedUsers.length === 0 ? (
             <div className="rounded-2xl bg-white dark:bg-gray-800 shadow-lg p-10 text-center text-gray-400 dark:text-gray-500">
-              Aucun responsable trouvé.
+              Aucun acteur trouvé.
             </div>
           ) : (
             paginatedUsers.map((u) => (
@@ -639,7 +639,7 @@ export default function GestionResponsableMetierPage() {
                 <thead className="bg-[#E9F5E3] dark:bg-gray-700 text-[#4E8F2F] dark:text-emerald-400">
                   <tr >
                     <th className="text-left px-6 lg:px-8 py-5 font-extrabold uppercase text-xs tracking-wider">
-                      Responsable
+                      Acteur
                     </th>
                     <th className="text-left px-6 lg:px-8 py-5 font-extrabold uppercase text-xs tracking-wider">
                       Email
@@ -666,7 +666,7 @@ export default function GestionResponsableMetierPage() {
                         colSpan={6}
                         className="py-12 text-center text-gray-400 dark:text-gray-500"
                       >
-                        Aucun responsable trouvé.
+                        Aucun acteur trouvé.
                       </td>
                     </tr>
                   ) : (
@@ -787,8 +787,8 @@ export default function GestionResponsableMetierPage() {
               <div>
                 <h2 className="text-xl font-extrabold text-gray-900 dark:text-white">
                   {modalMode === "add"
-                    ? "Ajouter un responsable métier"
-                    : "Modifier le responsable"}
+                    ? "Ajouter un acteur interne"
+                    : "Modifier l'acteur"}
                 </h2>
                 {modalMode === "add" && (
                   <p className="mt-1 flex items-center gap-1 text-sm text-[#4E8F2F] dark:text-emerald-400 font-medium">
@@ -823,14 +823,14 @@ export default function GestionResponsableMetierPage() {
               <form onSubmit={handleSubmit} className="mt-6 space-y-4">
                 <div>
                   <label className="mb-1 block text-sm font-semibold text-gray-900 dark:text-white">
-                    Responsables
+                    Acteurs
                   </label>
 
                   <EmployeeCombobox
                     employees={employees}
                     value={employeeId}
                     onChange={(id) => onSelectEmployee(id)}
-                    placeholder="Choisir un responsable..."
+                    placeholder="Choisir un acteur..."
                   />
                 </div>
 
@@ -846,7 +846,7 @@ export default function GestionResponsableMetierPage() {
                       bg-gray-50 dark:bg-gray-700/60 py-3 px-4
                       text-sm text-gray-700 dark:text-gray-200 
                       outline-none"
-                    placeholder="Auto depuis le responsable sélectionné"
+                    placeholder="Auto depuis le acteur sélectionné"
                   />
                 </div>
 
@@ -909,7 +909,7 @@ export default function GestionResponsableMetierPage() {
 
                 <div>
                   <label className="mb-1 block text-sm font-semibold text-gray-900 dark:text-white">
-                    Rôle de l&apos;responsable métier
+                    Rôle de l&apos;acteur 
                   </label>
                   <div className="relative">
                     <Users className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-[#6CB33F] dark:text-emerald-400" />

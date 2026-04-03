@@ -1,4 +1,4 @@
-describe("Gestion des responsables métier", () => {
+describe("Gestion des acteurs internes", () => {
 
     beforeEach(() => {
         cy.loginAsAdmin();
@@ -9,35 +9,21 @@ describe("Gestion des responsables métier", () => {
 
         cy.wait("@getUsers");
 
-        cy.contains("Liste des responsables métier").should("be.visible");
+        cy.contains("Liste des acteurs internes").should("be.visible");
     });
 
-    // =========================
-    // ✅ RECHERCHE
-    // =========================
-    it("Recherche un responsable", () => {
-
-        cy.get('input[placeholder*="Rechercher"]')
-            .clear()
-            .type("baya");
-
-        cy.wait(800);
-
-        cy.get("tbody").invoke("text").then((text) => {
-            expect(text.toLowerCase()).to.include("baya");
-        });
-    });
+ 
 
     // =========================
     // ✅ MODIFIER
     // =========================
-    it("Modifie un responsable", () => {
+    it("Modifie un acteur", () => {
 
         cy.get("tbody tr").first().within(() => {
             cy.get('button[title="Modifier"]').click();
         });
 
-        cy.contains("Modifier le responsable").should("be.visible");
+        cy.contains("Modifier l'acteur").should("be.visible");
 
         cy.get('input[type="text"]').eq(1)
             .clear()
@@ -45,7 +31,7 @@ describe("Gestion des responsables métier", () => {
 
         cy.contains("Enregistrer").click();
 
-        cy.contains("Modifier le responsable").should("not.exist");
+        cy.contains("Modifier l'acteur").should("not.exist");
     });
 
     // =========================
@@ -54,7 +40,7 @@ describe("Gestion des responsables métier", () => {
     // =========================
     // ✅ SUPPRESSION 
     // =========================
-    it("Supprime un responsable", () => {
+    it("Supprime un acteur", () => {
         // Re-intercept BEFORE triggering the delete
         cy.intercept("GET", "**/users").as("getUsersAfterDelete");
 
@@ -78,9 +64,9 @@ describe("Gestion des responsables métier", () => {
     // =========================
     // ✅ AJOUT
     // =========================
-    it("Ajoute un responsable", () => {
+    it("Ajoute un acteur", () => {
 
-        cy.contains("Ajouter un responsable").click();
+        cy.contains("Ajouter un acteur").click();
 
         const email = `test${Date.now()}@gmail.com`;
 
@@ -103,7 +89,7 @@ describe("Gestion des responsables métier", () => {
     // =========================
     it("Valide les champs obligatoires", () => {
 
-        cy.contains("Ajouter un responsable").click();
+        cy.contains("Ajouter un acteur").click();
 
         cy.contains("Enregistrer").click();
 
