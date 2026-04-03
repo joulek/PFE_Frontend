@@ -31,14 +31,19 @@ import {
   Phone,
   ClipboardList,
 } from "lucide-react";
+// ✅ REMPLACER les lignes 34-41 par :
+
 import {
   getDgaMyInterviews,
   confirmDgaInterview,
-  getInterviewNotes,
-  createInterviewNote,
-  updateInterviewNote,
-  deleteInterviewNote,
 } from "../../services/candidature.api";
+
+import {
+  getDgaNotes,
+  createDgaNote,
+  updateDgaNote,
+  deleteDgaNote,
+} from "../../services/interviewApi";
 
 /* ══════════════════════════════════════════════════════════════════
  * Helpers
@@ -618,7 +623,7 @@ function MatchingTab({ jobMatch }) {
 /* ══════════════════════════════════════════════════════════════════
  * NOTES
  * ══════════════════════════════════════════════════════════════════ */
-function NotesTab({ candidatureId }) {
+function NotesTab({ interviewId }) {
   const [notes, setNotes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -629,18 +634,18 @@ function NotesTab({ candidatureId }) {
   const [error, setError] = useState(null);
 
   const loadNotes = useCallback(async () => {
-    if (!candidatureId) return;
+    if (!interviewId) return;
     try {
       setLoading(true);
       setError(null);
-      const data = await getInterviewNotes(candidatureId);
+      const data = await getDgaNotes(interviewId);
       setNotes(Array.isArray(data) ? data : []);
     } catch {
       setError("Impossible de charger les notes.");
     } finally {
       setLoading(false);
     }
-  }, [candidatureId]);
+  }, [interviewId]);
 
   useEffect(() => {
     loadNotes();
@@ -651,11 +656,7 @@ function NotesTab({ candidatureId }) {
     try {
       setSaving(true);
       setError(null);
-      await createInterviewNote(candidatureId, {
-        note: text.trim(),
-        type: "dga",
-        stars: 0,
-      });
+      await createDgaNote(interviewId, { note: text.trim(), stars: 0 });
       setText("");
       await loadNotes();
     } catch {
@@ -670,9 +671,7 @@ function NotesTab({ candidatureId }) {
     try {
       setSaving(true);
       setError(null);
-      await updateInterviewNote(candidatureId, noteId, {
-        note: editText.trim(),
-      });
+      await updateDgaNote(interviewId, noteId, { note: editText.trim() });
       setEditId(null);
       setEditText("");
       await loadNotes();
@@ -687,7 +686,7 @@ function NotesTab({ candidatureId }) {
     try {
       setDeleting(noteId);
       setError(null);
-      await deleteInterviewNote(candidatureId, noteId);
+      await deleteDgaNote(interviewId, noteId);
       await loadNotes();
     } catch {
       setError("Erreur lors de la suppression.");
@@ -1113,7 +1112,7 @@ export default function EntretienDetailPage() {
         <div className="mt-6">
           {activeTab === "matching" && <MatchingTab jobMatch={iv.jobMatch} />}
           {activeTab === "notes" && (
-            <NotesTab candidatureId={iv.candidatureId} />
+            <NotesTab interviewId={String(iv._id)} />
           )}
         </div>
 

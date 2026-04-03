@@ -987,6 +987,8 @@ export default function AdminInterviewList() {
                       const allIvs = [iv, ...iv.siblings];
                       const ivWithDga = allIvs.find((siv) => siv.dgaInterview);
                       const allGroupNotes = Array.from(new Map(allIvs.flatMap((siv) => siv.allEntretienNotes || []).map((n) => [String(n._id || n.createdAt), n])).values());
+                      const allDgaNotes = Array.from(new Map(allIvs.flatMap((siv) => siv.dgaNotes || []).map((n) => [String(n._id || n.createdAt), n])).values());
+                      const allRhOptylabNotes = Array.from(new Map(allIvs.flatMap((siv) => (siv.entretienNotes || []).filter((n) => /responsable_rh_optylab/i.test(n.type || ""))).map((n) => [String(n._id || n.createdAt), n])).values());
 
                       const sc = STATUS_CONFIG[iv.status] || {};
                       const dgaNote = getDGANote(iv);
@@ -1112,12 +1114,20 @@ export default function AdminInterviewList() {
                                   </div>
 
                                   {/* Card Note RH Optylab */}
-                                  {iv.responsable_rh_optylab != null ? (
+                                  {allRhOptylabNotes.length > 0 ? (
                                     <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 p-5 flex flex-col gap-3">
-                                      <div className="text-[11px] uppercase tracking-wider font-bold text-gray-400 dark:text-gray-500">Note RH Optylab</div>
-                                      <div className="flex items-center gap-4 mt-1">
-                                        <div className="w-16 h-16 rounded-2xl bg-blue-50 dark:bg-blue-950/30 border border-blue-100 dark:border-blue-800 flex items-center justify-center flex-shrink-0"><span className="font-extrabold text-blue-700 dark:text-blue-300 text-2xl">{iv.responsable_rh_optylab}</span></div>
-                                        <div><div className="text-xs text-gray-400 mb-1">sur 5</div><div className="text-amber-500 text-lg">{"★".repeat(Math.round(iv.responsable_rh_optylab))}{"☆".repeat(5 - Math.round(iv.responsable_rh_optylab))}</div></div>
+                                      <div className="text-[11px] uppercase tracking-wider font-bold text-gray-400 dark:text-gray-500">Notes RH Optylab</div>
+                                      <div className="flex flex-col gap-2">
+                                        {allRhOptylabNotes.map((n, i) => (
+                                          <div key={n._id || i} className="rounded-xl bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800 px-3 py-2.5">
+                                            <p className="text-sm text-gray-800 dark:text-gray-200 leading-relaxed whitespace-pre-wrap">{n.note || "—"}</p>
+                                            <div className="flex items-center gap-2 mt-1.5 flex-wrap">
+                                              {n.stars > 0 && <span className="text-[11px] text-amber-500">{"★".repeat(n.stars)}{"☆".repeat(5 - n.stars)}</span>}
+                                              {n.createdAt && <span className="text-[11px] text-gray-400">{formatDate(n.createdAt)}</span>}
+                                              <span className="text-[10px] font-bold uppercase tracking-wider text-blue-600 dark:text-blue-400 bg-blue-100 dark:bg-blue-900/40 rounded-full px-2 py-0.5">RH Optylab</span>
+                                            </div>
+                                          </div>
+                                        ))}
                                       </div>
                                     </div>
                                   ) : (
@@ -1150,27 +1160,23 @@ export default function AdminInterviewList() {
                                   ) : null}
 
                                   {/* Card Notes DGA */}
-                                  {(() => {
-                                    const dgaNotes = allGroupNotes.filter((n) => /dga/i.test(n.type));
-                                    if (!dgaNotes.length) return null;
-                                    return (
-                                      <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 p-5 flex flex-col gap-3">
-                                        <div className="text-[11px] uppercase tracking-wider font-bold text-gray-400 dark:text-gray-500">Notes DGA</div>
-                                        <div className="flex flex-col gap-2">
-                                          {dgaNotes.map((n, i) => (
-                                            <div key={n._id || i} className="rounded-xl bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800 px-3 py-2.5">
-                                              <p className="text-sm text-gray-800 dark:text-gray-200 leading-relaxed whitespace-pre-wrap">{n.note || "—"}</p>
-                                              <div className="flex items-center gap-2 mt-1.5 flex-wrap">
-                                                {n.stars > 0 && <span className="text-[11px] text-amber-500">{"★".repeat(n.stars)}{"☆".repeat(5 - n.stars)}</span>}
-                                                {n.createdAt && <span className="text-[11px] text-gray-400">{formatDate(n.createdAt)}</span>}
-                                                <span className="text-[10px] font-bold uppercase tracking-wider text-amber-600 dark:text-amber-400 bg-amber-100 dark:bg-amber-900/40 rounded-full px-2 py-0.5">DGA</span>
-                                              </div>
+                                  {allDgaNotes.length > 0 ? (
+                                    <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 p-5 flex flex-col gap-3">
+                                      <div className="text-[11px] uppercase tracking-wider font-bold text-gray-400 dark:text-gray-500">Notes DGA</div>
+                                      <div className="flex flex-col gap-2">
+                                        {allDgaNotes.map((n, i) => (
+                                          <div key={n._id || i} className="rounded-xl bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800 px-3 py-2.5">
+                                            <p className="text-sm text-gray-800 dark:text-gray-200 leading-relaxed whitespace-pre-wrap">{n.note || "—"}</p>
+                                            <div className="flex items-center gap-2 mt-1.5 flex-wrap">
+                                              {n.stars > 0 && <span className="text-[11px] text-amber-500">{"★".repeat(n.stars)}{"☆".repeat(5 - n.stars)}</span>}
+                                              {n.createdAt && <span className="text-[11px] text-gray-400">{formatDate(n.createdAt)}</span>}
+                                              <span className="text-[10px] font-bold uppercase tracking-wider text-amber-600 dark:text-amber-400 bg-amber-100 dark:bg-amber-900/40 rounded-full px-2 py-0.5">DGA</span>
                                             </div>
-                                          ))}
-                                        </div>
+                                          </div>
+                                        ))}
                                       </div>
-                                    );
-                                  })()}
+                                    </div>
+                                  ) : null}
 
                                   {/* Card Report demandé */}
                                   {iv.status === "CANDIDATE_REQUESTED_RESCHEDULE" && (
