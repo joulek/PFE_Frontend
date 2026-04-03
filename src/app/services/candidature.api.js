@@ -58,28 +58,29 @@ export async function confirmDgaInterview(interviewId) {
 }
 
 // Notes DGA (liées à candidatureId via /api/interviews/:candidatureId/notes)
-export async function getInterviewNotes(candidatureId) {
-  const { data } = await api.get(`/api/interviews/${candidatureId}/notes`);
+export async function getInterviewNotes(interviewId) {
+  const { data } = await api.get(`/api/interviews/${interviewId}/notes`);
   return data;
 }
 
-export async function createInterviewNote(candidatureId, payload) {
-  const { data } = await api.post(`/api/interviews/${candidatureId}/notes`, payload);
+export async function createInterviewNote(interviewId, payload) {
+  const { data } = await api.post(`/api/interviews/${interviewId}/notes`, payload);
   return data;
 }
 
-export async function updateInterviewNote(candidatureId, noteId, payload) {
+export async function updateInterviewNote(interviewId, noteId, payload) {
   const { data } = await api.patch(
-    `/api/interviews/${candidatureId}/notes/${noteId}`,
+    `/api/interviews/${interviewId}/notes/${noteId}`,
     payload
   );
   return data;
 }
 
-export async function deleteInterviewNote(candidatureId, noteId) {
+export async function deleteInterviewNote(interviewId, noteId) {
   const { data } = await api.delete(
-    `/api/interviews/${candidatureId}/notes/${noteId}`
+    `/api/interviews/${interviewId}/notes/${noteId}`
   );
   return data;
 }
+
 

@@ -403,7 +403,7 @@ function MatchingTab({ jobMatch }) {
 /* ══════════════════════════════════════════════════════════════════
  * NOTES
  * ══════════════════════════════════════════════════════════════════ */
-function NotesTab({ candidatureId }) {
+function NotesTab({ interviewId  }) {
   const [notes, setNotes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -414,18 +414,18 @@ function NotesTab({ candidatureId }) {
   const [error, setError] = useState(null);
 
   const loadNotes = useCallback(async () => {
-    if (!candidatureId) return;
+    if (!interviewId) return;
     try {
       setLoading(true);
       setError(null);
-      const data = await getInterviewNotes(candidatureId);
+      const data = await getInterviewNotes(interviewId);
       setNotes(Array.isArray(data) ? data : []);
     } catch {
       setError("Impossible de charger les notes.");
     } finally {
       setLoading(false);
     }
-  }, [candidatureId]);
+  }, [interviewId]);
 
   useEffect(() => { loadNotes(); }, [loadNotes]);
 
@@ -434,7 +434,7 @@ function NotesTab({ candidatureId }) {
     try {
       setSaving(true);
       setError(null);
-      await createInterviewNote(candidatureId, { note: text.trim(), type: "responsable_rh_optylab", stars: 0 });
+      await createInterviewNote(interviewId, { note: text.trim(), type: "responsable_rh_optylab", stars: 0 });
       setText("");
       await loadNotes();
     } catch { setError("Erreur lors de l'ajout."); } finally { setSaving(false); }
@@ -445,7 +445,7 @@ function NotesTab({ candidatureId }) {
     try {
       setSaving(true);
       setError(null);
-      await updateInterviewNote(candidatureId, noteId, { note: editText.trim() });
+      await updateInterviewNote(interviewId, noteId, { note: editText.trim() });
       setEditId(null);
       setEditText("");
       await loadNotes();
@@ -456,7 +456,7 @@ function NotesTab({ candidatureId }) {
     try {
       setDeleting(noteId);
       setError(null);
-      await deleteInterviewNote(candidatureId, noteId);
+      await deleteInterviewNote(interviewId, noteId);
       await loadNotes();
     } catch { setError("Erreur lors de la suppression."); } finally { setDeleting(null); }
   };
@@ -1083,7 +1083,7 @@ export default function EntretienDetailPage() {
         <div className="mt-6">
           {activeTab === "matching"    && <MatchingTab    jobMatch={iv.jobMatch} />}
           {activeTab === "evaluations" && <EvaluationsTab interviewId={String(iv._id)} />}
-          {activeTab === "notes"       && <NotesTab       candidatureId={iv.candidatureId} />}
+          {activeTab === "notes" && <NotesTab interviewId={String(iv._id)} />}
         </div>
 
         {!cvUrl && (

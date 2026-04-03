@@ -207,19 +207,11 @@ export async function getConfirmedInterviews({
   limit = 10,
   search = "",
 } = {}) {
-  const params = new URLSearchParams({
-    page: String(page),
-    limit: String(limit),
-  });
-
-  if (search.trim()) {
-    params.set("search", search.trim());
-  }
-
-  const { data } = await api.get(`/api/interviews/confirmed?${params}`);
+  const params = new URLSearchParams({ page: String(page), limit: String(limit) });
+  if (search.trim()) params.set("search", search.trim());
+  const { data } = await api.get(`/api/interviews/confirmed-exclude-rh-nord?${params}`);
   return data;
 }
-
 
 export async function deleteRhNordNote(interviewId) {
   return request(`/api/interviews/${interviewId}/rh-nord-note`, {
