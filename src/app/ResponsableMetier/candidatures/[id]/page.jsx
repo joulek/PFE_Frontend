@@ -234,49 +234,7 @@ export default function ApplicationDetailPage() {
 
         </div>
 
-        <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow flex flex-wrap justify-between items-center gap-4">
-
-          <div className="flex gap-3">
-
-            <button
-              onClick={() => updateStatus("VU")}
-              disabled={updating} data-cy="btn-vu"
-              className="px-5 py-2 rounded-full border text-sm hover:bg-gray-100 dark:hover:bg-gray-700"
-            >
-              Marquer comme vu
-            </button>
-
-            <button
-              onClick={() => updateStatus("EN_ATTENTE")}
-              disabled={updating}  data-cy="btn-reset"
-              className="px-5 py-2 rounded-full border text-sm hover:bg-gray-100 dark:hover:bg-gray-700"
-            >
-              Réinitialiser
-            </button>
-
-          </div>
-
-          <div className="flex gap-3">
-
-            <button
-              onClick={() => updateStatus("REJETE")}
-              disabled={updating} data-cy="btn-refuser"
-              className="px-5 py-2 rounded-full bg-red-100 text-red-600 font-semibold"
-            >
-              Refuser
-            </button>
-
-            <button
-              onClick={() => updateStatus("RETENU")}
-              disabled={updating} data-cy="btn-accepter"
-              className="px-5 py-2 rounded-full bg-[#6CB33F] text-white font-semibold"
-            >
-              Accepter la candidature
-            </button>
-
-          </div>
-
-        </div>
+      
 
       </div>
     </div>
