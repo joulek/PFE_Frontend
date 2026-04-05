@@ -13,6 +13,7 @@ import {
   X,
   AlertTriangle,
   PhoneCall,
+  Lock,
 } from "lucide-react";
 import {
   getMyInterviewsStats,
@@ -253,7 +254,6 @@ export default function ResponsableMetierInterviewList() {
   const [totalPages, setTotalPages] = useState(1);
   const [total, setTotal] = useState(0);
 
-  // ✅ confirmingRhNordId : _id de l'entretien en cours de confirmation (spinner)
   const [confirmingRhNordId, setConfirmingRhNordId] = useState(null);
 
   const LIMIT = 10;
@@ -356,24 +356,28 @@ export default function ResponsableMetierInterviewList() {
   const handleConfirmRhNord = useCallback(async (e, iv) => {
     e.stopPropagation();
 
-    // Priorité : candidatureId, sinon _id de l'entretien
     const id = iv.candidatureId || iv._id;
     if (!id) return;
 
-    // Spinner sur ce bouton uniquement
     setConfirmingRhNordId(iv._id);
 
     try {
       await api.patch(`/api/interviewNord/confirm-rh-nord/${id}`);
 
-      // ✅ Mettre à jour l'objet dans la liste → rhNordConfirmed: true
-      // Le bouton basculera immédiatement en badge "Candidat confirmé" (désactivé)
+      const candidatureId = iv.candidatureId || iv._id;
+
       setInterviews((prev) =>
-        prev.map((item) =>
-          item._id === iv._id
+        prev.map((item) => {
+          const sameInterview   = item._id === iv._id;
+          const sameCandidature =
+            candidatureId &&
+            (String(item.candidatureId) === String(candidatureId) ||
+             String(item._id)           === String(candidatureId));
+
+          return sameInterview || sameCandidature
             ? { ...item, rhNordConfirmed: true }
-            : item
-        )
+            : item;
+        })
       );
     } catch (err) {
       console.error("❌ Erreur confirmation RH Nord:", err);
@@ -383,7 +387,6 @@ export default function ResponsableMetierInterviewList() {
     }
   }, []);
 
-  // Colonnes du tableau
   const COLS = ["Candidat", "Poste", "Type", "Date & heure", "Évaluation", "Statut", "Actions"];
 
   return (
@@ -514,6 +517,10 @@ export default function ResponsableMetierInterviewList() {
                       iv.interviewType === "entretien_nord" ||
                       iv.type === "entretien_nord";
 
+                    // ✅ true si cette ligne a un entretien RH Nord planifié
+                    // (soit c'est directement un entretien RH Nord, soit c'est un tel avec un RH associé)
+                    const hasRhNordInterview = isRHSimple || isRHTech;
+
                     const hasBoth   = !isTelephonique && !!iv._telEntry;
                     const statusCfg = STATUS_CONFIG[iv.status] || {};
                     const typeCfg   = isTelephonique
@@ -547,13 +554,27 @@ export default function ResponsableMetierInterviewList() {
 
                     // ─────────────────────────────────────────────────────
                     //  ✅ LOGIQUE CONFIRMATION
-                    //  isConfirmed = true si :
-                    //    • rhNordConfirmed === true vient de la DB (chargé au départ)
-                    //    • OU après un clic réussi → setInterviews met rhNordConfirmed: true
-                    //  Dans les deux cas le bouton est remplacé par le badge désactivé
+                    //
+                    //  isConfirmed    = déjà confirmé (DB ou après clic)
+                    //  isConfirming   = en cours de confirmation (spinner)
+                    //  rhNordRequired = entretien RH Nord obligatoire avant confirmation
+                    //                  → true si la ligne est UNIQUEMENT téléphonique
+                    //                    sans entretien RH Nord planifié
                     // ─────────────────────────────────────────────────────
-                    const isConfirmed  = iv.rhNordConfirmed === true;
-                    const isConfirming = confirmingRhNordId === iv._id;
+                    const isConfirmed = iv.rhNordConfirmed === true;
+
+                    const isConfirming =
+                      confirmingRhNordId === iv._id ||
+                      (iv.candidatureId &&
+                        interviews.some(
+                          (other) =>
+                            confirmingRhNordId === other._id &&
+                            String(other.candidatureId) === String(iv.candidatureId)
+                        ));
+
+                    // ✅ Condition clé : bouton verrouillé si pas d'entretien RH planifié
+                    // = la ligne est un téléphonique seul (sans RH Nord associé)
+                    const rhNordRequired = isTelephonique && !hasRhNordInterview;
 
                     // Afficher la colonne Actions seulement si statut éligible
                     const showConfirm = ["PENDING_CANDIDATE_CONFIRMATION", "CONFIRMED", "RESCHEDULED"].includes(iv.status);
@@ -660,13 +681,29 @@ export default function ResponsableMetierInterviewList() {
                         <td className="px-6 lg:px-8 py-5">
                           {showConfirm ? (
                             isConfirmed ? (
-                              // ✅ Badge statique — candidat déjà confirmé (DB ou après clic)
-                              <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-700 text-emerald-700 dark:text-emerald-300 font-semibold text-xs whitespace-nowrap cursor-default select-none">
+                              // ✅ Déjà confirmé — badge statique non cliquable
+                              <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-700 text-emerald-700 dark:text-emerald-300 font-semibold text-xs whitespace-nowrap cursor-default select-none pointer-events-none">
                                 <CheckCircle2 className="w-4 h-4" />
                                 Candidat confirmé
                               </span>
+                            ) : rhNordRequired ? (
+                              // ✅ Entretien RH Nord pas encore planifié
+                              // → bouton verrouillé avec explication
+                              <div className="flex flex-col gap-1">
+                                <span
+                                  title="Planifiez d'abord un entretien RH Nord avec ce candidat"
+                                  className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gray-100 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-400 dark:text-gray-500 font-semibold text-xs whitespace-nowrap cursor-not-allowed select-none pointer-events-none"
+                                >
+                                  <Lock className="w-3.5 h-3.5" />
+                                  Confirmer candidat
+                                </span>
+                                <span className="text-xs text-amber-600 dark:text-amber-400 font-medium flex items-center gap-1">
+                                  <AlertTriangle className="w-3 h-3 flex-shrink-0" />
+                                  Entretien RH requis
+                                </span>
+                              </div>
                             ) : (
-                              // ✅ Bouton actif — une seule confirmation possible
+                              // ✅ Entretien RH planifié → bouton actif
                               <button
                                 onClick={(e) => handleConfirmRhNord(e, iv)}
                                 disabled={isConfirming}

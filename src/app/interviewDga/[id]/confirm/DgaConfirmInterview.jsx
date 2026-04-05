@@ -23,18 +23,34 @@ function capitalize(str) {
   return str.charAt(0).toUpperCase() + str.slice(1);
 }
 
+// ── Helper : récupère le token depuis localStorage ou sessionStorage ──
+function getAuthToken() {
+  if (typeof window === "undefined") return "";
+  return (
+    localStorage.getItem("token") ||
+    sessionStorage.getItem("token") ||
+    ""
+  );
+}
+
 export default function DgaConfirmInterview({ id }) {
   const router = useRouter();
-  const [status, setStatus]       = useState("loading"); // loading | info | need_login | confirming | success | error
-  const [interview, setInterview] = useState(null);
+
+  // États possibles :
+  //   "loading"    → chargement initial (infos DGA + vérif token)
+  //   "info"       → DGA connecté → affiche infos + bouton confirmer
+  //   "confirming" → confirmation en cours (spinner)
+  //   "success"    → confirmation réussie
+  //   "error"      → erreur API
+  const [status, setStatus]       = useState("loading");
   const [dga, setDga]             = useState(null);
   const [errorMsg, setErrorMsg]   = useState("");
 
-  // ── 1. Charger les infos
+  // ── 1. Chargement initial ──────────────────────────────────────────────
   useEffect(() => {
     async function load() {
       try {
-        // Route publique — pas de token requis
+        // Charger les infos DGA (route publique — pas de token requis)
         const res  = await fetch(`${API_BASE}/api/interviews/${id}/dga-info`);
         const data = await res.json();
 
@@ -52,35 +68,47 @@ export default function DgaConfirmInterview({ id }) {
 
         setDga(data.dga);
 
-        // Vérifier si DGA connecté
-        const token =
-          (typeof localStorage !== "undefined" && localStorage.getItem("token")) ||
-          (typeof sessionStorage !== "undefined" && sessionStorage.getItem("token")) ||
-          "";
+        // ✅ Vérifier si le DGA est déjà connecté
+        const token = getAuthToken();
 
-        setStatus(token ? "info" : "need_login");
+        if (!token) {
+          // ✅ Pas connecté → rediriger immédiatement vers login
+          // On garde l'URL actuelle en paramètre redirect pour revenir après connexion
+          const currentUrl = `/interviewDga/${id}/confirm`;
+          router.replace(`/login?redirect=${encodeURIComponent(currentUrl)}`);
+          // On garde le status "loading" pendant la redirection
+          return;
+        }
+
+        // ✅ Connecté → afficher directement la page de confirmation
+        setStatus("info");
       } catch {
         setErrorMsg("Impossible de contacter le serveur.");
         setStatus("error");
       }
     }
-    load();
-  }, [id]);
 
-  // ── 2. Confirmer (DGA connecté — route protégée)
+    load();
+  }, [id, router]);
+
+  // ── 2. Confirmer (DGA connecté — route protégée) ───────────────────────
   async function handleConfirm() {
     setStatus("confirming");
     try {
-      const token =
-        (typeof localStorage !== "undefined" && localStorage.getItem("token")) ||
-        (typeof sessionStorage !== "undefined" && sessionStorage.getItem("token")) ||
-        "";
+      const token = getAuthToken();
+
+      // ✅ Si token expiré/manquant entre-temps → rediriger vers login
+      if (!token) {
+        const currentUrl = `/interviewDga/${id}/confirm`;
+        router.replace(`/login?redirect=${encodeURIComponent(currentUrl)}`);
+        return;
+      }
 
       const res  = await fetch(`${API_BASE}/api/interviews/${id}/confirm-dga`, {
         method:  "POST",
         headers: {
           "Content-Type": "application/json",
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          Authorization:  `Bearer ${token}`,
         },
         body: JSON.stringify({}),
       });
@@ -116,61 +144,60 @@ export default function DgaConfirmInterview({ id }) {
     return s;
   }
 
-  // =========================
-  // Need Login
-  // =========================
-  if (status === "need_login")
+  // ── Bloc infos entretien (réutilisé dans plusieurs états) ──────────────
+  function DgaInfoCard() {
+    if (!dga) return null;
     return (
-      <div className="min-h-screen bg-[#F0FAF0] dark:bg-[#050B14] flex items-center justify-center p-4">
-        <div className="w-full max-w-md overflow-hidden rounded-3xl bg-white dark:bg-[#0B1220] border border-emerald-100/60 dark:border-slate-800 shadow-2xl">
-          <div className="px-6 py-7 text-center bg-gradient-to-br from-[#4E8F2F] via-[#5a9e38] to-[#3d7524]">
-            <div className="text-2xl font-extrabold text-white">Optylab</div>
-            <div className="text-white/85 text-sm mt-1">Confirmation entretien Direction (DGA)</div>
+      <div className="space-y-3 p-4 bg-[#F0FAF0] dark:bg-emerald-950/40 rounded-2xl border border-emerald-200/60 dark:border-emerald-900/40">
+        <div className="flex items-center gap-3">
+          <div className="w-9 h-9 rounded-xl bg-emerald-500/10 dark:bg-emerald-500/15 flex items-center justify-center flex-shrink-0">
+            <Calendar className="w-4 h-4" style={{ color: OPTY }} />
           </div>
-          <div className="p-7 text-center">
-            <div className="mx-auto w-16 h-16 rounded-full bg-emerald-50 dark:bg-emerald-900/20 flex items-center justify-center mb-4">
-              <LogIn className="w-8 h-8" style={{ color: OPTY }} />
-            </div>
-            <h2 className="text-xl font-extrabold text-gray-900 dark:text-white mb-2">
-              Connexion requise
-            </h2>
-            <p className="text-sm text-gray-500 dark:text-slate-400 mb-6">
-              Veuillez vous connecter avec votre compte DGA pour confirmer cet entretien.
-            </p>
-            {dga && (
-              <div className="mb-6 p-4 bg-[#F0FAF0] dark:bg-emerald-950/40 rounded-2xl border border-emerald-200/60 text-left space-y-2">
-                <div className="flex items-center gap-2 text-sm">
-                  <Calendar className="w-4 h-4 flex-shrink-0" style={{ color: OPTY }} />
-                  <span className="font-semibold text-gray-700 dark:text-slate-200">{formatDate(dga.date)}</span>
-                </div>
-                <div className="flex items-center gap-2 text-sm">
-                  <Clock className="w-4 h-4 flex-shrink-0" style={{ color: OPTY }} />
-                  <span className="font-semibold text-gray-700 dark:text-slate-200">{formatTime(dga.time)}</span>
-                </div>
-                {dga.location && (
-                  <div className="flex items-center gap-2 text-sm">
-                    <MapPin className="w-4 h-4 flex-shrink-0" style={{ color: OPTY }} />
-                    <span className="text-gray-600 dark:text-slate-300">{dga.location}</span>
-                  </div>
-                )}
-              </div>
-            )}
-            <button
-              onClick={() => router.push(`/login?redirect=/interviewDga/${id}/confirm`)}
-              className="w-full py-4 rounded-2xl text-white font-extrabold text-base flex items-center justify-center gap-3 transition-all shadow-lg"
-              style={{ background: OPTY, boxShadow: "0 12px 30px rgba(78,143,47,0.22)" }}
-              onMouseEnter={(e) => (e.currentTarget.style.background = OPTY_D)}
-              onMouseLeave={(e) => (e.currentTarget.style.background = OPTY)}
-            >
-              <LogIn className="w-5 h-5" /> Se connecter pour confirmer
-            </button>
+          <div>
+            <p className="text-[10px] font-bold text-gray-400 dark:text-slate-400 uppercase tracking-wider">Date</p>
+            <p className="text-sm font-bold text-gray-800 dark:text-white">{formatDate(dga.date)}</p>
           </div>
         </div>
+
+        <div className="flex items-center gap-3">
+          <div className="w-9 h-9 rounded-xl bg-emerald-500/10 dark:bg-emerald-500/15 flex items-center justify-center flex-shrink-0">
+            <Clock className="w-4 h-4" style={{ color: OPTY }} />
+          </div>
+          <div>
+            <p className="text-[10px] font-bold text-gray-400 dark:text-slate-400 uppercase tracking-wider">Heure</p>
+            <p className="text-sm font-bold text-gray-800 dark:text-white">{formatTime(dga.time)}</p>
+          </div>
+        </div>
+
+        {dga.location && (
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-xl bg-emerald-500/10 dark:bg-emerald-500/15 flex items-center justify-center flex-shrink-0">
+              <MapPin className="w-4 h-4" style={{ color: OPTY }} />
+            </div>
+            <div>
+              <p className="text-[10px] font-bold text-gray-400 dark:text-slate-400 uppercase tracking-wider">Lieu</p>
+              <p className="text-sm font-bold text-gray-800 dark:text-white">{dga.location}</p>
+            </div>
+          </div>
+        )}
+
+        {dga.notes && (
+          <div className="flex items-start gap-3">
+            <div className="w-9 h-9 rounded-xl bg-emerald-500/10 dark:bg-emerald-500/15 flex items-center justify-center flex-shrink-0 mt-0.5">
+              <Briefcase className="w-4 h-4" style={{ color: OPTY }} />
+            </div>
+            <div>
+              <p className="text-[10px] font-bold text-gray-400 dark:text-slate-400 uppercase tracking-wider">Notes</p>
+              <p className="text-sm text-gray-700 dark:text-slate-300 whitespace-pre-wrap">{dga.notes}</p>
+            </div>
+          </div>
+        )}
       </div>
     );
+  }
 
   // =========================
-  // Loading
+  //  Loading / Redirection
   // =========================
   if (status === "loading")
     return (
@@ -183,7 +210,7 @@ export default function DgaConfirmInterview({ id }) {
     );
 
   // =========================
-  // Error
+  //  Error
   // =========================
   if (status === "error")
     return (
@@ -210,7 +237,7 @@ export default function DgaConfirmInterview({ id }) {
     );
 
   // =========================
-  // Success
+  //  Success
   // =========================
   if (status === "success")
     return (
@@ -225,27 +252,10 @@ export default function DgaConfirmInterview({ id }) {
             <h2 className="text-2xl font-extrabold text-gray-900 dark:text-white mb-2">
               Entretien confirmé !
             </h2>
-            <p className="text-sm text-gray-500 dark:text-slate-300 mb-1">
+            <p className="text-sm text-gray-500 dark:text-slate-300 mb-4">
               Votre confirmation a bien été enregistrée.
             </p>
-            {dga && (
-              <div className="mt-4 p-4 bg-[#F0FAF0] dark:bg-emerald-950/40 rounded-2xl border border-emerald-200/60 dark:border-emerald-900/40 text-left space-y-2">
-                <div className="flex items-center gap-2 text-sm">
-                  <Calendar className="w-4 h-4 flex-shrink-0" style={{ color: OPTY }} />
-                  <span className="font-semibold text-gray-700 dark:text-slate-200">{formatDate(dga.date)}</span>
-                </div>
-                <div className="flex items-center gap-2 text-sm">
-                  <Clock className="w-4 h-4 flex-shrink-0" style={{ color: OPTY }} />
-                  <span className="font-semibold text-gray-700 dark:text-slate-200">{formatTime(dga.time)}</span>
-                </div>
-                {dga.location && (
-                  <div className="flex items-center gap-2 text-sm">
-                    <MapPin className="w-4 h-4 flex-shrink-0" style={{ color: OPTY }} />
-                    <span className="text-gray-600 dark:text-slate-300">{dga.location}</span>
-                  </div>
-                )}
-              </div>
-            )}
+            <DgaInfoCard />
             <p className="text-xs text-gray-400 dark:text-slate-400 mt-4">
               Merci pour votre confirmation.
             </p>
@@ -255,7 +265,8 @@ export default function DgaConfirmInterview({ id }) {
     );
 
   // =========================
-  // Info + Confirmer
+  //  Info + Bouton Confirmer
+  //  (DGA connecté)
   // =========================
   return (
     <div className="min-h-screen bg-[#F0FAF0] dark:bg-[#050B14] flex items-center justify-center p-4">
@@ -284,54 +295,7 @@ export default function DgaConfirmInterview({ id }) {
           </p>
 
           {/* Infos entretien */}
-          {dga && (
-            <div className="space-y-3 p-4 bg-[#F0FAF0] dark:bg-emerald-950/40 rounded-2xl border border-emerald-200/60 dark:border-emerald-900/40">
-
-              <div className="flex items-center gap-3">
-                <div className="w-9 h-9 rounded-xl bg-emerald-500/10 dark:bg-emerald-500/15 flex items-center justify-center flex-shrink-0">
-                  <Calendar className="w-4 h-4" style={{ color: OPTY }} />
-                </div>
-                <div>
-                  <p className="text-[10px] font-bold text-gray-400 dark:text-slate-400 uppercase tracking-wider">Date</p>
-                  <p className="text-sm font-bold text-gray-800 dark:text-white">{formatDate(dga.date)}</p>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-3">
-                <div className="w-9 h-9 rounded-xl bg-emerald-500/10 dark:bg-emerald-500/15 flex items-center justify-center flex-shrink-0">
-                  <Clock className="w-4 h-4" style={{ color: OPTY }} />
-                </div>
-                <div>
-                  <p className="text-[10px] font-bold text-gray-400 dark:text-slate-400 uppercase tracking-wider">Heure</p>
-                  <p className="text-sm font-bold text-gray-800 dark:text-white">{formatTime(dga.time)}</p>
-                </div>
-              </div>
-
-              {dga.location && (
-                <div className="flex items-center gap-3">
-                  <div className="w-9 h-9 rounded-xl bg-emerald-500/10 dark:bg-emerald-500/15 flex items-center justify-center flex-shrink-0">
-                    <MapPin className="w-4 h-4" style={{ color: OPTY }} />
-                  </div>
-                  <div>
-                    <p className="text-[10px] font-bold text-gray-400 dark:text-slate-400 uppercase tracking-wider">Lieu</p>
-                    <p className="text-sm font-bold text-gray-800 dark:text-white">{dga.location}</p>
-                  </div>
-                </div>
-              )}
-
-              {dga.notes && (
-                <div className="flex items-start gap-3">
-                  <div className="w-9 h-9 rounded-xl bg-emerald-500/10 dark:bg-emerald-500/15 flex items-center justify-center flex-shrink-0 mt-0.5">
-                    <Briefcase className="w-4 h-4" style={{ color: OPTY }} />
-                  </div>
-                  <div>
-                    <p className="text-[10px] font-bold text-gray-400 dark:text-slate-400 uppercase tracking-wider">Notes</p>
-                    <p className="text-sm text-gray-700 dark:text-slate-300 whitespace-pre-wrap">{dga.notes}</p>
-                  </div>
-                </div>
-              )}
-            </div>
-          )}
+          <DgaInfoCard />
 
           {/* Bouton confirmer */}
           <button
@@ -339,11 +303,11 @@ export default function DgaConfirmInterview({ id }) {
             disabled={status === "confirming"}
             className="w-full py-4 rounded-2xl text-white font-extrabold text-base flex items-center justify-center gap-3 disabled:opacity-50 transition-all shadow-lg"
             style={{ background: OPTY, boxShadow: "0 12px 30px rgba(78,143,47,0.22)" }}
-            onMouseEnter={(e) => (e.currentTarget.style.background = OPTY_D)}
-            onMouseLeave={(e) => (e.currentTarget.style.background = OPTY)}
+            onMouseEnter={(e) => { if (status !== "confirming") e.currentTarget.style.background = OPTY_D; }}
+            onMouseLeave={(e) => { if (status !== "confirming") e.currentTarget.style.background = OPTY; }}
           >
             {status === "confirming" ? (
-              <><Loader2 className="w-5 h-5 animate-spin" /> Confirmation...</>
+              <><Loader2 className="w-5 h-5 animate-spin" /> Confirmation en cours...</>
             ) : (
               <><CheckCircle2 className="w-5 h-5" /> Confirmer ma présence</>
             )}

@@ -242,7 +242,7 @@ export default function InterviewEvaluationTelephoniquePage() {
       setSuccess(true);
 
       setTimeout(() => {
-        router.back();
+        router.push("/Responsable_RH_Nord/list-entretien");
       }, 2000);
     } catch (err) {
       console.error("❌ Save error:", err);
