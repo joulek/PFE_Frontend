@@ -262,7 +262,7 @@ export default function InterviewEvaluationPage() {
       setSuccess(true);
 
       setTimeout(() => {
-        router.push("/list-entretien");
+        router.push("/ResponsableMetier/list-entretien");
       }, 2000);
     } catch (err) {
       console.error("❌ Save error:", err);
@@ -293,7 +293,7 @@ export default function InterviewEvaluationPage() {
         <div className="mx-auto max-w-4xl">
           <button
             type="button"
-            onClick={() => router.push(`/list-entretien`)}
+            onClick={() => router.push(`/ResponsableMetier/list-entretien`)}
             className="mb-6 sm:mb-8 flex items-center gap-2 text-[#6CB33F] hover:opacity-80"
           >
             <ArrowLeft size={20} />
@@ -324,7 +324,7 @@ export default function InterviewEvaluationPage() {
         <div className="mb-6 sm:mb-8">
           <button
             type="button"
-            onClick={() => router.back()}
+            onClick={() => router.push('/ResponsableMetier/list-entretien')}
             className="mb-4 sm:mb-6 flex items-center gap-2 text-[#6CB33F] transition hover:opacity-80"
           >
             <ArrowLeft size={20} />
@@ -609,7 +609,7 @@ export default function InterviewEvaluationPage() {
           <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
             <button
               type="button"
-              onClick={() => router.back()}
+            onClick={() => router.push('/ResponsableMetier/list-entretien')}
               disabled={saving}
               className="flex-1 rounded-lg sm:rounded-full border-2 border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-4 sm:px-6 py-2.5 sm:py-3 font-semibold text-xs sm:text-sm text-gray-900 dark:text-white transition hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-60"
             >
