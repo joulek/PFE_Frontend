@@ -220,3 +220,23 @@ export async function deleteRhNordNote(interviewId) {
   });
 }
 
+// ── Notes DGA ─────────────────────────────────────────────────
+export async function getDgaNotes(interviewId) {
+  const { data } = await api.get(`/api/interviews/${interviewId}/notes-dga`);
+  return data;
+}
+
+export async function createDgaNote(interviewId, payload) {
+  const { data } = await api.post(`/api/interviews/${interviewId}/notes-dga`, payload);
+  return data;
+}
+
+export async function updateDgaNote(interviewId, noteId, payload) {
+  const { data } = await api.patch(`/api/interviews/${interviewId}/notes-dga/${noteId}`, payload);
+  return data;
+}
+
+export async function deleteDgaNote(interviewId, noteId) {
+  const { data } = await api.delete(`/api/interviews/${interviewId}/notes-dga/${noteId}`);
+  return data;
+}

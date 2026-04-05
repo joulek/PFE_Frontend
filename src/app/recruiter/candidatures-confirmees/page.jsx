@@ -24,7 +24,7 @@ import {
 } from "lucide-react";
 
 const API_BASE = (
-  process.env.NEXT_PUBLIC_API_URL
+  process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000"
 ).replace(/\/$/, "");
 
 function getAuthHeaders() {
@@ -465,7 +465,7 @@ export default function ConfirmedCandidaturesPage() {
 
       const params = new URLSearchParams({ page: "1", limit: "500" });
       if (search.trim()) params.append("search", search.trim());
-      const res = await fetch(`${API_BASE}/api/interviews/confirmed?${params}`, {
+      const res = await fetch(`${API_BASE}/api/interviews/confirmed-exclude-rh-nord?${params}`, {
         headers: { "Content-Type": "application/json", ...(token ? { Authorization: `Bearer ${token}` } : {}) },
       });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
