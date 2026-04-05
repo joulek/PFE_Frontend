@@ -5,18 +5,13 @@ import { useRouter } from "next/navigation";
 import {
   Search,
   Calendar,
-  User,
   Briefcase,
   CheckCircle2,
   Clock3,
   XCircle,
-  RefreshCcw,
-  ChevronDown,
-  ChevronRight,
   FileText,
   X,
   AlertTriangle,
-  Send,
   PhoneCall,
 } from "lucide-react";
 import {
@@ -26,15 +21,13 @@ import {
 import api from "../../services/api";
 
 // ─────────────────────────────────────────────────────────
-//  Helpers : résoudre nom/email depuis toutes les structures
+//  Helpers
 // ─────────────────────────────────────────────────────────
 function extractNameFromCvUrl(cvUrl) {
-  // "/uploads/cvs/1773869669421-NourheneAbbes.pdf" → "Nourhene Abbes"
   if (!cvUrl) return null;
   try {
     const filename = cvUrl.split("/").pop().replace(/\.pdf$/i, "").replace(/\.PDF$/i, "");
-    const withoutTs = filename.replace(/^\d+[-_]/, ""); // retirer timestamp
-    // CamelCase → "Nourhene Abbes"
+    const withoutTs = filename.replace(/^\d+[-_]/, "");
     const spaced = withoutTs
       .replace(/([a-z])([A-Z])/g, "$1 $2")
       .replace(/([A-Z]+)([A-Z][a-z])/g, "$1 $2")
@@ -47,19 +40,14 @@ function extractNameFromCvUrl(cvUrl) {
 const FAKE_NAMES = ["candidat", "candidate", "—", "-", "inconnu", "candidat inconnu", ""];
 
 function resolveCandidateName(iv) {
-  // 1. Champs directs — ignorer les valeurs bidon
   const raw = (iv.candidateName || "").trim();
   if (raw && !FAKE_NAMES.includes(raw.toLowerCase())) return raw;
-
-  // 2. Autres champs directs
   if (iv.candidate?.name?.trim())  return iv.candidate.name.trim();
   if (iv.nom?.trim())              return iv.nom.trim();
   if (iv.name?.trim())             return iv.name.trim();
   if (iv.fullName?.trim())         return iv.fullName.trim();
   const pif = [iv.prenom, iv.nomFamille].filter(Boolean).join(" ").trim();
   if (pif) return pif;
-
-  // 3. Depuis extracted.parsed (3 formats CV)
   const p = iv.extracted?.parsed;
   if (p) {
     if (p.nom?.trim())       return p.nom.trim();
@@ -77,11 +65,8 @@ function resolveCandidateName(iv) {
     const piD = [p.parsed?.personal_info?.first_name, p.parsed?.personal_info?.last_name].filter(Boolean).join(" ").trim();
     if (piD) return piD;
   }
-
-  // 4. ✅ Dernier recours — extraire depuis le nom du fichier CV
   const fromCv = extractNameFromCvUrl(iv.cvUrl || iv.cv?.url || iv.cv);
   if (fromCv) return fromCv;
-
   return "—";
 }
 
@@ -102,7 +87,7 @@ function resolveCandidateEmail(iv) {
 }
 
 // ─────────────────────────────────────────────────────────
-//  STATUTS
+//  STATUTS & TYPES
 // ─────────────────────────────────────────────────────────
 const STATUS_CONFIG = {
   PENDING_CONFIRMATION: {
@@ -178,7 +163,6 @@ const TYPE_CONFIG = {
     label: "Téléphonique",
     cls: "text-green-700 dark:text-green-300 bg-green-50 dark:bg-green-950/30 border-green-200 dark:border-green-700",
   },
-  // ✅ AJOUTS — entretiens créés par RH Nord
   NORD: {
     label: "Entretien RH",
     cls: "text-[#4E8F2F] dark:text-emerald-400 bg-[#E9F5E3] dark:bg-gray-700 border-[#d7ebcf] dark:border-gray-600",
@@ -236,35 +220,6 @@ function Badge({ label, className = "", dotClass = "" }) {
   );
 }
 
-function StatCard({ label, value, active, onClick, icon }) {
-  return (
-    <button
-      onClick={onClick}
-      className={`rounded-2xl border p-4 text-left transition-colors shadow-sm ${active
-        ? "bg-[#E9F5E3] dark:bg-gray-700 border-[#cfe4c4] dark:border-gray-600"
-        : "bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 hover:bg-green-50/40 dark:hover:bg-gray-700/60"
-      }`}
-    >
-      <div className="flex items-center justify-between mb-3">
-        <span className="text-[#4E8F2F] dark:text-emerald-400">{icon}</span>
-      </div>
-      <div className="text-2xl font-extrabold text-gray-900 dark:text-white">{value}</div>
-      <div className="text-[11px] uppercase tracking-wider font-bold text-gray-500 dark:text-gray-400">{label}</div>
-    </button>
-  );
-}
-
-function DetailCard({ label, value, children }) {
-  return (
-    <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 p-4 transition-colors">
-      <div className="text-[11px] uppercase tracking-wider font-bold text-gray-500 dark:text-gray-400 mb-2">{label}</div>
-      {children ? children : (
-        <div className="text-sm font-medium text-gray-800 dark:text-gray-200 break-words">{value || "—"}</div>
-      )}
-    </div>
-  );
-}
-
 function PendingAlert({ count, onClick }) {
   if (!count) return null;
   return (
@@ -274,7 +229,7 @@ function PendingAlert({ count, onClick }) {
     >
       <AlertTriangle className="w-5 h-5 text-amber-500 flex-shrink-0" />
       <span>{count} entretien{count > 1 ? "s" : ""} en attente de votre confirmation</span>
-      <ChevronRight className="w-4 h-4 ml-auto text-amber-400" />
+      <span className="ml-auto text-amber-400">›</span>
     </button>
   );
 }
@@ -297,9 +252,9 @@ export default function ResponsableMetierInterviewList() {
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [total, setTotal] = useState(0);
-  const [expandedRow, setExpandedRow] = useState(null);
+
+  // ✅ confirmingRhNordId : _id de l'entretien en cours de confirmation (spinner)
   const [confirmingRhNordId, setConfirmingRhNordId] = useState(null);
-  const [confirmedRhNordIds, setConfirmedRhNordIds] = useState(new Set());
 
   const LIMIT = 10;
   const debounceRef = useRef(null);
@@ -319,37 +274,26 @@ export default function ResponsableMetierInterviewList() {
     setLoading(true);
     setError(null);
     try {
-      // 1. Entretiens RH Nord planifiés
       let rhNordList = [];
       try {
         const params = new URLSearchParams({ page, limit: LIMIT });
         if (statusFilter && statusFilter !== "ALL") params.append("status", statusFilter);
         if (debouncedSearch.trim()) params.append("search", debouncedSearch.trim());
-
         const rhNordRes = await api.get(`/api/interviewNord/interview-nord/list?${params}`);
         rhNordList = rhNordRes.data?.interviews || [];
       } catch (rhErr) {
         console.error("❌ Erreur chargement entretiens RH Nord:", rhErr);
       }
 
-      // 2. Entretiens téléphoniques confirmés
       let telList = [];
       try {
-        const telData = await getMyTelephoniqueInterviews({
-          page: 1,
-          limit: 50,
-          search: debouncedSearch.trim(),
-        });
+        const telData = await getMyTelephoniqueInterviews({ page: 1, limit: 50, search: debouncedSearch.trim() });
         telList = telData.interviews || [];
-
-        if (statusFilter !== "ALL" && statusFilter !== "CONFIRMED") {
-          telList = [];
-        }
+        if (statusFilter !== "ALL" && statusFilter !== "CONFIRMED") telList = [];
       } catch (telErr) {
         console.error("❌ Erreur chargement téléphoniques:", telErr);
       }
 
-      // 3. Fusion
       const telByCandidatureId = {};
       for (const tel of telList) {
         const key = String(tel.candidatureId || tel._id);
@@ -408,15 +352,29 @@ export default function ResponsableMetierInterviewList() {
   useEffect(() => { fetchInterviews(); }, [fetchInterviews]);
   useEffect(() => { fetchStats(); }, [fetchStats]);
 
+  // ✅ Confirmation RH Nord
   const handleConfirmRhNord = useCallback(async (e, iv) => {
     e.stopPropagation();
-    const candidatureId = iv.candidatureId || iv._id;
-    if (!candidatureId) return;
+
+    // Priorité : candidatureId, sinon _id de l'entretien
+    const id = iv.candidatureId || iv._id;
+    if (!id) return;
+
+    // Spinner sur ce bouton uniquement
     setConfirmingRhNordId(iv._id);
+
     try {
-      await api.patch(`/api/interviews/candidatures/${candidatureId}/confirm-rh-nord`);
-      // ✅ Persiste définitivement dans le Set — pas de timeout
-      setConfirmedRhNordIds((prev) => new Set([...prev, iv._id]));
+      await api.patch(`/api/interviewNord/confirm-rh-nord/${id}`);
+
+      // ✅ Mettre à jour l'objet dans la liste → rhNordConfirmed: true
+      // Le bouton basculera immédiatement en badge "Candidat confirmé" (désactivé)
+      setInterviews((prev) =>
+        prev.map((item) =>
+          item._id === iv._id
+            ? { ...item, rhNordConfirmed: true }
+            : item
+        )
+      );
     } catch (err) {
       console.error("❌ Erreur confirmation RH Nord:", err);
       alert(err?.response?.data?.message || "Erreur lors de la confirmation.");
@@ -424,6 +382,9 @@ export default function ResponsableMetierInterviewList() {
       setConfirmingRhNordId(null);
     }
   }, []);
+
+  // Colonnes du tableau
+  const COLS = ["Candidat", "Poste", "Type", "Date & heure", "Évaluation", "Statut", "Actions"];
 
   return (
     <div className="min-h-screen bg-[#F0FAF0] dark:bg-gray-950 text-gray-900 dark:text-gray-100 transition-colors duration-300">
@@ -433,7 +394,7 @@ export default function ResponsableMetierInterviewList() {
         <div className="flex flex-col xl:flex-row xl:items-center xl:justify-between gap-4 mb-6 sm:mb-8">
           <div>
             <h1 className="text-3xl sm:text-4xl font-extrabold text-gray-900 dark:text-white">Mes Entretiens</h1>
-            <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">Entretiens RH  &amp; Téléphoniques assignés</p>
+            <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">Entretiens RH &amp; Téléphoniques assignés</p>
           </div>
         </div>
 
@@ -455,7 +416,7 @@ export default function ResponsableMetierInterviewList() {
           )}
         </div>
 
-        {/* Filtres */}
+        {/* Filtres statut */}
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3 sm:gap-4 mb-6">
           <div className="flex flex-wrap gap-1.5 sm:gap-2">
             {STATUS_FILTERS.map((s) => {
@@ -465,9 +426,10 @@ export default function ResponsableMetierInterviewList() {
                 <button
                   key={s}
                   onClick={() => setStatusFilter(s)}
-                  className={`inline-flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-1.5 sm:py-2 rounded-full border text-xs font-semibold transition-colors ${isActive
-                    ? "bg-[#6CB33F] hover:bg-[#4E8F2F] border-[#6CB33F] text-white dark:bg-emerald-600 dark:hover:bg-emerald-500 dark:border-emerald-600"
-                    : "bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-[#4E8F2F] dark:text-emerald-400 hover:bg-green-50 dark:hover:bg-gray-700"
+                  className={`inline-flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-1.5 sm:py-2 rounded-full border text-xs font-semibold transition-colors ${
+                    isActive
+                      ? "bg-[#6CB33F] hover:bg-[#4E8F2F] border-[#6CB33F] text-white dark:bg-emerald-600 dark:hover:bg-emerald-500 dark:border-emerald-600"
+                      : "bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-[#4E8F2F] dark:text-emerald-400 hover:bg-green-50 dark:hover:bg-gray-700"
                   }`}
                 >
                   {cfg?.dot ? <span className={`w-2 h-2 rounded-full ${isActive ? "bg-white" : cfg.dot}`} /> : null}
@@ -498,7 +460,12 @@ export default function ResponsableMetierInterviewList() {
               <XCircle className="w-16 h-16 text-red-400" />
               <p className="text-gray-700 dark:text-gray-300 text-lg font-semibold">Erreur de chargement</p>
               <p className="text-gray-500 dark:text-gray-400 text-sm">{error}</p>
-              <button onClick={fetchInterviews} className="px-5 py-2.5 rounded-full bg-[#6CB33F] text-white font-semibold text-sm hover:bg-[#4E8F2F] transition-colors">Réessayer</button>
+              <button
+                onClick={fetchInterviews}
+                className="px-5 py-2.5 rounded-full bg-[#6CB33F] text-white font-semibold text-sm hover:bg-[#4E8F2F] transition-colors"
+              >
+                Réessayer
+              </button>
             </div>
           </div>
         )}
@@ -510,8 +477,10 @@ export default function ResponsableMetierInterviewList() {
               <Calendar className="w-16 h-16 text-gray-300 dark:text-gray-600" />
               <p className="text-gray-700 dark:text-gray-300 text-lg font-semibold">Aucun entretien trouvé</p>
               <p className="text-gray-500 dark:text-gray-400 text-sm">
-                {search ? "Aucun résultat pour cette recherche."
-                  : statusFilter !== "ALL" ? "Aucun entretien pour ce statut."
+                {search
+                  ? "Aucun résultat pour cette recherche."
+                  : statusFilter !== "ALL"
+                  ? "Aucun entretien pour ce statut."
                   : "Vous n'avez pas d'entretiens assignés."}
               </p>
             </div>
@@ -522,22 +491,22 @@ export default function ResponsableMetierInterviewList() {
         {!loading && !error && interviews.length > 0 && (
           <div className="bg-white dark:bg-gray-800 rounded-2xl sm:rounded-3xl shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden transition-colors">
             <div className="overflow-x-auto">
-              <table className="w-full text-sm min-w-[1280px]">
+              <table className="w-full text-sm min-w-[1400px]">
                 <thead className="bg-[#E9F5E3] dark:bg-gray-700 text-[#4E8F2F] dark:text-emerald-400">
                   <tr>
-                    {["Candidat", "Poste", "Type", "Date & heure", "Évaluation", "Statut", ""].map((h) => (
-                      <th key={h} className="text-left px-6 lg:px-8 py-5 font-extrabold uppercase text-xs tracking-wider">{h}</th>
+                    {COLS.map((h) => (
+                      <th key={h} className="text-left px-6 lg:px-8 py-5 font-extrabold uppercase text-xs tracking-wider">
+                        {h}
+                      </th>
                     ))}
                   </tr>
                 </thead>
 
                 <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
                   {interviews.map((iv) => {
-                    const isExpanded = expandedRow === iv._id;
                     const isTelephonique = iv._isTelephonique === true || iv.interviewType === "telephonique";
                     const isRHTech = isRHTechInterview(iv.interviewType);
 
-                    // ✅ FIX — inclure NORD et entretien_nord
                     const isRHSimple =
                       iv.interviewType === "RH"             ||
                       iv.interviewType === "rh"             ||
@@ -545,12 +514,9 @@ export default function ResponsableMetierInterviewList() {
                       iv.interviewType === "entretien_nord" ||
                       iv.type === "entretien_nord";
 
-                    const hasBoth = !isTelephonique && !!iv._telEntry;
-
+                    const hasBoth   = !isTelephonique && !!iv._telEntry;
                     const statusCfg = STATUS_CONFIG[iv.status] || {};
-
-                    // ✅ FIX — fallback sur iv.type si iv.interviewType non reconnu
-                    const typeCfg = isTelephonique
+                    const typeCfg   = isTelephonique
                       ? TYPE_CONFIG.telephonique
                       : (TYPE_CONFIG[iv.interviewType] || TYPE_CONFIG[iv.type] || TYPE_CONFIG.RH);
 
@@ -560,16 +526,14 @@ export default function ResponsableMetierInterviewList() {
                     const displayTime = iv.confirmedDate
                       ? iv.confirmedTime
                       : (iv.proposedTime || (iv.proposedStart
-                        ? new Date(iv.proposedStart).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" })
-                        : null));
+                          ? new Date(iv.proposedStart).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" })
+                          : null));
 
-                    // ✅ FIX — showEvalRH inclut RESCHEDULED
                     const showEvalRH =
                       (isRHSimple || isRHTech) &&
                       ["CONFIRMED", "PENDING_CANDIDATE_CONFIRMATION", "RESCHEDULED"].includes(iv.status);
-
                     const showEvalTel = isTelephonique;
-                    const showEval = showEvalRH || showEvalTel || hasBoth;
+                    const showEval   = showEvalRH || showEvalTel || hasBoth;
 
                     const evalUrlRH = isRHTech
                       ? `/Responsable_RH_Nord/interviews/${iv._id}/evaluation?type=rh_tech`
@@ -581,183 +545,151 @@ export default function ResponsableMetierInterviewList() {
                         ? `/Responsable_RH_Nord/interviews/${iv._telEntry._id}/evaluation-telephonique`
                         : null;
 
+                    // ─────────────────────────────────────────────────────
+                    //  ✅ LOGIQUE CONFIRMATION
+                    //  isConfirmed = true si :
+                    //    • rhNordConfirmed === true vient de la DB (chargé au départ)
+                    //    • OU après un clic réussi → setInterviews met rhNordConfirmed: true
+                    //  Dans les deux cas le bouton est remplacé par le badge désactivé
+                    // ─────────────────────────────────────────────────────
+                    const isConfirmed  = iv.rhNordConfirmed === true;
+                    const isConfirming = confirmingRhNordId === iv._id;
+
+                    // Afficher la colonne Actions seulement si statut éligible
+                    const showConfirm = ["PENDING_CANDIDATE_CONFIRMATION", "CONFIRMED", "RESCHEDULED"].includes(iv.status);
+
                     return (
-                      <React.Fragment key={iv._id}>
-                        <tr
-                          onClick={() => setExpandedRow(isExpanded ? null : iv._id)}
-                          className={`hover:bg-green-50/40 dark:hover:bg-gray-700/40 transition-colors cursor-pointer ${isExpanded ? "bg-green-50/30 dark:bg-gray-700/30" : ""} ${isCancelled ? "opacity-60" : ""}`}
-                        >
-                          {/* Candidat */}
-                          <td className="px-6 lg:px-8 py-5">
-                            <div className="flex items-center gap-3">
-                              <Avatar name={iv.candidateName} />
-                              <div className="min-w-0">
-                                <p className="font-bold text-gray-900 dark:text-white truncate text-xs sm:text-sm">{iv.candidateName || "—"}</p>
-                                <p className="text-xs text-gray-400 dark:text-gray-500 truncate">{iv.candidateEmail || "—"}</p>
-                              </div>
+                      <tr
+                        key={iv._id}
+                        className={`hover:bg-green-50/40 dark:hover:bg-gray-700/40 transition-colors ${isCancelled ? "opacity-60" : ""}`}
+                      >
+                        {/* Candidat */}
+                        <td className="px-6 lg:px-8 py-5">
+                          <div className="flex items-center gap-3">
+                            <Avatar name={iv.candidateName} />
+                            <div className="min-w-0">
+                              <p className="font-bold text-gray-900 dark:text-white truncate text-xs sm:text-sm">
+                                {iv.candidateName || "—"}
+                              </p>
+                              <p className="text-xs text-gray-400 dark:text-gray-500 truncate">
+                                {iv.candidateEmail || "—"}
+                              </p>
                             </div>
-                          </td>
+                          </div>
+                        </td>
 
-                          {/* Poste */}
-                          <td className="px-3 sm:px-4 md:px-6 lg:px-8 py-3 sm:py-5">
-                            <span className="flex items-center gap-2 text-gray-700 dark:text-gray-300 font-medium text-xs sm:text-sm">
-                              <Briefcase className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-gray-400 flex-shrink-0" />
-                              <span className="truncate max-w-[100px] sm:max-w-[140px]">{iv.jobTitle || "—"}</span>
+                        {/* Poste */}
+                        <td className="px-6 lg:px-8 py-5">
+                          <span className="flex items-center gap-2 text-gray-700 dark:text-gray-300 font-medium text-xs sm:text-sm">
+                            <Briefcase className="w-4 h-4 text-gray-400 flex-shrink-0" />
+                            <span className="truncate max-w-[140px]">{iv.jobTitle || "—"}</span>
+                          </span>
+                        </td>
+
+                        {/* Type */}
+                        <td className="px-6 lg:px-8 py-5">
+                          <div className="flex flex-col gap-1.5">
+                            <Badge label={typeCfg.label} className={`${typeCfg.cls} border text-xs`} />
+                            {hasBoth && (
+                              <Badge label="Téléphonique" className={`${TYPE_CONFIG.telephonique.cls} border text-xs`} />
+                            )}
+                          </div>
+                        </td>
+
+                        {/* Date & heure */}
+                        <td className="px-6 lg:px-8 py-5">
+                          <div className="flex flex-col gap-1">
+                            <span className="flex items-center gap-2 text-gray-800 dark:text-gray-200 font-semibold text-xs sm:text-sm">
+                              <Calendar className="w-4 h-4 text-[#4E8F2F] dark:text-emerald-400 flex-shrink-0" />
+                              {formatDate(displayDate)}
                             </span>
-                          </td>
-
-                          {/* Type */}
-                          <td className="px-3 sm:px-4 md:px-6 lg:px-8 py-3 sm:py-5">
-                            <div className="flex flex-col gap-1.5">
-                              <Badge label={typeCfg.label} className={`${typeCfg.cls} border text-xs`} />
-                              {hasBoth && (
-                                <Badge label="Téléphonique" className={`${TYPE_CONFIG.telephonique.cls} border text-xs`} />
-                              )}
-                            </div>
-                          </td>
-
-                          {/* Date & heure */}
-                          <td className="px-3 sm:px-4 md:px-6 lg:px-8 py-3 sm:py-5">
-                            <div className="flex flex-col gap-1">
-                              <span className="flex items-center gap-2 text-gray-800 dark:text-gray-200 font-semibold text-xs sm:text-sm">
-                                <Calendar className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#4E8F2F] dark:text-emerald-400 flex-shrink-0" />
-                                {formatDate(displayDate)}
+                            {displayTime && (
+                              <span className="flex items-center gap-2 text-gray-500 dark:text-gray-400 text-xs ml-6">
+                                <Clock3 className="w-3.5 h-3.5" />
+                                {displayTime}
                               </span>
-                              {displayTime && (
-                                <span className="flex items-center gap-2 text-gray-500 dark:text-gray-400 text-xs ml-5 sm:ml-6">
-                                  <Clock3 className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
-                                  {displayTime}
-                                </span>
-                              )}
-                              {iv.status === "CANDIDATE_REQUESTED_RESCHEDULE" && (
-                                <div className="flex items-center gap-1 text-orange-600 dark:text-orange-400 text-xs ml-5 sm:ml-6 font-semibold">
-                                  <AlertTriangle className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
-                                  <span>{formatDate(iv.candidateProposedDate)}</span>
-                                </div>
-                              )}
-                            </div>
-                          </td>
+                            )}
+                            {iv.status === "CANDIDATE_REQUESTED_RESCHEDULE" && (
+                              <div className="flex items-center gap-1 text-orange-600 dark:text-orange-400 text-xs ml-6 font-semibold">
+                                <AlertTriangle className="w-3.5 h-3.5" />
+                                <span>{formatDate(iv.candidateProposedDate)}</span>
+                              </div>
+                            )}
+                          </div>
+                        </td>
 
-                          {/* Évaluation */}
-                          <td className="px-3 sm:px-4 md:px-6 lg:px-8 py-3 sm:py-5">
-                            <div className="flex flex-col gap-1.5">
-                              {(showEvalRH || hasBoth) && (
-                                <button
-                                  onClick={(e) => { e.stopPropagation(); router.push(evalUrlRH); }}
-                                  className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-xs font-semibold transition-colors whitespace-nowrap ${
-                                    isRHTech
-                                      ? "text-violet-700 dark:text-violet-300 bg-violet-50 dark:bg-violet-950/30 border-violet-200 dark:border-violet-700 hover:bg-violet-100 dark:hover:bg-violet-900/40"
-                                      : "text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/30 border-emerald-200 dark:border-emerald-700 hover:bg-emerald-100 dark:hover:bg-emerald-900/40"
-                                  }`}
-                                >
-                                  <FileText className="w-3.5 h-3.5" />
-                                  {isRHTech ? "RH + Tech" : "RH"}
-                                </button>
-                              )}
-                              {(showEvalTel || hasBoth) && evalUrlTel && (
-                                <button
-                                  onClick={(e) => { e.stopPropagation(); router.push(evalUrlTel); }}
-                                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-xs font-semibold transition-colors whitespace-nowrap text-green-700 dark:text-green-300 bg-green-50 dark:bg-green-950/30 border-green-200 dark:border-green-700 hover:bg-green-100 dark:hover:bg-green-900/40"
-                                >
-                                  <PhoneCall className="w-3.5 h-3.5" />
-                                  Téléphonique
-                                </button>
-                              )}
-                              {!showEval && <span className="text-xs text-gray-400">—</span>}
-                            </div>
-                          </td>
+                        {/* Évaluation */}
+                        <td className="px-6 lg:px-8 py-5">
+                          <div className="flex flex-col gap-1.5">
+                            {(showEvalRH || hasBoth) && (
+                              <button
+                                onClick={() => router.push(evalUrlRH)}
+                                className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-xs font-semibold transition-colors whitespace-nowrap ${
+                                  isRHTech
+                                    ? "text-violet-700 dark:text-violet-300 bg-violet-50 dark:bg-violet-950/30 border-violet-200 dark:border-violet-700 hover:bg-violet-100 dark:hover:bg-violet-900/40"
+                                    : "text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/30 border-emerald-200 dark:border-emerald-700 hover:bg-emerald-100 dark:hover:bg-emerald-900/40"
+                                }`}
+                              >
+                                <FileText className="w-3.5 h-3.5" />
+                                {isRHTech ? "RH + Tech" : "RH"}
+                              </button>
+                            )}
+                            {(showEvalTel || hasBoth) && evalUrlTel && (
+                              <button
+                                onClick={() => router.push(evalUrlTel)}
+                                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-xs font-semibold transition-colors whitespace-nowrap text-green-700 dark:text-green-300 bg-green-50 dark:bg-green-950/30 border-green-200 dark:border-green-700 hover:bg-green-100 dark:hover:bg-green-900/40"
+                              >
+                                <PhoneCall className="w-3.5 h-3.5" />
+                                Téléphonique
+                              </button>
+                            )}
+                            {!showEval && <span className="text-xs text-gray-400">—</span>}
+                          </div>
+                        </td>
 
-                          {/* Statut */}
-                          <td className="px-3 sm:px-4 md:px-6 lg:px-8 py-3 sm:py-5">
-                            <Badge
-                              label={statusCfg.short || iv.status}
-                              className={`${statusCfg.color || ""} text-xs`}
-                              dotClass={statusCfg.dot || ""}
-                            />
-                          </td>
+                        {/* Statut */}
+                        <td className="px-6 lg:px-8 py-5">
+                          <Badge
+                            label={statusCfg.short || iv.status}
+                            className={`${statusCfg.color || ""} text-xs`}
+                            dotClass={statusCfg.dot || ""}
+                          />
+                        </td>
 
-                          {/* Chevron */}
-                          <td className="px-3 sm:px-4 md:px-6 lg:px-8 py-3 sm:py-5 text-right">
-                            <ChevronDown className={`w-4 h-4 sm:w-5 sm:h-5 text-gray-400 ml-auto transition-transform ${isExpanded ? "rotate-180" : ""}`} />
-                          </td>
-                        </tr>
-
-                        {/* ── Ligne expandée ── */}
-                        {isExpanded && (
-                          <tr>
-                            <td colSpan={7} className="px-3 sm:px-4 md:px-6 lg:px-8 pb-4 sm:pb-6 bg-green-50/20 dark:bg-gray-900/20">
-                              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3 sm:gap-4 pt-4">
-                                <DetailCard label="Poste" value={iv.jobTitle} />
-
-                                {isTelephonique && (
-                                  <DetailCard
-                                    label="Type d'entretien"
-                                    value="Entretien Téléphonique — confirmé par RH Nord"
-                                  />
-                                )}
-
-                                {iv.status === "CANDIDATE_REQUESTED_RESCHEDULE" && (
+                        {/* ── Actions ── */}
+                        <td className="px-6 lg:px-8 py-5">
+                          {showConfirm ? (
+                            isConfirmed ? (
+                              // ✅ Badge statique — candidat déjà confirmé (DB ou après clic)
+                              <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-700 text-emerald-700 dark:text-emerald-300 font-semibold text-xs whitespace-nowrap cursor-default select-none">
+                                <CheckCircle2 className="w-4 h-4" />
+                                Candidat confirmé
+                              </span>
+                            ) : (
+                              // ✅ Bouton actif — une seule confirmation possible
+                              <button
+                                onClick={(e) => handleConfirmRhNord(e, iv)}
+                                disabled={isConfirming}
+                                className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[#6CB33F] hover:bg-[#4E8F2F] dark:bg-emerald-600 dark:hover:bg-emerald-500 text-white font-semibold text-xs transition-colors disabled:opacity-60 disabled:cursor-not-allowed whitespace-nowrap shadow-sm"
+                              >
+                                {isConfirming ? (
                                   <>
-                                    <DetailCard
-                                      label="Date proposée par le candidat"
-                                      value={`${formatDate(iv.candidateProposedDate)} ${iv.candidateProposedTime || ""}`}
-                                    />
-                                    <DetailCard
-                                      label="Raison du report"
-                                      value={iv.candidateRescheduleReason || "Non précisée"}
-                                    />
+                                    <span className="w-3.5 h-3.5 border-2 border-white/40 border-t-white rounded-full animate-spin" />
+                                    En cours...
+                                  </>
+                                ) : (
+                                  <>
+                                    <CheckCircle2 className="w-4 h-4" />
+                                    Confirmer candidat
                                   </>
                                 )}
-
-                                {iv.status === "PENDING_ADMIN_APPROVAL" && (
-                                  <DetailCard
-                                    label="Votre nouvelle date (en attente admin)"
-                                    value={`${formatDate(iv.responsableProposedDate)} ${iv.responsableProposedTime || ""}`}
-                                  />
-                                )}
-                              </div>
-
-                              <div className="mt-4 sm:mt-5 flex flex-col sm:flex-row flex-wrap gap-2 sm:gap-3">
-                               
-                                {/* ✅ Bouton Confirmer candidat — RH Nord
-                                     Visible pour RH et Téléphonique
-                                     Indépendant du statut entretien :
-                                     - candidat confirme l'entretien  → status = CONFIRMED
-                                     - RH Nord confirme le candidat   → rhNordConfirmed = true
-                                     Ces 2 actions sont séparées ! */}
-                                {["PENDING_CANDIDATE_CONFIRMATION", "CONFIRMED", "RESCHEDULED"].includes(iv.status) &&
-                                  !iv.rhNordConfirmed &&
-                                  (
-                                  confirmedRhNordIds.has(iv._id) ? (
-                                    <span className="inline-flex items-center gap-2 px-3 sm:px-4 py-2 rounded-full bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-700 text-emerald-700 dark:text-emerald-300 font-semibold text-xs sm:text-sm">
-                                      <CheckCircle2 className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                                      Candidat confirmé
-                                    </span>
-                                  ) : (
-                                    <button
-                                      onClick={(e) => handleConfirmRhNord(e, iv)}
-                                      disabled={confirmingRhNordId === iv._id}
-                                      className="px-3 sm:px-4 py-2 rounded-full bg-[#6CB33F] hover:bg-[#4E8F2F] dark:bg-emerald-600 dark:hover:bg-emerald-500 border border-[#6CB33F] dark:border-emerald-600 text-white font-semibold text-xs sm:text-sm transition-colors flex items-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed"
-                                    >
-                                      {confirmingRhNordId === iv._id ? (
-                                        <>
-                                          <span className="w-3.5 h-3.5 border-2 border-white/40 border-t-white rounded-full animate-spin" />
-                                          En cours...
-                                        </>
-                                      ) : (
-                                        <>
-                                          <CheckCircle2 className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                                          Confirmer candidat
-                                        </>
-                                      )}
-                                    </button>
-                                  )
-                                )}
-                              </div>
-                            </td>
-                          </tr>
-                        )}
-                      </React.Fragment>
+                              </button>
+                            )
+                          ) : (
+                            <span className="text-xs text-gray-400">—</span>
+                          )}
+                        </td>
+                      </tr>
                     );
                   })}
                 </tbody>
@@ -769,13 +701,17 @@ export default function ResponsableMetierInterviewList() {
         {/* Pagination */}
         {!loading && !error && interviews.length > 0 && totalPages > 1 && (
           <div className="mt-6 sm:mt-8 px-3 sm:px-4 md:px-8 py-4 sm:py-5 flex flex-col lg:flex-row items-center justify-between gap-4 text-xs sm:text-sm text-gray-500 dark:text-gray-400 transition-colors">
-            <p className="font-medium">Page {page} sur {totalPages} — Total : {total} entretien{total > 1 ? "s" : ""}</p>
+            <p className="font-medium">
+              Page {page} sur {totalPages} — Total : {total} entretien{total > 1 ? "s" : ""}
+            </p>
             <div className="flex items-center gap-2 flex-wrap justify-center">
               <button
                 onClick={() => setPage((p) => Math.max(1, p - 1))}
                 disabled={page === 1}
                 className="px-3 sm:px-4 py-2 rounded-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 font-semibold text-xs sm:text-sm disabled:opacity-50 transition-colors"
-              >← Préc.</button>
+              >
+                ← Préc.
+              </button>
               {Array.from({ length: Math.min(totalPages, 8) }, (_, i) => i + 1).map((p) => (
                 <button
                   key={p}
@@ -785,13 +721,17 @@ export default function ResponsableMetierInterviewList() {
                       ? "bg-[#6CB33F] border-[#6CB33F] text-white dark:bg-emerald-600 dark:border-emerald-600"
                       : "bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300"
                   }`}
-                >{p}</button>
+                >
+                  {p}
+                </button>
               ))}
               <button
                 onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
                 disabled={page === totalPages}
                 className="px-3 sm:px-4 py-2 rounded-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 font-semibold text-xs sm:text-sm disabled:opacity-50 transition-colors"
-              >Suiv. →</button>
+              >
+                Suiv. →
+              </button>
             </div>
           </div>
         )}

@@ -433,7 +433,7 @@ export default function ConfirmedInterviewsPage() {
                         "Lieu",
                         "Type",
                         "Responsable",
-                        "ResponsableRH",
+                        "Responsable RH",
                         "Statut",
                       ].map((h) => (
                         <th

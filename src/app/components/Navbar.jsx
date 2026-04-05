@@ -552,6 +552,7 @@ export default function Navbar() {
   const isInNordEntretiens =
     pathname.startsWith("/Responsable_RH_Nord/list-entretien") ||
     pathname.startsWith("/Responsable_RH_Nord/PreInterviewList");
+
   const isInFiche = pathname.startsWith("/fiche_renseignement");
 
   async function handleLogout() {
@@ -967,14 +968,13 @@ export default function Navbar() {
               )}
             </div>
 
-            {/* MOBILE RIGHT */}
+            {/* MOBILE RIGHT — cloche + hamburger uniquement dans le header */}
             <div className="md:hidden flex items-center gap-2">
               {user && (
                 <div ref={notifRef}>
                   <BellButton isMobile={true} />
                 </div>
               )}
-
               <button
                 onClick={() => setOpenMobile((v) => !v)}
                 className="p-2 rounded-lg hover:bg-gray-100/70 dark:hover:bg-gray-700/50 transition-colors"
@@ -990,32 +990,6 @@ export default function Navbar() {
           {openMobile && (
             <div className="md:hidden pb-5 pt-2">
               <div className="rounded-2xl bg-white/95 dark:bg-gray-900/85 shadow-xl border border-gray-200/70 dark:border-gray-700/60 p-4 space-y-2 backdrop-blur-sm transition-colors duration-200">
-
-                {/* MOBILE RIGHT */}
-                <div className="md:hidden flex items-center gap-2">
-                  {user && (
-                    <>
-                      {/* Nom utilisateur visible sur mobile */}
-                      <div className="flex items-center gap-1.5">
-                        <UserAvatar name={userFullName} size="sm" />
-                        <span className="text-xs font-semibold text-gray-700 dark:text-gray-200 max-w-[80px] truncate hidden xs:block">
-                          {userFullName.split(" ")[0]}
-                        </span>
-                      </div>
-                      <div ref={notifRef}>
-                        <BellButton isMobile={true} />
-                      </div>
-                    </>
-                  )}
-                  <button
-                    onClick={() => setOpenMobile((v) => !v)}
-                    className="p-2 rounded-lg hover:bg-gray-100/70 dark:hover:bg-gray-700/50 transition-colors"
-                  >
-                    <svg className="w-6 h-6 text-gray-700 dark:text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-                    </svg>
-                  </button>
-                </div>
 
                 {/* ── RESPONSABLE METIER ── */}
                 {!isAdmin && !isAssistanteRH && !isAssistanceDirection && !isResponsableRHOPTYLAB && !isResponsableRHNORD && !isDGA && (
@@ -1080,7 +1054,7 @@ export default function Navbar() {
                     <Link href="/employees" className={`block px-5 py-3.5 rounded-xl font-medium transition ${isActive("/employees") ? "bg-[#6CB33F] text-white" : "text-gray-700 dark:text-gray-200 hover:bg-gray-100/70 dark:hover:bg-gray-800/60"}`}>
                       Gestion Employés
                     </Link>
-                    <Link href="/utilisateurs" className={`block px-5 py-3.5 rounded-xl font-medium transition ${isActive("/utilisateur") ? "bg-[#6CB33F] text-white" : "text-gray-700 dark:text-gray-200 hover:bg-gray-100/70 dark:hover:bg-gray-800/60"}`}>
+                    <Link href="/utilisateurs" className={`block px-5 py-3.5 rounded-xl font-medium transition ${isActive("/utilisateurs") ? "bg-[#6CB33F] text-white" : "text-gray-700 dark:text-gray-200 hover:bg-gray-100/70 dark:hover:bg-gray-800/60"}`}>
                       Gestion Acteurs
                     </Link>
                     <Link href="/roles" className={`block px-5 py-3.5 rounded-xl font-medium transition ${isActive("/roles") ? "bg-[#6CB33F] text-white" : "text-gray-700 dark:text-gray-200 hover:bg-gray-100/70 dark:hover:bg-gray-800/60"}`}>
@@ -1201,6 +1175,7 @@ export default function Navbar() {
                   </>
                 )}
 
+                {/* ── ADMIN ── */}
                 {isAdmin && (
                   <>
                     <Link href="/recruiter/dashboard" className="block px-5 py-3.5 rounded-xl text-gray-700 dark:text-gray-200 hover:bg-gray-100/70 dark:hover:bg-gray-800/60">Tableau de bord</Link>
@@ -1222,7 +1197,7 @@ export default function Navbar() {
                     <Link href="/recruiter/QuizTechnique" className={`block px-5 py-3.5 rounded-xl font-medium transition ${isActive("/recruiter/QuizTechnique") ? "bg-[#6CB33F] text-white" : "text-gray-700 dark:text-gray-200 hover:bg-gray-100/70 dark:hover:bg-gray-800/60"}`}>
                       Quiz Technique
                     </Link>
-                    <Link href="/recruiter/criteres-evaluation" className={`${dropdownItemBase} ${isActive("/recruiter/criteres-evaluation") ? dropdownActive : dropdownHover}`}>
+                    <Link href="/recruiter/criteres-evaluation" className={`block px-5 py-3.5 rounded-xl font-medium transition ${isActive("/recruiter/criteres-evaluation") ? "bg-[#6CB33F] text-white" : "text-gray-700 dark:text-gray-200 hover:bg-gray-100/70 dark:hover:bg-gray-800/60"}`}>
                       Critères d'évaluation
                     </Link>
                     <Link href="/roles" className="block px-5 py-3.5 rounded-xl text-gray-700 dark:text-gray-200 hover:bg-gray-100/70 dark:hover:bg-gray-800/60">Gestion des rôles</Link>
@@ -1232,6 +1207,7 @@ export default function Navbar() {
                   </>
                 )}
 
+                {/* ── BAS DU MENU MOBILE : thème + déconnexion ── */}
                 <div className="pt-3 mt-2 border-t border-gray-200/70 dark:border-gray-700/60">
                   <button onClick={toggleTheme} className="w-full flex items-center gap-3 px-5 py-3.5 rounded-xl font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-100/70 dark:hover:bg-gray-800/60 transition-colors">
                     {theme === "dark" ? <><Sun className="h-5 w-5 text-amber-400" /><span>Mode clair</span></> : <><Moon className="h-5 w-5 text-gray-700" /><span>Mode sombre</span></>}
@@ -1241,13 +1217,13 @@ export default function Navbar() {
                       Espace recruteur
                     </Link>
                   ) : (
-                    /* ✅ Déconnexion mobile avec icône */
                     <button onClick={handleLogout} className="w-full flex items-center gap-3 px-5 py-3.5 rounded-xl font-semibold text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors">
                       <LogOut className="w-5 h-5" />
                       Déconnexion
                     </button>
                   )}
                 </div>
+
               </div>
             </div>
           )}
