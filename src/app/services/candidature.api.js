@@ -84,3 +84,17 @@ export async function deleteInterviewNote(interviewId, noteId) {
 }
 
 
+export async function getCandidatureByIdRH(id) {
+  const token =
+    localStorage.getItem("token") || sessionStorage.getItem("token") || null;
+
+  const res = await fetch(`${API_URL}/candidatures/${id}`, {
+    headers: {
+      "Content-Type": "application/json",
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
+  });
+
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  return res.json();
+}

@@ -37,7 +37,7 @@ import {
   createInterviewNote,
   updateInterviewNote,
   deleteInterviewNote,
-  getCandidatureById,
+  getCandidatureByIdRH,
 } from "../../../services/candidature.api.js";
 import {
   getInterviewsByCandidature,
@@ -960,37 +960,70 @@ export default function EntretienDetailPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [activeTab, setActiveTab] = useState("matching");
+const fetchDetail = useCallback(async () => {
+  if (!candidatureId) return;
+  try {
+    setLoading(true);
+    setError(null);
 
-  const fetchDetail = useCallback(async () => {
-    if (!candidatureId) return;
+    const listData = await getConfirmedInterviews({ limit: 100 });
+    const list = listData?.interviews || [];
+
+    const found =
+      list.find(
+        (i) =>
+          String(i.candidatureId) === candidatureId ||
+          String(i.candidatureIdStr) === candidatureId ||
+          String(i._id) === candidatureId
+      ) || null;
+
+    if (!found) throw new Error("Entretien introuvable");
+
+    const normalizedCandidatureId =
+      found.candidatureIdStr || String(found.candidatureId);
+
+    // ✅ Fetch candidature → récupère analysis.jobMatch
+    let jobMatch = null;
     try {
-      setLoading(true);
-      setError(null);
+      const token =
+        localStorage.getItem("token") || sessionStorage.getItem("token") || null;
+      const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
-      const listData = await getConfirmedInterviews({ limit: 100 });
-      const list = listData?.interviews || [];
-
-      const found =
-        list.find(
-          (i) =>
-            String(i.candidatureId) === candidatureId ||
-            String(i.candidatureIdStr) === candidatureId ||
-            String(i._id) === candidatureId
-        ) || null;
-
-      if (!found) throw new Error("Entretien introuvable");
-
-      setIv({
-        ...found,
-        candidatureId: found.candidatureIdStr || String(found.candidatureId),
+      const res = await fetch(`${API_URL}/candidatures/${normalizedCandidatureId}`, {
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
       });
-    } catch (e) {
-      setError(e?.response?.data?.message || e?.message || "Erreur lors du chargement");
-    } finally {
-      setLoading(false);
-    }
-  }, [candidatureId]);
 
+      if (res.ok) {
+        const candidature = await res.json();
+        console.log("🔍 analysis.jobMatch :", candidature?.analysis?.jobMatch);
+        const jm = candidature?.analysis?.jobMatch;
+        if (jm && jm.status === "DONE") {
+          jobMatch = jm;
+        }
+      } else {
+        console.warn("❌ fetch candidature status :", res.status);
+      }
+    } catch (err) {
+      console.warn("❌ jobMatch fetch error :", err.message);
+    }
+
+    setIv({
+      ...found,
+      candidatureId: normalizedCandidatureId,
+      jobMatch,
+    });
+
+    console.log("✅ found :", found);
+    console.log("✅ jobMatch final :", jobMatch);
+  } catch (e) {
+    setError(e?.response?.data?.message || e?.message || "Erreur lors du chargement");
+  } finally {
+    setLoading(false);
+  }
+}, [candidatureId]);
   useEffect(() => { fetchDetail(); }, [fetchDetail]);
 
   const handleOpenQuiz  = () => router.push(`/RESPONSABLE_RH_OPTYLAB/entretiens-confirmes/${iv.candidatureId}/quiz-result`);

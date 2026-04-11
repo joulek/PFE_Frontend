@@ -614,7 +614,7 @@ function RHFlow({ candidate, onBack, onClose }) {
       </div>
       <div className="mb-6 p-3 bg-green-50/60 dark:bg-green-900/20 rounded-xl border border-green-100 dark:border-green-800">
         <p className="text-xs text-green-800 dark:text-green-200 leading-relaxed">
-          Vous allez être redirigé vers votre <strong>calendrier Outlook</strong> pour créer l&apos;événement directement.
+          Vous allez être redirigé vers votre <strong>calendrier Gmail</strong> pour créer l&apos;événement directement.
           <span className="mt-1 block text-green-700/70 dark:text-green-300/70">
             Le formulaire sera pré-rempli avec les informations du candidat.
           </span>

@@ -1,30 +1,19 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import {
-  Calendar,
-  Clock,
-  User,
-  Briefcase,
-  CheckCircle,
-  XCircle,
-  Loader2,
-  AlertCircle,
-  CheckCircle2,
-  ArrowRight,
-  MessageSquare,
-  ShieldCheck,
-  ArrowLeft,
+  Calendar, Clock, CheckCircle, XCircle,
+  Loader2, AlertCircle, ArrowRight, MessageSquare,
 } from "lucide-react";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL;
 
-// ── Helper auth token ──────────────────────────────────────────
 function getAuthHeaders() {
+  if (typeof window === "undefined") return { "Content-Type": "application/json" };
   const token =
-    (typeof localStorage !== "undefined" && localStorage.getItem("token")) ||
-    (typeof sessionStorage !== "undefined" && sessionStorage.getItem("token")) ||
+    localStorage.getItem("token") ||
+    sessionStorage.getItem("token") ||
     "";
   return {
     "Content-Type": "application/json",
@@ -32,117 +21,118 @@ function getAuthHeaders() {
   };
 }
 
-export default function AdminApproveInterviewPage() {
-  const params = useParams();
-  const router = useRouter();
-  const interviewId = params.interviewId;
-  const urlAction = params.action; // "approve" ou "reject" depuis l'URL path
+function detectFromCandidate(iv) {
+  if (!iv) return false;
+  return !!(
+    iv.candidateRescheduleReason ||
+    iv.candidateRescheduleAt     ||
+    iv.candidatePreferredSlot    ||
+    iv.candidateProposedDate     ||
+    iv.candidateProposedTime
+  );
+}
 
-  const [loading, setLoading] = useState(true);
-  const [interview, setInterview] = useState(null);
-  const [submitting, setSubmitting] = useState(false);
-  const [successMessage, setSuccessMessage] = useState(null);
+export default function AdminApproveInterviewPage() {
+  const params      = useParams();
+  const router      = useRouter();
+  const interviewId = params?.interviewId;
+  const urlAction   = params?.action;
+
+  const [loading, setLoading]           = useState(true);
+  const [interview, setInterview]       = useState(null);
+  const [submitting, setSubmitting]     = useState(false);
   const [errorMessage, setErrorMessage] = useState(null);
-  const [done, setDone] = useState(false);
-  const [action, setAction] = useState(null);
+  const [showReject, setShowReject]     = useState(false);
   const [rejectReason, setRejectReason] = useState("");
+  const [alreadyDone, setAlreadyDone]   = useState(false);
+  const [doneMessage, setDoneMessage]   = useState("");
+
+  const autoApproveTriggered = useRef(false);
 
   useEffect(() => {
+    if (!interviewId) return;
     loadInterview();
   }, [interviewId]);
 
   useEffect(() => {
-    if (urlAction === "reject" && interview && !done) {
-      setAction("reject");
-    }
-    // ✅ Si l'URL est /approve → approuver directement sans clic
-    if (urlAction === "approve" && interview && !done && !submitting) {
+    if (!interview || alreadyDone) return;
+    if (urlAction === "reject") {
+      setShowReject(true);
+    } else if (urlAction === "approve" && !submitting && !autoApproveTriggered.current) {
+      autoApproveTriggered.current = true;
       handleApprove();
     }
-  }, [urlAction, interview, done]);
+  }, [urlAction, interview, alreadyDone]);
 
   const loadInterview = async () => {
     try {
       setLoading(true);
-      const response = await fetch(
-        `${API_BASE}/api/interviews/${interviewId}`,
-        { headers: getAuthHeaders() } // ✅ auth token
-      );
-      const data = await response.json();
-
+      const res  = await fetch(`${API_BASE}/api/interviews/${interviewId}`, { headers: getAuthHeaders() });
+      const data = await res.json();
       if (data.success) {
         setInterview(data.data);
         if (data.data.status !== "PENDING_ADMIN_APPROVAL") {
-          setDone(true);
-          setSuccessMessage(
-            data.data.status === "PENDING_CONFIRMATION"
-              ? "Cette demande a déjà été traitée."
-              : `Cet entretien est dans le statut : ${data.data.status}`
+          setAlreadyDone(true);
+          setDoneMessage(
+            data.data.status === "PENDING_CANDIDATE_CONFIRMATION"
+              ? "Cette demande a déjà été approuvée. Un email a été envoyé au candidat."
+              : data.data.status === "CONFIRMED"
+              ? "Cet entretien est déjà confirmé."
+              : `Statut actuel : ${data.data.status}`
           );
         }
       } else {
         setErrorMessage("Entretien introuvable");
       }
-    } catch (error) {
-      console.error("Error loading interview:", error);
+    } catch {
       setErrorMessage("Erreur lors du chargement");
     } finally {
       setLoading(false);
     }
   };
 
-  // ── Admin approuve ──
   const handleApprove = async () => {
     setSubmitting(true);
     setErrorMessage(null);
     try {
-      const response = await fetch(
-        `${API_BASE}/api/interviews/admin/approve/${interviewId}`,
-        {
-          method: "POST",
-          headers: getAuthHeaders(), // ✅ auth token
-          body: JSON.stringify({}),
-        }
-      );
-      const data = await response.json();
+      const res  = await fetch(`${API_BASE}/api/interviews/admin/approve/${interviewId}`, {
+        method:  "POST",
+        headers: getAuthHeaders(),
+        body:    JSON.stringify({}),
+      });
+      const data = await res.json();
       if (data.success) {
-        setDone(true);
-        setSuccessMessage(
-          "Modification approuvée ! Le responsable a été notifié pour re-confirmer la date avec le candidat."
-        );
+        // ✅ Redirect to list after approval
+        router.push("/recruiter/list_interview");
       } else {
         setErrorMessage(data.message || "Erreur lors de l'approbation");
+        autoApproveTriggered.current = false;
       }
-    } catch (error) {
+    } catch {
       setErrorMessage("Erreur lors de l'approbation");
+      autoApproveTriggered.current = false;
     } finally {
       setSubmitting(false);
     }
   };
 
-  // ── Admin rejette ──
   const handleReject = async () => {
     setSubmitting(true);
     setErrorMessage(null);
     try {
-      const response = await fetch(
-        `${API_BASE}/api/interviews/admin/reject/${interviewId}`,
-        {
-          method: "POST",
-          headers: getAuthHeaders(), // ✅ auth token
-          body: JSON.stringify({ reason: rejectReason }),
-        }
-      );
-      const data = await response.json();
+      const res  = await fetch(`${API_BASE}/api/interviews/admin/reject/${interviewId}`, {
+        method:  "POST",
+        headers: getAuthHeaders(),
+        body:    JSON.stringify({ reason: rejectReason }),
+      });
+      const data = await res.json();
       if (data.success) {
-        setDone(true);
-        setSuccessMessage(
-          "Modification refusée. Le responsable a été notifié et devra confirmer la date initiale."
-        );
+        // ✅ Redirect to list after rejection
+        router.push("/recruiter/list_interview");
       } else {
         setErrorMessage(data.message || "Erreur lors du rejet");
       }
-    } catch (error) {
+    } catch {
       setErrorMessage("Erreur lors du rejet");
     } finally {
       setSubmitting(false);
@@ -152,41 +142,34 @@ export default function AdminApproveInterviewPage() {
   const formatDate = (date) => {
     if (!date) return "—";
     return new Date(date).toLocaleDateString("fr-FR", {
-      weekday: "long", day: "numeric", month: "long", year: "numeric",
+      weekday: "long", day: "numeric", month: "long",
     });
   };
 
-  // ══════════════════════════════════════════════
-  //  LOADING
-  // ══════════════════════════════════════════════
+  const formatTime = (date) => {
+    if (!date) return null;
+    return new Date(date).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" });
+  };
+
+  // ── Loading ──
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 flex items-center justify-center transition-colors">
-        <div className="text-center">
-          <Loader2 className="w-12 h-12 animate-spin text-emerald-500 mx-auto mb-4" />
-          <p className="text-gray-600 dark:text-gray-300 font-medium">Chargement...</p>
-        </div>
+      <div className="min-h-screen flex items-center justify-center">
+        <Loader2 className="w-8 h-8 animate-spin text-gray-400" />
       </div>
     );
   }
 
-  // ══════════════════════════════════════════════
-  //  NOT FOUND
-  // ══════════════════════════════════════════════
-  if (!interview && !loading) {
+  // ── Not found ──
+  if (!interview) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 flex items-center justify-center transition-colors">
-        <div className="text-center max-w-md">
-          <AlertCircle className="w-16 h-16 text-gray-400 dark:text-gray-500 mx-auto mb-4" />
-          <p className="text-xl text-gray-600 dark:text-gray-300 font-medium mb-2">
-            {errorMessage || "Entretien introuvable"}
-          </p>
-          <p className="text-sm text-gray-500 dark:text-gray-400">
-            Ce lien est peut-être invalide ou l'entretien a été supprimé.
-          </p>
+      <div className="min-h-screen flex items-center justify-center px-4">
+        <div className="text-center max-w-sm">
+          <AlertCircle className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+          <p className="text-gray-600 font-medium mb-4">{errorMessage || "Entretien introuvable"}</p>
           <button
             onClick={() => router.push("/recruiter/list_interview")}
-            className="mt-6 px-6 py-3 bg-emerald-500 text-white rounded-xl font-semibold hover:bg-emerald-600 transition-colors"
+            className="px-5 py-2.5 bg-gray-900 text-white rounded-xl text-sm font-medium"
           >
             Retour à la liste
           </button>
@@ -195,286 +178,172 @@ export default function AdminApproveInterviewPage() {
     );
   }
 
-  // ══════════════════════════════════════════════
-  //  DONE (déjà traité)
-  // ══════════════════════════════════════════════
-  if (done) {
+  // ── Already processed ──
+  if (alreadyDone) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 flex items-center justify-center transition-colors">
-        <div className="text-center max-w-lg">
-          <div className="inline-flex items-center justify-center w-24 h-24 bg-emerald-100 dark:bg-emerald-900/30 rounded-full mb-6 transition-colors">
-            <ShieldCheck className="w-12 h-12 text-emerald-600 dark:text-emerald-400" />
-          </div>
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-4 transition-colors">
-            Traité !
-          </h1>
-          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 p-6 mb-6 transition-colors">
-            <div className="flex items-center gap-3 justify-center">
-              <CheckCircle2 className="w-6 h-6 text-emerald-500" />
-              <p className="text-emerald-700 dark:text-emerald-400 font-semibold">
-                {successMessage}
-              </p>
-            </div>
-          </div>
+      <div className="min-h-screen flex items-center justify-center px-4">
+        <div className="text-center max-w-sm">
+          <CheckCircle className="w-12 h-12 text-emerald-400 mx-auto mb-3" />
+          <p className="text-gray-700 font-medium mb-4">{doneMessage}</p>
           <button
             onClick={() => router.push("/recruiter/list_interview")}
-            className="px-8 py-3 bg-emerald-500 text-white rounded-xl font-semibold hover:bg-emerald-600 transition-colors"
+            className="px-5 py-2.5 bg-gray-900 text-white rounded-xl text-sm font-medium"
           >
-            Voir la liste des entretiens
+            Voir la liste
           </button>
         </div>
       </div>
     );
   }
 
-  // ══════════════════════════════════════════════
-  //  MAIN RENDER
-  // ══════════════════════════════════════════════
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 py-8 px-4 transition-colors">
-      <div className="max-w-3xl mx-auto">
+  const isFromCandidate = detectFromCandidate(interview);
+  const newDate = interview.candidatePreferredSlot || interview.responsableProposedDate;
+  const newTime = interview.responsableProposedTime || (newDate ? formatTime(newDate) : null);
+  const motif   = interview.candidateRescheduleReason || interview.responsableModificationNotes;
 
-        {/* ── Toast Error ── */}
+  // ── Main ──
+  return (
+    <div className="min-h-screen bg-gray-50 py-10 px-4">
+      <div className="max-w-md mx-auto">
+
+        {/* Header */}
+        <div className="mb-6">
+          <p className="text-sm text-gray-400 mb-1">Demande de report</p>
+          <h1 className="text-2xl font-semibold text-gray-900">Validation de report</h1>
+        </div>
+
+        {/* Error */}
         {errorMessage && (
-          <div className="fixed top-4 right-4 z-50 animate-in slide-in-from-top duration-300">
-            <div className="bg-red-500 text-white rounded-xl shadow-2xl p-4 flex items-center gap-3 min-w-[320px]">
-              <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center flex-shrink-0">
-                <XCircle className="w-6 h-6" />
+          <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-xl flex items-center gap-2 text-red-700 text-sm">
+            <AlertCircle className="w-4 h-4 flex-shrink-0" />
+            {errorMessage}
+          </div>
+        )}
+
+        {/* Card */}
+        <div className="bg-white rounded-2xl border border-gray-200 p-5 mb-4">
+
+          {/* Candidat */}
+          <div className="flex items-center gap-3 mb-4">
+            <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-700 font-semibold text-sm flex-shrink-0">
+              {interview.candidateName?.[0]?.toUpperCase() || "?"}
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="font-medium text-gray-900 truncate">{interview.candidateName}</p>
+              <p className="text-sm text-gray-400 truncate">{interview.candidateEmail}</p>
+            </div>
+            <span className="text-xs font-medium bg-amber-50 text-amber-700 px-2.5 py-1 rounded-lg flex-shrink-0">
+              Report demandé
+            </span>
+          </div>
+
+          <div className="border-t border-gray-100 pt-4">
+
+            {/* Dates comparison */}
+            <div className="grid grid-cols-[1fr_20px_1fr] gap-2 items-center mb-4">
+              {/* Date actuelle */}
+              <div className="bg-gray-50 rounded-xl p-3">
+                <p className="text-xs text-gray-400 mb-1.5">Date actuelle</p>
+                <div className="flex items-center gap-1.5 mb-1">
+                  <Calendar className="w-3.5 h-3.5 text-gray-400" />
+                  <p className="text-sm font-medium text-gray-800 leading-tight">{formatDate(interview.proposedDate)}</p>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <Clock className="w-3.5 h-3.5 text-gray-400" />
+                  <p className="text-sm text-gray-600">{interview.proposedTime || "—"}</p>
+                </div>
               </div>
-              <div className="flex-1">
-                <p className="font-bold text-sm">Erreur</p>
-                <p className="text-sm opacity-95">{errorMessage}</p>
+
+              <div className="flex justify-center">
+                <ArrowRight className="w-4 h-4 text-gray-300" />
               </div>
-              <button onClick={() => setErrorMessage(null)} className="text-white/80 hover:text-white transition-colors">
-                <XCircle className="w-5 h-5" />
+
+              {/* Nouvelle date */}
+              <div className="bg-emerald-50 rounded-xl p-3">
+                <p className="text-xs text-emerald-600 mb-1.5">Nouvelle date</p>
+                <div className="flex items-center gap-1.5 mb-1">
+                  <Calendar className="w-3.5 h-3.5 text-emerald-500" />
+                  <p className="text-sm font-medium text-emerald-900 leading-tight">{formatDate(newDate)}</p>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <Clock className="w-3.5 h-3.5 text-emerald-500" />
+                  <p className="text-sm text-emerald-700">{newTime || "—"}</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Motif */}
+            {motif && (
+              <div className="bg-gray-50 rounded-xl p-3 flex items-start gap-2">
+                <MessageSquare className="w-3.5 h-3.5 text-gray-400 mt-0.5 flex-shrink-0" />
+                <div>
+                  <p className="text-xs text-gray-400 mb-0.5">Motif</p>
+                  <p className="text-sm text-gray-700">{motif}</p>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Actions */}
+        {!showReject ? (
+          <div className="flex flex-col gap-2.5">
+            <button
+              onClick={handleApprove}
+              disabled={submitting}
+              className="w-full py-3.5 bg-gray-900 text-white rounded-xl font-medium flex items-center justify-center gap-2 disabled:opacity-50 hover:bg-gray-800 transition-colors"
+            >
+              {submitting
+                ? <Loader2 className="w-4 h-4 animate-spin" />
+                : <CheckCircle className="w-4 h-4" />
+              }
+              {isFromCandidate
+                ? "Approuver — notifier le candidat"
+                : "Approuver — notifier le responsable"}
+            </button>
+
+            <button
+              onClick={() => setShowReject(true)}
+              disabled={submitting}
+              className="w-full py-3.5 bg-white border border-gray-200 text-gray-500 rounded-xl font-medium flex items-center justify-center gap-2 hover:bg-gray-50 transition-colors disabled:opacity-50"
+            >
+              <XCircle className="w-4 h-4" />
+              Refuser
+            </button>
+          </div>
+        ) : (
+          /* Reject form */
+          <div className="bg-white rounded-2xl border border-gray-200 p-5">
+            <p className="font-medium text-gray-900 mb-3">Raison du refus</p>
+            <textarea
+              value={rejectReason}
+              onChange={(e) => setRejectReason(e.target.value)}
+              rows={3}
+              placeholder="Optionnel — ex : date trop éloignée…"
+              className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm resize-none focus:outline-none focus:ring-2 focus:ring-gray-300 bg-gray-50 text-gray-900 placeholder-gray-400"
+            />
+            <div className="flex gap-2 mt-3">
+              <button
+                onClick={() => { setShowReject(false); setErrorMessage(null); }}
+                className="flex-1 py-3 border border-gray-200 text-gray-600 rounded-xl text-sm font-medium hover:bg-gray-50 transition-colors"
+              >
+                Annuler
+              </button>
+              <button
+                onClick={handleReject}
+                disabled={submitting}
+                className="flex-[2] px-6 py-3 bg-red-500 text-white rounded-xl text-sm font-medium flex items-center justify-center gap-2 hover:bg-red-600 transition-colors disabled:opacity-50"
+              >
+                {submitting
+                  ? <Loader2 className="w-4 h-4 animate-spin" />
+                  : <XCircle className="w-4 h-4" />
+                }
+                Confirmer le refus
               </button>
             </div>
           </div>
         )}
 
-        {/* ── Header ── */}
-        <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-20 h-20 bg-amber-100 dark:bg-amber-900/30 rounded-full mb-4 transition-colors">
-            <ShieldCheck className="w-10 h-10 text-amber-600 dark:text-amber-400" />
-          </div>
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2 transition-colors">
-            Validation de modification
-          </h1>
-          <p className="text-gray-600 dark:text-gray-300 transition-colors">
-            Un responsable demande de modifier la date d'un entretien.
-          </p>
-        </div>
-
-        {/* ── Détails de l'entretien ── */}
-        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 p-8 mb-6 transition-colors">
-
-          {/* Candidat info */}
-          <div className="flex items-center gap-4 mb-6">
-            <div className="w-14 h-14 bg-blue-500 rounded-2xl flex items-center justify-center">
-              <span className="text-xl font-bold text-white">
-                {interview.candidateName?.[0]?.toUpperCase() || "?"}
-              </span>
-            </div>
-            <div>
-              <h2 className="text-xl font-bold text-gray-900 dark:text-white transition-colors">
-                {interview.candidateName || "Candidat"}
-              </h2>
-              <p className="text-sm text-gray-500 dark:text-gray-400">{interview.candidateEmail}</p>
-              {interview.jobTitle && interview.jobTitle !== "N/A" && (
-                <p className="text-sm text-emerald-600 dark:text-emerald-400 font-medium flex items-center gap-1 mt-0.5">
-                  <Briefcase className="w-3.5 h-3.5" />
-                  {interview.jobTitle}
-                </p>
-              )}
-            </div>
-          </div>
-
-          {/* Comparaison dates */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 relative">
-            {/* Date actuelle */}
-            <div className="bg-red-50 dark:bg-red-900/20 border-2 border-red-200 dark:border-red-800 rounded-xl p-5 transition-colors">
-              <div className="flex items-center gap-2 mb-3">
-                <XCircle className="w-5 h-5 text-red-500" />
-                <p className="text-sm font-bold text-red-700 dark:text-red-400 uppercase tracking-wide">
-                  Date actuelle
-                </p>
-              </div>
-              <div className="space-y-2">
-                <div className="flex items-center gap-2">
-                  <Calendar className="w-4 h-4 text-red-400" />
-                  <p className="text-base font-semibold text-gray-900 dark:text-white transition-colors">
-                    {formatDate(interview.proposedDate)}
-                  </p>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Clock className="w-4 h-4 text-red-400" />
-                  <p className="text-base font-semibold text-gray-900 dark:text-white transition-colors">
-                    {interview.proposedTime || "—"}
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            {/* Flèche centrale (desktop) */}
-            <div className="hidden md:flex absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-10">
-              <div className="w-10 h-10 bg-white dark:bg-gray-800 border-2 border-gray-200 dark:border-gray-600 rounded-full flex items-center justify-center transition-colors shadow">
-                <ArrowRight className="w-5 h-5 text-gray-400" />
-              </div>
-            </div>
-
-            {/* Nouvelle date demandée */}
-            <div className="bg-emerald-50 dark:bg-emerald-900/20 border-2 border-emerald-200 dark:border-emerald-800 rounded-xl p-5 transition-colors">
-              <div className="flex items-center gap-2 mb-3">
-                <CheckCircle className="w-5 h-5 text-emerald-500" />
-                <p className="text-sm font-bold text-emerald-700 dark:text-emerald-400 uppercase tracking-wide">
-                  Nouvelle date demandée
-                </p>
-              </div>
-              <div className="space-y-2">
-                <div className="flex items-center gap-2">
-                  <Calendar className="w-4 h-4 text-emerald-400" />
-                  <p className="text-base font-semibold text-gray-900 dark:text-white transition-colors">
-                    {formatDate(interview.responsableProposedDate || interview.candidatePreferredSlot)}
-                  </p>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Clock className="w-4 h-4 text-emerald-400" />
-                  <p className="text-base font-semibold text-gray-900 dark:text-white transition-colors">
-                    {interview.responsableProposedTime || "—"}
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Notes du responsable */}
-          {(interview.responsableModificationNotes || interview.candidateRescheduleReason) && (
-            <div className="mt-4 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-xl p-4 transition-colors">
-              <div className="flex items-start gap-3">
-                <MessageSquare className="w-5 h-5 text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5" />
-                <div>
-                  <p className="text-xs font-bold text-amber-700 dark:text-amber-400 uppercase tracking-wide mb-1">
-                    Motif
-                  </p>
-                  <p className="text-sm text-gray-700 dark:text-gray-300 transition-colors">
-                    {interview.responsableModificationNotes || interview.candidateRescheduleReason}
-                  </p>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Responsable info */}
-          <div className="mt-4 flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
-            <User className="w-4 h-4" />
-            <span>Demandé par : <strong>{interview.assignedUserEmail || "—"}</strong></span>
-          </div>
-        </div>
-
-        {/* ══════════════════════════════════════════════
-            Actions
-        ══════════════════════════════════════════════ */}
-        {!action ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <button
-              onClick={handleApprove}
-              disabled={submitting}
-              className="group bg-white dark:bg-gray-800 rounded-2xl shadow-sm border-2 border-emerald-200 dark:border-emerald-800 hover:border-emerald-400 dark:hover:border-emerald-500 hover:shadow-lg transition-all duration-200 p-6 text-left"
-            >
-              <div className="flex items-center gap-4">
-                <div className="w-14 h-14 bg-emerald-100 dark:bg-emerald-900/30 rounded-xl flex items-center justify-center group-hover:bg-emerald-500 transition-colors">
-                  {submitting ? (
-                    <Loader2 className="w-7 h-7 text-emerald-600 animate-spin" />
-                  ) : (
-                    <CheckCircle className="w-7 h-7 text-emerald-600 dark:text-emerald-400 group-hover:text-white transition-colors" />
-                  )}
-                </div>
-                <div className="flex-1">
-                  <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-1 transition-colors">Approuver</h3>
-                  <p className="text-gray-600 dark:text-gray-300 text-sm transition-colors">
-                    Accepter la nouvelle date. Le responsable sera notifié pour relancer le processus.
-                  </p>
-                </div>
-              </div>
-            </button>
-
-            <button
-              onClick={() => setAction("reject")}
-              className="group bg-white dark:bg-gray-800 rounded-2xl shadow-sm border-2 border-red-200 dark:border-red-800 hover:border-red-400 dark:hover:border-red-500 hover:shadow-lg transition-all duration-200 p-6 text-left"
-            >
-              <div className="flex items-center gap-4">
-                <div className="w-14 h-14 bg-red-100 dark:bg-red-900/30 rounded-xl flex items-center justify-center group-hover:bg-red-500 transition-colors">
-                  <XCircle className="w-7 h-7 text-red-600 dark:text-red-400 group-hover:text-white transition-colors" />
-                </div>
-                <div className="flex-1">
-                  <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-1 transition-colors">Refuser</h3>
-                  <p className="text-gray-600 dark:text-gray-300 text-sm transition-colors">
-                    Refuser le changement. Le responsable devra confirmer la date initiale.
-                  </p>
-                </div>
-              </div>
-            </button>
-          </div>
-        ) : (
-          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 p-8 transition-colors">
-            <button
-              onClick={() => { setAction(null); setErrorMessage(null); }}
-              className="flex items-center gap-2 text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white mb-6 transition-colors"
-            >
-              <ArrowLeft className="w-4 h-4" />
-              <span className="font-medium">Retour</span>
-            </button>
-
-            <div className="flex items-center gap-3 mb-6">
-              <div className="w-12 h-12 bg-red-100 dark:bg-red-900/30 rounded-xl flex items-center justify-center transition-colors">
-                <XCircle className="w-6 h-6 text-red-600 dark:text-red-400" />
-              </div>
-              <div>
-                <h2 className="text-2xl font-bold text-gray-900 dark:text-white transition-colors">Refuser la modification</h2>
-                <p className="text-gray-600 dark:text-gray-300 transition-colors">
-                  Le responsable sera informé et devra confirmer la date initiale.
-                </p>
-              </div>
-            </div>
-
-            <div className="space-y-6">
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 dark:text-gray-200 mb-2 transition-colors">
-                  <MessageSquare className="w-4 h-4 inline mr-1" />
-                  Raison du refus (optionnel)
-                </label>
-                <textarea
-                  value={rejectReason}
-                  onChange={(e) => setRejectReason(e.target.value)}
-                  rows={4}
-                  placeholder="Ex: La date proposée est trop éloignée, merci de confirmer la date initiale..."
-                  className="w-full px-4 py-3 border-2 border-gray-200 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-red-500 focus:border-red-500 resize-none bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 transition-all"
-                />
-              </div>
-
-              <div className="flex gap-3">
-                <button
-                  type="button"
-                  onClick={() => setAction(null)}
-                  className="flex-1 px-6 py-4 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-200 rounded-xl font-bold transition-colors"
-                >
-                  Annuler
-                </button>
-                <button
-                  onClick={handleReject}
-                  disabled={submitting}
-                  className="flex-1 px-6 py-4 bg-red-500 hover:bg-red-600 text-white rounded-xl font-bold text-lg disabled:bg-gray-400 dark:disabled:bg-gray-600 transition-all shadow-lg hover:shadow-xl flex items-center justify-center gap-2"
-                >
-                  {submitting ? (
-                    <><Loader2 className="w-5 h-5 animate-spin" />Envoi...</>
-                  ) : (
-                    <><XCircle className="w-5 h-5" />Confirmer le refus</>
-                  )}
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
       </div>
     </div>
   );
