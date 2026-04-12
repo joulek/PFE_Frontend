@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import {
   Calendar, Clock, CheckCircle, XCircle,
-  Loader2, AlertCircle, ArrowRight, MessageSquare,
+  Loader2, AlertCircle, ArrowRight, MessageSquare, CheckCircle2,
 } from "lucide-react";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL;
@@ -102,7 +102,6 @@ export default function AdminApproveInterviewPage() {
       });
       const data = await res.json();
       if (data.success) {
-        // ✅ Redirect to list after approval
         router.push("/recruiter/list_interview");
       } else {
         setErrorMessage(data.message || "Erreur lors de l'approbation");
@@ -127,7 +126,6 @@ export default function AdminApproveInterviewPage() {
       });
       const data = await res.json();
       if (data.success) {
-        // ✅ Redirect to list after rejection
         router.push("/recruiter/list_interview");
       } else {
         setErrorMessage(data.message || "Erreur lors du rejet");
@@ -154,8 +152,8 @@ export default function AdminApproveInterviewPage() {
   // ── Loading ──
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <Loader2 className="w-8 h-8 animate-spin text-gray-400" />
+      <div className="min-h-screen bg-[#F0FAF0] dark:bg-gray-950 flex items-center justify-center transition-colors duration-300">
+        <Loader2 className="w-8 h-8 animate-spin text-[#6CB33F] dark:text-emerald-400" />
       </div>
     );
   }
@@ -163,13 +161,15 @@ export default function AdminApproveInterviewPage() {
   // ── Not found ──
   if (!interview) {
     return (
-      <div className="min-h-screen flex items-center justify-center px-4">
-        <div className="text-center max-w-sm">
-          <AlertCircle className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-          <p className="text-gray-600 font-medium mb-4">{errorMessage || "Entretien introuvable"}</p>
+      <div className="min-h-screen bg-[#F0FAF0] dark:bg-gray-950 flex items-center justify-center px-4 transition-colors duration-300">
+        <div className="bg-white dark:bg-gray-800 border border-emerald-200 dark:border-emerald-800 rounded-2xl shadow p-10 max-w-sm w-full text-center">
+          <AlertCircle className="w-12 h-12 text-red-400 mx-auto mb-3" />
+          <p className="text-gray-700 dark:text-gray-200 font-medium mb-6">
+            {errorMessage || "Entretien introuvable"}
+          </p>
           <button
             onClick={() => router.push("/recruiter/list_interview")}
-            className="px-5 py-2.5 bg-gray-900 text-white rounded-xl text-sm font-medium"
+            className="w-full bg-[#6CB33F] hover:bg-[#4E8F2F] dark:bg-emerald-600 dark:hover:bg-emerald-500 text-white font-semibold py-3 rounded-xl transition-colors"
           >
             Retour à la liste
           </button>
@@ -181,13 +181,13 @@ export default function AdminApproveInterviewPage() {
   // ── Already processed ──
   if (alreadyDone) {
     return (
-      <div className="min-h-screen flex items-center justify-center px-4">
-        <div className="text-center max-w-sm">
-          <CheckCircle className="w-12 h-12 text-emerald-400 mx-auto mb-3" />
-          <p className="text-gray-700 font-medium mb-4">{doneMessage}</p>
+      <div className="min-h-screen bg-[#F0FAF0] dark:bg-gray-950 flex items-center justify-center px-4 transition-colors duration-300">
+        <div className="bg-white dark:bg-gray-800 border border-emerald-200 dark:border-emerald-800 rounded-2xl shadow p-10 max-w-sm w-full text-center">
+          <CheckCircle2 className="w-14 h-14 text-[#6CB33F] dark:text-emerald-400 mx-auto mb-4" />
+          <p className="text-gray-700 dark:text-gray-200 font-medium mb-6">{doneMessage}</p>
           <button
             onClick={() => router.push("/recruiter/list_interview")}
-            className="px-5 py-2.5 bg-gray-900 text-white rounded-xl text-sm font-medium"
+            className="w-full bg-[#6CB33F] hover:bg-[#4E8F2F] dark:bg-emerald-600 dark:hover:bg-emerald-500 text-white font-semibold py-3 rounded-xl transition-colors"
           >
             Voir la liste
           </button>
@@ -203,95 +203,122 @@ export default function AdminApproveInterviewPage() {
 
   // ── Main ──
   return (
-    <div className="min-h-screen bg-gray-50 py-10 px-4">
-      <div className="max-w-md mx-auto">
+    <div className="min-h-screen bg-[#F0FAF0] dark:bg-gray-950 flex items-center justify-center px-4 py-10 transition-colors duration-300">
+      <div className="w-full max-w-md space-y-4">
 
-        {/* Header */}
-        <div className="mb-6">
-          <p className="text-sm text-gray-400 mb-1">Demande de report</p>
-          <h1 className="text-2xl font-semibold text-gray-900">Validation de report</h1>
-        </div>
-
-        {/* Error */}
-        {errorMessage && (
-          <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-xl flex items-center gap-2 text-red-700 text-sm">
-            <AlertCircle className="w-4 h-4 flex-shrink-0" />
-            {errorMessage}
-          </div>
-        )}
-
-        {/* Card */}
-        <div className="bg-white rounded-2xl border border-gray-200 p-5 mb-4">
-
-          {/* Candidat */}
-          <div className="flex items-center gap-3 mb-4">
-            <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-700 font-semibold text-sm flex-shrink-0">
-              {interview.candidateName?.[0]?.toUpperCase() || "?"}
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="font-medium text-gray-900 truncate">{interview.candidateName}</p>
-              <p className="text-sm text-gray-400 truncate">{interview.candidateEmail}</p>
-            </div>
-            <span className="text-xs font-medium bg-amber-50 text-amber-700 px-2.5 py-1 rounded-lg flex-shrink-0">
-              Report demandé
-            </span>
+        {/* ── HEADER CARD ── */}
+        <div className="bg-white dark:bg-gray-800 border border-emerald-200 dark:border-emerald-800 rounded-2xl shadow overflow-hidden">
+          <div className="bg-[#6CB33F] dark:bg-emerald-700 px-7 py-6">
+            <p className="text-xs font-semibold uppercase tracking-widest text-white/70 mb-1">
+              Demande de report
+            </p>
+            <h1 className="text-2xl font-extrabold text-white leading-tight">
+              Validation de report
+            </h1>
+            <p className="text-sm text-white/80 mt-1">
+              Examinez la demande et prenez une décision
+            </p>
           </div>
 
-          <div className="border-t border-gray-100 pt-4">
+          <div className="px-6 py-5 space-y-5">
+
+            {/* ERROR */}
+            {errorMessage && (
+              <div className="flex items-center gap-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-600 dark:text-red-400 rounded-xl px-4 py-3 text-sm">
+                <AlertCircle className="w-4 h-4 shrink-0" />
+                <span>{errorMessage}</span>
+              </div>
+            )}
+
+            {/* Candidat */}
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-emerald-100 dark:bg-emerald-900/40 flex items-center justify-center text-[#4E8F2F] dark:text-emerald-400 font-bold text-sm shrink-0">
+                {interview.candidateName?.[0]?.toUpperCase() || "?"}
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="font-semibold text-gray-900 dark:text-white truncate">
+                  {interview.candidateName}
+                </p>
+                <p className="text-sm text-gray-400 dark:text-gray-500 truncate">
+                  {interview.candidateEmail}
+                </p>
+              </div>
+              <span className="text-xs font-semibold bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-800 px-2.5 py-1 rounded-full shrink-0">
+                Report demandé
+              </span>
+            </div>
+
+            {/* DIVIDER */}
+            <div className="border-t border-gray-100 dark:border-gray-700" />
 
             {/* Dates comparison */}
-            <div className="grid grid-cols-[1fr_20px_1fr] gap-2 items-center mb-4">
+            <div className="grid grid-cols-[1fr_20px_1fr] gap-2 items-center">
+
               {/* Date actuelle */}
-              <div className="bg-gray-50 rounded-xl p-3">
-                <p className="text-xs text-gray-400 mb-1.5">Date actuelle</p>
+              <div className="bg-gray-50 dark:bg-gray-900/50 border border-gray-100 dark:border-gray-700 rounded-xl p-3">
+                <p className="text-xs font-bold uppercase tracking-wider text-gray-400 dark:text-gray-500 mb-2">
+                  Date actuelle
+                </p>
                 <div className="flex items-center gap-1.5 mb-1">
-                  <Calendar className="w-3.5 h-3.5 text-gray-400" />
-                  <p className="text-sm font-medium text-gray-800 leading-tight">{formatDate(interview.proposedDate)}</p>
+                  <Calendar className="w-3.5 h-3.5 text-gray-400 dark:text-gray-500 shrink-0" />
+                  <p className="text-sm font-medium text-gray-800 dark:text-gray-200 leading-tight">
+                    {formatDate(interview.proposedDate)}
+                  </p>
                 </div>
                 <div className="flex items-center gap-1.5">
-                  <Clock className="w-3.5 h-3.5 text-gray-400" />
-                  <p className="text-sm text-gray-600">{interview.proposedTime || "—"}</p>
+                  <Clock className="w-3.5 h-3.5 text-gray-400 dark:text-gray-500 shrink-0" />
+                  <p className="text-sm text-gray-600 dark:text-gray-400">
+                    {interview.proposedTime || "—"}
+                  </p>
                 </div>
               </div>
 
               <div className="flex justify-center">
-                <ArrowRight className="w-4 h-4 text-gray-300" />
+                <ArrowRight className="w-4 h-4 text-gray-300 dark:text-gray-600" />
               </div>
 
               {/* Nouvelle date */}
-              <div className="bg-emerald-50 rounded-xl p-3">
-                <p className="text-xs text-emerald-600 mb-1.5">Nouvelle date</p>
+              <div className="bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 rounded-xl p-3">
+                <p className="text-xs font-bold uppercase tracking-wider text-[#4E8F2F] dark:text-emerald-500 mb-2">
+                  Nouvelle date
+                </p>
                 <div className="flex items-center gap-1.5 mb-1">
-                  <Calendar className="w-3.5 h-3.5 text-emerald-500" />
-                  <p className="text-sm font-medium text-emerald-900 leading-tight">{formatDate(newDate)}</p>
+                  <Calendar className="w-3.5 h-3.5 text-[#6CB33F] dark:text-emerald-400 shrink-0" />
+                  <p className="text-sm font-medium text-gray-800 dark:text-gray-200 leading-tight">
+                    {formatDate(newDate)}
+                  </p>
                 </div>
                 <div className="flex items-center gap-1.5">
-                  <Clock className="w-3.5 h-3.5 text-emerald-500" />
-                  <p className="text-sm text-emerald-700">{newTime || "—"}</p>
+                  <Clock className="w-3.5 h-3.5 text-[#6CB33F] dark:text-emerald-400 shrink-0" />
+                  <p className="text-sm text-[#4E8F2F] dark:text-emerald-400">
+                    {newTime || "—"}
+                  </p>
                 </div>
               </div>
             </div>
 
             {/* Motif */}
             {motif && (
-              <div className="bg-gray-50 rounded-xl p-3 flex items-start gap-2">
-                <MessageSquare className="w-3.5 h-3.5 text-gray-400 mt-0.5 flex-shrink-0" />
+              <div className="bg-gray-50 dark:bg-gray-900/50 border border-gray-100 dark:border-gray-700 rounded-xl p-3 flex items-start gap-2">
+                <MessageSquare className="w-3.5 h-3.5 text-gray-400 dark:text-gray-500 mt-0.5 shrink-0" />
                 <div>
-                  <p className="text-xs text-gray-400 mb-0.5">Motif</p>
-                  <p className="text-sm text-gray-700">{motif}</p>
+                  <p className="text-xs font-bold uppercase tracking-wider text-gray-400 dark:text-gray-500 mb-0.5">
+                    Motif
+                  </p>
+                  <p className="text-sm text-gray-700 dark:text-gray-300">{motif}</p>
                 </div>
               </div>
             )}
           </div>
         </div>
 
-        {/* Actions */}
+        {/* ── ACTIONS ── */}
         {!showReject ? (
-          <div className="flex flex-col gap-2.5">
+          <div className="flex flex-col gap-3">
             <button
               onClick={handleApprove}
               disabled={submitting}
-              className="w-full py-3.5 bg-gray-900 text-white rounded-xl font-medium flex items-center justify-center gap-2 disabled:opacity-50 hover:bg-gray-800 transition-colors"
+              className="w-full py-3.5 bg-[#6CB33F] hover:bg-[#4E8F2F] dark:bg-emerald-600 dark:hover:bg-emerald-500 disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold rounded-xl flex items-center justify-center gap-2 transition-colors"
             >
               {submitting
                 ? <Loader2 className="w-4 h-4 animate-spin" />
@@ -305,34 +332,36 @@ export default function AdminApproveInterviewPage() {
             <button
               onClick={() => setShowReject(true)}
               disabled={submitting}
-              className="w-full py-3.5 bg-white border border-gray-200 text-gray-500 rounded-xl font-medium flex items-center justify-center gap-2 hover:bg-gray-50 transition-colors disabled:opacity-50"
+              className="w-full py-3.5 bg-white dark:bg-gray-800 border border-red-200 dark:border-red-800 text-red-500 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 disabled:opacity-50 disabled:cursor-not-allowed font-semibold rounded-xl flex items-center justify-center gap-2 transition-colors"
             >
               <XCircle className="w-4 h-4" />
               Refuser
             </button>
           </div>
         ) : (
-          /* Reject form */
-          <div className="bg-white rounded-2xl border border-gray-200 p-5">
-            <p className="font-medium text-gray-900 mb-3">Raison du refus</p>
+          /* ── Reject form ── */
+          <div className="bg-white dark:bg-gray-800 border border-red-200 dark:border-red-800 rounded-2xl shadow px-6 py-5 space-y-4">
+            <p className="font-semibold text-gray-900 dark:text-white">
+              Raison du refus
+            </p>
             <textarea
               value={rejectReason}
               onChange={(e) => setRejectReason(e.target.value)}
               rows={3}
               placeholder="Optionnel — ex : date trop éloignée…"
-              className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm resize-none focus:outline-none focus:ring-2 focus:ring-gray-300 bg-gray-50 text-gray-900 placeholder-gray-400"
+              className="w-full px-4 py-3 border border-emerald-200 dark:border-emerald-800 bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-600 rounded-xl text-sm resize-none outline-none focus:ring-2 focus:ring-[#6CB33F] dark:focus:ring-emerald-500 transition"
             />
-            <div className="flex gap-2 mt-3">
+            <div className="flex gap-3">
               <button
                 onClick={() => { setShowReject(false); setErrorMessage(null); }}
-                className="flex-1 py-3 border border-gray-200 text-gray-600 rounded-xl text-sm font-medium hover:bg-gray-50 transition-colors"
+                className="flex-1 py-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-xl text-sm font-semibold transition-colors"
               >
                 Annuler
               </button>
               <button
                 onClick={handleReject}
                 disabled={submitting}
-                className="flex-[2] px-6 py-3 bg-red-500 text-white rounded-xl text-sm font-medium flex items-center justify-center gap-2 hover:bg-red-600 transition-colors disabled:opacity-50"
+                className="flex-[2] py-3 bg-red-500 hover:bg-red-600 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-xl text-sm font-semibold flex items-center justify-center gap-2 transition-colors"
               >
                 {submitting
                   ? <Loader2 className="w-4 h-4 animate-spin" />

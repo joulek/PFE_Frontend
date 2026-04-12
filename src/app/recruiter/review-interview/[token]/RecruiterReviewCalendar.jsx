@@ -404,7 +404,7 @@ export default function RecruiterReviewCalendar({ token }) {
             Date acceptée
           </h2>
           <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">
-            L'événement a été créé dans Outlook et un email a été envoyé au candidat.
+            L'événement a été créé dans le calendrier et un email a été envoyé au candidat.
           </p>
           <p className="text-xs text-gray-400 dark:text-gray-500">
             Redirection vers votre calendrier...
